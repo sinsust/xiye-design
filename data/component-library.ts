@@ -86,6 +86,170 @@ export const SOURCE_FILES: Record<string, string[]> = {
     "components/originkit/outstand/why-choose-us.tsx",
     "components/originkit/outstand/why-choose-us.module.css",
   ],
+  "outstand-values": [
+    "components/originkit/outstand/values.tsx",
+    "components/originkit/outstand/values.module.css",
+  ],
+  "outstand-expertise": [
+    "components/originkit/outstand/expertise.tsx",
+    "components/originkit/outstand/expertise.module.css",
+  ],
+  "outstand-digitalsolutions": [
+    "components/originkit/outstand/digital-solutions.tsx",
+    "components/originkit/outstand/digital-solutions.module.css",
+  ],
+  "outstand-benefits": [
+    "components/originkit/outstand/benefits.tsx",
+    "components/originkit/outstand/benefits.module.css",
+  ],
+  "outstand-benefits-section": [
+    "components/originkit/outstand/benefits-section.tsx",
+    "components/originkit/outstand/benefits-section.module.css",
+  ],
+  "outstand-contact-us": [
+    "components/originkit/outstand/contact-us.tsx",
+    "components/originkit/outstand/contact-us.module.css",
+  ],
+  "outstand-lets-work-together": [
+    "components/originkit/outstand/lets-work-together.tsx",
+    "components/originkit/outstand/lets-work-together.module.css",
+  ],
+  "outstand-our-solution-section": [
+    "components/originkit/outstand/our-solution-section.tsx",
+    "components/originkit/outstand/our-solution-section.module.css",
+  ],
+  "outstand-works-contact-us": [
+    "components/originkit/outstand/works-contact-us.tsx",
+    "components/originkit/outstand/works-contact-us.module.css",
+  ],
+  "outstand-works-excellence": [
+    "components/originkit/outstand/works-excellence.tsx",
+    "components/originkit/outstand/works-excellence.module.css",
+  ],
+  "outstand-works-partners": [
+    "components/originkit/outstand/works-partners.tsx",
+    "components/originkit/outstand/works-partners.module.css",
+  ],
+  "outstand-works-portfolio": [
+    "components/originkit/outstand/works-portfolio.tsx",
+    "components/originkit/outstand/works-portfolio.module.css",
+  ],
+  "outstand-works-projects": [
+    "components/originkit/outstand/works-projects.tsx",
+    "components/originkit/outstand/works-projects.module.css",
+  ],
+  "outstand-works-projects-hero": [
+    "components/originkit/outstand/works-projects-hero.tsx",
+    "components/originkit/outstand/works-projects-hero.module.css",
+  ],
+  "outstand-works-testimonials": [
+    "components/originkit/outstand/works-testimonials.tsx",
+    "components/originkit/outstand/works-testimonials.module.css",
+  ],
+  "outstand-services-benefits": [
+    "components/originkit/outstand/services-benefits.tsx",
+    "components/originkit/outstand/services-benefits.module.css",
+  ],
+  "outstand-services-comparison": [
+    "components/originkit/outstand/services-comparison.tsx",
+    "components/originkit/outstand/services-comparison.module.css",
+  ],
+  "outstand-services-expertise": [
+    "components/originkit/outstand/services-expertise.tsx",
+    "components/originkit/outstand/services-expertise.module.css",
+  ],
+  "outstand-services-faq": [
+    "components/originkit/outstand/services-faq.tsx",
+    "components/originkit/outstand/services-faq.module.css",
+  ],
+  "outstand-services-hero": [
+    "components/originkit/outstand/services-hero.tsx",
+    "components/originkit/outstand/services-hero.module.css",
+  ],
+  "outstand-services-keyfeatures": [
+    "components/originkit/outstand/services-keyfeatures.tsx",
+    "components/originkit/outstand/services-keyfeatures.module.css",
+  ],
+  "outstand-services-payment": [
+    "components/originkit/outstand/services-payment.tsx",
+    "components/originkit/outstand/services-payment.module.css",
+  ],
+  "outstand-services-pricingplan": [
+    "components/originkit/outstand/services-pricingplan.tsx",
+    "components/originkit/outstand/services-pricingplan.module.css",
+  ],
+  "outstand-services-process": [
+    "components/originkit/outstand/services-process.tsx",
+    "components/originkit/outstand/services-process.module.css",
+  ],
+  "outstand-services-services": [
+    "components/originkit/outstand/services-services.tsx",
+    "components/originkit/outstand/services-services.module.css",
+  ],
+  "outstand-services-overview": [
+    "components/originkit/outstand/services-overview.tsx",
+    "components/originkit/outstand/services-overview.module.css",
+  ],
+  "outstand-about-call-to-action": [
+    "components/originkit/outstand/about-call-to-action.tsx",
+    "components/originkit/outstand/about-call-to-action.module.css",
+  ],
+  "outstand-about-careers": [
+    "components/originkit/outstand/about-careers.tsx",
+    "components/originkit/outstand/about-careers.module.css",
+  ],
+  "outstand-about-excellence": [
+    "components/originkit/outstand/about-excellence.tsx",
+    "components/originkit/outstand/about-excellence.module.css",
+  ],
+  "outstand-about-features": [
+    "components/originkit/outstand/about-features.tsx",
+    "components/originkit/outstand/about-features.module.css",
+  ],
+  "outstand-about-hero": [
+    "components/originkit/outstand/about-hero.tsx",
+    "components/originkit/outstand/about-hero.module.css",
+  ],
+  "outstand-about-our-culture": [
+    "components/originkit/outstand/about-our-culture.tsx",
+    "components/originkit/outstand/about-our-culture.module.css",
+  ],
+  "outstand-about-our-story": [
+    "components/originkit/outstand/about-our-story.tsx",
+    "components/originkit/outstand/about-our-story.module.css",
+  ],
+  "outstand-about-team-members": [
+    "components/originkit/outstand/about-team-members.tsx",
+    "components/originkit/outstand/about-team-members.module.css",
+  ],
+  "outstand-about-testimonials": [
+    "components/originkit/outstand/about-testimonials.tsx",
+    "components/originkit/outstand/about-testimonials.module.css",
+  ],
+  "outstand-contact-digital-presence": [
+    "components/originkit/outstand/contact-digital-presence.tsx",
+    "components/originkit/outstand/contact-digital-presence.module.css",
+  ],
+  "outstand-contact-faq": [
+    "components/originkit/outstand/contact-faq.tsx",
+    "components/originkit/outstand/contact-faq.module.css",
+  ],
+  "outstand-contact-hero": [
+    "components/originkit/outstand/contact-hero.tsx",
+    "components/originkit/outstand/contact-hero.module.css",
+  ],
+  "outstand-contact-support": [
+    "components/originkit/outstand/contact-support.tsx",
+    "components/originkit/outstand/contact-support.module.css",
+  ],
+  "outstand-not-found": [
+    "components/originkit/outstand/not-found.tsx",
+    "components/originkit/outstand/not-found.module.css",
+  ],
+  "outstand-privacy-policy": [
+    "components/originkit/outstand/privacy-policy.tsx",
+    "components/originkit/outstand/privacy-policy.module.css",
+  ],
 };
 
 export function sourcePathFor(id: string): string[] {
@@ -527,6 +691,662 @@ export const COMPONENT_LIB: LibraryComponent[] = [
     name: "Outstand 差异化优势",
     icon: "Sparkles",
     description: "深色主题差异化优势区块：3 列卡片（Innovative Solutions / Putting Users First / Proven Track Record），每卡带图标 + 标题 + 描述，卡片含内边框（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-values",
+    name: "Outstand 价值观",
+    icon: "Sparkles",
+    description: "深色主题价值观区块：Our Guiding Principles 标题，6 张价值观卡片（Customer Focus/Integrity Always/Continuous Improvement/Innovation Driven/Team Collaboration/Excellence Pursuit），2 列 3 行布局，每卡带图标 + 底部装饰线（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-expertise",
+    name: "Outstand 能力与数据指标",
+    icon: "Sparkles",
+    description: "深色主题能力与数据指标区块：Our Expertise 标题 + 4 张能力卡（E-Commerce Solutions/Digital Marketing/Mobile App Development/Content Strategy），每卡含图片 + 图标 + 描述 + 3 组数据指标（如 40% Sales Increased/100+ Satisfied Clients/Awarded）（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-digitalsolutions",
+    name: "Outstand 数字方案",
+    icon: "Sparkles",
+    description: "深色主题数字方案区块：Digital Solutions Tailored for You 标题 + 6 张方案卡（Customized Digital Solutions/Collaborative Approach/Innovative Tech Solutions/Data-Driven Decisions/Adaptable Business Solutions/Clear & Open Communication），每卡带图标 + 分隔线 + 描述（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-benefits",
+    name: "Outstand 优势列表",
+    icon: "Sparkles",
+    description: "深色主题优势列表区块：标题 + 2 列多行优势条目（带编号、图标、分隔线，如 FAQ-style 优势展示），低频简洁（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-benefits-section",
+    name: "Outstand 优势区块",
+    icon: "Sparkles",
+    description: "深色主题优势区块：大标题 + 多个带大图/图标的优势卡（Benefits 场景），图文混排展示核心卖点（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-contact-us",
+    name: "Outstand 联系表单",
+    icon: "Sparkles",
+    description: "深色主题联系区块：标题 + 表单（Name/Email/Message 输入区 + 提交按钮）+ 联系信息（邮箱/地址等），表单含内边框输入框（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-lets-work-together",
+    name: "Outstand 合作横幅",
+    icon: "Sparkles",
+    description: "深色主题合作横幅：Rise & Shine With Us 标题 + 合作文案/CTA，下方 Past Customers 客户 Logo 墙（静态排列），顶部可与 Let's Work Together 区块结合（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-our-solution-section",
+    name: "Outstand 方案介绍",
+    icon: "Sparkles",
+    description: "深色主题方案介绍大区块：大标题 + 图文方案展示（方案卡片 + 特性标签 + 数据），场景化介绍整体解决方案（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-works-contact-us",
+    name: "Outstand 联系（作品页）",
+    icon: "Sparkles",
+    description: "深色联系区块：Get in Touch with Agency pro 标题 + 联系表单（Submit 按钮）+ 联系信息（取自 Outstand Works 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-works-excellence",
+    name: "Outstand 成就展示",
+    icon: "Sparkles",
+    description: "深色成就区块：Awards & Recognition 标题 + Excellence in Design 等获奖/成就条目（含数据与图标），展示荣誉与认可（取自 Outstand Works 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-works-partners",
+    name: "Outstand 合作伙伴",
+    icon: "Sparkles",
+    description: "深色合作区块：Our Collaborative Partnerships 标题 + Global Connect/Development 等合作领域条目 + 合作伙伴 Logo/信息展示（取自 Outstand Works 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-works-portfolio",
+    name: "Outstand 作品精选",
+    icon: "Sparkles",
+    description: "深色作品精选区块：Explore Our Portfolio 标题 + 精选项目卡（Gency 等，含封面图 + 描述 + 外链按钮），展示代表作品（取自 Outstand Works 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-works-projects",
+    name: "Outstand 项目展示（作品页）",
+    icon: "Sparkles",
+    description: "深色项目展示区块：Our Project Showcase 标题 + 项目卡网格（Gency/Agency Template for business Brand 等，含图 + 描述 + 外链）（取自 Outstand Works 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-works-projects-hero",
+    name: "Outstand 作品页首屏背景",
+    icon: "Sparkles",
+    description: "深色作品页首屏背景区块：响应式横幅大图（picture + 多断点 srcSet，桌面/平板/手机三档），作为作品集页面顶部背景（取自 Outstand Works 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-works-testimonials",
+    name: "Outstand 客户评价（作品页）",
+    icon: "Sparkles",
+    description: "深色客户评价区块：What our Clients say About Us 标题 + 评价卡列表（Happy!/Awesome! 等 + 客户头像/姓名），展示客户反馈（取自 Outstand Works 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-benefits",
+    name: "Outstand 优势（服务页）",
+    icon: "Sparkles",
+    description: "深色优势区块：Benefits of Choosing Us 标题 + 优势条目/卡，展示选择服务的价值（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-comparison",
+    name: "Outstand 服务对比",
+    icon: "Sparkles",
+    description: "深色对比区块：Service Comparison Overview 标题 + 服务方案对比表（特性逐行对比，突出推荐项），用于服务/套餐对比（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-expertise",
+    name: "Outstand 能力（服务页）",
+    icon: "Sparkles",
+    description: "深色能力区块：Our Range of Expertise 标题 + 能力分类（Design & Development 等 + 能力清单），展示专业服务范围（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-faq",
+    name: "Outstand FAQ（服务页）",
+    icon: "Sparkles",
+    description: "深色手风琴 FAQ：Questions? We Have Answers 标题 + 分类问题（Design & Development 等）+ 可交互折叠问答（useState 手风琴），点击展开/收起（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-hero",
+    name: "Outstand 服务首屏",
+    icon: "Sparkles",
+    description: "深色服务首屏：Explore Works 标题 + 数据指标（Projects Completed/Satisfied Clients 等）+ 环形旋转文字（CircularText 环绕动画），视觉冲击力强（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-keyfeatures",
+    name: "Outstand 核心特性",
+    icon: "Sparkles",
+    description: "深色核心特性区块：Our Competitive Edge 标题 + 特性卡（Custom Solutions 等 + 亮点/图标），突出服务核心竞争力（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-payment",
+    name: "Outstand 付款方式",
+    icon: "Sparkles",
+    description: "深色付款区块：Flexible Payment Options 标题 + 付款方式卡（Stripe 等 + 图标），展示支持的支付渠道（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-pricingplan",
+    name: "Outstand 定价（服务页）",
+    icon: "Sparkles",
+    description: "深色定价区块：Pricing plans 标题 + 定价卡 + Monthly/Yearly 切换（useState 联动，如价格随计费周期变化），含推荐/基础档（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-process",
+    name: "Outstand 流程（服务页）",
+    icon: "Sparkles",
+    description: "深色流程区块：The Outstand Way 标题 + 流程步骤卡（Consultation 等 + 周数/图标），展示服务交付阶段（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-services",
+    name: "Outstand 服务列表",
+    icon: "Sparkles",
+    description: "深色服务列表区块：Comprehensive Digital Solutions 标题 + 服务条目（Design & Development 等 + 描述/更多），概览服务目录（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-services-overview",
+    name: "Outstand 服务概览",
+    icon: "Sparkles",
+    description: "深色服务概览区块：Our Services Overview 标题 + 服务概览卡（Design & Development 等图文混合 + 数据），完整服务能力全景（取自 Outstand Services 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-call-to-action",
+    name: "Outstand 行动号召（关于页）",
+    icon: "Sparkles",
+    description: "深色 CTA 区块：Join Now 环形旋转文字（CircularText）+ 号召性标题 + CTA 按钮，引导注册/合作（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-careers",
+    name: "Outstand 招聘职位",
+    icon: "Sparkles",
+    description: "深色招聘区块：Explore Exciting Opportunities 标题 + 职位卡（Front End Developer 等 + 描述/申请按钮），展示开放岗位（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-excellence",
+    name: "Outstand 成就展示（关于页）",
+    icon: "Sparkles",
+    description: "深色成就区块：Awards & Recognition 标题 + Excellence in Design 等获奖/成就条目（含数据与图标），展示荣誉认可（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-features",
+    name: "Outstand 使命价值观",
+    icon: "Sparkles",
+    description: "深色使命区块：Our Mission & Values 标题 + Mission/价值观条目，传达品牌使命与文化（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-hero",
+    name: "Outstand 关于首屏",
+    icon: "Sparkles",
+    description: "深色关于首屏：About Us + Trusted by world leaders 大标题 + 数据指标 + 图文展示，品牌门面（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-our-culture",
+    name: "Outstand 企业文化",
+    icon: "Sparkles",
+    description: "深色文化区块：Our Culture, Empowering Excellence 标题 + 文化条目（Diversity & Inclusion 等 + 图标/描述），传达公司氛围（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-our-story",
+    name: "Outstand 品牌故事",
+    icon: "Sparkles",
+    description: "深色故事区块：Over The Years 标题 + 里程碑时间线（Founded 等阶段），讲述品牌发展历程（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-team-members",
+    name: "Outstand 团队成员",
+    icon: "Sparkles",
+    description: "深色团队区块：Awesome Team Members 标题 + 成员卡（Raj Khanna 等，含头像/姓名/角色），展示团队阵容（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about-testimonials",
+    name: "Outstand 客户评价（关于页）",
+    icon: "Sparkles",
+    description: "深色客户评价区块：What our Clients say About Us 标题 + 评价卡（Happy! 等 + 客户头像/姓名），展示客户反馈（取自 Outstand About 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-contact-digital-presence",
+    name: "Outstand 数字形象",
+    icon: "Sparkles",
+    description: "深色数字形象区块：Digital Presence 标题 + 社交媒体链接（Our Socials + 各平台图标），展示品牌线上形象（取自 Outstand Contact 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-contact-faq",
+    name: "Outstand FAQ（联系页）",
+    icon: "Sparkles",
+    description: "深色手风琴 FAQ：Questions? We Have Answers 标题 + 分类问题 + 可交互折叠问答（useState 手风琴），点击展开/收起（取自 Outstand Contact 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-contact-hero",
+    name: "Outstand 联系首屏",
+    icon: "Sparkles",
+    description: "深色联系首屏：Contact Us + Send a Message 联系表单 + Google 地图嵌入 + 办公室信息（Canada Office 等），联系入口大区块（取自 Outstand Contact 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-contact-support",
+    name: "Outstand 客服支持",
+    icon: "Sparkles",
+    description: "深色支持区块：Support + Connect with Our Team 标题 + 支持入口（Design & Development 等 + 客服渠道），帮助用户联系售后（取自 Outstand Contact 页面）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-not-found",
+    name: "Outstand 404 页面",
+    icon: "Sparkles",
+    description: "深色 404 区块：Page Not Found 大标题 + 提示 + Back to Home 返回按钮，作为无法访问页面的兜底页（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-privacy-policy",
+    name: "Outstand 隐私政策",
+    icon: "Sparkles",
+    description: "深色政策区块：Privacy Policy + Our Privacy Policy 大标题 + 分节长文（Information We Collect 等章节标题 + 说明文字），作为法律条款页内容（取自 Outstand 模板）。",
     category: "整站模板",
     site: "Outstand",
     settings: [

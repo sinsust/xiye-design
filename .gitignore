@@ -54,6 +54,13 @@ knowledge/user/
 xiye-dev.exe
 xiye-dev.spec
 
+# Trae IDE 配置（不入库）
+.trae/
+
+# 临时 npm pack 调试产物
+*.tgz
+postgres-3.4.9.tgz
+
 # 独立模板工程（仅顶层 /outstand 是独立项目，不并入主仓库；
 # components/originkit/outstand 与 public/originkit/outstand 是组件库源码+资源，必须入库）
 /outstand/

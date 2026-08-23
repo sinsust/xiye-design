@@ -1,0 +1,79 @@
+﻿/* ===== scoped Outstand tokens ===== */
+:local(circular) {
+  --color-accent: rgb(205, 241, 64);
+  --color-accent-soft: rgb(212, 244, 88);
+  --color-accent-muted: rgb(218, 246, 111);
+  --color-accent-tint: rgb(248, 253, 231);
+  --color-ink-950: rgb(15, 15, 15);
+  --color-ink-900: rgb(20, 20, 20);
+  --color-ink-850: rgb(26, 26, 26);
+  --color-ink-800: rgb(31, 31, 31);
+  --color-ink-700: rgb(38, 38, 38);
+  --color-ink-600: rgb(46, 46, 46);
+  --color-ink-500: rgb(64, 64, 64);
+  --color-mist-600: rgb(150, 151, 156);
+  --color-mist-500: rgb(176, 177, 181);
+  --color-mist-400: rgb(202, 203, 206);
+  --color-mist-300: rgb(228, 229, 230);
+  --color-mist-200: rgb(242, 242, 243);
+  --color-mist-100: rgb(247, 247, 248);
+  --color-white: rgb(255, 255, 255);
+  --font-heading: "Rethink Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-body: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+  --shell-max-width: 1140px;
+  --ease-out-framer: cubic-bezier(0.44, 0, 0.56, 1);
+  --duration-appear: 0.8s;
+  --duration-hover: 0.3s;
+}
+:local(circular) [data-border='true'] {
+  position: relative;
+}
+:local(circular) [data-border='true']::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: inherit;
+  border-width: var(--border-top-width, 0) var(--border-right-width, 0) var(--border-bottom-width, 0) var(--border-left-width, 0);
+  border-color: var(--border-color, transparent);
+  border-style: var(--border-style, none);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Revolving ring of text. Duration is set inline per instance. */
+
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  will-change: transform;
+  animation-name: ring-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  color: var(--color-ink-950);
+  pointer-events: none;
+}
+
+.reverse {
+  animation-direction: reverse;
+}
+
+@keyframes ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+  }
+}
+

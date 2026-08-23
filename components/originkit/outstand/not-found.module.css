@@ -1,0 +1,440 @@
+﻿/* ===== scoped Outstand tokens ===== */
+:local(content) {
+  --color-accent: rgb(205, 241, 64);
+  --color-accent-soft: rgb(212, 244, 88);
+  --color-accent-muted: rgb(218, 246, 111);
+  --color-accent-tint: rgb(248, 253, 231);
+  --color-ink-950: rgb(15, 15, 15);
+  --color-ink-900: rgb(20, 20, 20);
+  --color-ink-850: rgb(26, 26, 26);
+  --color-ink-800: rgb(31, 31, 31);
+  --color-ink-700: rgb(38, 38, 38);
+  --color-ink-600: rgb(46, 46, 46);
+  --color-ink-500: rgb(64, 64, 64);
+  --color-mist-600: rgb(150, 151, 156);
+  --color-mist-500: rgb(176, 177, 181);
+  --color-mist-400: rgb(202, 203, 206);
+  --color-mist-300: rgb(228, 229, 230);
+  --color-mist-200: rgb(242, 242, 243);
+  --color-mist-100: rgb(247, 247, 248);
+  --color-white: rgb(255, 255, 255);
+  --font-heading: "Rethink Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-body: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+  --shell-max-width: 1140px;
+  --ease-out-framer: cubic-bezier(0.44, 0, 0.56, 1);
+  --duration-appear: 0.8s;
+  --duration-hover: 0.3s;
+}
+:local(content) [data-border='true'] {
+  position: relative;
+}
+:local(content) [data-border='true']::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: inherit;
+  border-width: var(--border-top-width, 0) var(--border-right-width, 0) var(--border-bottom-width, 0) var(--border-left-width, 0);
+  border-color: var(--border-color, transparent);
+  border-style: var(--border-style, none);
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.main {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  padding: 180px 150px 40px 150px;
+}
+.r1 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.background {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.r3 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100vh;
+}
+.r4 {
+  width: 100%;
+  height: 100vh;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 2880 / 1452;
+}
+.container {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 415px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.subContainer {
+  display: flex;
+  position: relative;
+  width: 150.5px;
+  height: 33px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  row-gap: 2px;
+  column-gap: 2px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 6px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r8 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+}
+.r9 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 21 / 21;
+}
+.text {
+  display: flex;
+  position: relative;
+  width: 104.5px;
+  height: 21px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r11 {
+  width: 104.5px;
+  height: 21px;
+  color: rgb(218, 246, 111);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: 0.28px;
+}
+.text2 {
+  display: flex;
+  position: relative;
+  width: 360px;
+  height: 240px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r13 {
+  width: 360px;
+  height: 240px;
+  color: rgb(228, 229, 230);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 200px;
+  font-weight: 700;
+  line-height: 240px;
+  letter-spacing: 4px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r15 {
+  width: 1140px;
+  height: 27px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.r16 {
+  position: relative;
+  width: 199.391px;
+  height: 55px;
+  flex-shrink: 0;
+}
+.iconLeftRight {
+  display: flex;
+  position: relative;
+  width: 199.391px;
+  height: 55px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  row-gap: 4px;
+  column-gap: 4px;
+  background-color: rgb(205, 241, 64);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center;
+  cursor: pointer;
+  padding: 14px 28px;
+  border-radius: 53px;
+}
+.text3 {
+  display: flex;
+  position: relative;
+  width: 115.391px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r19 {
+  width: 115.391px;
+  height: 27px;
+  color: rgb(15, 15, 15);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+}
+.iconRight {
+  display: flex;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.icon2 {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.r22 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 24px;
+  height: 24px;
+}
+.r23 {
+  width: 24px;
+  height: 24px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 20;
+}
+.shine {
+  position: absolute;
+  top: -23px;
+  right: 201.391px;
+  bottom: -2px;
+  left: -7px;
+  width: 5px;
+  height: 80px;
+  background-image: linear-gradient(177deg, rgba(255, 255, 255, 0) 8%, rgb(255, 255, 255) 84%);
+  z-index: 1;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  filter: blur(2px);
+  transform: matrix(0.866025, 0.5, -0.5, 0.866025, 0, 0);
+  flex-shrink: 0;
+}
+
+@media (max-width: 1319px) {
+  .main {
+    padding: 160px 60px 40px 60px;
+  }
+  .background {
+    bottom: 300px;
+    height: 600px;
+  }
+  .r3 {
+    height: 600px;
+  }
+  .r4 {
+    height: 600px;
+    aspect-ratio: auto 810 / 1202;
+  }
+  .container {
+    width: 904px;
+    height: 412px;
+  }
+  .paragraph {
+    width: 904px;
+    height: 25.5px;
+  }
+  .r15 {
+    width: 904px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .r16 {
+    width: 192.984px;
+    height: 53.5px;
+  }
+  .iconLeftRight {
+    width: 192.984px;
+    height: 53.5px;
+  }
+  .text3 {
+    width: 108.984px;
+    height: 25.5px;
+  }
+  .r19 {
+    width: 108.984px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+  }
+  .shine {
+    right: 194.984px;
+    height: 78.5px;
+  }
+}
+
+@media (max-width: 809px) {
+  .main {
+    padding: 160px 16px 40px 16px;
+  }
+  .background {
+    bottom: 244px;
+  }
+  .r4 {
+    aspect-ratio: auto 780 / 1200;
+  }
+  .container {
+    width: 258px;
+    height: 281.5px;
+    max-width: 258px;
+    gap: 16px;
+    row-gap: 16px;
+    column-gap: 16px;
+  }
+  .text2 {
+    width: 144px;
+    height: 96px;
+  }
+  .r13 {
+    width: 144px;
+    height: 96px;
+    font-size: 80px;
+    line-height: 96px;
+    letter-spacing: 1.6px;
+  }
+  .paragraph {
+    width: 258px;
+    height: 51px;
+  }
+  .r15 {
+    width: 258px;
+    height: 51px;
+  }
+  .r16 {
+    width: 258px;
+  }
+  .iconLeftRight {
+    width: 258px;
+  }
+  .shine {
+    right: 260px;
+  }
+}
+

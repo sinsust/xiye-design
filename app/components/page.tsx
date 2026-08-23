@@ -37,6 +37,47 @@ import OutstandCta from "@/components/originkit/outstand/cta";
 import OutstandProcess from "@/components/originkit/outstand/process";
 import OutstandProjects from "@/components/originkit/outstand/projects";
 import OutstandWhyChooseUs from "@/components/originkit/outstand/why-choose-us";
+import OutstandValues from "@/components/originkit/outstand/values";
+import OutstandExpertise from "@/components/originkit/outstand/expertise";
+import OutstandDigitalSolutions from "@/components/originkit/outstand/digital-solutions";
+import OutstandBenefits from "@/components/originkit/outstand/benefits";
+import OutstandBenefitsSection from "@/components/originkit/outstand/benefits-section";
+import OutstandContactUs from "@/components/originkit/outstand/contact-us";
+import OutstandLetsWorkTogether from "@/components/originkit/outstand/lets-work-together";
+import OutstandOurSolutionSection from "@/components/originkit/outstand/our-solution-section";
+import OutstandWorksContactUs from "@/components/originkit/outstand/works-contact-us";
+import OutstandWorksExcellence from "@/components/originkit/outstand/works-excellence";
+import OutstandWorksPartners from "@/components/originkit/outstand/works-partners";
+import OutstandWorksPortfolio from "@/components/originkit/outstand/works-portfolio";
+import OutstandWorksProjects from "@/components/originkit/outstand/works-projects";
+import OutstandWorksProjectsHero from "@/components/originkit/outstand/works-projects-hero";
+import OutstandWorksTestimonials from "@/components/originkit/outstand/works-testimonials";
+import OutstandServicesBenefits from "@/components/originkit/outstand/services-benefits";
+import OutstandServicesComparison from "@/components/originkit/outstand/services-comparison";
+import OutstandServicesExpertise from "@/components/originkit/outstand/services-expertise";
+import OutstandServicesFaq from "@/components/originkit/outstand/services-faq";
+import OutstandServicesHero from "@/components/originkit/outstand/services-hero";
+import OutstandServicesKeyFeatures from "@/components/originkit/outstand/services-keyfeatures";
+import OutstandServicesPayment from "@/components/originkit/outstand/services-payment";
+import OutstandServicesPricingPlan from "@/components/originkit/outstand/services-pricingplan";
+import OutstandServicesProcess from "@/components/originkit/outstand/services-process";
+import OutstandServicesServices from "@/components/originkit/outstand/services-services";
+import OutstandServicesOverview from "@/components/originkit/outstand/services-overview";
+import OutstandAboutCallToAction from "@/components/originkit/outstand/about-call-to-action";
+import OutstandAboutCareers from "@/components/originkit/outstand/about-careers";
+import OutstandAboutExcellence from "@/components/originkit/outstand/about-excellence";
+import OutstandAboutFeatures from "@/components/originkit/outstand/about-features";
+import OutstandAboutHero from "@/components/originkit/outstand/about-hero";
+import OutstandAboutOurCulture from "@/components/originkit/outstand/about-our-culture";
+import OutstandAboutOurStory from "@/components/originkit/outstand/about-our-story";
+import OutstandAboutTeamMembers from "@/components/originkit/outstand/about-team-members";
+import OutstandAboutTestimonials from "@/components/originkit/outstand/about-testimonials";
+import OutstandContactDigitalPresence from "@/components/originkit/outstand/contact-digital-presence";
+import OutstandContactFaq from "@/components/originkit/outstand/contact-faq";
+import OutstandContactHero from "@/components/originkit/outstand/contact-hero";
+import OutstandContactSupport from "@/components/originkit/outstand/contact-support";
+import OutstandNotFound from "@/components/originkit/outstand/not-found";
+import OutstandPrivacyPolicy from "@/components/originkit/outstand/privacy-policy";
 import {
   COMPONENT_LIB,
   FLUID_PALETTES,
@@ -87,44 +128,105 @@ function groupComponents(components: LibraryComponent[]): Group[] {
 }
 
 /**
- * 全宽区块/Hero 预览容器：保持 100% 真实宽度，不缩放，
- * 高度自然延展，不再内部截断滚动。
+ * 全宽区块/Hero 预览容器：子内容宽度超出容器时自动按 scale 缩小，
+ * 保证固定宽度设计稿（如 Outstand 整站模板 1140px）在窄预览区也能完整展示。
  */
 function WidePreviewFrame({ children }: { children: ReactNode }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const content = contentRef.current;
+    if (!container || !content) return;
+
+    const fit = () => {
+      // 测量时把内容层临时 absolute + max-content 挪出视口，使其自然撑开到
+      // 子内容真实宽度（固定 1140px 等），读准 scrollWidth 后再恢复原位，
+      // 避免 width:100% 让 scrollWidth 只等于容器宽度而漏缩放
+      const prev = {
+        position: content.style.position,
+        width: content.style.width,
+        transform: content.style.transform,
+        left: content.style.left,
+        top: content.style.top,
+        visibility: content.style.visibility,
+        pointerEvents: content.style.pointerEvents,
+      };
+      content.style.position = "absolute";
+      content.style.visibility = "hidden";
+      content.style.pointerEvents = "none";
+      content.style.left = "-99999px";
+      content.style.top = "0";
+      content.style.transform = "none";
+      content.style.width = "max-content";
+      const cw = container.clientWidth;
+      const sw = content.scrollWidth;
+      content.style.position = prev.position;
+      content.style.visibility = prev.visibility;
+      content.style.pointerEvents = prev.pointerEvents;
+      content.style.left = prev.left;
+      content.style.top = prev.top;
+      content.style.transform = prev.transform;
+      content.style.width = prev.width;
+      const s = cw > 0 && sw > cw ? cw / sw : 1;
+      setScale(s);
+    };
+
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(container);
+    const onResize = () => fit();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("load", onResize);
+    const timers = [100, 300, 600].map((ms) => setTimeout(fit, ms));
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("load", onResize);
+      timers.forEach(clearTimeout);
+    };
+  }, []);
+
   return (
-    <div className="relative w-full overflow-hidden rounded-[var(--radius)] bg-background">
-      {children}
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden rounded-[var(--radius)] bg-background"
+    >
+      <div
+        ref={contentRef}
+        className="w-full"
+        style={{
+          transform: scale < 1 ? `scale(${scale})` : undefined,
+          transformOrigin: "top left",
+          // 缩放后占位宽度随之收缩，保证后续内容不错位
+          width: scale < 1 ? `${(100 / scale).toFixed(4)}%` : "100%",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
 /**
  * Outstand 区块作用域容器：深色底 + 主题色变量。
- * 区块固定宽度 1140px/780px，容器允许横向滚动查看完整效果。
- * container=true 时为容器查询容器（inline-size）。
  */
 function SectionScope({
   children,
   accent,
-  container = false,
 }: {
   children: ReactNode;
   accent: string;
-  container?: boolean;
 }) {
   return (
     <div
-      className="w-full overflow-x-auto"
+      className="w-full"
       style={{
         background: "#0f0f0f",
         ["--color-accent" as string]: accent,
         ["--color-accent-soft" as string]: accent,
-        ...(container
-          ? {
-              containerType: "inline-size",
-              // 不包裹子元素宽度，让容器宽度 = 外层实际宽度
-            }
-          : {}),
       }}
     >
       {children}
@@ -789,7 +891,7 @@ export default function ComponentLibraryPage() {
 
               {comp.id === "outstand-projects" && (
                 <WidePreviewFrame>
-                  <SectionScope container accent={String(settings.accentColor ?? "#CDF140")}>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
                     <OutstandProjects />
                   </SectionScope>
                 </WidePreviewFrame>
@@ -799,6 +901,334 @@ export default function ComponentLibraryPage() {
                 <WidePreviewFrame>
                   <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
                     <OutstandWhyChooseUs />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-values" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandValues />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-expertise" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandExpertise />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-digitalsolutions" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandDigitalSolutions />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-benefits" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandBenefits />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-benefits-section" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandBenefitsSection />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-contact-us" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandContactUs />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-lets-work-together" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandLetsWorkTogether />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-our-solution-section" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandOurSolutionSection />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-works-contact-us" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWorksContactUs />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-works-excellence" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWorksExcellence />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-works-partners" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWorksPartners />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-works-portfolio" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWorksPortfolio />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-works-projects" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWorksProjects />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-works-projects-hero" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWorksProjectsHero />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-works-testimonials" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWorksTestimonials />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-benefits" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesBenefits />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-comparison" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesComparison />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-expertise" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesExpertise />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-faq" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesFaq />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-hero" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesHero />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-keyfeatures" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesKeyFeatures />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-payment" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesPayment />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-pricingplan" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesPricingPlan />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-process" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesProcess />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-services" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesServices />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-services-overview" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandServicesOverview />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-call-to-action" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutCallToAction />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-careers" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutCareers />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-excellence" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutExcellence />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-features" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutFeatures />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-hero" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutHero />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-our-culture" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutOurCulture />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-our-story" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutOurStory />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-team-members" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutTeamMembers />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about-testimonials" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAboutTestimonials />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-contact-digital-presence" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandContactDigitalPresence />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-contact-faq" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandContactFaq />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-contact-hero" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandContactHero />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-contact-support" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandContactSupport />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-not-found" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandNotFound />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-privacy-policy" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandPrivacyPolicy />
                   </SectionScope>
                 </WidePreviewFrame>
               )}
