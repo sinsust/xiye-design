@@ -9,7 +9,7 @@
 // 2) POSTGRES_URL          —— Vercel 自带 Postgres Storage（池化）
 // 3) SUPABASE_DB_URL       —— Supabase 官方 Vercel 集成（直连）
 // 4) POSTGRES_URL_NON_POOLING —— Vercel Postgres 直连
-function resolveDatabaseUrl(): string {
+export function resolveDatabaseUrl(): string {
   return (
     process.env.DATABASE_URL ??
     process.env.POSTGRES_URL ??
