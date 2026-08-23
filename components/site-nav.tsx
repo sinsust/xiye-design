@@ -1,0 +1,54 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemePresetToggle } from "@/components/theme-preset-toggle";
+import { AuthMenu } from "@/components/auth-menu";
+
+const NAV_LINKS = [
+  { href: "/flow", label: "流程工作台" },
+  { href: "/builder", label: "页面搭建" },
+  { href: "/components", label: "组件库" },
+  { href: "/library", label: "知识库" },
+];
+
+export function SiteNav() {
+  const pathname = usePathname();
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="relative mx-auto flex h-14 max-w-7xl items-center px-4">
+        <Link
+          href="/"
+          className="font-heading text-lg tracking-tight text-foreground"
+        >
+          xiye
+        </Link>
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 sm:flex">
+          {NAV_LINKS.map((link) => {
+            const isActive =
+              pathname === link.href || pathname.startsWith(link.href + "/");
+            return (
+              <Button
+                key={link.href}
+                render={<Link href={link.href} />}
+                nativeButton={false}
+                variant={isActive ? "default" : "ghost"}
+                size="sm"
+              >
+                {link.label}
+              </Button>
+            );
+          })}
+        </nav>
+        <div className="ml-auto flex items-center gap-1.5">
+          <ThemePresetToggle />
+          <ThemeToggle />
+          <AuthMenu />
+        </div>
+      </div>
+    </header>
+  );
+}

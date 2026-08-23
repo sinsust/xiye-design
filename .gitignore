@@ -1,0 +1,70 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# xiye 本地 SQLite 数据库（本地存档用，勿入库）
+xiye.db
+xiye.db-shm
+xiye.db-wal
+
+# 用户自建知识库（运行时由 /library 写入，含私有内容，勿入库）
+knowledge/user/
+.originkit/
+
+# 本地打包产物 / 二进制
+xiye-dev.exe
+xiye-dev.spec
+
+# 独立模板工程（outstand 是独立项目，不并入主仓库，任意层级均排除）
+outstand/
+
+# python 缓存
+__pycache__/
+
+# 临时 npm 缓存目录
+/.npm-tmp
+/.tmp-npm-cache
+
+# WorkBuddy 项目私有数据（勿入库）
+.workbuddy/
+
+# 临时分析报告产物
+section-analysis-report.md
