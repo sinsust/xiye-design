@@ -52,6 +52,9 @@ export async function POST(req: NextRequest) {
         error: "debug",
         message: String(e?.message ?? e),
         code: e?.code,
+        cause: e?.cause
+          ? { message: String((e.cause as any).message ?? e.cause), code: (e.cause as any).code }
+          : null,
         dbUrlHost: (() => {
           try {
             const u = new URL(resolveDatabaseUrl());
