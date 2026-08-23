@@ -1,18 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Check,
-  CloudFog,
+  ChevronDown,
   Code2,
-  Copy,
+  CloudFog,
+  Globe,
+  Layers,
   Orbit,
   PanelsTopLeft,
+  PanelLeft,
+  PanelLeftClose,
   Scan,
   SlidersHorizontal,
+  Sparkles,
+  Wand2,
   Waves,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import FluidText from "@/components/originkit/ui/fluid-text";
 import SmokyText from "@/components/originkit/ui/smokytext";
 import FlashlightText from "@/components/originkit/ui/spotlighttext";
@@ -20,7 +28,21 @@ import { RingGallery } from "@/components/originkit/ring-gallery";
 import Hero36 from "@/components/originkit/hero-36";
 import Hero19 from "@/components/originkit/hero-19";
 import OutstandHero from "@/components/originkit/outstand/hero";
-import { COMPONENT_LIB, FLUID_PALETTES, sourcePathFor, type LibraryComponent } from "@/data/component-library";
+import OutstandPricing from "@/components/originkit/outstand/pricing";
+import OutstandFaq from "@/components/originkit/outstand/faq";
+import OutstandTestimonials from "@/components/originkit/outstand/testimonials";
+import OutstandFeatures from "@/components/originkit/outstand/features";
+import OutstandAbout from "@/components/originkit/outstand/about";
+import OutstandCta from "@/components/originkit/outstand/cta";
+import OutstandProcess from "@/components/originkit/outstand/process";
+import OutstandProjects from "@/components/originkit/outstand/projects";
+import OutstandWhyChooseUs from "@/components/originkit/outstand/why-choose-us";
+import {
+  COMPONENT_LIB,
+  FLUID_PALETTES,
+  sourcePathFor,
+  type LibraryComponent,
+} from "@/data/component-library";
 
 type Settings = Record<string, string | number | string[]>;
 
@@ -30,27 +52,83 @@ const ICONS: Record<string, ReactNode> = {
   Scan: <Scan className="size-4" />,
   Orbit: <Orbit className="size-4" />,
   PanelsTopLeft: <PanelsTopLeft className="size-4" />,
+  Sparkles: <Sparkles className="size-4" />,
 };
 
-function CopyButton({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false);
+type SimpleGroup = { type: "simple"; items: LibraryComponent[] };
+type SiteGroup = { type: "sites"; sites: Record<string, LibraryComponent[]> };
+type Group = { category: string; icon: ReactNode } & (SimpleGroup | SiteGroup);
+
+const CATEGORY_ICONS: Record<string, ReactNode> = {
+  特效: <Wand2 className="size-4" />,
+  区块: <Layers className="size-4" />,
+  整站模板: <Globe className="size-4" />,
+};
+
+function groupComponents(components: LibraryComponent[]): Group[] {
+  const byCategory = new Map<string, LibraryComponent[]>();
+  for (const c of components) {
+    byCategory.set(c.category, [...(byCategory.get(c.category) ?? []), c]);
+  }
+  return Array.from(byCategory.entries()).map(([category, items]) => {
+    const siteItems = items.filter((c) => c.site);
+    const plainItems = items.filter((c) => !c.site);
+    const icon = CATEGORY_ICONS[category] ?? <PanelsTopLeft className="size-4" />;
+    if (siteItems.length > 0) {
+      const sites: Record<string, LibraryComponent[]> = {};
+      for (const c of siteItems) {
+        sites[c.site!] = [...(sites[c.site!] ?? []), c];
+      }
+      if (plainItems.length > 0) sites["默认"] = plainItems;
+      return { category, icon, type: "sites" as const, sites };
+    }
+    return { category, icon, type: "simple" as const, items };
+  });
+}
+
+/**
+ * 全宽区块/Hero 预览容器：保持 100% 真实宽度，不缩放，
+ * 高度自然延展，不再内部截断滚动。
+ */
+function WidePreviewFrame({ children }: { children: ReactNode }) {
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(text);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        } catch {
-          /* 静默 */
-        }
+    <div className="relative w-full overflow-hidden rounded-[var(--radius)] bg-background">
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Outstand 区块作用域容器：深色底 + 主题色变量。
+ * 区块固定宽度 1140px/780px，容器允许横向滚动查看完整效果。
+ * container=true 时为容器查询容器（inline-size）。
+ */
+function SectionScope({
+  children,
+  accent,
+  container = false,
+}: {
+  children: ReactNode;
+  accent: string;
+  container?: boolean;
+}) {
+  return (
+    <div
+      className="w-full overflow-x-auto"
+      style={{
+        background: "#0f0f0f",
+        ["--color-accent" as string]: accent,
+        ["--color-accent-soft" as string]: accent,
+        ...(container
+          ? {
+              containerType: "inline-size",
+              // 不包裹子元素宽度，让容器宽度 = 外层实际宽度
+            }
+          : {}),
       }}
     >
-      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-      {copied ? "已复制" : label}
-    </Button>
+      {children}
+    </div>
   );
 }
 
@@ -184,30 +262,69 @@ export function Demo() {
 }`;
 }
 
-const ZEBRA_BG = `
-  background-color: #111;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255,255,255,0.05) 0,
-    rgba(255,255,255,0.05) 12px,
-    transparent 12px,
-    transparent 24px
-  );
-`;
-
 function bgStyle(bg: string): React.CSSProperties {
   if (bg === "light") return { backgroundColor: "#f4f4f5" };
   if (bg === "black") return { backgroundColor: "#000" };
-  if (bg === "zebra") return {};
   return { backgroundColor: "#0c0c0f" };
 }
 
+function ItemButton({
+  comp,
+  active,
+  onClick,
+}: {
+  comp: LibraryComponent;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 rounded-[var(--radius)] border px-2 py-1.5 text-left text-xs transition",
+        active
+          ? "border-primary bg-primary/5 text-primary"
+          : "border-transparent text-muted-foreground hover:bg-muted/40"
+      )}
+    >
+      <span className="shrink-0">{ICONS[comp.icon] ?? null}</span>
+      <span className="truncate">{comp.name}</span>
+    </button>
+  );
+}
+
 export default function ComponentLibraryPage() {
+  const groups = useMemo(() => groupComponents(COMPONENT_LIB), []);
   const [activeId, setActiveId] = useState(COMPONENT_LIB[0]?.id ?? "");
-  const comp = COMPONENT_LIB.find((c) => c.id === activeId) ?? COMPONENT_LIB[0];
-  const [settings, setSettings] = useState<Settings>(() => defaultSettings(comp));
+  const comp =
+    COMPONENT_LIB.find((c) => c.id === activeId) ?? COMPONENT_LIB[0];
+  const [settings, setSettings] = useState<Settings>(() =>
+    defaultSettings(comp)
+  );
   const [sourceCode, setSourceCode] = useState<string>("");
   const [sourceCopied, setSourceCopied] = useState(false);
+
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
+    () => {
+      const init: Record<string, boolean> = {};
+      groups.forEach((g) => (init[g.category] = true));
+      return init;
+    }
+  );
+  const [expandedSites, setExpandedSites] = useState<Record<string, boolean>>(
+    () => {
+      const init: Record<string, boolean> = {};
+      groups.forEach((g) => {
+        if (g.type === "sites") {
+          Object.keys(g.sites).forEach((site) => (init[site] = true));
+        }
+      });
+      return init;
+    }
+  );
 
   // 切换组件时重置设置
   useEffect(() => {
@@ -222,8 +339,8 @@ export default function ComponentLibraryPage() {
     if (paths.length === 0) return;
     Promise.all(
       paths.map((p) =>
-        fetch(`/api/component-source?path=${encodeURIComponent(p)}`).then((r) =>
-          r.ok ? r.text() : ""
+        fetch(`/api/component-source?path=${encodeURIComponent(p)}`).then(
+          (r) => (r.ok ? r.text() : "")
         )
       )
     )
@@ -240,238 +357,495 @@ export default function ComponentLibraryPage() {
     };
   }, [comp.id]);
 
+  // 选中组件后自动展开其所在分组与站点
+  useEffect(() => {
+    const group = groups.find((g) =>
+      g.type === "simple"
+        ? g.items.some((i) => i.id === comp.id)
+        : Object.values(g.sites).some((items) =>
+            items.some((i) => i.id === comp.id)
+          )
+    );
+    if (!group) return;
+    setExpandedGroups((prev) => ({ ...prev, [group.category]: true }));
+    if (group.type === "sites") {
+      const site = Object.entries(group.sites).find(([, items]) =>
+        items.some((i) => i.id === comp.id)
+      )?.[0];
+      if (site) setExpandedSites((prev) => ({ ...prev, [site]: true }));
+    }
+  }, [comp.id, groups]);
+
   const set = (key: string, value: string | number | string[]) =>
     setSettings((s) => ({ ...s, [key]: value }));
 
   const usageCode = useMemo(() => buildUsageCode(comp, settings), [comp, settings]);
 
+  const handleCopySource = async () => {
+    try {
+      await navigator.clipboard.writeText(sourceCode || usageCode);
+      setSourceCopied(true);
+      setTimeout(() => setSourceCopied(false), 1500);
+    } catch {
+      /* 静默 */
+    }
+  };
+
   return (
-    <div className="grid gap-6 lg:h-[calc(100vh-9rem)] lg:grid-cols-[210px_minmax(0,1fr)_260px]">
-      {/* 侧边栏：组件列表（按分类分组） */}
-      <aside className="flex max-h-[60vh] flex-col gap-1.5 overflow-y-auto pb-1 lg:max-h-none lg:pb-0">
-        <p className="px-1 pb-1 font-heading text-sm font-semibold text-foreground">
-          组件库
-        </p>
-        {Array.from(new Set(COMPONENT_LIB.map((c) => c.category))).map((cat) => {
-          const items = COMPONENT_LIB.filter((c) => c.category === cat);
-          return (
-            <div key={cat} className="mb-1.5 flex flex-col gap-1.5">
-              <p className="truncate px-1 pt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
-                {cat}
-              </p>
-              {items.map((c) => {
-                const active = c.id === comp.id;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setActiveId(c.id)}
-                    className={[
-                      "flex items-center gap-2 border px-3 py-2 text-left text-sm transition",
-                      "rounded-[var(--radius)]",
-                      active
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-transparent bg-transparent text-muted-foreground hover:bg-muted/40",
-                    ].join(" ")}
-                  >
-                    <span className="shrink-0">{ICONS[c.icon] ?? null}</span>
-                    <span className="truncate">{c.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-        <p className="mt-auto px-1 pt-3 text-xs leading-5 text-muted-foreground">
-          选中组件后，右侧可实时调整参数；下方复制用法或完整源码。
-        </p>
+    <div className="relative flex min-h-[calc(100vh-4rem)] rounded-[var(--radius)] border border-border bg-background">
+      {/* 侧边栏：sticky 固定，内部独立滚动 */}
+      <aside
+        className={cn(
+          "sticky top-4 self-start flex h-[calc(100vh-4.5rem)] shrink-0 flex-col overflow-hidden border-r border-border transition-all duration-200 ease-in-out",
+          sidebarOpen ? "w-[180px]" : "w-[44px]"
+        )}
+      >
+        <div className="flex h-11 shrink-0 items-center justify-between gap-1 border-b border-border px-2">
+          {sidebarOpen && (
+            <span className="text-sm font-semibold">组件库</span>
+          )}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((v) => !v)}
+            className={cn(
+              "inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition hover:bg-muted hover:text-foreground",
+              !sidebarOpen && "mx-auto"
+            )}
+            title={sidebarOpen ? "收起侧边栏" : "展开侧边栏"}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="size-4" />
+            ) : (
+              <PanelLeft className="size-4" />
+            )}
+          </button>
+        </div>
+
+        {sidebarOpen ? (
+          <div className="flex-1 overflow-y-auto p-2">
+            {groups.map((group) => (
+              <div key={group.category} className="mb-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedGroups((prev) => ({
+                      ...prev,
+                      [group.category]: !prev[group.category],
+                    }))
+                  }
+                  className="mb-1 flex w-full items-center justify-between rounded-[var(--radius)] px-1 py-1 text-left transition hover:bg-muted/50"
+                >
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {group.category}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "size-3.5 text-muted-foreground transition-transform",
+                      expandedGroups[group.category] ? "rotate-180" : ""
+                    )}
+                  />
+                </button>
+
+                {expandedGroups[group.category] &&
+                  (group.type === "simple" ? (
+                    <div className="flex flex-col gap-0.5">
+                      {group.items.map((c) => (
+                        <ItemButton
+                          key={c.id}
+                          comp={c}
+                          active={c.id === comp.id}
+                          onClick={() => setActiveId(c.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {Object.entries(group.sites).map(([site, items]) => (
+                        <div
+                          key={site}
+                          className="ml-1 border-l border-border pl-2"
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedSites((prev) => ({
+                                ...prev,
+                                [site]: !prev[site],
+                              }))
+                            }
+                            className="mb-0.5 flex w-full items-center justify-between rounded-[var(--radius)] px-1 py-1 text-left transition hover:bg-muted/50"
+                          >
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {site}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "size-3 text-muted-foreground transition-transform",
+                                expandedSites[site] ? "rotate-180" : ""
+                              )}
+                            />
+                          </button>
+                          {expandedSites[site] && (
+                            <div className="flex flex-col gap-0.5">
+                              {items.map((c) => (
+                                <ItemButton
+                                  key={c.id}
+                                  comp={c}
+                                  active={c.id === comp.id}
+                                  onClick={() => setActiveId(c.id)}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center gap-1 overflow-y-auto px-1 py-2">
+            {groups.map((group) => {
+              const firstId =
+                group.type === "simple"
+                  ? group.items[0]?.id
+                  : Object.values(group.sites)[0]?.[0]?.id;
+              return (
+                <button
+                  key={group.category}
+                  type="button"
+                  title={group.category}
+                  onClick={() => {
+                    if (firstId) setActiveId(firstId);
+                    setExpandedGroups((prev) => ({
+                      ...prev,
+                      [group.category]: true,
+                    }));
+                    setSidebarOpen(true);
+                  }}
+                  className={cn(
+                    "inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition hover:bg-muted hover:text-foreground",
+                    group.category === comp.category && "bg-primary/10 text-primary"
+                  )}
+                >
+                  {group.icon}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </aside>
 
-      {/* 画布 + 代码 */}
-      <div className="flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto pr-0.5">
-        <div
-          className="relative shrink-0 overflow-hidden rounded-[var(--radius)]"
-          style={{
-            ...bgStyle(String(settings.bg ?? "dark")),
-            ...(String(settings.bg) === "zebra" ? { backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 12px, transparent 12px, transparent 24px)", backgroundColor: "#111" } : {}),
-            minHeight: "20rem",
-          }}
-        >
-          {comp.id === "fluid-text" && (
-            <FluidText
-              text={String(settings.text ?? "FLUID TEXT")}
-              color={String(settings.color ?? "#FFFFFF")}
-              paletteColors={
-                Array.isArray(settings.palette) && (settings.palette as string[]).length
-                  ? (settings.palette as string[])
-                  : FLUID_PALETTES[0].colors
-              }
-              splatRadius={Number(settings.splatRadius ?? 7)}
-              splatForce={Number(settings.splatForce ?? 10)}
-              curl={Number(settings.curl ?? 50)}
-              densityDissipation={Number(settings.densityDissipation ?? 5)}
-              font={{
-                fontSize: `${Number(settings.fontSize ?? 120)}px`,
-                fontWeight: Number(settings.fontWeight ?? 700),
-                lineHeight: 1.2,
-              }}
-              style={{ pointerEvents: "auto" }}
-            />
-          )}
-
-          {comp.id === "smoky-text" && (
-            <div className="flex min-h-[20rem] items-center justify-center bg-black px-6 py-8">
-              <div className="h-[220px] w-full">
-                <SmokyText
-                  text={String(settings.text ?? "SMOKY\nTEXT")}
-                  color={String(settings.color ?? "#f5f5f5")}
-                  intensity={Number(settings.intensity ?? 10)}
-                  appearTrigger={String(settings.appearTrigger ?? "default") as any}
-                  animationMode={String(settings.animationMode ?? "singleLine") as any}
-                  position={String(settings.position ?? "bottomLeft") as any}
-                  font={{
-                    fontFamily: "Inter",
-                    fontWeight: 700,
-                    fontSize: Number(settings.fontSize ?? 120),
-                    textAlign: "center",
-                  }}
-                  appearTransition={{
-                    type: "tween",
-                    ease: "easeOut",
-                    duration: Number(settings.duration ?? 2),
-                    delay: 0,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {comp.id === "spotlight-text" && (
-            <div className="flex min-h-[20rem] items-center justify-center bg-black px-6 py-8">
-              <div className="h-[240px] w-full">
-                <FlashlightText
-                  text={String(settings.text ?? "Not everything is meant to be seen at once. Hover to reveal.")}
-                  brightColor={String(settings.brightColor ?? "#FFFFFF")}
-                  dimColor={String(settings.dimColor ?? "#2A2A2A")}
-                  maskSize={Number(settings.maskSize ?? 150)}
-                  intensity={Number(settings.intensity ?? 10)}
-                  font={{
-                    fontFamily: "Inter",
-                    fontWeight: 600,
-                    fontSize: `${Number(settings.fontSize ?? 40)}px`,
-                    lineHeight: "1.3em",
-                    letterSpacing: "0em",
-                    textAlign: "center",
-                  }}
-                  transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
-                />
-              </div>
-            </div>
-          )}
-
-          {comp.id === "ring-gallery" && (
-            <div className="flex min-h-[20rem] items-center justify-center py-10">
-              <RingGallery
-                rings={Number(settings.rings ?? 3)}
-                direction={String(settings.direction ?? "cw") as any}
-                speed={Number(settings.speed ?? 7)}
-                innerRadius={Number(settings.innerRadius ?? 110)}
-                ringGap={Number(settings.ringGap ?? 120)}
-                cardWidth={Number(settings.cardWidth ?? 72)}
-                cardHeight={Number(settings.cardHeight ?? 92)}
-                rounded={Number(settings.rounded ?? 6)}
-                tilt={Number(settings.tilt ?? 6)}
-                fit={String(settings.fit ?? "cover") as any}
-                count={Number(settings.count ?? 12)}
-              />
-            </div>
-          )}
-
-          {comp.id === "hero-36" && (
-            <div className="min-h-[20rem] bg-background">
-              <Hero36 />
-            </div>
-          )}
-
-          {comp.id === "hero-19" && (
-            <div className="min-h-[20rem] bg-background">
-              <Hero19 />
-            </div>
-          )}
-
-          {comp.id === "outstand-hero" && (
-            <div className="w-full">
-              <OutstandHero
-                heading={String(settings.heading ?? "Modern, Cool, and Effective Template for Your Business")}
-                subheading={String(settings.subheading ?? "Boost Your Brand with Our Sleek and Cutting-Edge Framer Template")}
-                primaryCta={{
-                  label: String(settings.ctaLabel ?? "Book a call"),
-                  href: "#",
-                }}
-                {...(settings.accentColor
-                  ? {
-                      // 通过 CSS 变量注入主题色
-                      style: { "--os-color-accent": settings.accentColor } as React.CSSProperties,
-                    }
-                  : {})}
-              />
-            </div>
-          )}
-
-          <div className="pointer-events-none absolute left-3 top-3">
-            <span className="rounded-[var(--radius)] bg-black/40 px-2 py-0.5 text-[11px] text-white/70">
-              {comp.name}
-              {comp.id === "fluid-text" ? " · 拖动搅动" : ""}
-            </span>
+      {/* 主区域 */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* 顶部工具条：参数设置 / 复制源码 */}
+        <div className="flex h-11 shrink-0 items-center justify-between gap-4 border-b border-border px-4">
+          <span className="truncate text-sm font-medium text-foreground">
+            {comp.name}
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopySource}
+              disabled={!sourceCode}
+            >
+              {sourceCopied ? (
+                <Check className="size-3.5" />
+              ) : (
+                <Code2 className="size-3.5" />
+              )}
+              {sourceCopied ? "已复制" : "复制源码"}
+            </Button>
+            <Button
+              variant={panelOpen ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPanelOpen((v) => !v)}
+            >
+              <SlidersHorizontal className="size-3.5" />
+              参数设置
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* 右侧：源码 + 设置面板 */}
-      <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pr-0.5">
-        <div className="space-y-2 rounded-[var(--radius)] border border-border bg-background p-4">
-          <Button
-            size="sm"
-            className="w-full justify-start bg-primary text-primary-foreground hover:bg-primary/80"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(sourceCode || usageCode);
-                setSourceCopied(true);
-                setTimeout(() => setSourceCopied(false), 1500);
-              } catch {
-                /* 静默 */
-              }
-            }}
-            disabled={!sourceCode}
-          >
-            {sourceCopied ? (
-              <Check className="size-3.5" />
-            ) : (
-              <Code2 className="size-3.5" />
-            )}
-            {sourceCopied ? "已复制" : "复制源码"}
-          </Button>
-        </div>
+        {/* 画布 + 参数面板 */}
+        <div className="relative flex flex-1">
+          <div className="flex-1 p-4">
+            <div
+              className="relative overflow-hidden rounded-[var(--radius)]"
+              style={{
+                ...bgStyle(String(settings.bg ?? "dark")),
+                ...(String(settings.bg) === "zebra"
+                  ? {
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 12px, transparent 12px, transparent 24px)",
+                      backgroundColor: "#111",
+                    }
+                  : {}),
+                minHeight: "20rem",
+              }}
+            >
+              {comp.id === "fluid-text" && (
+                <div className="relative h-[360px] w-full">
+                  <FluidText
+                    text={String(settings.text ?? "FLUID TEXT")}
+                    color={String(settings.color ?? "#FFFFFF")}
+                    paletteColors={
+                      Array.isArray(settings.palette) &&
+                      (settings.palette as string[]).length
+                        ? (settings.palette as string[])
+                        : FLUID_PALETTES[0].colors
+                    }
+                    splatRadius={Number(settings.splatRadius ?? 7)}
+                    splatForce={Number(settings.splatForce ?? 10)}
+                    curl={Number(settings.curl ?? 50)}
+                    densityDissipation={Number(settings.densityDissipation ?? 5)}
+                    font={{
+                      fontSize: `${Number(settings.fontSize ?? 120)}px`,
+                      fontWeight: Number(settings.fontWeight ?? 700),
+                      lineHeight: 1.2,
+                    }}
+                    style={{ pointerEvents: "auto" }}
+                  />
+                </div>
+              )}
 
-        <div className="space-y-4 rounded-[var(--radius)] border border-border bg-background p-4">
-          <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-            <SlidersHorizontal className="size-4" />
-            参数设置
-          </p>
-          {comp.settings.map((st) => (
-            <SettingField
-              key={st.key}
-              label={st.label}
-              kind={st.kind}
-              value={settings[st.key]}
-              min={st.min}
-              max={st.max}
-              step={st.step}
-              unit={st.unit}
-              options={st.options}
-              onChange={(v) => set(st.key, v)}
-            />
-          ))}
+              {comp.id === "smoky-text" && (
+                <div className="flex min-h-[20rem] items-center justify-center bg-black px-6 py-8">
+                  <div className="h-[220px] w-full">
+                    <SmokyText
+                      text={String(settings.text ?? "SMOKY\nTEXT")}
+                      color={String(settings.color ?? "#f5f5f5")}
+                      intensity={Number(settings.intensity ?? 10)}
+                      appearTrigger={
+                        String(settings.appearTrigger ?? "default") as any
+                      }
+                      animationMode={
+                        String(settings.animationMode ?? "singleLine") as any
+                      }
+                      position={
+                        String(settings.position ?? "bottomLeft") as any
+                      }
+                      font={{
+                        fontFamily: "Inter",
+                        fontWeight: 700,
+                        fontSize: Number(settings.fontSize ?? 120),
+                        textAlign: "center",
+                      }}
+                      appearTransition={{
+                        type: "tween",
+                        ease: "easeOut",
+                        duration: Number(settings.duration ?? 2),
+                        delay: 0,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "spotlight-text" && (
+                <div className="flex min-h-[20rem] items-center justify-center bg-black px-6 py-8">
+                  <div className="h-[240px] w-full">
+                    <FlashlightText
+                      text={String(
+                        settings.text ??
+                          "Not everything is meant to be seen at once. Hover to reveal."
+                      )}
+                      brightColor={String(settings.brightColor ?? "#FFFFFF")}
+                      dimColor={String(settings.dimColor ?? "#2A2A2A")}
+                      maskSize={Number(settings.maskSize ?? 150)}
+                      intensity={Number(settings.intensity ?? 10)}
+                      font={{
+                        fontFamily: "Inter",
+                        fontWeight: 600,
+                        fontSize: `${Number(settings.fontSize ?? 40)}px`,
+                        lineHeight: "1.3em",
+                        letterSpacing: "0em",
+                        textAlign: "center",
+                      }}
+                      transition={{
+                        type: "tween",
+                        duration: 0.3,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "ring-gallery" && (
+                <div className="flex min-h-[20rem] items-center justify-center py-10">
+                  <RingGallery
+                    rings={Number(settings.rings ?? 3)}
+                    direction={String(settings.direction ?? "cw") as any}
+                    speed={Number(settings.speed ?? 7)}
+                    innerRadius={Number(settings.innerRadius ?? 110)}
+                    ringGap={Number(settings.ringGap ?? 120)}
+                    cardWidth={Number(settings.cardWidth ?? 72)}
+                    cardHeight={Number(settings.cardHeight ?? 92)}
+                    rounded={Number(settings.rounded ?? 6)}
+                    tilt={Number(settings.tilt ?? 6)}
+                    fit={String(settings.fit ?? "cover") as any}
+                    count={Number(settings.count ?? 12)}
+                  />
+                </div>
+              )}
+
+              {comp.id === "hero-36" && (
+                <WidePreviewFrame>
+                  <Hero36 />
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "hero-19" && (
+                <WidePreviewFrame>
+                  <Hero19 />
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-hero" && (
+                <WidePreviewFrame>
+                  <OutstandHero
+                    compact
+                    heading={String(
+                      settings.heading ??
+                        "Modern, Cool, and Effective Template for Your Business"
+                    )}
+                    subheading={String(
+                      settings.subheading ??
+                        "Boost Your Brand with Our Sleek and Cutting-Edge Framer Template"
+                    )}
+                    primaryCta={{
+                      label: String(settings.ctaLabel ?? "Book a call"),
+                      href: "#",
+                    }}
+                    {...(settings.accentColor
+                      ? {
+                          style: {
+                            "--os-color-accent": settings.accentColor,
+                          } as React.CSSProperties,
+                        }
+                      : {})}
+                  />
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-pricing" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandPricing />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-faq" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandFaq />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-testimonials" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandTestimonials />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-features" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandFeatures />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-about" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandAbout />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-cta" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandCta />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-process" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandProcess />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-projects" && (
+                <WidePreviewFrame>
+                  <SectionScope container accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandProjects />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "outstand-whychooseus" && (
+                <WidePreviewFrame>
+                  <SectionScope accent={String(settings.accentColor ?? "#CDF140")}>
+                    <OutstandWhyChooseUs />
+                  </SectionScope>
+                </WidePreviewFrame>
+              )}
+
+              <div className="pointer-events-none absolute left-3 top-3">
+                <span className="rounded-[var(--radius)] bg-black/40 px-2 py-0.5 text-[11px] text-white/70">
+                  {comp.name}
+                  {comp.id === "fluid-text" ? " · 拖动搅动" : ""}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 右侧参数面板 */}
+          {panelOpen && (
+            <aside className="sticky top-4 self-start flex h-[calc(100vh-4.5rem)] w-[280px] shrink-0 flex-col overflow-hidden border-l border-border bg-background">
+              <div className="flex h-11 shrink-0 items-center justify-between border-b border-border px-4">
+                <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <SlidersHorizontal className="size-4" />
+                  参数设置
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPanelOpen(false)}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                {comp.settings.map((st) => (
+                  <SettingField
+                    key={st.key}
+                    label={st.label}
+                    kind={st.kind}
+                    value={settings[st.key]}
+                    min={st.min}
+                    max={st.max}
+                    step={st.step}
+                    unit={st.unit}
+                    options={st.options}
+                    onChange={(v) => set(st.key, v)}
+                  />
+                ))}
+              </div>
+            </aside>
+          )}
         </div>
       </div>
     </div>
@@ -558,11 +932,11 @@ function SettingField({
                 type="button"
                 title={p.label}
                 onClick={() => onChange([...p.colors])}
-                className={[
+                className={cn(
                   "flex h-7 items-center gap-0.5 border p-0.5 transition",
                   "rounded-[var(--radius)]",
-                  selected ? "border-primary" : "border-border hover:border-primary/40",
-                ].join(" ")}
+                  selected ? "border-primary" : "border-border hover:border-primary/40"
+                )}
               >
                 {p.colors.map((c, i) => (
                   <span
@@ -586,12 +960,12 @@ function SettingField({
                 key={o.value}
                 type="button"
                 onClick={() => onChange(o.value)}
-                className={[
+                className={cn(
                   "rounded-[var(--radius)] px-2.5 py-1 text-xs transition",
                   selected
                     ? "bg-primary text-primary-foreground"
-                    : "border border-border text-muted-foreground hover:bg-muted/40",
-                ].join(" ")}
+                    : "border border-border text-muted-foreground hover:bg-muted/40"
+                )}
               >
                 {o.label}
               </button>

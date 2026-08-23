@@ -33,6 +33,7 @@ export interface LibraryComponent {
   icon: string; // lucide-react 图标名
   description: string;
   category: string;
+  site?: string; // 整站模板下所属站点（如 Outstand），用于二级分组
   settings: ComponentSetting[];
 }
 
@@ -48,6 +49,42 @@ export const SOURCE_FILES: Record<string, string[]> = {
     "components/originkit/outstand/hero.tsx",
     "components/originkit/outstand/hero.module.css",
     "components/originkit/outstand/reveal.tsx",
+  ],
+  "outstand-pricing": [
+    "components/originkit/outstand/pricing.tsx",
+    "components/originkit/outstand/pricing.module.css",
+  ],
+  "outstand-faq": [
+    "components/originkit/outstand/faq.tsx",
+    "components/originkit/outstand/faq.module.css",
+  ],
+  "outstand-testimonials": [
+    "components/originkit/outstand/testimonials.tsx",
+    "components/originkit/outstand/testimonials.module.css",
+  ],
+  "outstand-features": [
+    "components/originkit/outstand/features.tsx",
+    "components/originkit/outstand/features.module.css",
+  ],
+  "outstand-about": [
+    "components/originkit/outstand/about.tsx",
+    "components/originkit/outstand/about.module.css",
+  ],
+  "outstand-cta": [
+    "components/originkit/outstand/cta.tsx",
+    "components/originkit/outstand/cta.module.css",
+  ],
+  "outstand-process": [
+    "components/originkit/outstand/process.tsx",
+    "components/originkit/outstand/process.module.css",
+  ],
+  "outstand-projects": [
+    "components/originkit/outstand/projects.tsx",
+    "components/originkit/outstand/projects.module.css",
+  ],
+  "outstand-whychooseus": [
+    "components/originkit/outstand/why-choose-us.tsx",
+    "components/originkit/outstand/why-choose-us.module.css",
   ],
 };
 
@@ -343,11 +380,156 @@ export const COMPONENT_LIB: LibraryComponent[] = [
     name: "Outstand Hero",
     icon: "Sparkles",
     description: "深色主题 agency Hero：图案背景 + 光晕入场动画、逐词揭示标题、评分徽章、4 栏数据指标与无限滚动客户 Logo 跑马灯（取自 Originkit Outstand 模板）。",
-    category: "整站模板 · Outstand",
+    category: "整站模板",
+    site: "Outstand",
     settings: [
       { key: "heading", label: "标题", kind: "text", default: "Modern, Cool, and Effective Template for Your Business" },
       { key: "subheading", label: "副标题", kind: "text", default: "Boost Your Brand with Our Sleek and Cutting-Edge Framer Template" },
       { key: "ctaLabel", label: "CTA 文字", kind: "text", default: "Book a call" },
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-pricing",
+    name: "Outstand 定价",
+    icon: "Sparkles",
+    description: "深色主题定价区块：月/年计费切换开关、三档计划卡片（Starter/Growth/Enterprise）、Popular 高亮卡、悬停箭头动效（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-faq",
+    name: "Outstand FAQ",
+    icon: "Sparkles",
+    description: "深色主题 FAQ 手风琴区块：双栏问题分类（设计开发 / 营销服务）、逐条展开折叠、旋转加减号图标（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-testimonials",
+    name: "Outstand 客户评价",
+    icon: "Sparkles",
+    description: "深色主题客户评价区块：6 张评价卡片网格，标题标签、引述文案、头像 + 姓名 + 角色 + X 社交链接（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-features",
+    name: "Outstand 特性",
+    icon: "Sparkles",
+    description: "深色主题特性区块：左侧介绍卡 + 4 项要点 + 按钮，右侧 2x2 特性网格，点划虚线分隔线（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-about",
+    name: "Outstand 关于我们",
+    icon: "Sparkles",
+    description: "深色主题关于区块：左侧介绍图 + 右侧大字数据卡片网格（5+ 年经验 / 500+ 项目 / 95% 满意度 / 40+ 成员），每卡含标题/分隔线/描述（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-cta",
+    name: "Outstand 行动号召",
+    icon: "Sparkles",
+    description: "深色主题 CTA 转化区块：网格背景 + 光晕 + 顶部服务标签（设计开发/数字营销/品牌身份）+ 邮箱订阅表单（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-process",
+    name: "Outstand 流程",
+    icon: "Sparkles",
+    description: "深色主题流程区块：6 步流程卡片（Consultation/Proposal/Execution/Delivery/Support/Feedback），每卡带图标 + 周数标签 + 标题 + 描述，底部卡片含 hover 亮光动效与箭头（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-projects",
+    name: "Outstand 作品集",
+    icon: "Sparkles",
+    description: "深色主题作品集区块：3 个项目展示卡（Gency/Landfree/Waitlista），每卡含大封面图 + 缩略图切换 Tab + 标题 + Open 外链，底部 View All Projects 按钮（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
+      {
+        key: "accentColor",
+        label: "主题色",
+        kind: "color",
+        default: "#CDF140",
+      },
+    ],
+  },
+  {
+    id: "outstand-whychooseus",
+    name: "Outstand 差异化优势",
+    icon: "Sparkles",
+    description: "深色主题差异化优势区块：3 列卡片（Innovative Solutions / Putting Users First / Proven Track Record），每卡带图标 + 标题 + 描述，卡片含内边框（取自 Outstand 模板）。",
+    category: "整站模板",
+    site: "Outstand",
+    settings: [
       {
         key: "accentColor",
         label: "主题色",

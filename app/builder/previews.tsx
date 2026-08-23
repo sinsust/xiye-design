@@ -775,16 +775,23 @@ function HeroPreview({ variantId }: { variantId: string }) {
   if (variantId === "hero_morphgradient")
     return (
       <div
-        className="flex min-h-44 flex-col items-center px-6 pt-8"
+        className="relative flex h-44 w-full flex-col items-center justify-start overflow-hidden px-8 pt-10"
         style={{
           background:
-            "radial-gradient(40% 50% at 18% 22%, color-mix(in srgb, var(--primary) 22%, transparent), transparent), radial-gradient(45% 55% at 85% 28%, color-mix(in srgb, var(--secondary) 18%, transparent), transparent), var(--background)",
+            "radial-gradient(55% 60% at 20% 0%, color-mix(in srgb, var(--primary) 30%, transparent), transparent), radial-gradient(50% 55% at 100% 10%, color-mix(in srgb, var(--secondary) 26%, transparent), transparent), radial-gradient(80% 70% at 50% 100%, color-mix(in srgb, var(--accent2, var(--primary)) 20%, transparent), transparent), var(--background)",
         }}
       >
-        <div className="max-w-xs text-center">
-          <h3 className="text-lg font-bold leading-snug">安静，却足够有力</h3>
-          <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>少即是多。把克制，做成一种产品力。</p>
-          <span className="mt-3 inline-block rounded-full px-5 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>了解更多</span>
+        <div className="max-w-sm text-center">
+          <h3 className="text-xl font-bold leading-tight">安静，却足够有力</h3>
+          <p className="mx-auto mt-2 max-w-xs text-sm" style={{ color: "var(--muted-foreground)" }}>
+            少即是多。把克制，做成一种产品力。
+          </p>
+          <span
+            className="mt-5 inline-block rounded-full px-6 py-2 text-sm font-medium text-white"
+            style={{ background: "var(--primary)" }}
+          >
+            了解更多
+          </span>
         </div>
       </div>
     );
