@@ -54,8 +54,9 @@ knowledge/user/
 xiye-dev.exe
 xiye-dev.spec
 
-# 独立模板工程（outstand 是独立项目，不并入主仓库，任意层级均排除）
-outstand/
+# 独立模板工程（仅顶层 /outstand 是独立项目，不并入主仓库；
+# components/originkit/outstand 与 public/originkit/outstand 是组件库源码+资源，必须入库）
+/outstand/
 
 # python 缓存
 __pycache__/

@@ -1,0 +1,533 @@
+/*
+ * Outstand — Hero section
+ * Design tokens scoped to this component so it doesn't leak globally.
+ * Values measured from the original Framer export at 1440 / 1024 / 390.
+ */
+
+.hero {
+  /* ---- Brand accent (lime) ---------------------------------------- */
+  --os-color-accent: rgb(205, 241, 64);
+  --os-color-accent-soft: rgb(212, 244, 88);
+  --os-color-accent-muted: rgb(218, 246, 111);
+  --os-color-accent-tint: rgb(248, 253, 231);
+
+  /* ---- Dark surfaces (page background → raised cards) -------------- */
+  --os-color-ink-950: rgb(15, 15, 15);
+  --os-color-ink-900: rgb(20, 20, 20);
+  --os-color-ink-850: rgb(26, 26, 26);
+  --os-color-ink-800: rgb(31, 31, 31);
+  --os-color-ink-700: rgb(38, 38, 38);
+  --os-color-ink-600: rgb(46, 46, 46);
+  --os-color-ink-500: rgb(64, 64, 64);
+
+  /* ---- Neutral text / borders ------------------------------------- */
+  --os-color-mist-600: rgb(150, 151, 156);
+  --os-color-mist-500: rgb(176, 177, 181);
+  --os-color-mist-400: rgb(202, 203, 206);
+  --os-color-mist-300: rgb(228, 229, 230);
+  --os-color-mist-200: rgb(242, 242, 243);
+  --os-color-mist-100: rgb(247, 247, 248);
+  --os-color-white: rgb(255, 255, 255);
+
+  /* ---- Typography -------------------------------------------------- */
+  --os-font-heading: "Rethink Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --os-font-body: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+
+  /* ---- Layout ------------------------------------------------------ */
+  --os-shell-max-width: 1140px;
+
+  /* ---- Motion ------------------------------------------------------ */
+  --os-ease-out-framer: cubic-bezier(0.44, 0, 0.56, 1);
+  --os-duration-appear: 0.8s;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-top: 150px;
+  padding-bottom: 32px;
+  background-color: var(--os-color-ink-950);
+  overflow: hidden;
+  color: var(--os-color-white);
+  font-family: var(--os-font-body);
+}
+
+/* Compact mode: no top padding (for preview / no-header scenarios). */
+.hero.compact {
+  padding-top: 40px;
+}
+
+.hero.compact .background {
+  height: 560px;
+}
+
+.hero.compact .pattern img {
+  height: 560px;
+}
+
+.hero * {
+  box-sizing: border-box;
+}
+
+.hero h1,
+.hero p,
+.hero dl,
+.hero dd,
+.hero dt {
+  margin: 0;
+}
+
+.hero img,
+.hero svg {
+  display: block;
+  max-width: 100%;
+}
+
+.hero a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---- Background stack ---------------------------------------------- */
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 729px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pattern {
+  position: absolute;
+  inset: 0;
+}
+
+.pattern img {
+  width: 100%;
+  height: 729px;
+  object-fit: cover;
+}
+
+/* Fades the pattern into the page background. */
+.fade {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    rgba(15, 15, 15, 0),
+    rgb(15, 15, 15) 83.4488%
+  );
+}
+
+/* Two glow sprites that drift in from the upper corners on load. */
+.light {
+  position: absolute;
+  top: 0;
+  width: 406px;
+  height: 330px;
+  opacity: 0;
+  overflow: hidden;
+  animation: os-light-in 1.2s var(--os-ease-out-framer) 0.15s forwards;
+}
+
+.lightLeft {
+  left: 0;
+  transform: translate(-200px, -200px) scale(0.5);
+}
+
+.lightRight {
+  right: 0;
+  transform: translate(200px, -200px) scale(0.5);
+}
+
+.light img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes os-light-in {
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Foreground ----------------------------------------------------- */
+
+.container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: var(--os-shell-max-width);
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+  width: 100%;
+}
+
+.headingBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+/* ---- Rating badge ---------------------------------------------------- */
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+}
+
+.badgeText {
+  font-family: var(--os-font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--os-color-mist-500);
+}
+
+/* ---- Headline -------------------------------------------------------- */
+
+.textContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 850px;
+  max-width: 100%;
+}
+
+.heading {
+  font-family: var(--os-font-heading);
+  font-size: 58px;
+  font-weight: 700;
+  line-height: 69.6px;
+  letter-spacing: 1.16px;
+  text-align: center;
+  color: var(--os-color-mist-200);
+}
+
+.subheading {
+  font-family: var(--os-font-heading);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.4px;
+  text-align: center;
+  color: var(--os-color-mist-600);
+}
+
+/* ---- CTA + note ------------------------------------------------------ */
+
+.ctaBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 55px;
+  padding: 14px 28px;
+  border-radius: 53px;
+  background-color: var(--os-color-accent);
+  overflow: hidden;
+  z-index: 1;
+  font-family: var(--os-font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+  color: var(--os-color-ink-950);
+  white-space: nowrap;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: var(--os-font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+  color: var(--os-color-mist-500);
+}
+
+/* ---- Stats ----------------------------------------------------------- */
+
+.lower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+  width: 100%;
+}
+
+.statsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Hairline that fades out at both ends. */
+.rule {
+  width: 100%;
+  height: 1px;
+  background-image: linear-gradient(
+    270deg,
+    rgba(31, 31, 31, 0),
+    rgba(31, 31, 31, 0.9) 48.6486%,
+    rgba(31, 31, 31, 0)
+  );
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 0 0;
+  padding: 40px 20px;
+  border-radius: 20px;
+  background-color: var(--os-color-ink-900);
+  --os-border-top-width: 1px;
+  --os-border-right-width: 1px;
+  --os-border-bottom-width: 1px;
+  --os-border-left-width: 1px;
+  --os-border-color: rgb(31, 31, 31);
+  --os-border-style: solid;
+}
+
+/* Inner border — replaces the global [data-border] rule, scoped here. */
+.stat::after {
+  content: "";
+  border-width: var(--os-border-top-width, 0) var(--os-border-right-width, 0)
+    var(--os-border-bottom-width, 0) var(--os-border-left-width, 0);
+  border-color: var(--os-border-color, none);
+  border-style: var(--os-border-style, none);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  box-sizing: border-box;
+  left: 0;
+  top: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.statValue {
+  font-family: var(--os-font-heading);
+  font-size: 55px;
+  font-weight: 800;
+  line-height: 82.5px;
+  letter-spacing: 1.1px;
+  text-align: center;
+  color: var(--os-color-mist-200);
+}
+
+.statLabel {
+  font-family: var(--os-font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+  color: var(--os-color-mist-600);
+}
+
+/* ---- Client logo marquee --------------------------------------------- */
+
+.marquee {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  width: 918px;
+  max-width: 100%;
+}
+
+.marqueeTitle {
+  font-family: var(--os-font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+  color: var(--os-color-white);
+}
+
+.marqueeViewport {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+.marqueeTrack {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  width: max-content;
+  height: 64px;
+  animation: os-marquee 28s linear infinite;
+}
+
+.marqueeTrack img {
+  width: 135px;
+  height: 45px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+@keyframes os-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marqueeTrack {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Tablet
+ * ------------------------------------------------------------------ */
+@media (max-width: 1319px) {
+  .hero {
+    padding-top: 176px;
+    --os-shell-max-width: 900px;
+  }
+
+  .heading {
+    font-size: 48px;
+    line-height: 57.6px;
+    letter-spacing: 0.96px;
+  }
+
+  .textContainer {
+    width: 100%;
+  }
+
+  .statValue {
+    font-size: 44px;
+    line-height: 66px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Phone
+ * ------------------------------------------------------------------ */
+@media (max-width: 809px) {
+  .hero {
+    padding-top: 192px;
+    --os-shell-max-width: 100%;
+  }
+
+  .container {
+    max-width: 528px;
+    padding-inline: 20px;
+    gap: 50px;
+  }
+
+  .intro {
+    gap: 30px;
+  }
+
+  .light {
+    width: 190px;
+    height: 154.42px;
+  }
+
+  .heading {
+    font-size: 36px;
+    line-height: 43.2px;
+    letter-spacing: 0.72px;
+  }
+
+  .subheading {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .cta {
+    height: 53.5px;
+  }
+
+  .note {
+    font-size: 16px;
+    line-height: 25.5px;
+  }
+
+  .stats {
+    flex-wrap: wrap;
+    gap: 24px 20px;
+  }
+
+  .stat {
+    flex: 0 0 calc(50% - 10px);
+  }
+
+  .statValue {
+    font-size: 40px;
+    line-height: 60px;
+  }
+}
