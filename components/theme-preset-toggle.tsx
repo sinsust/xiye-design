@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Palette, RotateCcw } from "lucide-react";
+import { useFlowStore } from "@/lib/store/flow-store";
 import {
   mergePalette,
   presetStyle,
@@ -21,8 +22,6 @@ const PRESET_OPTIONS = [
   { label: "Amethyst Haze 紫雾", value: "aw-amethyst-haze" },
   { label: "T3 Chat 玫粉", value: "aw-t3-chat" },
 ] as const;
-
-const STORAGE_KEY = "theme-preset";
 
 function ColorRow({
   label,
@@ -63,34 +62,24 @@ function ColorRow({
 }
 
 export function ThemePresetToggle() {
-  const [preset, setPresetState] = useState<string>("aw-brutalist");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  // preset 直接读全局 store 的 activeStyleId，与 builder 视觉选择器完全同步
+  const preset = useThemePaletteStore((s) => s.activeStyleId);
+  const setActiveStyle = useThemePaletteStore((s) => s.setActiveStyle);
   const custom = useThemePaletteStore((s) => s.custom);
   const setOverride = useThemePaletteStore((s) => s.setOverride);
   const resetOverride = useThemePaletteStore((s) => s.resetOverride);
+  // 顶部切预设也同步 builder 工作台的 visualStyle，保证「搭页面」预览同步变化
+  const setFlowVisualStyle = useFlowStore((s) => s.setVisualStyle);
 
-  // 挂载后从 localStorage 读取当前 preset
-  useEffect(() => {
-    try {
-      const p = localStorage.getItem(STORAGE_KEY);
-      if (p) setPresetState(p);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  // 统一由 store 里的 activeStyleId 应用到 <html> CSS 变量
+  useApplyPalette();
 
-  // 把当前 preset 同步到 <html> CSS 变量（统一复用 hook）
-  useApplyPalette(preset);
-
-  // 持久化 preset
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, preset);
-    } catch {
-      /* ignore */
-    }
-  }, [preset]);
+  const applyPreset = (id: string) => {
+    setActiveStyle(id);
+    setFlowVisualStyle(id);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -155,7 +144,7 @@ export function ThemePresetToggle() {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setPresetState(opt.value)}
+                  onClick={() => applyPreset(opt.value)}
                   className={[
                     "flex flex-col items-center gap-1 rounded-md border px-1.5 py-1.5 text-[10px] transition",
                     active

@@ -108,9 +108,13 @@ export function clearPaletteOverride() {
   keys.forEach((k) => el.style.removeProperty(k));
 }
 
-// 单一 store：所有 preset 共享同一份 custom 覆盖映射，组件间状态天然同步
+// 单一 store：所有 preset 共享同一份 custom 覆盖映射 + 全局「当前激活主题」。
+// 顶部 ThemePresetToggle 与 builder 视觉选择器共用，避免两边各自 apply 互相覆盖。
 type PaletteState = {
+  /** 当前激活的视觉风格 id（data-theme-preset） */
+  activeStyleId: string;
   custom: Record<string, PaletteOverride>;
+  setActiveStyle: (id: string) => void;
   setOverride: (id: string, patch: Partial<PaletteOverride>) => void;
   resetOverride: (id: string) => void;
 };
@@ -118,7 +122,9 @@ type PaletteState = {
 export const useThemePaletteStore = create<PaletteState>()(
   persist(
     (set) => ({
+      activeStyleId: "aw-brutalist",
       custom: {},
+      setActiveStyle: (id) => set({ activeStyleId: id }),
       setOverride: (id, patch) =>
         set((s) => ({
           custom: { ...s.custom, [id]: { ...(s.custom[id] ?? {}), ...patch } },
@@ -138,22 +144,24 @@ export const useThemePaletteStore = create<PaletteState>()(
 );
 
 /**
- * 同步把当前 styleId 的覆盖应用到 <html> CSS 变量。
- * 在 ThemePresetToggle 与 builder 视觉选择器里都调用，保证两侧任一改色都即时生效。
+ * 把「当前激活主题」（activeStyleId）的覆盖应用到 <html> CSS 变量。
+ * 统一只读 store 里的 activeStyleId，所以顶部与 builder 任何一方切换/调色
+ * 都会反映到全局，且不会互相覆盖。
  */
-export function useApplyPalette(styleId: string | null | undefined) {
+export function useApplyPalette() {
+  const activeStyleId = useThemePaletteStore((s) => s.activeStyleId);
   const custom = useThemePaletteStore((s) => s.custom);
   useEffect(() => {
-    if (!styleId) return;
+    if (!activeStyleId) return;
     const el = document.documentElement;
-    el.setAttribute("data-theme-preset", styleId);
-    const style = presetStyle(styleId);
+    el.setAttribute("data-theme-preset", activeStyleId);
+    const style = presetStyle(activeStyleId);
     if (!style) return;
-    const ov = custom[styleId];
+    const ov = custom[activeStyleId];
     if (ov && Object.keys(ov).length > 0) {
       applyPaletteToRoot(mergePalette(style, ov));
     } else {
       clearPaletteOverride();
     }
-  }, [styleId, custom]);
+  }, [activeStyleId, custom]);
 }

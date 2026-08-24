@@ -396,7 +396,15 @@ export default function BuilderPage() {
   const themeCustom = useThemePaletteStore((s) => s.custom);
   const themeSetOverride = useThemePaletteStore((s) => s.setOverride);
   const themeResetOverride = useThemePaletteStore((s) => s.resetOverride);
-  useApplyPalette(visualStyle ?? null);
+  const themeSetActiveStyle = useThemePaletteStore((s) => s.setActiveStyle);
+  useApplyPalette();
+
+  // 挂载时把 flow-store 的 visualStyle 同步为全局主题，保证顶部色盘与搭页面预览一致
+  useEffect(() => {
+    themeSetActiveStyle(visualStyle ?? PREVIEW_DEFAULT_STYLE_ID);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const styleOv = themeCustom[style.id] ?? {};
   const styleMerged = mergePalette(style, styleOv);
   const isStyleCustomized = Object.keys(styleOv).length > 0;
@@ -670,6 +678,7 @@ export default function BuilderPage() {
                       type="button"
                       onClick={() => {
                         setVisualStyle(PREVIEW_DEFAULT_STYLE_ID);
+                        themeSetActiveStyle(PREVIEW_DEFAULT_STYLE_ID);
                         setStyleOpen(false);
                       }}
                       className="col-span-3 flex items-center gap-1.5 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-2 text-left text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
@@ -683,6 +692,7 @@ export default function BuilderPage() {
                       type="button"
                       onClick={() => {
                         setVisualStyle(s.id);
+                        themeSetActiveStyle(s.id);
                         setStyleOpen(false);
                       }}
                       className={[

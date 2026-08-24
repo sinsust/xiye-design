@@ -3084,7 +3084,7 @@ function DashTopbarPreview({ variantId }: { variantId: string }) {
       </div>
     );
   }
-  return null;
+  return <PreviewFallback title="DashTopbarPreview" />;
 }
 
 function DashTablePreview({ variantId }: { variantId: string }) {
@@ -3159,7 +3159,7 @@ function DashTablePreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashTablePreview" />;
 }
 
 function DashTasksPreview({ variantId }: { variantId: string }) {
@@ -3224,7 +3224,7 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashTasksPreview" />;
 }
 
 function DashNotificationsPreview({ variantId }: { variantId: string }) {
@@ -3283,7 +3283,7 @@ function DashNotificationsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashNotificationsPreview" />;
 }
 
 function DashTabsPreview({ variantId }: { variantId: string }) {
@@ -3325,7 +3325,7 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashTabsPreview" />;
 }
 
 function DashFiltersPreview({ variantId }: { variantId: string }) {
@@ -3368,7 +3368,7 @@ function DashFiltersPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashFiltersPreview" />;
 }
 
 function DashStatstripPreview({ variantId }: { variantId: string }) {
@@ -3415,7 +3415,7 @@ function DashStatstripPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashStatstripPreview" />;
 }
 
 function DashPermissionsPreview({ variantId }: { variantId: string }) {
@@ -3488,7 +3488,7 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashPermissionsPreview" />;
 }
 
 function DashGaugesPreview({ variantId }: { variantId: string }) {
@@ -3564,7 +3564,7 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashGaugesPreview" />;
 }
 
 function DashActivityPreview({ variantId }: { variantId: string }) {
@@ -3635,7 +3635,7 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashActivityPreview" />;
 }
 
 function DashTransferPreview({ variantId }: { variantId: string }) {
@@ -3707,7 +3707,7 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DashTransferPreview" />;
 }
 
 /* ───────── Portfolio ───────── */
@@ -3771,7 +3771,7 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
         </Carousel>
       </div>
     );
-  return null;
+  return <PreviewFallback title="PortfolioGridPreview" />;
 }
 
 function PortfolioCasePreview({ variantId }: { variantId: string }) {
@@ -3822,7 +3822,7 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="PortfolioCasePreview" />;
 }
 
 function PortfolioAboutPreview({ variantId }: { variantId: string }) {
@@ -3871,7 +3871,7 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="PortfolioAboutPreview" />;
 }
 
 /* ───────── Portfolio Ring ───────── */
@@ -4014,7 +4014,7 @@ function RingPreviewImpl({ preset }: { preset: "circle" | "alt" }) {
 function PortfolioRingPreview({ variantId }: { variantId: string }) {
   if (variantId === "pring_circle") return <RingPreviewImpl preset="circle" />;
   if (variantId === "pring_alt") return <RingPreviewImpl preset="alt" />;
-  return null;
+  return <PreviewFallback title="PortfolioRingPreview" />;
 }
 
 /* ───────── Blog ───────── */
@@ -4075,7 +4075,7 @@ function BlogListPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="BlogListPreview" />;
 }
 
 function BlogPostPreview({ variantId }: { variantId: string }) {
@@ -4140,7 +4140,7 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="BlogPostPreview" />;
 }
 
 function BlogTagsPreview({ variantId }: { variantId: string }) {
@@ -4189,7 +4189,7 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="BlogTagsPreview" />;
 }
 
 /* ───────── Product ───────── */
@@ -4238,7 +4238,7 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ProductGalleryPreview" />;
 }
 
 function ProductInfoPreview({ variantId }: { variantId: string }) {
@@ -4290,7 +4290,7 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ProductInfoPreview" />;
 }
 
 function ProductGridPreview({ variantId }: { variantId: string }) {
@@ -4325,7 +4325,7 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ProductGridPreview" />;
 }
 
 function ProductCartPreview({ variantId }: { variantId: string }) {
@@ -4364,7 +4364,7 @@ function ProductCartPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ProductCartPreview" />;
 }
 
 /* ───────── About ───────── */
@@ -4417,7 +4417,7 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="AboutStoryPreview" />;
 }
 
 function AboutTeamPreview({ variantId }: { variantId: string }) {
@@ -4452,7 +4452,7 @@ function AboutTeamPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="AboutTeamPreview" />;
 }
 
 function AboutValuesPreview({ variantId }: { variantId: string }) {
@@ -4487,7 +4487,7 @@ function AboutValuesPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="AboutValuesPreview" />;
 }
 
 /* ───────── Contact ───────── */
@@ -4529,7 +4529,7 @@ function ContactFormPreview({ variantId }: { variantId: string }) {
         <div className="space-y-2">{field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"))}{field(fNames[1] || "邮箱", "you@example.com")}{field("留言", "简单描述你的需求…")}<span className="inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{contact.formTitle}</span></div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ContactFormPreview" />;
 }
 
 function ContactInfoPreview({ variantId }: { variantId: string }) {
@@ -4565,7 +4565,7 @@ function ContactInfoPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ContactInfoPreview" />;
 }
 
 function ContactFaqPreview({ variantId }: { variantId: string }) {
@@ -4728,7 +4728,7 @@ function DocsNavPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DocsNavPreview" />;
 }
 
 function DocsContentPreview({ variantId }: { variantId: string }) {
@@ -4770,7 +4770,7 @@ function DocsContentPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DocsContentPreview" />;
 }
 
 function DocsSearchPreview({ variantId }: { variantId: string }) {
@@ -4808,7 +4808,7 @@ function DocsSearchPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="DocsSearchPreview" />;
 }
 
 /* ───────── AI Chat ───────── */
@@ -4859,7 +4859,7 @@ function ChatInputPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ChatInputPreview" />;
 }
 
 function ChatSuggestPreview({ variantId }: { variantId: string }) {
@@ -4888,7 +4888,7 @@ function ChatSuggestPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ChatSuggestPreview" />;
 }
 
 // ── 动效联动（步骤3）：与 motion-library 变体 id 对应的示意动画 ──
@@ -5127,7 +5127,7 @@ function ProcessPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ProcessPreview" />;
 }
 
 function IntegrationsPreview({ variantId }: { variantId: string }) {
@@ -5159,7 +5159,7 @@ function IntegrationsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="IntegrationsPreview" />;
 }
 
 function ContactPreview({ variantId }: { variantId: string }) {
@@ -5196,7 +5196,7 @@ function ContactPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  return <PreviewFallback title="ContactPreview" />;
 }
 
 /* ───────── 加载反馈（Feedback） ───────── */
