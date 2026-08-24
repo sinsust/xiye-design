@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 // 组件预览渲染器：把「变体」可视化渲染（视觉风格 palette 贯穿）。
 // 用法：外层容器注入 CSS 变量（--primary/--surface/...），预览内部元素与
@@ -566,6 +566,18 @@ export function ComponentPreview({
 }
 
 /* ───────── Navbar ───────── */
+/** 区块预览兜底：当前函数未匹配到已知变体时渲染该卡，避免整块空白 */
+function PreviewFallback({ title }: { title: string }) {
+  const label = title.replace(/Preview$/, "");
+  return (
+    <div className="flex h-40 items-center justify-center px-6" style={{ background: "var(--background)" }}>
+      <div className="max-w-xs rounded-xl border border-dashed px-6 py-5 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <p className="text-sm font-semibold">{label}</p>
+        <p className="mt-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>可在面板顶部切换该区块的样式变体</p>
+      </div>
+    </div>
+  );
+}
 function NavbarPreview({ variantId }: { variantId: string }) {
   const links = ["功能", PREVIEW_CONTENT.nav.pricing, PREVIEW_CONTENT.nav.faq];
   const inner = (

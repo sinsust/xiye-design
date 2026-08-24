@@ -11,10 +11,11 @@ import {
   type PaletteOverride,
 } from "@/lib/use-theme-palette";
 
-// 顶部主题切换的 6 个 preset 选项
+// 顶部主题切换的 7 个 preset 选项
 const PRESET_OPTIONS = [
   { label: "默认 · 粗野", value: "aw-brutalist" },
   { label: "Soft Pop 柔和流行", value: "aw-soft-pop" },
+  { label: "自然绿", value: "nature-green" },
   { label: "Tangerine 柑橘", value: "aw-tangerine" },
   { label: "Claude 编辑", value: "aw-claude" },
   { label: "Amethyst Haze 紫雾", value: "aw-amethyst-haze" },
