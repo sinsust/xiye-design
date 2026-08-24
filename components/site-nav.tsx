@@ -9,10 +9,10 @@ import { AuthMenu } from "@/components/auth-menu";
 import { BrandLogo } from "@/components/brand-logo";
 
 const NAV_LINKS = [
-  { href: "/workflow", label: "工作流" },
-  { href: "/builder", label: "页面搭建" },
-  { href: "/components", label: "组件库" },
-  { href: "/library", label: "知识库" },
+  { href: "/workflow", label: "做产品" },
+  { href: "/builder", label: "搭页面" },
+  { href: "/components", label: "找组件" },
+  { href: "/library", label: "存知识" },
 ];
 
 export function SiteNav() {

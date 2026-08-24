@@ -99,6 +99,9 @@ import OutstandContactSupport from "@/components/originkit/outstand/contact-supp
 import OutstandNotFound from "@/components/originkit/outstand/not-found";
 import OutstandPrivacyPolicy from "@/components/originkit/outstand/privacy-policy";
 import WexoStudio from "@/components/originkit/wexo/studio";
+import WexoSite from "@/components/originkit/wexo/site";
+import OutstandSite from "@/components/originkit/outstand/site";
+import GeniusSite from "@/components/originkit/genius/site";
 import {
   COMPONENT_LIB,
   FLUID_PALETTES,
@@ -118,6 +121,8 @@ const ICONS: Record<string, ReactNode> = {
   Disc3: <Disc3 className="size-4" />,
   Keyboard: <Keyboard className="size-4" />,
   Sparkles: <Sparkles className="size-4" />,
+  Palette: <Palette className="size-4" />,
+  MousePointerClick: <MousePointerClick className="size-4" />,
 };
 
 type SimpleGroup = { type: "simple"; items: LibraryComponent[] };
@@ -254,6 +259,22 @@ function defaultSettings(comp: LibraryComponent): Settings {
 
 function buildUsageCode(comp: LibraryComponent, settings: Settings): string {
   // 每个组件生成可直接复制的使用示例；完整源码由「复制源码」读取源文件给出
+  // 整站模板 · 全部：iframe 嵌入完整站点首页，支持多页点击
+  if (comp.id.endsWith("-all")) {
+    const site = comp.id.slice(0, -4); // e.g. "wexo-all" -> "wexo"
+    return `"use client";
+// ${comp.name}：iframe 嵌入完整站点首页，还原多页交互
+export function Demo() {
+  return (
+    <iframe
+      src="/api/originkit/${site}/index.html"
+      style={{ width: "100%", height: "760px", border: 0 }}
+      title="${comp.name}"
+    />
+  );
+}`;
+  }
+
   // Wexo 整站模板区块：thin wrapper 直接渲染 Originkit 原版 HTML 片段（动效由 framer.css 承载）
   if (comp.id.startsWith("wexo-")) {
     const slug = comp.id.slice("wexo-".length);
@@ -264,6 +285,22 @@ import ${Pascal} from "@/components/originkit/wexo/${slug}";
 
 export function Demo() {
   return <${Pascal} />;
+}`;
+  }
+
+  // Genius 整站模板页面：直链线上真实站点（Framer 平台），完整还原交互
+  if (comp.id.startsWith("genius-")) {
+    const slug = comp.id.slice("genius-".length);
+    return `"use client";
+// Genius 整站页面：直链 Framer 线上真实站点，完整还原 HTML/CSS/JS 交互
+export function Demo() {
+  return (
+    <iframe
+      src="https://genius.framer.wiki/${slug}"
+      style={{ width: "100%", height: "760px", border: 0 }}
+      title="Genius ${slug}"
+    />
+  );
 }`;
   }
 
@@ -733,11 +770,18 @@ export default function ComponentLibraryPage() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     () => {
+      // 手风琴：默认只展开第一个一级分组，其余收起
       const init: Record<string, boolean> = {};
-      groups.forEach((g) => (init[g.category] = true));
+      groups.forEach((g, i) => (init[g.category] = i === 0));
       return init;
     }
   );
+  // 点击子菜单/组件：仅展开其所属一级，其余一级全部收起
+  const expandOnly = (cat: string) =>
+    setExpandedGroups((prev) => ({
+      ...Object.fromEntries(groups.map((g) => [g.category, false])),
+      [cat]: true,
+    }));
   const [expandedSites, setExpandedSites] = useState<Record<string, boolean>>(
     () => {
       const init: Record<string, boolean> = {};
@@ -1036,11 +1080,11 @@ export default function ComponentLibraryPage() {
   };
 
   return (
-    <div className="relative flex min-h-[calc(100vh-4rem)] overflow-hidden rounded-[var(--radius)] border border-border bg-background">
+    <div className="relative flex min-h-[calc(100vh-3rem)] overflow-hidden rounded-[var(--radius)] border border-border bg-background">
       {/* 侧边栏：sticky 固定，内部独立滚动 */}
       <aside
         className={cn(
-          "sticky top-4 self-start flex h-[calc(100vh-4.5rem)] shrink-0 flex-col overflow-hidden border-r border-border transition-all duration-200 ease-in-out",
+          "sticky top-2 self-start flex h-[calc(100vh-3rem)] shrink-0 flex-col overflow-hidden border-r border-border transition-all duration-200 ease-in-out",
           sidebarOpen ? "w-[180px]" : "w-[44px]"
         )}
       >
@@ -1073,13 +1117,19 @@ export default function ComponentLibraryPage() {
                   type="button"
                   onClick={() =>
                     setExpandedGroups((prev) => ({
-                      ...prev,
+                      // 手风琴互斥：打开当前一级，其余一级全部收起
+                      ...Object.fromEntries(groups.map((g) => [g.category, false])),
                       [group.category]: !prev[group.category],
                     }))
                   }
-                  className="mb-1 flex w-full items-center justify-between rounded-[var(--radius)] px-1 py-1 text-left transition hover:bg-muted/50"
+                  className={cn(
+                    "mb-1 flex w-full items-center justify-between rounded-[var(--radius)] border-l-2 px-1 py-1 text-left transition hover:bg-muted/50",
+                    expandedGroups[group.category]
+                      ? "border-foreground bg-muted/60"
+                      : "border-transparent"
+                  )}
                 >
-                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <span className="text-sm font-bold text-foreground">
                     {group.category}
                   </span>
                   <ChevronDown
@@ -1098,7 +1148,10 @@ export default function ComponentLibraryPage() {
                           key={c.id}
                           comp={c}
                           active={c.id === comp.id}
-                          onClick={() => setActiveId(c.id)}
+                          onClick={() => {
+                            expandOnly(group.category);
+                            setActiveId(c.id);
+                          }}
                         />
                       ))}
                     </div>
@@ -1111,15 +1164,26 @@ export default function ComponentLibraryPage() {
                         >
                           <button
                             type="button"
-                            onClick={() =>
-                              setExpandedSites((prev) => ({
-                                ...prev,
-                                [site]: !prev[site],
-                              }))
-                            }
+                            onClick={() => {
+                              // 点击二级站点：互斥切换（其他所有 site 都收起），同时确保所属一级展开
+                              expandOnly(group.category);
+                              setExpandedSites((prev) => {
+                                const next: Record<string, boolean> = {};
+                                // 把所有一级下的所有 site 都收起
+                                for (const g of groups) {
+                                  if (g.type === "sites") {
+                                    for (const s of Object.keys(g.sites)) {
+                                      next[s] = false;
+                                    }
+                                  }
+                                }
+                                next[site] = !prev[site];
+                                return next;
+                              });
+                            }}
                             className="mb-0.5 flex w-full items-center justify-between rounded-[var(--radius)] px-1 py-1 text-left transition hover:bg-muted/50"
                           >
-                            <span className="text-xs font-medium text-muted-foreground">
+                            <span className="text-xs font-medium text-foreground/80">
                               {site}
                             </span>
                             <ChevronDown
@@ -1136,7 +1200,23 @@ export default function ComponentLibraryPage() {
                                   key={c.id}
                                   comp={c}
                                   active={c.id === comp.id}
-                                  onClick={() => setActiveId(c.id)}
+                                  onClick={() => {
+                                    // 点击子组件：所属一级展开；该 site 也保持展开；其他 site 收起
+                                    expandOnly(group.category);
+                                    setExpandedSites((prev) => {
+                                      const next: Record<string, boolean> = {};
+                                      for (const g of groups) {
+                                        if (g.type === "sites") {
+                                          for (const s of Object.keys(g.sites)) {
+                                            next[s] = false;
+                                          }
+                                        }
+                                      }
+                                      next[site] = true;
+                                      return next;
+                                    });
+                                    setActiveId(c.id);
+                                  }}
                                 />
                               ))}
                             </div>
@@ -2131,17 +2211,22 @@ export default function ComponentLibraryPage() {
                 </WidePreviewFrame>
               )}
 
+              {/* 整站模板 · 全部：直链线上真实站点（Framer 平台），交互 100% 还原 */}
+              {comp.id === "wexo-all" && <WexoSite liveUrl="https://wexo.framer.website/" />}
+              {comp.id === "outstand-all" && <OutstandSite />}
+              {comp.id === "genius-all" && <GeniusSite liveUrl="https://genius.framer.wiki/" />}
+
               {/* Wexo 整站模板区块：可视化编辑器（可在预览内改文案/配色/子区块，并可导出一体化整站 zip） */}
-              {comp.id.startsWith("wexo-") && (
+              {comp.id.startsWith("wexo-") && comp.id !== "wexo-all" && (
                 <WexoStudio slug={comp.id.slice("wexo-".length)} />
               )}
 
-              <div className="pointer-events-none absolute left-3 top-3">
-                <span className="rounded-[var(--radius)] bg-black/40 px-2 py-0.5 text-[11px] text-white/70">
-                  {comp.name}
-                  {comp.id === "fluid-text" ? " · 拖动搅动" : ""}
-                </span>
-              </div>
+              {/* Genius 整站模板页面：直链线上真实站点，完整还原交互 */}
+              {comp.id.startsWith("genius-") && comp.id !== "genius-all" && (
+                <GeniusSite liveUrl={`https://genius.framer.wiki/${comp.id.slice("genius-".length)}`} />
+              )}
+
+              {/* 预览左上角名称标签已全部移除（顶部工具条与下方标题区已足够识别当前组件） */}
             </div>
           </div>
 

@@ -244,6 +244,14 @@ export default function BuilderPage() {
     } else {
       selectPage(p.id);
       setExpandedPages((prev) => ({ ...prev, [p.id]: true }));
+      // 点击子菜单时：只展开其所属一级，其余一级全部收起（与一级互斥一致）
+      setExpandedGroups((prev) => {
+        const target = PAGE_GROUPS.find((g) => g.ids.includes(p.id))?.label ?? "";
+        return {
+          ...Object.fromEntries(PAGE_GROUPS.map((g) => [g.label, false])),
+          [target]: true,
+        };
+      });
     }
   };
   const [styleQuery, setStyleQuery] = useState("");
@@ -844,7 +852,6 @@ export default function BuilderPage() {
                 const pages = g.ids
                   .map((pid) => SKELETON_PAGES.find((p) => p.id === pid))
                   .filter((p): p is SkeletonPage => Boolean(p));
-                const hasActive = pages.some((p) => p.id === activePageId);
                 const open = expandedGroups[g.label] ?? true;
                 return (
                   <div key={g.label} className="mb-1">
@@ -852,25 +859,24 @@ export default function BuilderPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        setExpandedGroups((prev) => ({ ...prev, [g.label]: !(prev[g.label] ?? true) }))
+                        setExpandedGroups((prev) => ({
+                          // 手风琴互斥：打开当前一级，其余一级全部收起
+                          ...Object.fromEntries(PAGE_GROUPS.map((grp) => [grp.label, false])),
+                          [g.label]: !(prev[g.label] ?? true),
+                        }))
                       }
                       className={[
-                        "mb-0.5 flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-left transition hover:bg-muted",
-                        hasActive ? "text-primary" : "text-muted-foreground",
+                        "mb-0.5 flex w-full items-center gap-1.5 rounded-lg border-l-2 px-1.5 py-1.5 text-left transition hover:bg-muted",
+                        open ? "border-primary bg-primary/5" : "border-transparent",
                       ].join(" ")}
                     >
                       <ChevronDown
-                        className={["size-3.5 shrink-0 transition-transform", open ? "rotate-180" : ""].join(" ")}
+                        className={["size-3.5 shrink-0 text-muted-foreground transition-transform", open ? "rotate-180" : ""].join(" ")}
                       />
-                      <span
-                        className={[
-                          "flex-1 truncate text-xs font-semibold uppercase tracking-wide",
-                          hasActive ? "text-primary" : "text-muted-foreground",
-                        ].join(" ")}
-                      >
+                      <span className="flex-1 truncate text-sm font-bold text-foreground">
                         {g.label}
                       </span>
-                      <span className="rounded-full border border-border/60 bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      <span className="rounded-full border border-foreground/10 bg-background px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
                         {pages.length}
                       </span>
                     </button>

@@ -5,6 +5,7 @@
 // - 右侧面板实时修改 -> 应用到预览
 // - 一键把全部 12 块「修改后的整站」与 framer.css/images/fonts 一起打包成可独立部署的 zip 下载
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Pencil } from "lucide-react";
 import {
   SECTION_BASE,
   WEXO_SLUGS,
@@ -286,13 +287,15 @@ export function WexoStudio({ slug }: { slug: string }) {
       <div className="mb-2 flex items-center gap-2">
         <button
           onClick={() => setPanelOpen((v) => !v)}
-          className={`h-8 rounded-[calc(var(--radius)+1px)] border px-3 text-xs font-medium transition-colors ${
+          title={panelOpen ? "收起编辑" : "编辑"}
+          aria-label={panelOpen ? "收起编辑" : "编辑"}
+          className={`inline-flex h-8 w-8 items-center justify-center rounded-[calc(var(--radius)+1px)] border transition-colors ${
             panelOpen
               ? "border-ring bg-muted text-foreground"
               : "border-border bg-background text-muted-foreground hover:text-foreground"
           }`}
         >
-          面板 {panelOpen ? "收起" : "编辑"}
+          <Pencil className="size-4" />
         </button>
         <button
           onClick={handleExport}

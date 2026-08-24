@@ -221,14 +221,18 @@ export const DEMO_CONTENT: DemoContent = {
     title: "常见问题",
     subtitle: "没找到答案？联系我们的团队",
     items: [
-      { q: "有免费试用吗？", a: "有，新用户可免费体验核心功能，无需绑定银行卡。" },
-      { q: "可以随时取消吗？", a: "可以，升级或退订都随时自助完成，剩余时长照常使用。" },
+      { q: "有免费试用吗？", a: "有，新用户可免费体验全部核心功能，无需绑定银行卡，试用期内不限制项目数。" },
+      { q: "可以随时取消或升级吗？", a: "当然，套餐变更都由你自助完成，升级即时生效，退订后账户数据仍保留 30 天。" },
+      { q: "我的数据安全吗？", a: "数据全程 TLS 加密传输、静态加密存储，支持 SSO 与审计日志，符合主流合规要求。" },
+      { q: "支持与现有工具集成吗？", a: "内置飞书、钉钉、Slack、GitHub 等 30+ 集成，并提供开放 API 与 Webhook 对接自有系统。" },
+      { q: "有企业版或私有化部署吗？", a: "提供企业版，支持私有化部署、专属客户成功经理与 SLA，具体可联系销售团队。" },
     ],
   },
   stats: {
     title: "备受信赖",
     items: [
       { label: "活跃团队", value: "50k+" },
+      { label: "服务国家/地区", value: "40+" },
       { label: "满意度", value: "4.9/5" },
       { label: "已交付项目", value: "120k+" },
     ],
@@ -237,8 +241,12 @@ export const DEMO_CONTENT: DemoContent = {
     title: "客户怎么说",
     subtitle: "来自真实用户的反馈",
     items: [
-      { quote: "让团队协作真正快起来了。", name: "林女士", role: "某科技公司产品经理" },
-      { quote: "几分钟就搭起可用原型，非常顺手。", name: "王先生", role: "独立开发者" },
+      { quote: "让团队协作真正快起来了，需求、文档和进度再也不用来回拷贝。", name: "林女士", role: "某科技公司产品经理" },
+      { quote: "几分钟就搭起一个可用原型，跑通演示比我之前快太多了。", name: "王先生", role: "独立开发者" },
+      { quote: "改装落地页后转化率提升了近三成，A/B 测试也更顺手了。", name: "陈女士", role: "电商运营总监" },
+      { quote: "从想法到可演示的 MVP 只用了两周，后面的融资路演全靠它撑场。", name: "张先生", role: "初创公司 CEO" },
+      { quote: "非技术团队也能独立搭出课程落地页，省下了一大笔外包费用。", name: "李老师", role: "在线教育机构负责人" },
+      { quote: "生成的代码干净可维护，评审和上线都毫无压力。", name: "赵先生", role: "SaaS 科技公司工程负责人" },
     ],
   },
   process: {
@@ -249,7 +257,7 @@ export const DEMO_CONTENT: DemoContent = {
       { name: "一键上线", desc: "导出代码直接部署" },
     ],
   },
-  logos: ["Acme", "Nova", "Vertex", "Pulse", "Orbit"],
+  logos: ["腾讯", "阿里巴巴", "Vercel", "Apple", "Google", "TikTok", "Meta", "X", "GitHub", "Slack", "Notion"],
   dashboard: {
     title: "控制台",
     greeting: "欢迎回来，今天想设计点什么？",

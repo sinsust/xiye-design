@@ -4,7 +4,7 @@
 // 用法：外层容器注入 CSS 变量（--primary/--surface/...），预览内部元素与
 // 变体的 TSX code 写法一致（var(--primary) 等），保证「预览 = 代码效果」。
 
-import { useState, useRef, useEffect, useMemo, createContext, useContext, type CSSProperties } from "react";
+import { useState, useRef, useEffect, useMemo, createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import type { VisualStyle } from "@/data/visual-styles";
 import { DEMO_CONTENT, type DemoContent } from "@/data/skeleton-content";
 import { useSkeletonStore } from "@/lib/skeleton-store";
@@ -605,7 +605,7 @@ function NavbarPreview({ variantId }: { variantId: string }) {
               <div key={f} className="rounded-md px-2 py-1.5 text-[10px] font-medium" style={{ background: "var(--background)", animation: "megaItem 0.4s cubic-bezier(0.16,1,0.3,1) both", animationDelay: 0.06 * i + "s" }}>{f}</div>
             ))}
           </div>
-          <span className="mt-2 block text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>hover 展开浮层 · 项交错浮现</span>
+          <span className="mt-2 block text-center text-[9px] font-medium" style={{ color: "var(--primary)" }}>查看全部功能 →</span>
         </div>
         <style>{`@keyframes megaIn { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } } @keyframes megaItem { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       </div>
@@ -656,6 +656,7 @@ function NavbarPreview({ variantId }: { variantId: string }) {
 
 /* ───────── Hero ───────── */
 function HeroPreview({ variantId }: { variantId: string }) {
+  const hero = PREVIEW_CONTENT.hero;
   if (variantId === "hero_center")
     return (
       <div className="px-6 py-8 text-center">
@@ -734,13 +735,16 @@ function HeroPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "hero_video")
     return (
-      <div className="relative flex min-h-56 items-center justify-center overflow-hidden bg-slate-800">
-        <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400">▶ 视频背景占位</div>
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 max-w-md px-6 text-center text-white">
-          <h3 className="text-[length:var(--text-h4)] font-bold">感受真正的身临其境</h3>
-          <p className="mx-auto mt-1.5 max-w-sm text-xs text-white/80">用视频讲述产品故事。</p>
-          <span className="mt-3 inline-block cursor-pointer rounded-md bg-white px-4 py-1.5 text-xs font-medium text-slate-900 transition-transform duration-200 hover:-translate-y-0.5">观看更多</span>
+      <div className="relative flex min-h-56 items-center justify-center overflow-hidden rounded-xl px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 28%, var(--background)), color-mix(in srgb, var(--secondary) 34%, var(--background)))" }}>
+        <div aria-hidden className="absolute inset-0 opacity-20 [background-image:radial-gradient(var(--foreground)_1px,transparent_1px)] [background-size:18px_18px]" />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 to-black/10" />
+        <div className="relative z-10 max-w-md text-center text-white">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-white/40 bg-white/10 backdrop-blur">
+            <span className="ml-0.5 text-sm">▶</span>
+          </div>
+          <h3 className="mt-3 text-[length:var(--text-h4)] font-bold">感受真正的身临其境</h3>
+          <p className="mx-auto mt-1.5 max-w-sm text-xs text-white/80">用视频把产品体验讲给你听——第一视角，一目了然。</p>
+          <span className="mt-3 inline-block cursor-pointer rounded-md bg-white px-4 py-1.5 text-xs font-medium text-slate-900 transition-transform duration-200 hover:-translate-y-0.5">{PREVIEW_CONTENT.cta.primary}</span>
         </div>
       </div>
     );
@@ -811,7 +815,18 @@ function HeroPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  // 兜底：未知变体时渲染首屏默认，避免预览区空白
+  return (
+    <div className="px-6 py-8 text-center">
+      <span className="inline-block rounded-full border px-2 py-0.5 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{hero.badge}</span>
+      <h3 className="mx-auto mt-3 max-w-md text-[length:var(--text-h3)] font-bold leading-snug">{hero.heading}</h3>
+      <p className="mx-auto mt-1.5 max-w-sm text-xs" style={{ color: "var(--muted-foreground)" }}>{hero.subheading}</p>
+      <div className="mt-4 flex justify-center gap-2">
+        <Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn>
+        <Btn>{PREVIEW_CONTENT.cta.secondary}</Btn>
+      </div>
+    </div>
+  );
 }
 
 /* ───────── Features ───────── */
@@ -855,7 +870,7 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
         desc: f.desc,
         n: String(i + 1).padStart(2, "0"),
       }))
-    : [{ icon: iconSeq[0], title: "核心能力", desc: "真实文案待生成", n: "01" }];
+    : [{ icon: iconSeq[0], title: "核心能力", desc: "从骨架到上线的完整方案", n: "01" }];
 
   if (variantId === "feat_grid3")
     return (
@@ -949,7 +964,7 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
       <div className="px-6 py-6">
         <h3 className="mb-1 text-center text-base font-bold">{title}</h3>
         <p className="mb-3 text-center text-xs" style={{ color: "var(--muted-foreground)" }}>{subtitle}</p>
-        <div className="mt-1 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <div className="mt-1 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {items.map((f) => (
             <Card key={f.title} className="text-center">
               <span className="inline-flex text-sm">{f.icon}</span>
@@ -996,7 +1011,24 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  // 兜底：未知变体时渲染三卡网格，避免预览区空白
+  return (
+    <div className="px-6 py-6">
+      <div className="text-center">
+        <h3 className="text-base font-bold">{title}</h3>
+        <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{subtitle}</p>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {items.map((f) => (
+          <Card key={f.title}>
+            <div className="flex size-8 items-center justify-center rounded-lg text-sm" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>{f.icon}</div>
+            <p className="mt-2 text-sm font-semibold">{f.title}</p>
+            <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /* ───────── FAQ ───────── */
@@ -1336,12 +1368,17 @@ function FooterPreview({ variantId }: { variantId: string }) {
   if (variantId === "footer_dark")
     return (
       <div className="bg-slate-900 px-6 py-6 text-slate-50">
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
-            <p className="mt-1 text-[11px] text-slate-400">让每个人都高效工作。</p>
+            <p className="mt-1 text-[11px] text-slate-400">{PREVIEW_CONTENT.footer.tagline}</p>
+            <div className="mt-2 flex gap-1.5 text-slate-400">
+              {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
+                <span key={i} className="flex size-5 items-center justify-center rounded border border-white/15 text-[9px]"><BrandMark name={i} className="size-3" /></span>
+              ))}
+            </div>
           </div>
-          {cols.slice(0, 2).map((c) => (
+          {cols.map((c) => (
             <div key={c.t}>
               <p className="text-xs font-semibold">{c.t}</p>
               <ul className="mt-1.5 space-y-1 text-[11px] text-slate-400">
@@ -1382,8 +1419,12 @@ function FooterPreview({ variantId }: { variantId: string }) {
           <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
             <div>
               <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
-              <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>让每个人都高效工作。</p>
-              <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>𝕏 · GitHub · LinkedIn</p>
+              <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.footer.tagline}</p>
+              <div className="mt-2 flex gap-1.5" style={{ color: "var(--muted-foreground)" }}>
+                {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
+                  <span key={i} className="flex size-5 items-center justify-center rounded-md border" style={{ borderColor: "var(--border)" }}><BrandMark name={i} className="size-3" /></span>
+                ))}
+              </div>
             </div>
             {cols.map((c) => (
               <div key={c.t}>
@@ -1426,8 +1467,12 @@ function FooterPreview({ variantId }: { variantId: string }) {
       <div className="grid gap-5 sm:grid-cols-4">
         <div>
           <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
-          <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>让每个人都高效工作。</p>
-          <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>𝕏 · GitHub · LinkedIn</p>
+          <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.footer.tagline}</p>
+          <div className="mt-2 flex gap-1.5" style={{ color: "var(--muted-foreground)" }}>
+                {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
+                  <span key={i} className="flex size-5 items-center justify-center rounded-md border" style={{ borderColor: "var(--border)" }}><BrandMark name={i} className="size-3" /></span>
+                ))}
+              </div>
         </div>
         {cols.map((c) => (
           <div key={c.t}>
@@ -1447,6 +1492,65 @@ function FooterPreview({ variantId }: { variantId: string }) {
 }
 
 /* ───────── Logos ───────── */
+
+// —— 真实品牌 SVG 图形标记（信誉墙）：用当前颜色渲染，随主题色/品牌色变化 ——
+const BRAND_MARKS: Record<string, ReactNode> = {
+  Vercel: <path d="M12 3 21 20.5H3z" />,
+  Apple: (
+    <path d="M17.05 12.5c-.03-2.4 1.97-3.55 2.06-3.61-1.12-1.64-2.87-1.87-3.5-1.9-1.49-.15-2.9.87-3.66.87-.75 0-1.92-.85-3.16-.83-1.62.02-3.12.94-3.96 2.4-1.69 2.93-.43 7.27 1.21 9.65.8 1.17 1.76 2.48 3.02 2.43 1.21-.05 1.67-.78 3.13-.78 1.46 0 1.87.78 3.16.76 1.3-.02 2.13-1.19 2.92-2.36.92-1.35 1.3-2.66 1.32-2.73-.03-.01-2.53-.97-2.55-3.87zM13.9 6.24c.67-.82 1.13-1.96 1-3.1-.97.04-2.14.64-2.83 1.46-.62.72-1.17 1.88-1.02 2.99 1.09.08 2.18-.54 2.85-1.35z" />
+  ),
+  Google: (
+    <path d="M17.7 7.2C16.25 5.85 14.4 5.2 12 5.2c-3.4 0-6.2 2.26-7.2 5.3C4 11.5 4 12.5 4.8 13.5c1 3.04 3.8 5.3 7.2 5.3 1.7 0 3.15-.49 4.16-1.34.94-.8 1.44-1.9 1.44-3.2v-.35h-5.6v2.55h3.35c-.4.7-1.6 1.8-3.35 1.8-2.35 0-4.25-1.9-4.25-4.6 0-2.7 1.9-4.6 4.25-4.6 1.2 0 2.2.4 2.9 1.1z" />
+  ),
+  GitHub: (
+    <path d="M12 1.5C6.1 1.5 1.3 6.3 1.3 12.2c0 4.7 3 8.7 7.3 10.1.5.1.6-.2.6-.6 0-.3-.1-1.1-.1-2.2-2.7.6-3.4-1.1-3.6-2.1-.1-.5-.5-1-1-1.8-.4-.2-.9-.6-.6-.7.4-.9-.5-1.2-.5-1.2-.5-.2-.4-1.4-.1-1.4.4-.1 1 .9 1.4 1 .7-1.1 2.2-.9 2.7-.7 0-.6.2-1.1.5-1.5-2.1-.2-4.3-1.1-4.3-4.7 0-1 .4-1.9 1.1-2.5-.1-.2-.5-1.2.1-2.5 0 0 .9-.3 2.8 1 .8-.2 1.6-.3 2.5-.3.8 0 1.7.1 2.5.3 2-1.2 2.8-1 2.8-1 .6 1.3.2 2.3.1 2.5.7.6.1 2.3.1 2.5-.2.4-1 1-1.7 1.1.3.3.5.8.5 1.5 0 3.4-2.2 4.5-4.3 4.7.3.3.6.9.6 1.8 0 1.3-.1 2.4-.1 2.7 0 .3.1.7.6.6 4.3-1.4 7.3-5.4 7.3-10.1C22.7 6.3 17.9 1.5 12 1.5z" />
+  ),
+  Meta: (
+    <path d="M12 8.5C10.8 6.2 8.8 5.1 7 5.1 4.6 5.1 2.5 7.1 2.5 9.9c0 1.7.8 3.2 2.3 4.7.6.6 1.2 1.4 1.7 2.2.5.8.9 1.5 1.3 2.2l2.7 4.1c.5.8.9.8 1.5 0l2.7-4.1c.4-.7.8-1.4 1.3-2.2.5-.8 1.1-1.6 1.7-2.2 1.5-1.5 2.3-3 2.3-4.7 0-2.8-2.1-4.8-4.5-4.8-1.8 0-3.8 1.1-5 3.4z" />
+  ),
+  Notion: (
+    <path d="M4 3.5h3.2l9.6 16.5V3.5c.8 0 1.6 0 2.4 0V20.5h-3.2L6.4 4.05c0 5.48 0 10.97 0 16.45H4z" />
+  ),
+  腾讯: (
+    <path d="M12 3c-4 0-7 3-7 7 0 1 .2 2 .5 2.9C3.9 14.1 2.7 15.9 2.7 18c0 1.4.5 2.6 1.3 3.5.7-.4 2.5-.5 3-.5v.2c3.34 3.7 6.66 3.7 10 0V21c.5 0 2.3.1 3 .5.8-.9 1.3-2.1 1.3-3.5 0-2.1-1.2-3.9-2.8-5.1.3-.9.5-1.9.5-2.9 0-4-3-7-7-7zM8.5 9.5c1 0 1.8.8 1.8 1.8S9.5 13 8.5 13s-1.8-.8-1.8-1.9.8-1.6 1.8-1.6zm7 0c1 0 1.8.8 1.8 1.8s-.8 1.7-1.8 1.7-1.8-.8-1.8-1.9.8-1.6 1.8-1.6z" />
+  ),
+  阿里巴巴: (
+    <path d="M3 7.5h6.5l.8 2.2-2 1.3 1.8 1.8 1.3 2-3.5 1-2.3-1.5-.6-2.3 2-1.4L3 7.5zM16.3 7.5c1.9 0 3.6.5 5 1.5l.6 1.8-2.2.9-1.3-1-1.5.5-2.3 3.1-1.3-1.2 1.1-2-1-1.2 1.4-1 3-3.4zM10.4 7.5c1.4 0 2.5 1 2.5 2.5s-1.1 2.3-2.5 2.3-2.5-1-2.5-2.4 1.1-2.4 2.5-2.4z" />
+  ),
+  Slack: (
+    <g fill="currentColor">
+      <rect x="3.8" y="9.4" width="6.1" height="6" rx="1.4" />
+      <rect x="8.9" y="3.8" width="6" height="6.1" rx="1.4" />
+      <rect x="8.9" y="14.1" width="6" height="6.1" rx="1.4" />
+      <rect x="14.1" y="9" width="6.1" height="6" rx="1.4" />
+    </g>
+  ),
+  TikTok: (
+    <path d="M15.5 3c.3 2.9 2.1 4.6 5 4.9v3.3c-1.7 0-3.2-.6-4.8-1.7v6.2c0 4-3 6.6-6.7 6.6-3.3 0-6-2.5-6-6 0-3.9 2.3-6.9 6.2-6.5v3.2c-1.7-.3-3 .7-3 3.1 0 1.9 1.1 3.1 3 3.1 1.6 0 2.8-1.1 2.8-3.3V3z" />
+  ),
+  X: <path d="M17.8 4H21l-6.9 8.8L22.2 20h-5.9l-4.6-5.4L6.5 20H3.3l7.4-9.4L3 4h6l4.2 5z" />,
+  LinkedIn: (
+    <path d="M6.5 8.6a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5zM5 9.9h3V20.5H5zM9.9 9.9h2.9v1.45h.04c.4-.78 1.4-1.6 2.88-1.6 3.08 0 3.64 2.03 3.64 4.66V20.5h-3v-4.92c0-1.17-.02-2.7-1.64-2.7-1.64 0-1.9 1.28-1.9 2.6V20.5h-3z" />
+  ),
+};
+
+function BrandMark({ name, className }: { name: string; className?: string }) {
+  const mark = BRAND_MARKS[name];
+  if (!mark)
+    return <span className={"font-bold leading-none " + (className ?? "")}>{name}</span>;
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      aria-label={name}
+      role="img"
+    >
+      {mark}
+    </svg>
+  );
+}
+
 function LogosPreview({ variantId }: { variantId: string }) {
   const brands = PREVIEW_CONTENT.logos.length ? PREVIEW_CONTENT.logos : ["Acme"];
   const palette = ["#29725f", "#4b69f0", "#f5693c", "#a0325a", "#82a0ff", "#f0befa"];
@@ -1458,12 +1562,12 @@ function LogosPreview({ variantId }: { variantId: string }) {
         <div className="mt-4 flex overflow-hidden whitespace-nowrap [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
           <div className="flex shrink-0 gap-12 pr-12 [animation:marqueeX_18s_linear_infinite] hover:[animation-play-state:paused]">
             {[...brands, ...brands].map((b, i) => (
-              <span key={i} className="text-sm font-bold opacity-50 transition hover:opacity-100">{b}</span>
+              <BrandMark key={i} name={b} className="h-6 w-auto shrink-0 opacity-50 transition hover:opacity-100" />
             ))}
           </div>
           <div aria-hidden className="flex shrink-0 gap-12 pr-12 [animation:marqueeX_18s_linear_infinite] hover:[animation-play-state:paused]">
             {[...brands, ...brands].map((b, i) => (
-              <span key={i} className="text-sm font-bold opacity-50">{b}</span>
+              <BrandMark key={i} name={b} className="h-6 w-auto shrink-0 opacity-50" />
             ))}
           </div>
         </div>
@@ -1476,7 +1580,7 @@ function LogosPreview({ variantId }: { variantId: string }) {
       <div key={dir} className="flex-1 overflow-hidden">
         <div className={dir === "up" ? "flex flex-col gap-2 [animation:marqueeUp_12s_linear_infinite]" : "flex flex-col gap-2 [animation:marqueeDown_12s_linear_infinite]"}>
           {[...tiles, ...tiles].map((t, i) => (
-            <div key={i} className="flex h-14 items-center justify-center rounded-lg text-xs font-bold text-white" style={{ background: t.c }}>{t.n}</div>
+            <div key={i} className="flex h-14 items-center justify-center rounded-lg" style={{ background: t.c }}><BrandMark name={t.n} className="h-6 w-auto text-white" /></div>
           ))}
         </div>
       </div>
@@ -1502,8 +1606,8 @@ function LogosPreview({ variantId }: { variantId: string }) {
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2">
           {brands.slice(0, 6).map((b, i) => (
-            <div key={b} className="flex h-12 items-center justify-center rounded-lg border text-xs font-bold" style={{ borderColor: "var(--border)", background: "var(--surface)", color: ["#2563EB", "#7C3AED", "#059669", "#EA580C", "#0EA5E9", "#DC2626"][i], opacity: 0.75 }}>
-              {b}
+            <div key={b} className="flex h-12 items-center justify-center rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)", color: ["#2563EB", "#7C3AED", "#059669", "#EA580C", "#0EA5E9", "#DC2626"][i], opacity: 0.75 }}>
+              <BrandMark name={b} className="h-5 w-auto" />
             </div>
           ))}
         </div>
@@ -1513,10 +1617,10 @@ function LogosPreview({ variantId }: { variantId: string }) {
     return (
       <div className="px-6 py-6">
         <h3 className="mb-3 text-sm font-bold">信任我们的团队</h3>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {brands.slice(0, 6).map((b, i) => (
-            <div key={b} className={"flex h-14 items-center justify-center rounded-xl border text-xs font-bold transition-transform hover:-translate-y-0.5 " + (i === 0 ? "col-span-2" : "")} style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}>
-              {b}
+            <div key={b} className={"flex h-14 items-center justify-center rounded-xl border transition-transform hover:-translate-y-0.5 " + (i === 0 ? "col-span-2" : "")} style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}>
+              <BrandMark name={b} className="h-6 w-auto" />
             </div>
           ))}
         </div>
@@ -1527,9 +1631,9 @@ function LogosPreview({ variantId }: { variantId: string }) {
       <div className="px-6 py-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>Trusted by</p>
-          <div className="flex flex-1 flex-wrap items-center gap-x-8 gap-y-2">
+          <div className="flex flex-1 flex-wrap items-center gap-x-8 gap-y-3">
             {brands.map((b) => (
-              <span key={b} className="text-sm font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>{b}</span>
+              <span key={b} className="inline-flex h-5 items-center" style={{ color: "var(--foreground)" }}><BrandMark name={b} className="h-5 w-auto" /></span>
             ))}
           </div>
         </div>
@@ -1541,7 +1645,7 @@ function LogosPreview({ variantId }: { variantId: string }) {
         <p className="text-center text-[9px] uppercase tracking-[0.2em]" style={{ color: "#9A9AA2" }}>信任我们</p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {brands.map((n, i) => (
-            <span key={n} className="rounded-lg px-3 py-1.5 text-sm font-bold" style={{ border: "1px solid color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 40%, transparent)", background: "color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 10%, #141416)", color: neonPalette[i % neonPalette.length] }}>{n}</span>
+            <span key={n} className="inline-flex h-6 items-center rounded-lg px-3" style={{ border: "1px solid color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 40%, transparent)", background: "color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 10%, #141416)", color: neonPalette[i % neonPalette.length] }}><BrandMark name={n} className="h-4 w-auto" /></span>
           ))}
         </div>
       </div>
@@ -1554,7 +1658,7 @@ function LogosPreview({ variantId }: { variantId: string }) {
       </p>
       <div className="mt-3 flex flex-wrap items-center justify-center gap-8">
         {brands.map((b) => (
-          <span key={b} className="text-sm font-bold opacity-40">{b}</span>
+          <BrandMark key={b} name={b} className="h-6 w-auto opacity-40" />
         ))}
       </div>
     </div>
@@ -1568,7 +1672,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   if (variantId === "stats_dark")
     return (
       <div className="bg-slate-900 px-6 py-6 text-white">
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
           {stats.map((s) => (
             <div key={s.l}>
               <p className="text-[length:var(--text-h1)] font-black"><CountUp value={s.n} /></p>
@@ -1608,7 +1712,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   if (variantId === "stats_editorial")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0" style={{ borderColor: "var(--border)" }}>
+        <div className="grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4" style={{ borderColor: "var(--border)" }}>
           {stats.map((s) => (
             <div key={s.l} className="px-6 py-4 text-center sm:text-left">
               <CountUp value={s.n} className="text-3xl font-bold tracking-tight" style={{ color: "var(--foreground)" }} />
@@ -1621,7 +1725,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   if (variantId === "stats_countup")
     return (
       <div className="px-6 py-6 text-center">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {stats.map((s) => (
             <div key={s.l}>
               <CountUp value={s.n} className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }} />
@@ -1647,7 +1751,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   // stats_grid
   return (
     <div className="px-6 py-6">
-      <div className="grid grid-cols-3 gap-4 text-center">
+      <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
         {stats.map((s) => (
           <div key={s.l}>
             <CountUp value={s.n} className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }} />
@@ -1666,7 +1770,6 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     ? testi.items.map((t) => ({ q: t.quote, n: t.name, r: t.role }))
     : [{ q: "让团队协作真正快起来了。", n: "林女士", r: "产品经理" }];
   const featured = items[0];
-  const mq = items.map((t) => t.q);
   if (variantId === "testi_featured")
     return (
       <div className="px-6 py-6 text-center">
@@ -1699,18 +1802,26 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_carousel")
     return (
-      <div className="px-6 py-6 text-center">
-        <h3 className="text-sm font-bold">用户评价</h3>
-        <div className="mx-auto mt-3 max-w-xs rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <p className="text-xs leading-relaxed">"{items[0].q}"</p>
-          <p className="mt-2 text-[10px] font-semibold">— {items[0].n}</p>
-        </div>
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <span className="rounded-full border px-2 py-0.5 text-[10px]" style={{ borderColor: "var(--border)" }}>←</span>
-          <span className="size-1.5 rounded-full" style={{ background: "var(--primary)" }} />
-          <span className="size-1.5 rounded-full opacity-30" style={{ background: "var(--primary)" }} />
-          <span className="size-1.5 rounded-full opacity-30" style={{ background: "var(--primary)" }} />
-          <span className="rounded-full border px-2 py-0.5 text-[10px]" style={{ borderColor: "var(--border)" }}>→</span>
+      <div className="px-6 py-6">
+        <h3 className="text-center text-sm font-bold">用户评价</h3>
+        <div className="mx-auto mt-3 max-w-md">
+          <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {items.map((t, i) => (
+              <figure key={i} className="flex w-full min-w-[min(100%,17rem)] shrink-0 snap-center flex-col justify-center rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                <span className="text-xl leading-none" style={{ color: "var(--primary)" }}>"</span>
+                <p className="mt-1 text-xs leading-relaxed">{t.q}</p>
+                <figcaption className="mt-3 flex items-center gap-2">
+                  <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
+                  <span className="text-[10px]"><span className="font-semibold">{t.n}</span> <span style={{ color: "var(--muted-foreground)" }}>{t.r}</span></span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+          <div className="mt-2 flex justify-center gap-1.5">
+            {items.map((t, i) => (
+              <span key={i} className="size-1.5 rounded-full" style={{ background: "var(--primary)", opacity: i === 0 ? 1 : 0.28 }} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -1718,10 +1829,16 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     return (
       <div className="px-6 py-6">
         <div className="grid grid-cols-3 gap-2.5">
+          {PREVIEW_CONTENT.logos.slice(0, 6).map((b, i) => (
+            <div key={i} className="flex items-center justify-center rounded-lg border px-3 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <span className="text-xs font-black tracking-tight" style={{ color: "var(--muted-foreground)" }}>{b}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2.5">
           {items.slice(0, 3).map((t) => (
             <div key={t.n} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-              <p className="text-[9px] font-black tracking-widest" style={{ color: "var(--muted-foreground)" }}>{t.n.slice(0, 4).toUpperCase()}</p>
-              <p className="mt-1.5 text-[10px] leading-relaxed">"{t.q}"</p>
+              <p className="text-[10px] leading-relaxed">"{t.q}"</p>
               <p className="mt-1.5 text-[10px] font-semibold">— {t.n}</p>
             </div>
           ))}
@@ -1734,18 +1851,24 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
         <h3 className="mb-3 text-center text-sm font-bold">他们都在用，且都说好</h3>
         <div className="flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
           <div className="flex shrink-0 gap-2.5 pr-2.5 [animation:marqueeX_24s_linear_infinite] hover:[animation-play-state:paused]">
-            {mq.map((q, i) => (
+            {items.map((t, i) => (
               <figure key={i} className="w-44 shrink-0 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                <p className="text-[10px] leading-relaxed">"{q}"</p>
-                <figcaption className="mt-2 text-[10px] font-semibold">— {featured.n}</figcaption>
+                <p className="text-[10px] leading-relaxed">"{t.q}"</p>
+                <figcaption className="mt-2 flex items-center gap-1.5">
+                  <span className="flex size-4 items-center justify-center rounded-full text-[7px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
+                  <span className="truncate text-[10px] font-semibold">— {t.n}</span>
+                </figcaption>
               </figure>
             ))}
           </div>
           <div aria-hidden className="flex shrink-0 gap-2.5 pr-2.5 [animation:marqueeX_24s_linear_infinite] hover:[animation-play-state:paused]">
-            {mq.map((q, i) => (
+            {items.map((t, i) => (
               <figure key={i} className="w-44 shrink-0 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                <p className="text-[10px] leading-relaxed">"{q}"</p>
-                <figcaption className="mt-2 text-[10px] font-semibold">— {featured.n}</figcaption>
+                <p className="text-[10px] leading-relaxed">"{t.q}"</p>
+                <figcaption className="mt-2 flex items-center gap-1.5">
+                  <span className="flex size-4 items-center justify-center rounded-full text-[7px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
+                  <span className="truncate text-[10px] font-semibold">— {t.n}</span>
+                </figcaption>
               </figure>
             ))}
           </div>
@@ -2560,7 +2683,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
   if (variantId === "dkpi_dark")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.l} className="rounded-lg border border-white/10 bg-slate-900 p-3">
               <p className="text-[9px] text-slate-400">{k.l}</p>
@@ -2584,7 +2707,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
   if (variantId === "dkpi_spark")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {kpis.map((k, i) => (
             <div key={k.l} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
@@ -2635,7 +2758,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
   // dkpi_grid
   return (
     <div className="px-6 py-6">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {kpis.map((k) => (
           <div key={k.l} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
@@ -2725,7 +2848,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
   if (variantId === "dchart_bento")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="col-span-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">{dash.chartTitle}</p>
             <div className="mt-2 flex h-14 items-end gap-1">
@@ -2793,7 +2916,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
   if (variantId === "dlist_cards")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {T.slice(0, 3).map((i) => (
             <div key={i.n} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[9px] font-medium" style={{ color: i.c }}>{i.s}</p>
@@ -2842,7 +2965,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
   if (variantId === "dlist_bento")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="rounded-xl p-3" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>
             <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>今日新增</p>
             <p className="mt-1 text-base font-black">+1,204</p>
@@ -3035,7 +3158,7 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
   if (variantId === "dtask_board")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {cols.map((c, ci) => (
             <div key={c} className="rounded-lg p-2" style={{ border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 60%, transparent)" }}>
               <p className="px-1 pb-1.5 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>{c} · {ci === 0 ? dash.tasks.length : 0}</p>
@@ -3055,7 +3178,7 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
   if (variantId === "dtask_neon")
     return (
       <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { t: "待办", c: "#4B69F0" },
             { t: "进行中", c: "#F5693C" },
@@ -3362,7 +3485,7 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
   if (variantId === "dgauge_dials")
     return (
       <div className="px-6 py-6">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { l: "CPU", p: "72%" },
             { l: "内存", p: "46%" },
@@ -3403,7 +3526,7 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
   if (variantId === "dgauge_neon")
     return (
       <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { l: "CPU", p: 72, c: "#22D3EE" },
             { l: "内存", p: 46, c: "#F472B6" },
@@ -4167,7 +4290,7 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
   if (variantId === "pgrid_card")
     return (
       <div className="px-6 py-6">
-        <div className="mx-auto grid max-w-lg grid-cols-4 gap-3">
+        <div className="mx-auto grid max-w-md grid-cols-3 gap-3">
           {products.slice(0, 4).map((p) => (
             <div key={p.t} className="group">
               <img src={p.img} alt={p.t} loading="lazy" className="aspect-[4/5] w-full rounded-lg object-cover" />
@@ -4294,7 +4417,7 @@ function AboutTeamPreview({ variantId }: { variantId: string }) {
   if (variantId === "ateam_grid")
     return (
       <div className="px-6 py-6">
-        <div className="mx-auto grid max-w-lg grid-cols-4 gap-3">
+        <div className="mx-auto grid max-w-sm grid-cols-3 gap-3">
           {team.slice(0, 4).map((m) => (
             <div key={m.n} className="text-center">
               <img src={m.img} alt={m.n} loading="lazy" className="aspect-[4/5] w-full rounded-lg object-cover" />
@@ -4964,7 +5087,7 @@ function ProcessPreview({ variantId }: { variantId: string }) {
   if (variantId === "home_process_neon")
     return (
       <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { n: "1", c: "#22D3EE" },
             { n: "2", c: "#F472B6" },

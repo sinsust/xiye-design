@@ -285,7 +285,7 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
                   : undefined
               }
             >
-              进入页面搭建
+              页面搭建
               <ArrowRight className="size-4" />
             </Button>
           </div>

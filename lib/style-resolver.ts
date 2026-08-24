@@ -119,8 +119,13 @@ export function resolveStyleVars(
   const scrollBehavior: "smooth" | undefined =
     ds?.scroll === "scroll-smooth" ? "smooth" : undefined;
 
+  // 毛玻璃风格（blur: true + previewBg）：用渐变光晕底板代替纯色 bg，
+  // 让半透明+backdrop-blur 的玻璃面板背有可模糊的层次，玻璃感才显露。
+  const background =
+    style.blur && style.previewBg ? style.previewBg : style.palette.bg;
+
   return {
-    "--background": style.palette.bg,
+    "--background": background,
     "--surface": style.palette.surface,
     "--border": style.palette.border,
     "--foreground": ensureReadable(style.palette.bg, style.palette.text, 4.5),
