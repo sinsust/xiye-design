@@ -250,6 +250,29 @@ function SectionBadge({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** 渐变图标泡：主色线性渐变底 + 主色图标，落地页营销图标的统一语言 */
+function SFIcon({ icon, className = "", size = "size-9" }: { icon: React.ReactNode; className?: string; size?: string }) {
+  return (
+    <div
+      className={"flex shrink-0 items-center justify-center rounded-[var(--radius)] text-sm " + size + " " + className}
+      style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--primary) 3%, transparent))", color: "var(--primary)" }}
+    >
+      {icon}
+    </div>
+  );
+}
+
+/** 统一区块标题头：眉标(pill) + 大标题 + 副标题，四要素之一 */
+function SectionHead({ badge, title, sub, center = false }: { badge: string; title: string; sub?: string; center?: boolean }) {
+  return (
+    <div className={center ? "text-center" : ""}>
+      <SectionBadge>{badge}</SectionBadge>
+      <h3 className="mt-2.5 text-lg font-bold tracking-tight">{title}</h3>
+      {sub ? <p className="mt-1.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{sub}</p> : null}
+    </div>
+  );
+}
+
 /** 预览轮播：横向滚动 + scroll-snap 吸附 + 左右箭头 + 可拖动，真实交互 */
 function Carousel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -914,26 +937,10 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
       }))
     : [{ icon: iconSeq[0], title: "核心能力", desc: "从骨架到上线的完整方案", n: "01" }];
 
-  const SHead = ({ sub, center = false }: { sub?: string; center?: boolean }) => (
-    <div className={center ? "text-center" : ""}>
-      <SectionBadge>核心能力</SectionBadge>
-      <h3 className="mt-2.5 text-lg font-bold tracking-tight">{title}</h3>
-      {sub ? <p className="mt-1.5 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{sub}</p> : null}
-    </div>
-  );
-  const SFIcon = ({ icon }: { icon: React.ReactNode }) => (
-    <div
-      className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius)] text-sm"
-      style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--primary) 3%, transparent))", color: "var(--primary)" }}
-    >
-      {icon}
-    </div>
-  );
-
   if (variantId === "feat_grid3")
     return (
-      <div className="px-5 py-7">
-        <SHead sub={subtitle} center />
+      <div className="px-6 py-7">
+        <SectionHead badge="核心能力" title={title} sub={subtitle} center />
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           {items.map((f) => (
             <Card key={f.title} className="flex flex-col items-center gap-2 text-center">
@@ -947,8 +954,8 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_numbered")
     return (
-      <div className="px-5 py-7">
-        <SHead />
+      <div className="px-6 py-7">
+        <SectionHead badge="核心能力" title={title} />
         <div className="mt-4 divide-y" style={{ borderColor: "var(--border)" }}>
           {items.map((f) => (
             <div key={f.title} className="group flex gap-4 py-3.5">
@@ -967,8 +974,8 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_timeline")
     return (
-      <div className="px-5 py-7">
-        <SHead />
+      <div className="px-6 py-7">
+        <SectionHead badge="核心能力" title={title} />
         <div className="mt-5 space-y-5 border-l pl-6" style={{ borderColor: "var(--border)" }}>
           {items.map((f) => (
             <div key={f.title} className="relative">
@@ -983,8 +990,8 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_bento" || variantId === "feat_bento_animated")
     return (
-      <div className="px-5 py-7">
-        <SHead center />
+      <div className="px-6 py-7">
+        <SectionHead badge="核心能力" title={title} center />
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           {items.map((f, i) => (
             <Card key={f.title + i} className={i === 0 ? "sm:col-span-2" : ""}>
@@ -1000,10 +1007,10 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_image_list")
     return (
-      <div className="grid items-center gap-6 px-5 py-7 sm:grid-cols-2">
+      <div className="grid items-center gap-6 px-6 py-7 sm:grid-cols-2">
         <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)" }}><Img label="功能预览" src={ph("feature", 3, 900)} /></div>
         <div>
-          <SHead sub={subtitle} />
+          <SectionHead badge="核心能力" title={title} sub={subtitle} />
           <ul className="mt-4 space-y-2.5">
             {items.map((f) => (
               <li key={f.title} className="flex items-start gap-2.5 rounded-lg border px-3 py-2 text-xs" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -1018,8 +1025,8 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_staggered" || variantId === "feat_iconcard")
     return (
-      <div className="px-5 py-7">
-        <SHead sub={subtitle} center />
+      <div className="px-6 py-7">
+        <SectionHead badge="核心能力" title={title} sub={subtitle} center />
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {items.map((f) => (
             <Card key={f.title} className="flex flex-col items-center gap-2 text-center">
@@ -1033,8 +1040,8 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_tabs")
     return (
-      <div className="px-5 py-7">
-        <SHead center />
+      <div className="px-6 py-7">
+        <SectionHead badge="核心能力" title={title} center />
         <div className="mt-5 flex gap-1 rounded-full border p-1" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {items.slice(0, 3).map((t, i) => (
             <span key={t.title} className={"flex-1 rounded-full px-3 py-1 text-center text-xs font-medium transition-all " + (i === 0 ? "text-[var(--on-primary)] shadow-sm" : "")} style={i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t.title}</span>
@@ -1053,8 +1060,8 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_3dtilt")
     return (
-      <div className="px-5 py-7">
-        <SHead sub={subtitle} center />
+      <div className="px-6 py-7">
+        <SectionHead badge="核心能力" title={title} sub={subtitle} center />
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           {items.map((f) => (
             <TiltCard key={f.title} className="flex flex-col items-start gap-2">
@@ -1068,8 +1075,8 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   // 兜底：未知变体时渲染三卡网格，避免预览区空白
   return (
-    <div className="px-5 py-7">
-      <SHead sub={subtitle} center />
+    <div className="px-6 py-7">
+      <SectionHead badge="核心能力" title={title} sub={subtitle} center />
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         {items.map((f) => (
           <Card key={f.title} className="flex flex-col items-center gap-2 text-center">
@@ -1168,21 +1175,21 @@ function FaqPreview({ variantId }: { variantId: string }) {
 
   if (variantId === "faq_twocol")
     return (
-      <div className="grid gap-6 px-6 py-6 sm:grid-cols-[1fr_2fr]">
-        <div><h3 className="text-base font-bold">{faq.title}</h3><p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p></div>
+      <div className="grid gap-6 px-6 py-7 sm:grid-cols-[1fr_2fr]">
+        <div><SectionHead badge="常见问题" title={faq.title} sub={faq.subtitle} /></div>
         <div className="grid gap-3 sm:grid-cols-2">
           {items.map((f) => (
-            <div key={f.q} className="cursor-default rounded-lg border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Card key={f.q}>
               <p className="text-xs font-medium">{f.q}</p>
               <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
     );
   if (variantId === "faq_search")
     return (
-      <div className="px-5 py-7">
+      <div className="px-6 py-7">
         <div className="text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>常见问题</span>
           <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
@@ -1194,14 +1201,14 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "faq_dark")
     return (
-      <div className="bg-slate-900 px-6 py-6 text-slate-50">
+      <div className="bg-slate-900 px-6 py-7 text-slate-50">
         <h3 className="text-center text-base font-bold">{faq.title}</h3>
         <div className="mt-3"><Accordion dark /></div>
       </div>
     );
   if (variantId === "faq_accordion_animated")
     return (
-      <div className="px-5 py-7">
+      <div className="px-6 py-7">
         <div className="text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>常见问题</span>
           <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
@@ -1228,7 +1235,7 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "faq_editorial")
     return (
-      <div className="grid gap-6 px-6 py-6 sm:grid-cols-[1fr_1.4fr]">
+      <div className="grid gap-6 px-6 py-7 sm:grid-cols-[1fr_1.4fr]">
         <div>
           <h3 className="text-lg font-bold tracking-tight">{faq.title}</h3>
           <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p>
@@ -1251,7 +1258,7 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pfaq_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--primary)" }}>定价 FAQ</p>
         <h3 className="mt-1 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>{faq.title}</h3>
         <div className="mt-3 grid gap-3 border-t pt-3 sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
@@ -1266,7 +1273,7 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pfaq_neon" || variantId === "faq_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
         <h3 className="text-center text-base font-bold text-white">{faq.title}</h3>
         <div className="mx-auto mt-4 max-w-sm divide-y" style={{ borderColor: "#262629" }}>
           {items.map((f) => (
@@ -1280,7 +1287,7 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   // single / multi 共用
   return (
-    <div className="px-5 py-7">
+    <div className="px-6 py-7">
       <div className="text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>常见问题</span>
         <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
@@ -1310,7 +1317,6 @@ function CursorCta() {
     >
       <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(400px circle at ${pos.x}% ${pos.y}%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 60%)` }} />
       <div className="relative">
-        <h3 className="text-lg font-bold">让每一次点击，都有回应</h3>
         <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "var(--muted-foreground)" }}>把想法变成产品，几分钟的事。</p>
         <span className="mt-3 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费开始</span>
       </div>
@@ -1321,9 +1327,9 @@ function CursorCta() {
 function CtaPreview({ variantId }: { variantId: string }) {
   if (variantId === "cta_solid")
     return (
-      <div className="px-5 py-7">
-        <div className="rounded-xl px-6 py-9 text-center text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
-          <h3 className="text-lg font-bold">{PREVIEW_CONTENT.cta.title}</h3>
+      <div className="px-6 py-7">
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <div className="mt-5 rounded-xl px-6 py-9 text-center text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
           <span className="mt-4 inline-block rounded-md bg-white px-5 py-1.5 text-xs font-semibold text-slate-900 transition-transform duration-150 hover:scale-[1.04] active:scale-95">{PREVIEW_CONTENT.cta.button} →</span>
         </div>
@@ -1331,9 +1337,9 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_gradient")
     return (
-      <div className="px-5 py-7">
-        <div className="rounded-xl px-6 py-9 text-center text-white" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, #000), var(--secondary))" }}>
-          <h3 className="text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>{PREVIEW_CONTENT.cta.title}</h3>
+      <div className="px-6 py-7">
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <div className="mt-5 rounded-xl px-6 py-9 text-center text-white" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, #000), var(--secondary))" }}>
           <p className="mx-auto mt-1.5 max-w-xs text-xs text-white/85">{PREVIEW_CONTENT.cta.subheading}</p>
           <span className="mt-4 inline-block rounded-full bg-white px-6 py-1.5 text-xs font-semibold text-slate-900 shadow-lg transition-transform duration-150 hover:scale-[1.04] active:scale-95">立即开始</span>
         </div>
@@ -1341,9 +1347,9 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_glass")
     return (
-      <div className="relative overflow-hidden rounded-2xl px-5 py-7" style={{ background: "radial-gradient(120% 120% at 20% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 60%), var(--surface)" }}>
-        <div className="relative z-10 mx-auto max-w-xs rounded-2xl border p-6 text-center" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, var(--border))", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(16px)", color: "var(--foreground)" }}>
-          <h3 className="text-base font-bold">{PREVIEW_CONTENT.cta.title}</h3>
+      <div className="relative overflow-hidden rounded-2xl px-6 py-7" style={{ background: "radial-gradient(120% 120% at 20% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 60%), var(--surface)" }}>
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <div className="relative z-10 mx-auto mt-5 max-w-xs rounded-2xl border p-6 text-center" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, var(--border))", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(16px)", color: "var(--foreground)" }}>
           <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
           <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
         </div>
@@ -1351,17 +1357,17 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_divider")
     return (
-      <div className="mx-auto max-w-sm border-t px-5 py-8 text-center" style={{ borderColor: "var(--border)" }}>
-        <h3 className="text-base font-bold">{PREVIEW_CONTENT.cta.title}</h3>
-        <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>现在就{PREVIEW_CONTENT.cta.primary}，随时可以取消。</p>
+      <div className="mx-auto max-w-sm border-t px-6 py-8 text-center" style={{ borderColor: "var(--border)" }}>
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>现在就{PREVIEW_CONTENT.cta.primary}，随时可以取消。</p>
         <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
       </div>
     );
   if (variantId === "cta_newsletter")
     return (
-      <div className="px-5 py-8 text-center">
-        <h3 className="text-base font-bold">{PREVIEW_CONTENT.cta.title}</h3>
-        <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+      <div className="px-6 py-8 text-center">
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
         <div className="mx-auto mt-4 flex max-w-xs gap-1.5">
           <span className="flex-1 rounded-md border px-3 py-1.5 text-xs" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>you@example.com</span>
           <span className="rounded-md px-4 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ background: "var(--primary)" }}>订阅</span>
@@ -1371,10 +1377,10 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_card_bento")
     return (
-      <div className="px-5 py-7">
-        <div className="grid gap-3 rounded-2xl border p-5 sm:grid-cols-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="px-6 py-7">
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <div className="mt-5 grid gap-3 rounded-2xl border p-5 sm:grid-cols-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="sm:col-span-2">
-            <h3 className="text-base font-bold">准备好让团队快起来了？</h3>
             <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>14 天全功能试用，无需信用卡。</p>
           </div>
           <div className="flex items-center justify-end">
@@ -1385,9 +1391,9 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_glow")
     return (
-      <div className="px-5 py-7">
-        <div className="relative overflow-hidden rounded-2xl border p-8 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent), 0 30px 80px -40px color-mix(in srgb, var(--primary) 45%, transparent)" }}>
-          <h3 className="text-lg font-bold">{PREVIEW_CONTENT.cta.title}</h3>
+      <div className="px-6 py-7">
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <div className="mt-5 relative overflow-hidden rounded-2xl border p-8 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent), 0 30px 80px -40px color-mix(in srgb, var(--primary) 45%, transparent)" }}>
           <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
           <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
         </div>
@@ -1395,15 +1401,16 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_cursor")
     return (
-      <div className="px-5 py-7">
+      <div className="px-6 py-7">
+        <SectionHead badge="行动号召" title="让每一次点击，都有回应" center />
         <CursorCta />
       </div>
     );
   // dualbtn
   return (
-    <div className="px-5 py-8 text-center">
-      <h3 className="text-lg font-bold">{PREVIEW_CONTENT.cta.title}</h3>
-      <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+    <div className="px-6 py-8 text-center">
+      <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+      <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
       <div className="mt-4 flex justify-center gap-2"><Btn primary glow>{PREVIEW_CONTENT.cta.button}</Btn><Btn>联系销售</Btn></div>
       <p className="mt-3 text-[10px]" style={{ color: "var(--muted-foreground)" }}>✓ 30 天退款保证 · ✓ 无需信用卡</p>
     </div>
@@ -1428,7 +1435,7 @@ function FooterPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "footer_dark")
     return (
-      <div className="bg-slate-900 px-6 py-6 text-slate-50">
+      <div className="bg-slate-900 px-6 py-7 text-slate-50">
         <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
@@ -1456,7 +1463,7 @@ function FooterPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "footer_cta")
     return (
-      <div className="border-t px-6 py-6" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <div className="flex flex-col items-center justify-between gap-3 rounded-xl border p-4 sm:flex-row" style={{ borderColor: "var(--border)" }}>
           <div>
             <p className="text-sm font-bold">订阅最新动态</p>
@@ -1475,7 +1482,7 @@ function FooterPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "footer_bento")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="rounded-2xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
             <div>
@@ -1508,7 +1515,7 @@ function FooterPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "footer_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <p className="text-2xl font-bold tracking-tight">{PREVIEW_CONTENT.brand}</p>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
           <span>功能</span>
@@ -1524,7 +1531,7 @@ function FooterPreview({ variantId }: { variantId: string }) {
     );
   // footer_multi 默认
   return (
-    <div className="border-t px-6 py-6" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+    <div className="border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <div className="grid gap-5 sm:grid-cols-4">
         <div>
           <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
@@ -1618,8 +1625,8 @@ function LogosPreview({ variantId }: { variantId: string }) {
   const neonPalette = ["#22D3EE", "#F472B6", "#F59E0B", "#34D399", "#FB7185"];
   if (variantId === "logos_marquee")
     return (
-      <div className="relative overflow-hidden border-y px-6 py-6" style={{ borderColor: "var(--border)" }}>
-        <p className="text-center text-[10px] uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>Trusted by teams at</p>
+      <div className="relative overflow-hidden border-y px-6 py-7" style={{ borderColor: "var(--border)" }}>
+        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
         <div className="mt-4 flex overflow-hidden whitespace-nowrap [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
           <div className="flex shrink-0 gap-12 pr-12 [animation:marqueeX_18s_linear_infinite] hover:[animation-play-state:paused]">
             {[...brands, ...brands].map((b, i) => (
@@ -1648,7 +1655,8 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
     return (
       <div className="relative overflow-hidden py-4" style={{ background: "var(--background)" }}>
-        <div className="flex gap-2 px-4">
+        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
+        <div className="mt-3 flex gap-2 px-4">
           {col("up")}
           {col("down")}
         </div>
@@ -1660,9 +1668,12 @@ function LogosPreview({ variantId }: { variantId: string }) {
   }
   if (variantId === "logos_grid")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold">值得信赖的合作伙伴</h3>
+          <div>
+            <SectionBadge>合作伙伴</SectionBadge>
+            <h3 className="mt-1.5 text-sm font-bold">值得信赖的合作伙伴</h3>
+          </div>
           <a className="text-xs font-medium" style={{ color: "var(--primary)" }}>查看全部 →</a>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2">
@@ -1676,9 +1687,10 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "logos_bento")
     return (
-      <div className="px-6 py-6">
-        <h3 className="mb-3 text-sm font-bold">信任我们的团队</h3>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="px-6 py-7">
+          <SectionBadge>合作伙伴</SectionBadge>
+          <h3 className="mb-3 mt-1.5 text-sm font-bold">信任我们的团队</h3>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {brands.slice(0, 6).map((b, i) => (
             <div key={b} className={"flex h-14 items-center justify-center rounded-xl border transition-transform hover:-translate-y-0.5 " + (i === 0 ? "col-span-2" : "")} style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}>
               <BrandMark name={b} className="h-6 w-auto" />
@@ -1689,9 +1701,9 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "logos_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <p className="text-[10px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>Trusted by</p>
+          <SectionBadge>合作伙伴</SectionBadge>
           <div className="flex flex-1 flex-wrap items-center gap-x-8 gap-y-3">
             {brands.map((b) => (
               <span key={b} className="inline-flex h-5 items-center" style={{ color: "var(--foreground)" }}><BrandMark name={b} className="h-5 w-auto" /></span>
@@ -1702,8 +1714,8 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "logos_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
-        <p className="text-center text-[9px] uppercase tracking-[0.2em]" style={{ color: "#9A9AA2" }}>信任我们</p>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {brands.map((n, i) => (
             <span key={n} className="inline-flex h-6 items-center rounded-lg px-3" style={{ border: "1px solid color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 40%, transparent)", background: "color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 10%, #141416)", color: neonPalette[i % neonPalette.length] }}><BrandMark name={n} className="h-4 w-auto" /></span>
@@ -1713,10 +1725,8 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   // grayrow / compact 共用
   return (
-    <div className="px-6 py-6">
-      <p className="text-center text-[10px] uppercase tracking-widest" style={{ color: "var(--muted-foreground)" }}>
-        {variantId === "logos_compact" ? "—" : "Trusted by teams at"}
-      </p>
+    <div className="px-6 py-7">
+      <SectionHead badge="合作伙伴" title="信任我们的团队" center />
       <div className="mt-3 flex flex-wrap items-center justify-center gap-8">
         {brands.map((b) => (
           <BrandMark key={b} name={b} className="h-6 w-auto opacity-40" />
@@ -1730,15 +1740,9 @@ function LogosPreview({ variantId }: { variantId: string }) {
 function StatsPreview({ variantId }: { variantId: string }) {
   const raw = PREVIEW_CONTENT.stats.items.length ? PREVIEW_CONTENT.stats.items : [{ label: "50k+", value: "活跃用户" }];
   const stats = raw.map((s) => ({ n: s.value, l: s.label }));
-  const SHead = () => (
-    <div className="text-center">
-      <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>数据概览</span>
-      <h3 className="mt-2 text-sm font-bold tracking-tight">{PREVIEW_CONTENT.stats.title || "有据可查"}</h3>
-    </div>
-  );
   if (variantId === "stats_dark")
     return (
-      <div className="bg-slate-900 px-6 py-6 text-white">
+      <div className="bg-slate-900 px-6 py-7 text-white">
         <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
           {stats.map((s) => (
             <div key={s.l}>
@@ -1752,14 +1756,14 @@ function StatsPreview({ variantId }: { variantId: string }) {
   if (variantId === "stats_withdesc")
     return (
       <div className="px-6 py-7">
-        <SHead />
+        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {raw.map((s) => (
-            <div key={s.label} className="rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Card key={s.label}>
               <CountUp value={s.value} className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }} />
               <p className="mt-1 text-sm font-semibold">{s.label}</p>
               <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>领先同业 · {s.label}专项增长</p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -1767,7 +1771,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   if (variantId === "stats_inline")
     return (
       <div className="px-6 py-7">
-        <SHead />
+        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
         <div className="mt-4 flex justify-center divide-x" style={{ borderColor: "var(--border)" }}>
           {stats.map((s) => (
             <div key={s.l} className="px-6 text-center">
@@ -1781,7 +1785,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   if (variantId === "stats_editorial")
     return (
       <div className="px-6 py-7">
-        <SHead />
+        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
         <div className="mt-4 grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4" style={{ borderColor: "var(--border)" }}>
           {stats.map((s) => (
             <div key={s.l} className="px-6 py-4 text-center sm:text-left">
@@ -1795,7 +1799,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   if (variantId === "stats_countup")
     return (
       <div className="px-6 py-7 text-center">
-        <SHead />
+        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {stats.map((s) => (
             <div key={s.l}>
@@ -1809,7 +1813,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "stats_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
         <div className="grid grid-cols-4 gap-3 text-center">
           {raw.map((s, i) => (
             <div key={s.label}>
@@ -1822,7 +1826,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
   // stats_grid
   return (
     <div className="px-6 py-7">
-      <SHead />
+      <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
       <div className="mt-4 grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
         {stats.map((s) => (
           <div key={s.l}>
@@ -1842,17 +1846,10 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     ? testi.items.map((t) => ({ q: t.quote, n: t.name, r: t.role }))
     : [{ q: "让团队协作真正快起来了。", n: "林女士", r: "产品经理" }];
   const featured = items[0];
-  const THead = () => (
-    <div className="text-center">
-      <SectionBadge>客户证言</SectionBadge>
-      <h3 className="mt-2.5 text-lg font-bold tracking-tight">{testi.title || "他们怎么说"}</h3>
-      {testi.subtitle ? <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{testi.subtitle}</p> : null}
-    </div>
-  );
   if (variantId === "testi_featured")
     return (
       <div className="px-6 py-7 text-center">
-        <THead />
+        <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
         <span className="mt-2 inline-block text-2xl" style={{ color: "var(--primary)" }}>"</span>
         <blockquote className="mx-auto mt-1 max-w-xs text-base font-semibold leading-snug">"{featured.q}"</blockquote>
         <div className="mt-3 flex items-center justify-center gap-2">
@@ -1861,7 +1858,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {items.slice(1, 4).map((t) => (
-            <p key={t.n} className="rounded-lg border p-2 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>"{t.q}"</p>
+            <Card key={t.n} className="text-[10px]">"{t.q}"</Card>
           ))}
         </div>
       </div>
@@ -1869,10 +1866,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
   if (variantId === "testi_dark")
     return (
       <div className="bg-slate-900 px-6 py-7 text-slate-50">
-        <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>用户声音</span>
-          <h3 className="mt-2.5 text-lg font-bold tracking-tight text-white">{PREVIEW_CONTENT.testimonials?.title || "用户怎么说"}</h3>
-        </div>
+        <SectionHead badge="客户证言" title={PREVIEW_CONTENT.testimonials?.title || "用户怎么说"} center />
         <div className="mx-auto mt-5 grid max-w-sm gap-2 sm:grid-cols-2">
           {items.slice(0, 4).map((t) => (
             <div key={t.n} className="rounded-lg border border-white/10 p-3">
@@ -1886,18 +1880,18 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
   if (variantId === "testi_carousel")
     return (
       <div className="px-6 py-7">
-        <THead />
+        <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
         <div className="mx-auto mt-3 max-w-md">
           <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {items.map((t, i) => (
-              <figure key={i} className="flex w-full min-w-[min(100%,17rem)] shrink-0 snap-center flex-col justify-center rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <Card key={i} className="flex w-full min-w-[min(100%,17rem)] shrink-0 snap-center flex-col justify-center">
                 <span className="text-xl leading-none" style={{ color: "var(--primary)" }}>"</span>
                 <p className="mt-1 text-xs leading-relaxed">{t.q}</p>
                 <figcaption className="mt-3 flex items-center gap-2">
                   <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
                   <span className="text-[10px]"><span className="font-semibold">{t.n}</span> <span style={{ color: "var(--muted-foreground)" }}>{t.r}</span></span>
                 </figcaption>
-              </figure>
+              </Card>
             ))}
           </div>
           <div className="mt-2 flex justify-center gap-1.5">
@@ -1910,7 +1904,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_logo")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-3 gap-2.5">
           {getBrands().slice(0, 6).map((b, i) => (
             <div key={i} className="flex items-center justify-center rounded-lg border px-3 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -1920,10 +1914,10 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2.5">
           {items.slice(0, 3).map((t) => (
-            <div key={t.n} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Card key={t.n}>
               <p className="text-[10px] leading-relaxed">"{t.q}"</p>
               <p className="mt-1.5 text-[10px] font-semibold">— {t.n}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
@@ -1931,28 +1925,28 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
   if (variantId === "testi_marquee")
     return (
       <div className="relative overflow-hidden py-7">
-        <div className="mb-5"><THead /></div>
+        <div className="mb-5"><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
         <div className="flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
           <div className="flex shrink-0 gap-2.5 pr-2.5 [animation:marqueeX_24s_linear_infinite] hover:[animation-play-state:paused]">
             {items.map((t, i) => (
-              <figure key={i} className="w-44 shrink-0 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <Card key={i} className="w-44 shrink-0">
                 <p className="text-[10px] leading-relaxed">"{t.q}"</p>
                 <figcaption className="mt-2 flex items-center gap-1.5">
                   <span className="flex size-4 items-center justify-center rounded-full text-[7px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
                   <span className="truncate text-[10px] font-semibold">— {t.n}</span>
                 </figcaption>
-              </figure>
+              </Card>
             ))}
           </div>
           <div aria-hidden className="flex shrink-0 gap-2.5 pr-2.5 [animation:marqueeX_24s_linear_infinite] hover:[animation-play-state:paused]">
             {items.map((t, i) => (
-              <figure key={i} className="w-44 shrink-0 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <Card key={i} className="w-44 shrink-0">
                 <p className="text-[10px] leading-relaxed">"{t.q}"</p>
                 <figcaption className="mt-2 flex items-center gap-1.5">
                   <span className="flex size-4 items-center justify-center rounded-full text-[7px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
                   <span className="truncate text-[10px] font-semibold">— {t.n}</span>
                 </figcaption>
-              </figure>
+              </Card>
             ))}
           </div>
         </div>
@@ -1961,7 +1955,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_3dstack")
     return (
-      <div className="flex min-h-52 items-center justify-center px-6 py-6 [perspective:1200px]">
+      <div className="flex min-h-52 items-center justify-center px-6 py-7 [perspective:1200px]">
         <div className="relative w-full max-w-xs">
           <div aria-hidden className="absolute inset-x-3 top-3 rounded-2xl border" style={{ borderColor: "var(--border)", background: "var(--surface)", transform: "translateY(16px) scale(0.96)", opacity: 0.5 }} />
           <TiltCard>
@@ -1978,31 +1972,31 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_split")
     return (
-      <div className="grid gap-3 px-6 py-6 md:grid-cols-2">
-        <figure className="flex flex-col justify-center rounded-2xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="grid gap-3 px-6 py-7 md:grid-cols-2">
+        <Card className="flex flex-col justify-center">
           <p className="text-sm font-semibold leading-snug">"{featured.q}"</p>
           <figcaption className="mt-3 flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
             <span className="text-[10px]"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
           </figcaption>
-        </figure>
+        </Card>
         <div className="grid grid-rows-2 gap-3">
           {items.slice(1, 3).map((t) => (
-            <figure key={t.n} className="flex flex-col justify-center rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Card key={t.n} className="flex flex-col justify-center">
               <p className="text-[11px] leading-relaxed">"{t.q}"</p>
               <figcaption className="mt-2 text-[10px] font-semibold">— {t.n}</figcaption>
-            </figure>
+            </Card>
           ))}
         </div>
       </div>
     );
   // testi_grid
   return (
-    <div className="px-5 py-7">
-      <THead />
+    <div className="px-6 py-7">
+      <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
       <div className="mt-3 grid grid-cols-3 gap-3">
         {items.map((t) => (
-          <div key={t.n} className="flex flex-col rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <Card key={t.n} className="flex flex-col">
             <span className="text-sm" style={{ color: "var(--primary)" }}>"</span>
             <p className="mt-1 flex-1 text-[10px] leading-relaxed">{t.q}</p>
             <div className="mt-2 flex items-center gap-1.5">
@@ -2012,7 +2006,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
                 <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{t.r}</p>
               </div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
@@ -2022,17 +2016,10 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
 /* ───────── Pricing ───────── */
 function PricingPreview({ variantId }: { variantId: string }) {
   const [billing, setBilling] = useState<"m" | "y">("m");
-  const PHead = () => (
-    <div className="text-center">
-      <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>定价方案</span>
-      <h3 className="mt-2.5 text-lg font-bold tracking-tight">{PREVIEW_CONTENT.pricing.title || "简单透明的定价"}</h3>
-      {PREVIEW_CONTENT.pricing.subtitle ? <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.pricing.subtitle}</p> : null}
-    </div>
-  );
   if (variantId === "price_single")
     return (
-      <div className="px-5 py-7">
-        <PHead />
+      <div className="px-6 py-7">
+        <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
         <div className="mx-auto mt-5 max-w-xs rounded-xl border p-5 text-center" style={{ borderColor: "var(--primary)", background: "var(--surface)" }}>
           <p className="text-[length:var(--text-h1)] font-black">$19<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
           <p className="mt-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>包括所有功能，无隐藏费用。</p>
@@ -2047,8 +2034,8 @@ function PricingPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "price_billing")
     return (
-      <div className="px-5 py-7">
-        <PHead />
+      <div className="px-6 py-7">
+        <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
         <div className="flex items-center justify-center gap-2.5 text-[10px]">
           <button type="button" onClick={() => setBilling("m")} className={"cursor-pointer transition " + (billing === "m" ? "font-semibold" : "")} style={{ color: billing === "m" ? "var(--foreground)" : "var(--muted-foreground)" }}>月付</button>
           <button type="button" onClick={() => setBilling("y")} aria-label="切换计费周期" className="relative inline-flex h-4 w-8 cursor-pointer items-center rounded-full transition-colors" style={{ background: billing === "y" ? "var(--primary)" : "var(--muted-foreground)" }}>
@@ -2061,19 +2048,19 @@ function PricingPreview({ variantId }: { variantId: string }) {
             { n: "基础版", m: "$15", y: "$12" },
             { n: "专业版", m: "$39", y: "$31" },
           ].map((t) => (
-            <div key={t.n} className="rounded-lg border p-4 transition-all duration-200 hover:-translate-y-0.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Card key={t.n}>
               <p className="text-[10px] font-semibold">{t.n}</p>
-              <p className="mt-1 text-xl font-black tabular-nums transition-all">{billing === "y" ? t.y : t.m}<span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
+              <p className="mt-1 text-xl font-black tabular-nums">{billing === "y" ? t.y : t.m}<span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
               <span className="mt-3 block cursor-pointer rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ background: "var(--primary)" }}>选择</span>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
     );
   if (variantId === "price_compare")
     return (
-      <div className="px-5 py-7">
-        <PHead />
+      <div className="px-6 py-7">
+        <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
         <div className="mx-auto mt-5 max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
           <table className="w-full text-[10px]">
             <thead>
@@ -2102,7 +2089,7 @@ function PricingPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "price_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
         <div className="mx-auto grid max-w-sm grid-cols-3 gap-2">
           {[
             { p: "基础", price: "$0", c: "#F472B6", hot: false },
@@ -2121,20 +2108,20 @@ function PricingPreview({ variantId }: { variantId: string }) {
     );
   // price_tiers
   return (
-    <div className="px-5 py-7">
-      <PHead />
+    <div className="px-6 py-7">
+      <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
       <div className="mx-auto mt-5 grid max-w-md grid-cols-3 gap-3">
         {PREVIEW_CONTENT.pricing.plans.map((t, i) => {
           const pop = i === 1;
           return (
-            <div key={t.name} className={["relative rounded-lg border p-3 transition-all duration-200 hover:-translate-y-1", pop ? "shadow-lg ring-2 ring-[var(--primary)]/30" : ""].join(" ")} style={{ borderColor: pop ? "var(--primary)" : "var(--border)", background: "var(--surface)" }}>
+            <Card key={t.name} className={["relative", pop ? "ring-2 ring-[var(--primary)]/30" : ""].join(" ")}>
               {pop && (
                 <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>
               )}
               <p className="text-[10px] font-semibold">{t.name}</p>
               <p className="mt-1 text-lg font-black">{t.price}{t.period && <span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>{t.period}</span>}</p>
               <span className="mt-2 block rounded-md py-1.5 text-center text-[9px] font-medium" style={pop ? { background: "var(--primary)", color: "#fff" } : { border: "1px solid var(--border)" }}>{t.cta}</span>
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -2146,13 +2133,11 @@ function PricingPreview({ variantId }: { variantId: string }) {
 function PricingTiersPreview({ variantId }: { variantId: string }) {
   if (variantId === "ptiers_single")
     return (
-      <div className="px-5 py-7">
+      <div className="px-6 py-7">
         <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>定价方案</span>
-          <h3 className="mt-2.5 text-lg font-bold tracking-tight">{PREVIEW_CONTENT.pricing.title}</h3>
-          {PREVIEW_CONTENT.pricing.subtitle ? <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.pricing.subtitle}</p> : null}
+          <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title} sub={PREVIEW_CONTENT.pricing.subtitle} center />
         </div>
-        <div className="mx-auto mt-5 max-w-xs rounded-xl border-2 p-5 text-center" style={{ borderColor: "var(--primary)", background: "var(--surface)" }}>
+        <Card className="mx-auto mt-5 max-w-xs text-center ring-2 ring-[var(--primary)]/30">
           <p className="text-[length:var(--text-h1)] font-black">$19<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
           <span className="mt-4 block rounded-md py-2 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.02] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
           <ul className="mt-4 space-y-1.5 text-left text-[10px]">
@@ -2161,12 +2146,12 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
             ))}
           </ul>
           <p className="mt-3 border-t pt-2 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>✓ 30 天退款保证</p>
-        </div>
+        </Card>
       </div>
     );
   if (variantId === "ptiers_billing")
     return (
-      <div className="px-5 py-7">
+      <div className="px-6 py-7">
         <div className="flex items-center justify-center gap-2 text-[10px]">
           <span style={{ color: "var(--muted-foreground)" }}>月付</span>
           <span className="relative inline-block h-4 w-8 rounded-full" style={{ background: "var(--primary)" }}><span className="absolute left-[18px] top-0.5 size-3 rounded-full bg-white" /></span>
@@ -2178,18 +2163,18 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
             { n: "专业", p: "$39" },
             { n: "旗舰", p: "$79" },
           ].map((t) => (
-            <div key={t.n} className="rounded-lg border p-2.5 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Card key={t.n} className="text-center">
               <p className="text-[10px] font-semibold">{t.n}</p>
               <p className="mt-1 text-base font-black">{t.p}</p>
               <span className="mt-1.5 block rounded-md py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>选择</span>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
     );
   if (variantId === "ptiers_enterprise")
     return (
-      <div className="px-5 py-7">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-sm grid-cols-3 items-stretch gap-2">
           <div className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">免费</p><p className="mt-1 text-base font-black">$0</p>
@@ -2208,10 +2193,9 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
     );
   // ptiers_highlight
   return (
-    <div className="px-5 py-7">
+    <div className="px-6 py-7">
       <div className="text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>定价方案</span>
-        <h3 className="mt-2.5 text-lg font-bold tracking-tight">{PREVIEW_CONTENT.pricing.title}</h3>
+        <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title} center />
       </div>
       <div className="mx-auto mt-5 grid max-w-md grid-cols-3 items-center gap-2">
         {[
@@ -2219,12 +2203,12 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
           { n: "专业", p: "$29", pop: true },
           { n: "企业", p: "定制", pop: false },
         ].map((t) => (
-          <div key={t.n} className={["relative rounded-lg border p-2.5", t.pop ? "scale-[1.04] shadow-lg" : ""].join(" ")} style={{ borderColor: t.pop ? "var(--primary)" : "var(--border)", background: "var(--surface)" }}>
+          <Card key={t.n} className={["relative", t.pop ? "scale-[1.04] ring-2 ring-[var(--primary)]/30" : ""].join(" ")}>
             {t.pop && <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>}
             <p className="text-[10px] font-semibold">{t.n}</p>
             <p className="mt-1 text-base font-black">{t.p}</p>
             <span className="mt-1.5 block rounded-md py-1 text-center text-[9px] font-medium" style={t.pop ? { background: "var(--primary)", color: "#fff" } : { border: "1px solid var(--border)" }}>选择</span>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
@@ -2242,7 +2226,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
   }));
   if (variantId === "pcomp_dark")
     return (
-      <div className="bg-slate-900 px-6 py-6">
+      <div className="bg-slate-900 px-6 py-7">
         <div className="mx-auto max-w-sm overflow-hidden rounded-lg border border-white/10">
           <table className="w-full text-[10px] text-slate-100">
             <thead><tr className="border-b border-white/10"><th className="p-2 text-left font-semibold">功能</th>{tierNames.map((p, i) => <th key={p} className="p-2 text-center font-semibold">{p}</th>)}</tr></thead>
@@ -2260,7 +2244,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_highlight")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
           <table className="w-full text-[10px]">
             <thead>
@@ -2287,7 +2271,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm">
           <div className="flex items-baseline justify-between border-b pb-1.5" style={{ borderColor: "var(--border)" }}>
             <span className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>功能</span>
@@ -2304,7 +2288,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_bento")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-sm grid-cols-3 gap-2">
           {plans.map((x, xi) => (
             <div key={x.name} className={"rounded-lg p-2.5 " + (xi === 1 ? "ring-2" : "border")} style={xi === 1 ? { background: "color-mix(in srgb, var(--primary) 8%, var(--surface))", boxShadow: "0 0 0 2px var(--primary)" } : { borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2318,7 +2302,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
         <div className="mx-auto max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "#262629" }}>
           <table className="w-full text-[9px] text-slate-100">
             <thead><tr className="border-b" style={{ borderColor: "#262629" }}><th className="p-2 text-left text-slate-400">功能</th>{tierNames.map((p, i) => <th key={p} className="p-2 text-center" style={{ color: i === 1 ? "#22D3EE" : "inherit" }}>{p}</th>)}</tr></thead>
@@ -2336,7 +2320,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   // pcomp_standard
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-7">
       <h3 className="text-center text-sm font-bold">功能对比</h3>
       <div className="mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
         <table className="w-full text-[10px]">
@@ -2485,7 +2469,7 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
 function AuthSocialPreview({ variantId }: { variantId: string }) {
   if (variantId === "asocial_stacked")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-xs space-y-2">
           {["使用 Google 登录", "使用 GitHub 登录", "使用 Microsoft 登录"].map((l) => (
             <span key={l} className="block rounded-md border py-2 text-center text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>{l}</span>
@@ -2495,7 +2479,7 @@ function AuthSocialPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "asocial_iconrow")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex justify-center gap-2.5">
           {["G", "GH", ""].map((s, i) => (
             <span key={i} className="flex size-10 items-center justify-center rounded-full border text-xs font-semibold" style={{ borderColor: "var(--border)" }}>{s}</span>
@@ -2505,7 +2489,7 @@ function AuthSocialPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "asocial_glass")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-xs grid-cols-3 gap-2">
           {["Google", "GitHub", "Apple"].map((s) => (
             <span key={s} className="rounded-xl border py-2 text-center text-[10px] font-medium" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 55%, transparent)", backdropFilter: "blur(12px)" }}>{s}</span>
@@ -2515,7 +2499,7 @@ function AuthSocialPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "asocial_pill")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-xs space-y-2">
           {["使用 Google 登录", "使用 GitHub 登录", "使用 Microsoft 登录"].map((l) => (
             <span key={l} className="block rounded-full border py-2 text-center text-[10px] font-medium" style={{ borderColor: "color-mix(in srgb, var(--primary) 35%, var(--border))", background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--surface)), color-mix(in srgb, var(--secondary) 6%, var(--surface)))" }}>{l}</span>
@@ -2525,7 +2509,7 @@ function AuthSocialPreview({ variantId }: { variantId: string }) {
     );
   // asocial_divider
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-7">
       <div className="flex items-center gap-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>
         <span className="h-px flex-1" style={{ background: "var(--border)" }} />或继续使用<span className="h-px flex-1" style={{ background: "var(--border)" }} />
       </div>
@@ -2557,7 +2541,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
           <p className="text-xs font-bold text-white">{PREVIEW_CONTENT.brand}</p>
           <p className="text-sm font-semibold leading-snug text-white">为高绩效团队而生</p>
         </div>
-        <div className="flex items-center justify-center px-5 py-6">{formCol}</div>
+        <div className="flex items-center justify-center px-6 py-7">{formCol}</div>
       </div>
     );
   if (variantId === "asplit_image")
@@ -2567,7 +2551,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
           <div className="absolute inset-0 bg-black/50" />
           <p className="relative z-10 text-xs font-semibold text-white">"最好的决策工具，没有之一。"</p>
         </div>
-        <div className="flex items-center justify-center px-5 py-6">{formCol}</div>
+        <div className="flex items-center justify-center px-6 py-7">{formCol}</div>
       </div>
     );
   if (variantId === "asplit_glass")
@@ -2577,7 +2561,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
           <p className="text-xs font-bold">{PREVIEW_CONTENT.brand}</p>
           <p className="text-lg font-black leading-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>让每个团队<br />都高效工作</p>
         </div>
-        <div className="flex items-center justify-center px-5 py-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--background)), var(--background) 60%)" }}>
+        <div className="flex items-center justify-center px-6 py-7" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--background)), var(--background) 60%)" }}>
           <div className="w-full max-w-xs rounded-2xl border p-4" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>{formCol}</div>
         </div>
       </div>
@@ -2590,7 +2574,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
           <p className="text-2xl font-black leading-[1.05]" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>少即是多，<br />多即是繁。</p>
           <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>© 2025 {PREVIEW_CONTENT.brand}</p>
         </div>
-        <div className="flex items-center justify-center px-5 py-6" style={{ background: "var(--surface)" }}>
+        <div className="flex items-center justify-center px-6 py-7" style={{ background: "var(--surface)" }}>
           <div className="w-full max-w-xs">
             <h3 className="text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>欢迎回来</h3>
             <div className="mt-4 space-y-3">
@@ -2612,7 +2596,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
           <p className="mt-1 text-[10px] text-white/80">一站式工作台，从项目到数据全链路。</p>
         </div>
       </div>
-      <div className="flex items-center justify-center px-5 py-6">{formCol}</div>
+      <div className="flex items-center justify-center px-6 py-7">{formCol}</div>
     </div>
   );
 }
@@ -2627,7 +2611,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
   );
   if (variantId === "asignup_company")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto w-full max-w-xs">
           <h3 className="text-sm font-bold">创建企业账号</h3>
           <div className="mt-3 grid grid-cols-2 gap-2">{f("公司名", "{PREVIEW_CONTENT.brand} Inc.")}{f("团队规模", "1-10 人")}{f("工作{PREVIEW_CONTENT.auth.email}", "you@company.com")}</div>
@@ -2637,7 +2621,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "asignup_steps")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto w-full max-w-xs">
           <h3 className="text-sm font-bold">创建账号</h3>
           <div className="mt-2 flex gap-1">
@@ -2652,7 +2636,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "asignup_glass")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto w-full max-w-xs rounded-2xl border p-5" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>
           <h3 className="text-sm font-bold">创建账号</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
@@ -2663,7 +2647,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "asignup_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto w-full max-w-xs">
           <h3 className="text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>创建账号</h3>
           <p className="mt-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
@@ -2691,7 +2675,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
     );
   // asignup_standard
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-7">
       <div className="mx-auto w-full max-w-xs">
         <h3 className="text-sm font-bold">创建账号</h3>
         <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
@@ -2780,7 +2764,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     : [{ l: "活跃用户", v: "12,847", d: "+12%", up: true }];
   if (variantId === "dkpi_dark")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.l} className="rounded-lg border border-white/10 bg-slate-900 p-3">
@@ -2794,7 +2778,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_horizontal")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-lg border px-4 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {kpis.map((k) => (
             <div key={k.l}><p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p><p className="text-xs font-bold">{k.v}</p></div>
@@ -2804,7 +2788,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_spark")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {kpis.map((k, i) => (
             <div key={k.l} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2820,7 +2804,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_bento")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2">
           <div className="col-span-2 rounded-xl p-4" style={{ background: "var(--primary)", color: "#fff" }}>
             <p className="text-[9px] opacity-80">{kpis[0].l}</p>
@@ -2839,7 +2823,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="space-y-5">
           {kpis.map((k) => (
             <div key={k.l} className="flex items-end justify-between border-b pb-3" style={{ borderColor: "var(--border)" }}>
@@ -2855,7 +2839,7 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   // dkpi_grid
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-7">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {kpis.map((k) => (
           <div key={k.l} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2874,7 +2858,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
   const dash = PREVIEW_CONTENT.dashboard;
   if (variantId === "dchart_loading")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-center justify-between">
             <Shimmer className="h-3.5 w-24" />
@@ -2899,7 +2883,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_line")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="text-xs font-semibold">{dash.chartTitle}</p>
           <svg viewBox="0 0 270 90" className="mt-2 w-full">
@@ -2911,7 +2895,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_donut")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex items-center gap-4 rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <svg viewBox="0 0 140 140" className="size-24">
             <circle cx="70" cy="70" r="55" fill="none" stroke="var(--border)" strokeWidth="16" />
@@ -2929,7 +2913,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_glass")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="rounded-2xl border p-4" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 65%, transparent)", backdropFilter: "blur(14px)" }}>
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold">{dash.chartTitle}</p>
@@ -2945,7 +2929,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_bento")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="col-span-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">{dash.chartTitle}</p>
@@ -2969,7 +2953,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   // dchart_bars
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-7">
       <div className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold">{dash.chartTitle}</p>
@@ -2992,7 +2976,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
   const T = dash.table.map((r) => ({ n: r.name, s: r.status, c: r.status === "运行中" ? "#059669" : "#d97706" }));
   if (variantId === "dlist_loading")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-center justify-between border-b px-3.5 py-2.5" style={{ borderColor: "var(--border)" }}>
             <Shimmer className="h-3.5 w-28" />
@@ -3013,7 +2997,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_cards")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {T.slice(0, 3).map((i) => (
             <div key={i.n} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -3027,7 +3011,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_inbox")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {(dash.notifications.length ? dash.notifications : [{ text: "新的评论待审阅", time: "2 分钟前" }]).map((m) => (
             <div key={m.text} className="flex items-center gap-2.5 px-3 py-2.5">
@@ -3043,7 +3027,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
           <h3 className="mb-3 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>项目</h3>
           <ul>
@@ -3062,7 +3046,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_bento")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="rounded-xl p-3" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>
             <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>今日新增</p>
@@ -3081,7 +3065,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   // dlist_table
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-7">
       <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <table className="w-full text-[10px]">
           <thead>
@@ -3180,7 +3164,7 @@ function DashTablePreview({ variantId }: { variantId: string }) {
   const rows = dash.table.map((r, i) => ({ n: r.name, s: r.status, o: r.company, p: [68, 32, 100][i % 3] }));
   if (variantId === "dtbl_standard")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <table className="w-full text-[10px]">
             <thead>
@@ -3216,7 +3200,7 @@ function DashTablePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtbl_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <section className="border-y" style={{ borderColor: "var(--border)" }}>
           {dash.table.map((r, i) => (
             <div key={r.name} className="flex items-baseline justify-between gap-3 border-b py-4 last:border-0" style={{ borderColor: "var(--border)" }}>
@@ -3230,7 +3214,7 @@ function DashTablePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtbl_dense")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-4 gap-px overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--border)" }}>
           {[
             { k: "req/min", v: "12,480", t: "#059669" },
@@ -3255,7 +3239,7 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
   const cols = ["待办", "进行中", "已完成"];
   if (variantId === "dtask_board")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {cols.map((c, ci) => (
             <div key={c} className="rounded-lg p-2" style={{ border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 60%, transparent)" }}>
@@ -3275,7 +3259,7 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtask_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { t: "待办", c: "#4B69F0" },
@@ -3295,7 +3279,7 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtask_wave")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="space-y-2.5">
           {["一", "二", "三"].map((day, di) => (
             <div key={day} className="flex gap-2.5">
@@ -3320,7 +3304,7 @@ function DashNotificationsPreview({ variantId }: { variantId: string }) {
   const nots = dash.notifications.length ? dash.notifications.map((m) => ({ i: "•", t: "通知", d: m.text, time: m.time, unread: true })) : [];
   if (variantId === "dnot_list")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {nots.map((m) => (
             <div key={m.d} className="flex items-start gap-2.5 px-3 py-2.5">
@@ -3337,7 +3321,7 @@ function DashNotificationsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dnot_bento")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div className="rounded-lg border p-3 sm:col-span-2" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--primary) 8%, var(--surface))" }}>
             <p className="text-[7px] uppercase tracking-[0.2em]" style={{ color: "var(--primary)" }}>置顶</p>
@@ -3355,7 +3339,7 @@ function DashNotificationsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dnot_terminal")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="rounded-lg p-3.5 font-mono text-[9px]" style={{ background: "#0A0A0B", border: "1px solid #262629" }}>
           <span className="mb-2 flex gap-1.5"><span className="size-1.5 rounded-full bg-[#FB7185]" /><span className="size-1.5 rounded-full bg-[#F59E0B]" /><span className="size-1.5 rounded-full bg-[#34D399]" /></span>
           <div className="space-y-1">
@@ -3378,7 +3362,7 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
   const tabs = PREVIEW_CONTENT.dashboard.tabs.length ? PREVIEW_CONTENT.dashboard.tabs : ["概览"];
   if (variantId === "dtabs_seg")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex gap-1 border-b p-2" style={{ borderColor: "var(--border)" }}>
             {tabs.map((t, i) => (
@@ -3393,7 +3377,7 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtabs_underline")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="border-b" style={{ borderColor: "var(--border)" }}>
           <div className="flex gap-6 px-1">
             {tabs.map((t, i) => (
@@ -3405,7 +3389,7 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtabs_glass")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="inline-flex gap-1 rounded-full border p-1" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)", backdropFilter: "blur(10px)" }}>
           {tabs.map((t, i) => (
             <span key={t} className={"cursor-pointer rounded-full px-3 py-1 text-[10px] font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)", boxShadow: "0 4px 16px -6px var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
@@ -3420,7 +3404,7 @@ function DashFiltersPreview({ variantId }: { variantId: string }) {
   const filters = PREVIEW_CONTENT.dashboard.filters.length ? PREVIEW_CONTENT.dashboard.filters : ["全部"];
   if (variantId === "dfil_bar")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex flex-wrap items-center gap-1.5">
           {filters.map((c, i) => (
             <span key={c} className={"cursor-pointer rounded-full px-2.5 py-1 text-[9px] font-medium " + (i === 1 ? "text-[var(--on-primary)]" : "")} style={i === 1 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
@@ -3431,7 +3415,7 @@ function DashFiltersPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dfil_combo")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1.5 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌕ 搜索项目、成员…</div>
           <div className="flex flex-wrap gap-1.5">
@@ -3445,7 +3429,7 @@ function DashFiltersPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dfil_range")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="space-y-2.5">
           <div className="relative h-1 rounded-full bg-muted">
             <div className="absolute h-full rounded-full" style={{ left: "24%", width: "54%", background: "var(--primary)" }} />
@@ -3464,7 +3448,7 @@ function DashStatstripPreview({ variantId }: { variantId: string }) {
   const strips = dash.kpis.length ? dash.kpis.map((k, i) => ({ l: k.label, v: k.value, d: k.trend, g: ["#7C5CFC", "#22D3EE", "#F472B6", "#34D399"][i % 4] })) : [{ l: "今日活跃", v: "1,204", d: "+12.4%", g: "#7C5CFC" }];
   if (variantId === "dstrip_stack")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-4 divide-x overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {strips.map((s) => (
             <div key={s.l} className="px-3 py-3">
@@ -3478,7 +3462,7 @@ function DashStatstripPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dstrip_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <section className="grid grid-cols-4 divide-x border-y" style={{ borderColor: "var(--border)" }}>
           {strips.map((x) => (
             <div key={x.l} className="px-3 py-4">
@@ -3491,7 +3475,7 @@ function DashStatstripPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dstrip_gradient")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
         <div className="grid grid-cols-4 gap-2">
           {strips.map((x) => (
             <div key={x.l} className="rounded-lg p-2.5" style={{ border: "1px solid #ffffff22", background: "linear-gradient(135deg, color-mix(in srgb, " + x.g + " 22%, transparent), transparent)", boxShadow: "inset 0 1px 0 #ffffff22" }}>
@@ -3511,7 +3495,7 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
   const perms = dash.permissions.length ? dash.permissions : ["管理员", "编辑", "只读"];
   if (variantId === "dperm_list")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: "var(--border)" }}>
             <p className="text-[10px] font-semibold">成员与权限</p>
@@ -3532,7 +3516,7 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dperm_tree")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {[
             { m: "项目 · 官网改版", v: true },
@@ -3556,7 +3540,7 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dperm_matrix")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="grid grid-cols-4 border-b text-center text-[8px] font-semibold" style={{ borderColor: "var(--border)" }}>
             <span className="px-3 py-2 text-left">能力</span>
@@ -3582,7 +3566,7 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
 function DashGaugesPreview({ variantId }: { variantId: string }) {
   if (variantId === "dgauge_dials")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { l: "CPU", p: "72%" },
@@ -3601,7 +3585,7 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dgauge_linear")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="space-y-3">
           {[
             { l: "队列负载", v: 62 },
@@ -3623,7 +3607,7 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dgauge_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { l: "CPU", p: 72, c: "#22D3EE" },
@@ -3640,7 +3624,7 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dgauge_pointer")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex justify-center">
           <svg viewBox="0 0 120 70" className="w-full max-w-48">
             <path d="M10 64 A50 50 0 0 1 110 64" fill="none" stroke="var(--muted)" strokeWidth="8" strokeLinecap="round" opacity="0.35" />
@@ -3659,7 +3643,7 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
   const act = PREVIEW_CONTENT.dashboard.activity.length ? PREVIEW_CONTENT.dashboard.activity : [{ text: "李雷 编辑了首页文案", time: "3 分钟前" }];
   if (variantId === "dact_timeline")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <ol className="space-y-0">
           {act.map((i, idx) => (
             <li key={idx} className="relative flex gap-2.5 pb-4 last:pb-0">
@@ -3676,7 +3660,7 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dact_cards")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="space-y-1.5">
           {[
             { i: "＋", t: "创建了项目", d: "「官网改版」", time: "10 分钟前" },
@@ -3696,7 +3680,7 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dact_commits")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="space-y-1.5 rounded-lg border p-3 font-mono text-[9px]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="truncate"><span style={{ color: "var(--primary)" }}>a1f2e3</span> feat: 视觉风格画廊 <span style={{ color: "var(--muted-foreground)" }}>· main · 李娜</span></p>
           <p className="truncate"><span style={{ color: "var(--primary)" }}>9c0b8a</span> fix: 表格空态 <span style={{ color: "var(--muted-foreground)" }}>· main · 王强</span></p>
@@ -3706,7 +3690,7 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dact_bento")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="grid grid-cols-2 gap-1.5">
           <div className="col-span-2 rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--primary) 8%, var(--surface))" }}>
             <p className="text-[7px] uppercase tracking-[0.15em]" style={{ color: "var(--primary)" }}>本周高光</p>
@@ -3729,7 +3713,7 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
 function DashTransferPreview({ variantId }: { variantId: string }) {
   if (variantId === "dtrans_toolbar")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div>
             <p className="text-[10px] font-semibold">数据导入 / 导出</p>
@@ -3749,7 +3733,7 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtrans_drop")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="flex flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-6 py-8 text-center" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)" }}>
           <span className="flex size-8 items-center justify-center rounded-full text-xs" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}>⇪</span>
           <p className="text-[10px] font-medium">拖拽文件到这里</p>
@@ -3759,7 +3743,7 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtrans_jobs")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="space-y-1.5">
           {PREVIEW_CONTENT.dashboard.transfer.map((j, i) => (
             <div key={j.name} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -3777,7 +3761,7 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtrans_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="border-y" style={{ borderColor: "var(--border)" }}>
           {[
             { f: "CSV", d: "原始行数据 · 可再入读" },
@@ -3804,9 +3788,10 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
   const proj = port.projects.length ? port.projects.map((p) => p.title) : ["精选作品", "作品二", "作品三", "作品四"];
   if (variantId === "pgrid_masonry")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-xl">
-          <div className="flex items-center justify-between">
+          <SectionBadge>作品集</SectionBadge>
+          <div className="flex items-center justify-between mt-1.5">
             <p className="text-sm font-bold">{port.title}</p>
             <div className="flex gap-1.5">
               {["全部", proj[1] || "Branding", "Web"].map((f, i) => (
@@ -3827,11 +3812,11 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pgrid_split")
     return (
-      <div className="grid gap-5 px-6 py-6 sm:grid-cols-2">
+      <div className="grid gap-5 px-6 py-7 sm:grid-cols-2">
         <a className="block">
           <img src={ph("work", 5, 900)} alt={proj[0]} className="w-full rounded-xl object-cover" />
-          <p className="mt-2 text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{port.subtitle}</p>
-          <p className="text-base font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{proj[0]}</p>
+          <SectionBadge>作品集</SectionBadge>
+          <p className="mt-1.5 text-base font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{proj[0]}</p>
         </a>
         <div className="flex flex-col justify-center">
           {proj.slice(1).map((w) => (
@@ -3845,8 +3830,9 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pgrid_hscroll")
     return (
-      <div className="px-6 py-6">
-        <p className="text-sm font-bold">{port.title}</p>
+      <div className="px-6 py-7">
+        <SectionBadge>作品集</SectionBadge>
+        <p className="mt-1.5 text-sm font-bold">{port.title}</p>
         <Carousel className="mt-3">
           {proj.slice(0, 6).map((w, i) => (
             <div key={w} className="group w-44 shrink-0 snap-start">
@@ -3868,9 +3854,9 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
   const steps = PREVIEW_CONTENT.process.items.length ? PREVIEW_CONTENT.process.items.map((s) => s.name).slice(0, 3) : ["发现", "设计", "上线"];
   if (variantId === "pcase_hero")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-lg">
-          <p className="text-[9px] uppercase tracking-[0.25em]" style={{ color: "var(--muted-foreground)" }}>Case Study · 2025</p>
+          <SectionBadge>案例</SectionBadge>
           <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{featured}</h3>
           <div className="mt-3 flex flex-wrap gap-5 border-y py-2.5" style={{ borderColor: "var(--border)" }}>
             {[{ l: "时间", v: "8 周" }, { l: "角色", v: "品牌+开发" }, { l: "成果", v: "+212%" }].map((m) => (
@@ -3883,9 +3869,10 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcase_process")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-lg space-y-4">
-          <p className="text-sm font-bold">过程</p>
+          <SectionBadge>案例</SectionBadge>
+          <p className="mt-1.5 text-sm font-bold">过程</p>
           {steps.map((t, i) => (
             <div key={t} className="flex items-center gap-3 border-b pb-3 last:border-0" style={{ borderColor: "var(--border)" }}>
               <span className="text-base font-black" style={{ color: "var(--primary)" }}>{"0" + (i + 1)}</span>
@@ -3898,7 +3885,7 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcase_result")
     return (
-      <div className="px-6 py-6" style={{ background: "var(--surface)" }}>
+      <div className="px-6 py-7" style={{ background: "var(--surface)" }}>
         <div className="mx-auto max-w-lg">
           <div className="grid grid-cols-3 gap-4 border-y py-5" style={{ borderColor: "var(--border)" }}>
             {[{ v: "212%", l: "转化" }, { v: "-38%", l: "跳出" }, { v: "4.6x", l: "询盘" }].map((m) => (
@@ -3921,7 +3908,7 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
     return (
       <div className="px-6 py-8" style={{ background: "var(--background)" }}>
         <div className="mx-auto max-w-lg">
-          <p className="text-[9px] uppercase tracking-[0.25em]" style={{ color: "var(--muted-foreground)" }}>About</p>
+          <SectionBadge>关于</SectionBadge>
           <h3 className="mt-3 text-xl font-black leading-[1.15] tracking-tight sm:text-2xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{about.story}</h3>
           <div className="mt-5 flex gap-6 border-t pt-3" style={{ borderColor: "var(--border)" }}>
             {svcs.map((s) => <span key={s} className="text-[10px] font-medium">{s}</span>)}
@@ -3931,7 +3918,7 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pabout_stats")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-lg grid-cols-4 gap-3 border-y py-5" style={{ borderColor: "var(--border)" }}>
           {stats.slice(0, 4).map((s) => (
             <div key={s.l} className="text-center"><CountUp value={s.v} className="text-xl font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }} /><p className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p></div>
@@ -3941,9 +3928,10 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pabout_timeline")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
-          <p className="text-sm font-bold">{about.title}</p>
+          <SectionBadge>关于</SectionBadge>
+          <p className="mt-1.5 text-sm font-bold">{about.title}</p>
           <div className="mt-3">
             {[
               { y: "2018", t: "工作室成立" },
@@ -4113,7 +4101,7 @@ function BlogListPreview({ variantId }: { variantId: string }) {
     : [{ t: "设计系统加速交付", c: "设计", d: "2026-08-10", i: 1 }, { t: "动效的克制之美", c: "动效", d: "2026-07-28", i: 2 }, { t: "AI 时代界面叙事", c: "趋势", d: "2026-07-12", i: 3 }];
   if (variantId === "blist_card")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-lg gap-3 sm:grid-cols-3">
           {posts.slice(0, 3).map((p) => (
             <div key={p.t} className="rounded-lg border p-1.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -4129,9 +4117,9 @@ function BlogListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "blist_row")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
-          <p className="text-[9px] uppercase tracking-[0.25em]" style={{ color: "var(--muted-foreground)" }}>{blog.title}</p>
+          <SectionHead badge="博客" title={blog.title} center />
           <div className="mt-3">
             {posts.map((p, idx) => (
               <div key={p.t} className="flex items-baseline gap-4 border-b py-3" style={{ borderColor: "var(--border)" }}>
@@ -4146,7 +4134,7 @@ function BlogListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "blist_feature")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-lg gap-4 sm:grid-cols-[1.5fr_1fr]">
           <div>
             <img src={ph("blog", 11, 1000)} alt={posts[0]?.t || "精选文章"} className="aspect-[5/3] w-full rounded-lg object-cover" />
@@ -4175,7 +4163,7 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
   const date = first?.date || "2026-08-10";
   if (variantId === "bpost_article")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
           <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{tag} · {date}</p>
           <h3 className="mt-1.5 text-lg font-bold leading-tight">{title}</h3>
@@ -4190,7 +4178,7 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "bpost_sidebar")
     return (
-      <div className="mx-auto grid max-w-lg gap-5 px-6 py-6 sm:grid-cols-[1fr_120px]">
+      <div className="mx-auto grid max-w-lg gap-5 px-6 py-7 sm:grid-cols-[1fr_120px]">
         <div className="min-w-0">
           <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{tag} · {date}</p>
           <h3 className="mt-1 text-lg font-bold leading-tight">{title}</h3>
@@ -4237,9 +4225,10 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
   const tagsData = tags.map((t, i) => ({ t, n: Math.max(4, 14 - i * 4), active: i === 0 }));
   if (variantId === "btags_pills")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
-          <p className="text-sm font-bold">{blog.subtitle}</p>
+          <SectionBadge>博客</SectionBadge>
+          <p className="mt-1.5 text-sm font-bold">{blog.subtitle}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {tagsData.map((t) => (
               <span key={t.t} className={"rounded-full px-3 py-1 text-[9px] " + (t.active ? "text-[var(--on-primary)]" : "border")} style={t.active ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{t.t} {t.n}</span>
@@ -4250,7 +4239,7 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "btags_cat")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-md gap-2.5 sm:grid-cols-3">
           {tagsData.slice(0, 3).map((c) => (
             <div key={c.t} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -4264,7 +4253,7 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "btags_sidebar")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="w-44 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="px-1 text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>分类</p>
           <div className="mt-2 space-y-1">
@@ -4286,7 +4275,7 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
     const thumbs = [1, 2, 3, 4];
     const [active, setActive] = useState(0);
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-xs">
           <div className="group relative overflow-hidden rounded-xl">
             <span className="absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>新品</span>
@@ -4318,7 +4307,7 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
   }
   if (variantId === "pgallery_split")
     return (
-      <div className="grid gap-3 px-6 py-6 sm:grid-cols-[1.1fr_1fr]">
+      <div className="grid gap-3 px-6 py-7 sm:grid-cols-[1.1fr_1fr]">
         <img src={ph("product", 22, 700)} alt="商品图 A" className="aspect-[3/4] w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
         <div className="grid gap-3">
           <img src={ph("product", 23, 700)} alt="商品图 B" className="w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
@@ -4336,10 +4325,10 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
   const pdesc = prod?.desc || "";
   if (variantId === "pinfo_standard")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm">
-          <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.shop.title} / {PREVIEW_CONTENT.shop.subtitle}</p>
-          <h3 className="mt-1 text-base font-bold">{pname}</h3>
+          <SectionBadge>商品</SectionBadge>
+          <h3 className="mt-1.5 text-base font-bold">{pname}</h3>
           <div className="mt-1 flex items-baseline gap-2"><p className="text-lg font-black">{pprice}</p><p className="text-xs line-through" style={{ color: "var(--muted-foreground)" }}>¥899</p></div>
           <p className="mt-3 text-[10px] font-medium">颜色</p>
           <div className="mt-1.5 flex gap-1.5">
@@ -4362,9 +4351,9 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pinfo_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm px-1">
-          <p className="text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.brand} · 2025 秋冬</p>
+          <SectionBadge>商品</SectionBadge>
           <h3 className="mt-2 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{pname}</h3>
           <p className="mt-1 text-sm font-medium">{pprice}</p>
           <div className="mt-3 border-t" style={{ borderColor: "var(--border)" }}>
@@ -4387,7 +4376,7 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
     : [{ t: "经典款", d: "", p: "¥299", img: ph("product", 26, 600) }];
   if (variantId === "pgrid_card")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-md grid-cols-3 gap-3">
           {products.slice(0, 4).map((p) => (
             <div key={p.t} className="group">
@@ -4401,7 +4390,7 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pgrid_hlist")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
           {products.slice(0, 3).map((p) => (
             <div key={p.t} className="flex items-center gap-3 border-b py-2.5 last:border-0" style={{ borderColor: "var(--border)" }}>
@@ -4423,7 +4412,7 @@ function ProductCartPreview({ variantId }: { variantId: string }) {
   const subtotal = goods.reduce((s, g) => s + g.p * g.q, 0);
   if (variantId === "pcart_list")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {goods.map((it) => (
             <div key={it.t} className="flex items-center gap-3 border-b px-3 py-2.5 last:border-0" style={{ borderColor: "var(--border)" }}>
@@ -4439,9 +4428,10 @@ function ProductCartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcart_summary")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-xs rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <p className="text-xs font-bold">订单摘要</p>
+          <SectionBadge>购物车</SectionBadge>
+          <p className="mt-1.5 text-xs font-bold">订单摘要</p>
           <div className="mt-2.5 space-y-1.5 text-[10px]">
             {[{ k: "小计", v: "¥" + subtotal }, { k: "运费", v: "免运费" }, { k: "优惠码", v: "-¥" + Math.round(subtotal * 0.1) }].map((r) => (
               <div key={r.k} className="flex justify-between"><span style={{ color: "var(--muted-foreground)" }}>{r.k}</span><span className={r.v.startsWith("-") ? "text-green-600" : "font-medium"}>{r.v}</span></div>
@@ -4464,7 +4454,8 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
     return (
       <div className="px-6 py-10 text-center" style={{ background: "var(--background)" }}>
         <div className="mx-auto max-w-md">
-          <h3 className="text-2xl font-black leading-[1.15] tracking-tight sm:text-3xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{storyT}</h3>
+          <SectionBadge>关于</SectionBadge>
+          <h3 className="mt-2 text-2xl font-black leading-[1.15] tracking-tight sm:text-3xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{storyT}</h3>
           <p className="mx-auto mt-3 max-w-xs text-[10px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{about.subtitle} · {PREVIEW_CONTENT.brand} 陪伴 {about.team.length || 120} 位伙伴。</p>
           <div className="mx-auto mt-6 flex max-w-xs justify-between border-t pt-4" style={{ borderColor: "var(--border)" }}>
             {[{ v: "2016", l: "成立" }, { v: "120", l: "伙伴" }, { v: "30+", l: "国家" }].map((s) => (
@@ -4479,7 +4470,7 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
       <div className="grid items-start gap-5 px-6 py-8 sm:grid-cols-2">
         <div className="space-y-8">
           <div className="max-w-xs">
-            <p className="text-[8px] uppercase tracking-[0.25em]" style={{ color: "var(--muted-foreground)" }}>{about.title}</p>
+            <SectionBadge>关于</SectionBadge>
             <h3 className="mt-2 text-xl font-black leading-tight tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{about.story}</h3>
             <p className="mt-2 text-[10px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{about.subtitle}</p>
             <p className="mt-3 text-[9px] font-medium">— {founder?.name || "创始人团队"}</p>
@@ -4499,7 +4490,8 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
     return (
       <div className="px-6 py-12 text-center" style={{ background: "var(--surface)" }}>
         <div className="mx-auto max-w-md">
-          <p className="text-lg font-medium leading-relaxed sm:text-xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>"{about.subtitle}"</p>
+          <SectionBadge>关于</SectionBadge>
+          <p className="mt-2 text-lg font-medium leading-relaxed sm:text-xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>"{about.subtitle}"</p>
           <p className="mt-3 text-[10px] font-semibold">{founder?.name || "创始人"} · {PREVIEW_CONTENT.brand} 创始人</p>
           <div className="mx-auto mt-5 h-px w-16" style={{ background: "var(--border)" }} />
         </div>
@@ -4514,7 +4506,7 @@ function AboutTeamPreview({ variantId }: { variantId: string }) {
     : [{ n: "林一", r: "联合创始人", img: ph("avatar", 29, 400) }, { n: "王越", r: "设计负责人", img: ph("avatar", 30, 400) }];
   if (variantId === "ateam_grid")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-sm grid-cols-3 gap-3">
           {team.slice(0, 4).map((m) => (
             <div key={m.n} className="text-center">
@@ -4528,7 +4520,7 @@ function AboutTeamPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "ateam_list")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm">
           {team.slice(0, 3).map((m) => (
             <div key={m.n} className="flex items-center gap-3 border-b py-2.5 last:border-0" style={{ borderColor: "var(--border)" }}>
@@ -4549,21 +4541,22 @@ function AboutValuesPreview({ variantId }: { variantId: string }) {
     : [{ n: "01", t: "用户至上", d: "每个决定回到真实场景" }, { n: "02", t: "干净简单", d: "克制而不复杂" }, { n: "03", t: "持续进化", d: "小步快跑" }];
   if (variantId === "avalue_grid")
     return (
-      <div className="px-6 py-6">
-        <div className="mx-auto grid max-w-lg gap-3 sm:grid-cols-3">
+      <div className="px-6 py-7">
+        <SectionHead badge="我们的价值观" title={PREVIEW_CONTENT.about.title || "我们坚守什么"} center />
+        <div className="mx-auto mt-5 grid max-w-lg gap-3 sm:grid-cols-3">
           {vals.slice(0, 3).map((v) => (
-            <div key={v.n} className="rounded-lg border p-3.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Card key={v.n}>
               <span className="text-[9px] font-black" style={{ color: "var(--muted-foreground)" }}>{v.n}</span>
               <h3 className="mt-2 text-xs font-semibold">{v.t}</h3>
               <p className="mt-1 text-[9px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{v.d}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
     );
   if (variantId === "avalue_timeline")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm border-l pl-5" style={{ borderColor: "var(--border)" }}>
           {vals.slice(0, 3).map((v, i) => (
             <div key={v.n} className="relative pb-4 last:pb-0">
@@ -4590,7 +4583,7 @@ function ContactFormPreview({ variantId }: { variantId: string }) {
   );
   if (variantId === "cform_standard")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm space-y-2.5">
           <div className="grid grid-cols-2 gap-2.5">{field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"))}{field(fNames[1] || "邮箱", "you@example.com")}</div>
           {fNames.length > 2 ? field(fNames[2], "请输入" + fNames[2], true) : null}
@@ -4604,9 +4597,9 @@ function ContactFormPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cform_split")
     return (
-      <div className="grid gap-5 px-6 py-6 sm:grid-cols-[1fr_1.4fr]">
+      <div className="grid gap-5 px-6 py-7 sm:grid-cols-[1fr_1.4fr]">
         <div>
-          <p className="text-[8px] uppercase tracking-[0.25em]" style={{ color: "var(--muted-foreground)" }}>{contact.title}</p>
+          <SectionBadge>联系</SectionBadge>
           <h3 className="mt-1.5 text-lg font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{contact.subtitle}</h3>
           <div className="mt-3 space-y-2">
             {contact.infoItems.slice(0, 2).map((i) => (
@@ -4628,21 +4621,21 @@ function ContactInfoPreview({ variantId }: { variantId: string }) {
   const icons = [<Mail key="m" className="size-4" />, <Phone key="p" className="size-4" />, <MapPin key="mp" className="size-4" />];
   if (variantId === "cinfo_cards")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-md gap-3 sm:grid-cols-3">
           {infos.slice(0, 3).map((c, i) => (
-            <div key={c.label} className="rounded-lg border p-4 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-              <span className="mx-auto flex size-8 items-center justify-center rounded-full text-xs" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{icons[i % 3]}</span>
+            <Card key={c.label} className="text-center">
+              <SFIcon icon={icons[i % 3]} size="size-8" className="mx-auto" />
               <p className="mt-2 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{c.label}</p>
               <p className="mt-0.5 text-[10px] font-semibold">{c.value}</p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
     );
   if (variantId === "cinfo_editorial")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm">
           {infos.map((r) => (
             <div key={r.label} className="flex items-baseline justify-between border-b py-3" style={{ borderColor: "var(--border)" }}>
@@ -4663,10 +4656,11 @@ function ContactFaqPreview({ variantId }: { variantId: string }) {
     : [{ q: "多久能收到回复？", a: "通常 1 个工作日内回复。" }, { q: "支持远程合作吗？", a: "支持，60% 客户来自异地。" }];
   if (variantId === "cfaq_simple")
     return (
-      <div className="grid gap-5 px-6 py-6 sm:grid-cols-[1fr_1.6fr]">
+      <div className="grid gap-5 px-6 py-7 sm:grid-cols-[1fr_1.6fr]">
       <div>
-        <h3 className="text-lg font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{faq.title}</h3>
-        <p className="mt-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p>
+          <SectionBadge>常见问题</SectionBadge>
+          <h3 className="mt-2 text-lg font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{faq.title}</h3>
+          <p className="mt-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p>
       </div>
       <div>
         {items.map((f) => (
@@ -4698,8 +4692,8 @@ function Misc404Preview({ variantId }: { variantId: string }) {
   if (variantId === "e404_creative")
     return (
       <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-        <p className="text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>404 · Page not found</p>
-        <h3 className="mt-2 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{nf.title}</h3>
+          <SectionBadge>404</SectionBadge>
+          <h3 className="mt-2 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{nf.title}</h3>
         <div className="mt-3 flex w-full max-w-55 items-center gap-1.5 rounded-full border px-3 py-1.5" style={{ borderColor: "var(--border)" }}>
           <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>⌕</span>
           <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.docs.searchTitle}</span>
@@ -4726,8 +4720,8 @@ function MiscComingPreview({ variantId }: { variantId: string }) {
     return (
       <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
         <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
-        <p className="mt-3 text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>Coming Soon</p>
-        <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{cm.title}<span style={{ fontStyle: "italic", color: "var(--primary)" }}>。</span></h3>
+          <SectionBadge>即将上线</SectionBadge>
+          <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{cm.title}<span style={{ fontStyle: "italic", color: "var(--primary)" }}>。</span></h3>
         <div className="mt-3 flex w-full max-w-60 items-center gap-1.5 rounded-full border p-1 pl-3" style={{ borderColor: "var(--border)" }}>
           <span className="min-w-0 flex-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>you@example.com</span>
           <span className="shrink-0 rounded-full px-3 py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{cm.button}</span>
@@ -4737,8 +4731,8 @@ function MiscComingPreview({ variantId }: { variantId: string }) {
   if (variantId === "coming_timer")
     return (
       <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-        <p className="text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.brand} · {cm.subtitle}</p>
-        <h3 className="mt-2 text-xl font-black tracking-tight">{cm.title}</h3>
+          <SectionBadge>即将上线</SectionBadge>
+          <h3 className="mt-2 text-xl font-black tracking-tight">{cm.title}</h3>
         <div className="mt-3 flex gap-2">
           {[{ v: "12", l: "天" }, { v: "08", l: "小时" }, { v: "36", l: "分钟" }].map((x) => (
             <div key={x.l} className="w-12 rounded-lg border py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -4754,8 +4748,8 @@ function MiscComingPreview({ variantId }: { variantId: string }) {
   return (
     <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
       <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
-      <p className="mt-3 text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>Coming Soon</p>
-      <h3 className="mt-2 text-2xl font-black tracking-tight">{cm.title}</h3>
+          <SectionBadge>即将上线</SectionBadge>
+          <h3 className="mt-2 text-2xl font-black tracking-tight">{cm.title}</h3>
       <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{cm.subtitle}</p>
       <p className="mt-4 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{cm.date}</p>
     </div>
@@ -4775,7 +4769,7 @@ function DocsNavPreview({ variantId }: { variantId: string }) {
     : ["路由", "数据获取"];
   if (variantId === "dnav_sidebar")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="w-48 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold">{PREVIEW_CONTENT.brand}</span>
@@ -4796,7 +4790,7 @@ function DocsNavPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dnav_tree")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="w-48 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="px-1 text-xs font-bold">{PREVIEW_CONTENT.brand} Docs</p>
           {dTreeGroups.map((grp) => (
@@ -4826,7 +4820,7 @@ function DocsContentPreview({ variantId }: { variantId: string }) {
   const dApiParams = PREVIEW_CONTENT.docs.sections.slice(1).map((s, i) => ({ n: s.title, t: i % 2 ? "string" : "enum", r: "否" }));
   if (variantId === "dcont_article")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
           <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{dSubtitle}</p>
           <h3 className="mt-1 text-lg font-bold tracking-tight">{dTitle}</h3>
@@ -4840,7 +4834,7 @@ function DocsContentPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dcont_api")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-md">
           <div className="flex items-center gap-2">
             <span className="rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white">POST</span>
@@ -4868,7 +4862,7 @@ function DocsSearchPreview({ variantId }: { variantId: string }) {
     : [{ t: "快速开始", p: "指南 / 快速开始" }, { t: "配置项", p: "参考 / 配置项" }];
   if (variantId === "dsearch_bar")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto flex max-w-60 items-center gap-2 rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>⌕</span>
           <span className="min-w-0 flex-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{dSearchTitle}</span>
@@ -4878,7 +4872,7 @@ function DocsSearchPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dsearch_panel")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-64 overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-center gap-2 border-b px-3 py-2" style={{ borderColor: "var(--border)" }}>
             <span style={{ color: "var(--muted-foreground)" }}>⌕</span>
@@ -4906,7 +4900,7 @@ function ChatWindowPreview({ variantId }: { variantId: string }) {
     ? PREVIEW_CONTENT.chat.messages.map((m) => ({ from: m.role === "user" ? "user" : "ai", text: m.text }))
     : [{ from: "ai", text: PREVIEW_CONTENT.chat.title }, { from: "user", text: "你好" }];
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-7">
       <div className="mx-auto flex max-w-sm flex-col gap-3 rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         {chatMessages.map((m, i) => (
           <div key={i} className={"flex items-start gap-2 " + (m.from === "user" ? "flex-row-reverse" : "")}>
@@ -4924,7 +4918,7 @@ function ChatInputPreview({ variantId }: { variantId: string }) {
   const chatPlaceholder = PREVIEW_CONTENT.chat.placeholder;
   if (variantId === "cinput_bar")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto flex max-w-sm items-center gap-2 rounded-full border p-1.5 pl-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>＋</span>
           <span className="min-w-0 flex-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{chatPlaceholder}</span>
@@ -4934,7 +4928,7 @@ function ChatInputPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cinput_panel")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto max-w-sm rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="min-h-6 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{chatPlaceholder}（Enter 发送）</p>
           <div className="flex items-center justify-between border-t pt-2" style={{ borderColor: "var(--border)" }}>
@@ -4955,7 +4949,7 @@ function ChatSuggestPreview({ variantId }: { variantId: string }) {
   const suggCards = sugg.slice(0, 4).map((c, i) => ({ icon: [<FileText className="size-4" key="a" />, <PenLine className="size-4" key="b" />, <BarChart3 className="size-4" key="c" />, <Code className="size-4" key="d" />][i], t: c, d: c }));
   if (variantId === "csugg_chips")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto flex max-w-sm flex-wrap justify-center gap-2">
           {sugg.map((c) => (
             <span key={c} className="rounded-full border px-3 py-1 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
@@ -4965,7 +4959,7 @@ function ChatSuggestPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "csugg_card")
     return (
-      <div className="px-6 py-6">
+      <div className="px-6 py-7">
         <div className="mx-auto grid max-w-sm grid-cols-2 gap-2">
           {suggCards.map((c) => (
             <div key={c.t} className="flex items-start gap-2 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -5187,8 +5181,8 @@ function ProcessPreview({ variantId }: { variantId: string }) {
     : [{ n: "01", t: "描述需求" }, { n: "02", t: "选择区块" }, { n: "03", t: "生成代码" }];
   if (variantId === "home_process_editorial")
     return (
-      <div className="px-6 py-6">
-        <p className="text-[9px] font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{procTitle}</p>
+      <div className="px-6 py-7">
+        <SectionHead badge="流程" title={procTitle} />
         <div className="mt-3 divide-y" style={{ borderColor: "var(--border)" }}>
           {procSteps.map((s) => (
             <div key={s.n} className="grid grid-cols-[auto_1fr] items-baseline gap-3 py-2.5">
@@ -5201,8 +5195,9 @@ function ProcessPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "home_process_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <SectionHead badge="流程" title={procTitle} center />
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { n: "1", c: "#22D3EE" },
             { n: "2", c: "#F472B6" },
@@ -5224,8 +5219,8 @@ function IntegrationsPreview({ variantId }: { variantId: string }) {
     : [{ n: "Slack", c: "#22D3EE" }, { n: "Figma", c: "#F472B6" }, { n: "Notion", c: "#34D399" }];
   if (variantId === "home_int_editorial")
     return (
-      <div className="px-6 py-6">
-        <p className="text-[9px] font-semibold" style={{ fontFamily: "var(--font-heading)" }}>集成生态</p>
+      <div className="px-6 py-7">
+        <SectionHead badge="集成" title="集成生态" />
         <div className="mt-3 border-y" style={{ borderColor: "var(--border)" }}>
           {intItems.map((t) => (
             <div key={t.n} className="flex items-center justify-between border-b py-2 last:border-0" style={{ borderColor: "var(--border)" }}>
@@ -5238,8 +5233,8 @@ function IntegrationsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "home_int_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "#0B0B0C" }}>
-        <p className="text-center text-[10px] font-bold text-white">集成生态</p>
+      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <SectionHead badge="集成" title="集成生态" center />
         <div className="mt-3 grid grid-cols-3 gap-2">
           {intItems.map((t) => (
             <div key={t.n} className="rounded-lg py-2.5 text-center text-[9px] font-semibold" style={{ border: "1px solid color-mix(in srgb, " + t.c + " 40%, transparent)", background: "color-mix(in srgb, " + t.c + " 8%, #141416)", color: t.c }}>{t.n}</div>
@@ -5256,9 +5251,9 @@ function ContactPreview({ variantId }: { variantId: string }) {
   const ctFormFields = PREVIEW_CONTENT.contact.formFields.length ? PREVIEW_CONTENT.contact.formFields : ["姓名", "邮箱"];
   if (variantId === "home_ct_editorial")
     return (
-      <div className="px-6 py-6">
-        <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--primary)" }}>{ctSubtitle}</p>
-        <h3 className="mt-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>{ctTitle}</h3>
+      <div className="px-6 py-7">
+        <SectionBadge>联系</SectionBadge>
+        <h3 className="mt-1.5 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>{ctTitle}</h3>
         <div className="mt-3 space-y-3 border-t pt-3" style={{ borderColor: "var(--border)" }}>
           {ctFormFields.map((l) => (
             <div key={l}>
@@ -5272,9 +5267,9 @@ function ContactPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "home_ct_neon")
     return (
-      <div className="px-6 py-6" style={{ background: "linear-gradient(135deg,#0B0B0C,#122229)" }}>
-        <div className="mx-auto max-w-xs rounded-xl p-4" style={{ border: "1px solid color-mix(in srgb, #22D3EE 35%, transparent)", background: "rgba(20,20,22,0.7)", backdropFilter: "blur(14px)" }}>
-          <h4 className="text-center text-base font-bold text-white">{ctTitle}</h4>
+      <div className="px-6 py-7" style={{ background: "linear-gradient(135deg,#0B0B0C,#122229)" }}>
+        <SectionHead badge="联系" title={ctTitle} center />
+        <div className="mx-auto mt-4 max-w-xs rounded-xl p-4" style={{ border: "1px solid color-mix(in srgb, #22D3EE 35%, transparent)", background: "rgba(20,20,22,0.7)", backdropFilter: "blur(14px)" }}>
           <div className="mt-3 space-y-2">
             {ctFormFields.slice(0, 2).map((l) => (
               <div key={l} className="rounded-md px-2.5 py-2 text-[10px] text-slate-500" style={{ background: "#141416" }}>{l}</div>
