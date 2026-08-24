@@ -88,6 +88,13 @@ import { applySnapshot } from "@/lib/project-snapshot";
 import { findComponentMotion } from "@/data/component-motions";
 import { ensureWebFonts } from "@/lib/web-fonts";
 import { FONT_OPTIONS } from "@/data/design-presets";
+import {
+  mergePalette,
+  useApplyPalette,
+  useThemePaletteStore,
+  type PaletteOverride,
+} from "@/lib/use-theme-palette";
+import { ColorRow } from "@/components/theme-preset-toggle";
 
 // —— 页面分组：一级「用途」→ 二级「页面」，左侧栏层级树展示 ——
 const PAGE_GROUPS: { label: string; ids: string[] }[] = [
@@ -383,6 +390,23 @@ export default function BuilderPage() {
   })();
 
   const style = VISUAL_STYLE_MAP[visualStyle ?? PREVIEW_DEFAULT_STYLE_ID] ?? VISUAL_STYLE_MAP[PREVIEW_DEFAULT_STYLE_ID] ?? VISUAL_STYLES[0];
+
+  // 调色：与顶部 ThemePresetToggle 共享同一份 useThemePaletteStore；
+  // custom key 用当前 visualStyle，使每个视觉风格都能独立调色。
+  const themeCustom = useThemePaletteStore((s) => s.custom);
+  const themeSetOverride = useThemePaletteStore((s) => s.setOverride);
+  const themeResetOverride = useThemePaletteStore((s) => s.resetOverride);
+  useApplyPalette(visualStyle ?? null);
+  const styleOv = themeCustom[style.id] ?? {};
+  const styleMerged = mergePalette(style, styleOv);
+  const isStyleCustomized = Object.keys(styleOv).length > 0;
+  const updateStyleAccent = (idx: number, v: string) => {
+    const seed = style.palette.accents ?? [];
+    const cur = styleOv.accents ?? seed;
+    const next = [...cur];
+    next[idx] = v;
+    themeSetOverride(style.id, { accents: next } as Partial<PaletteOverride>);
+  };
 
   // —— 页面蓝图：加入 / 移除 / 换变体 / 按页面分组 ——
   const inBlueprint = useMemo(
@@ -687,6 +711,68 @@ export default function BuilderPage() {
                       </span>
                     </button>
                   ))}
+                </div>
+
+                {/* 当前风格色盘编辑（与顶部 ThemePresetToggle 共享 storage） */}
+                <div className="mt-2 border-t border-border pt-2">
+                  <div className="mb-1 flex items-center justify-between px-1">
+                    <span className="text-[11px] text-muted-foreground">
+                      色盘：{style.name}
+                      {isStyleCustomized && (
+                        <span className="ml-1 rounded bg-primary/15 px-1 text-[10px] font-medium text-primary">
+                          已定制
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => themeResetOverride(style.id)}
+                      disabled={!isStyleCustomized}
+                      className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      重置
+                    </button>
+                  </div>
+                  <div className="space-y-0.5">
+                    <ColorRow
+                      label="背景"
+                      value={styleMerged.bg}
+                      onChange={(v) => themeSetOverride(style.id, { bg: v })}
+                    />
+                    <ColorRow
+                      label="表面"
+                      value={styleMerged.surface}
+                      onChange={(v) => themeSetOverride(style.id, { surface: v })}
+                    />
+                    <ColorRow
+                      label="文字"
+                      value={styleMerged.text}
+                      onChange={(v) => themeSetOverride(style.id, { text: v })}
+                    />
+                    <ColorRow
+                      label="主色"
+                      value={styleMerged.accent}
+                      onChange={(v) => themeSetOverride(style.id, { accent: v })}
+                    />
+                    <ColorRow
+                      label="辅色"
+                      value={styleMerged.accent2}
+                      onChange={(v) => themeSetOverride(style.id, { accent2: v })}
+                    />
+                    {(style.palette.accents ?? []).slice(0, 2).map((_, i) => {
+                      const seed = style.palette.accents ?? [];
+                      const fallback = seed[i] ?? styleMerged.accent;
+                      const cur = styleMerged.accents[i] ?? fallback;
+                      return (
+                        <ColorRow
+                          key={i}
+                          label={`扩展 ${i + 1}`}
+                          value={cur}
+                          onChange={(v) => updateStyleAccent(i, v)}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
