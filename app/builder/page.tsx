@@ -652,12 +652,74 @@ export default function BuilderPage() {
             {styleOpen && (
               <div
                 className={[
-                  "absolute right-0 z-50 mt-2 w-[19.5rem] p-2",
+                  "absolute right-0 z-50 mt-2 max-h-[calc(100vh-6rem)] w-[19.5rem] overflow-y-auto p-2",
                   style.id === "aw-brutalist"
                     ? "rounded-none border-2 border-black bg-white shadow-[3px_3px_0_#000]"
                     : "rounded-xl border border-border bg-card shadow-xl",
                 ].join(" ")}
               >
+                {/* 当前风格色盘编辑（与顶部 ThemePresetToggle 共享 storage） */}
+                <div className="mb-2 rounded-lg border border-border/70 bg-background p-2">
+                  <div className="mb-1 flex items-center justify-between px-0.5">
+                    <span className="text-[11px] font-medium text-foreground">
+                      色盘 · {style.name}
+                      {isStyleCustomized && (
+                        <span className="ml-1 rounded bg-primary/15 px-1 text-[10px] font-medium text-primary">
+                          已定制
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => themeResetOverride(style.id)}
+                      disabled={!isStyleCustomized}
+                      className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      重置
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                    <ColorRow
+                      label="背景"
+                      value={styleMerged.bg}
+                      onChange={(v) => themeSetOverride(style.id, { bg: v })}
+                    />
+                    <ColorRow
+                      label="表面"
+                      value={styleMerged.surface}
+                      onChange={(v) => themeSetOverride(style.id, { surface: v })}
+                    />
+                    <ColorRow
+                      label="文字"
+                      value={styleMerged.text}
+                      onChange={(v) => themeSetOverride(style.id, { text: v })}
+                    />
+                    <ColorRow
+                      label="主色"
+                      value={styleMerged.accent}
+                      onChange={(v) => themeSetOverride(style.id, { accent: v })}
+                    />
+                    <ColorRow
+                      label="辅色"
+                      value={styleMerged.accent2}
+                      onChange={(v) => themeSetOverride(style.id, { accent2: v })}
+                    />
+                    {(style.palette.accents ?? []).slice(0, 2).map((_, i) => {
+                      const seed = style.palette.accents ?? [];
+                      const fallback = seed[i] ?? styleMerged.accent;
+                      const cur = styleMerged.accents[i] ?? fallback;
+                      return (
+                        <ColorRow
+                          key={i}
+                          label={`扩展 ${i + 1}`}
+                          value={cur}
+                          onChange={(v) => updateStyleAccent(i, v)}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="relative mb-2">
                   <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <input
@@ -672,7 +734,7 @@ export default function BuilderPage() {
                     ].join(" ")}
                   />
                 </div>
-                <div className="grid max-h-60 grid-cols-3 gap-1.5 overflow-auto">
+                <div className="grid max-h-40 grid-cols-3 gap-1.5 overflow-auto">
                   {style.id !== "aw-brutalist" && (
                     <button
                       type="button"
@@ -721,68 +783,6 @@ export default function BuilderPage() {
                       </span>
                     </button>
                   ))}
-                </div>
-
-                {/* 当前风格色盘编辑（与顶部 ThemePresetToggle 共享 storage） */}
-                <div className="mt-2 border-t border-border pt-2">
-                  <div className="mb-1 flex items-center justify-between px-1">
-                    <span className="text-[11px] text-muted-foreground">
-                      色盘：{style.name}
-                      {isStyleCustomized && (
-                        <span className="ml-1 rounded bg-primary/15 px-1 text-[10px] font-medium text-primary">
-                          已定制
-                        </span>
-                      )}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => themeResetOverride(style.id)}
-                      disabled={!isStyleCustomized}
-                      className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      重置
-                    </button>
-                  </div>
-                  <div className="space-y-0.5">
-                    <ColorRow
-                      label="背景"
-                      value={styleMerged.bg}
-                      onChange={(v) => themeSetOverride(style.id, { bg: v })}
-                    />
-                    <ColorRow
-                      label="表面"
-                      value={styleMerged.surface}
-                      onChange={(v) => themeSetOverride(style.id, { surface: v })}
-                    />
-                    <ColorRow
-                      label="文字"
-                      value={styleMerged.text}
-                      onChange={(v) => themeSetOverride(style.id, { text: v })}
-                    />
-                    <ColorRow
-                      label="主色"
-                      value={styleMerged.accent}
-                      onChange={(v) => themeSetOverride(style.id, { accent: v })}
-                    />
-                    <ColorRow
-                      label="辅色"
-                      value={styleMerged.accent2}
-                      onChange={(v) => themeSetOverride(style.id, { accent2: v })}
-                    />
-                    {(style.palette.accents ?? []).slice(0, 2).map((_, i) => {
-                      const seed = style.palette.accents ?? [];
-                      const fallback = seed[i] ?? styleMerged.accent;
-                      const cur = styleMerged.accents[i] ?? fallback;
-                      return (
-                        <ColorRow
-                          key={i}
-                          label={`扩展 ${i + 1}`}
-                          value={cur}
-                          onChange={(v) => updateStyleAccent(i, v)}
-                        />
-                      );
-                    })}
-                  </div>
                 </div>
               </div>
             )}
