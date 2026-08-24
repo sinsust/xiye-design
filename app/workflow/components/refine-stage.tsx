@@ -381,9 +381,6 @@ function AllView({
                 </div>
                 <AgentStatusBadge status={st?.status ?? "standby"} />
               </div>
-              <p className="mt-2 line-clamp-2 min-h-[2.5em] text-xs leading-snug text-muted-foreground">
-                {st?.summary || (working ? "正在整理…" : "")}
-              </p>
               <div className="mt-auto flex items-center justify-between pt-2 text-[11px] text-muted-foreground">
                 <span>{decisionLabel(a.id)}</span>
                 {pct === 100 ? (

@@ -1270,7 +1270,7 @@ function CtaPreview({ variantId }: { variantId: string }) {
     return (
       <div className="px-6 py-6">
         <div className="rounded-xl px-6 py-8 text-center text-white" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
-          <h3 className="text-lg font-bold">加入 5 万+ 团队</h3>
+          <h3 className="text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>让增长自然发生</h3>
           <p className="mx-auto mt-1 max-w-xs text-xs text-white/80">{PREVIEW_CONTENT.cta.secondary}，10 分钟搭建工作流。</p>
           <span className="mt-3 inline-block rounded-full bg-white px-5 py-1.5 text-xs font-medium text-slate-900">立即注册</span>
         </div>
@@ -1278,12 +1278,10 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_glass")
     return (
-      <div className="relative overflow-hidden px-6 py-8">
-        <div className="absolute inset-0 bg-slate-700" />
-        <div className="absolute inset-0 bg-black/60" />
-        <div className="relative z-10 mx-auto max-w-xs rounded-2xl border border-white/20 p-5 text-center text-white" style={{ background: "color-mix(in srgb, var(--surface) 50%, transparent)", backdropFilter: "blur(16px)" }}>
-          <h3 className="text-base font-bold">别错过你的下一个增长</h3>
-          <p className="mt-1 text-xs text-white/80">把想法变成现实。</p>
+      <div className="relative overflow-hidden rounded-2xl px-6 py-8" style={{ background: "radial-gradient(120% 120% at 20% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 60%), var(--surface)" }}>
+        <div className="relative z-10 mx-auto max-w-xs rounded-2xl border p-5 text-center" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, var(--border))", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(16px)", color: "var(--foreground)" }}>
+          <h3 className="text-base font-bold">别错过下一个增长</h3>
+          <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>把想法变成现实。</p>
           <span className="mt-3 inline-block rounded-md px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>开始体验</span>
         </div>
       </div>
@@ -4611,7 +4609,15 @@ function Misc404Preview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return null;
+  // 兜底：未知变体也渲染完整 404 而非空白
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+      <p className="text-5xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>404</p>
+      <p className="mt-2 text-sm font-medium">{nf.title}</p>
+      <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{nf.subtitle}</p>
+      <span className="mt-4 rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{nf.button}</span>
+    </div>
+  );
 }
 
 function MiscComingPreview({ variantId }: { variantId: string }) {
@@ -4644,7 +4650,16 @@ function MiscComingPreview({ variantId }: { variantId: string }) {
         <p className="mt-3 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{cm.date}</p>
       </div>
     );
-  return null;
+  // 兜底：未知变体也渲染完整预告页而非空白
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+      <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
+      <p className="mt-3 text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>Coming Soon</p>
+      <h3 className="mt-2 text-2xl font-black tracking-tight">{cm.title}</h3>
+      <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{cm.subtitle}</p>
+      <p className="mt-4 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{cm.date}</p>
+    </div>
+  );
 }
 
 /* ───────── Docs ───────── */
@@ -5231,7 +5246,7 @@ function LoaderShimmerPreview({ variantId }: { variantId: string }) {
             className="rounded"
             style={{
               height: h,
-              backgroundImage: "linear-gradient(100deg,var(--surface) 35%,rgba(255,255,255,.55) 50%,var(--surface) 65%)",
+              backgroundImage: "linear-gradient(100deg,var(--surface) 35%,color-mix(in srgb, var(--foreground) 10%, transparent) 50%,var(--surface) 65%)",
               backgroundSize: "200% 100%",
               animation: k + " 1.4s linear infinite",
             }}
@@ -5247,7 +5262,7 @@ function LoaderButtonPreview({ variantId }: { variantId: string }) {
   return (
     <div className="flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
       <button className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-[var(--on-primary)] opacity-80" style={{ background: "var(--primary)" }} disabled>
-        <span className="size-4 animate-spin rounded-full border-2" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+        <span className="size-4 animate-spin rounded-full border-2" style={{ borderColor: "var(--on-primary)", borderTopColor: "transparent" }} />
         提交中…
       </button>
     </div>
