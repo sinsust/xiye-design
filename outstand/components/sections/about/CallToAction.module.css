@@ -1,0 +1,904 @@
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.cta {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 482.594px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 40px;
+  row-gap: 40px;
+  column-gap: 40px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.textContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 92.5938px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 150px;
+  padding-left: 150px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.heading {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 57.5938px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r3 {
+  width: 840px;
+  height: 57.5938px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 57.6px;
+  letter-spacing: 0.96px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r5 {
+  width: 840px;
+  height: 27px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.subContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 350px;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.r7 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.image {
+  position: relative;
+  width: 204px;
+  height: 150px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  border-radius: 16px;
+}
+.r9 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 204px;
+  height: 150px;
+  border-radius: 16px;
+}
+.r10 {
+  width: 204px;
+  height: 150px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 408 / 300;
+  border-radius: 16px;
+}
+.abstractDesign {
+  position: absolute;
+  top: -10px;
+  right: -9px;
+  bottom: 128px;
+  left: 181px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  transform: matrix(0.990268, -0.139173, 0.139173, 0.990268, 0, 0);
+  flex-shrink: 0;
+}
+.r12 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 32px;
+  height: 32px;
+}
+.r13 {
+  width: 32px;
+  height: 32px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 33 / 33;
+}
+.container {
+  display: flex;
+  position: relative;
+  width: 204px;
+  height: 300px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.image2 {
+  position: relative;
+  width: 204px;
+  height: 135px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  border-radius: 16px;
+}
+.r23 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 204px;
+  height: 135px;
+  border-radius: 16px;
+}
+.r24 {
+  width: 204px;
+  height: 135px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 408 / 270;
+  border-radius: 16px;
+}
+.image3 {
+  position: relative;
+  width: 204px;
+  height: 350px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  border-radius: 16px;
+}
+.r26 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 204px;
+  height: 350px;
+  border-radius: 16px;
+}
+.r27 {
+  width: 204px;
+  height: 350px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 408 / 700;
+  border-radius: 16px;
+}
+.circleWrap {
+  display: flex;
+  position: absolute;
+  top: 260px;
+  right: -78px;
+  bottom: -90px;
+  left: 102px;
+  width: 180px;
+  height: 180px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  background-color: rgb(15, 15, 15);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  transform: matrix(1, 0, 0, 1, -90, 0);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  cursor: pointer;
+  padding: 20px;
+  border-radius: 100%;
+}
+.r29 {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+}
+.big {
+  display: flex;
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  place-items: center normal;
+  place-content: center;
+}
+.ellipse1 {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  background-color: rgb(205, 241, 64);
+  flex-shrink: 0;
+  border-radius: 100%;
+}
+.icon {
+  position: absolute;
+  top: 50px;
+  right: 50px;
+  bottom: 50px;
+  left: 50px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.r33 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 40px;
+  height: 40px;
+}
+.r34 {
+  width: 40px;
+  height: 40px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 40 / 40;
+}
+.r35 {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  width: 124px;
+  height: 124px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.r36 {
+  position: relative;
+  width: 124px;
+  height: 124px;
+}
+.r37 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 124px;
+  height: 124px;
+  transform: matrix(0.685691, 0.727892, -0.727892, 0.685691, 0, 0);
+}
+.image4 {
+  position: relative;
+  width: 204px;
+  height: 135px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  border-radius: 16px;
+}
+.r39 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 204px;
+  height: 135px;
+  border-radius: 16px;
+}
+.r40 {
+  width: 204px;
+  height: 135px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 408 / 270;
+  border-radius: 16px;
+}
+.abstractDesign3 {
+  position: absolute;
+  top: -16px;
+  right: -8px;
+  bottom: 107px;
+  left: 168px;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r42 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 44px;
+  height: 44px;
+}
+.r43 {
+  width: 44px;
+  height: 44px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 45 / 44;
+}
+.image5 {
+  position: relative;
+  width: 204px;
+  height: 150px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  border-radius: 16px;
+}
+.abstractDesign5 {
+  position: absolute;
+  top: 130px;
+  right: 167px;
+  bottom: -20px;
+  left: -3px;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r53 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 40px;
+  height: 40px;
+}
+.r54 {
+  width: 40px;
+  height: 40px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 41 / 40;
+}
+
+@media (max-width: 1319px) {
+  .cta {
+    width: 780px;
+    height: 497px;
+  }
+  .textContainer {
+    width: 780px;
+    height: 107px;
+    padding-right: 60px;
+    padding-left: 60px;
+  }
+  .heading {
+    width: 660px;
+    height: 48px;
+  }
+  .r3 {
+    width: 660px;
+    height: 48px;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 0.8px;
+  }
+  .paragraph {
+    width: 660px;
+    height: 51px;
+  }
+  .r5 {
+    width: 660px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .subContainer {
+    width: 780px;
+    gap: 20px;
+    row-gap: 20px;
+    column-gap: 20px;
+  }
+  .image {
+    width: 140px;
+  }
+  .r14 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 140px;
+    height: 150px;
+    border-radius: 16px;
+  }
+  .r15 {
+    width: 140px;
+    height: 150px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 408 / 300;
+    border-radius: 16px;
+  }
+  .abstractDesign2 {
+    position: absolute;
+    top: -32px;
+    right: -15px;
+    bottom: 150px;
+    left: 123px;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    transform: matrix(0.990268, -0.139173, 0.139173, 0.990268, 0, 0);
+    flex-shrink: 0;
+  }
+  .r17 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 32px;
+    height: 32px;
+  }
+  .r18 {
+    width: 32px;
+    height: 32px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 33 / 33;
+  }
+  .container {
+    width: 140px;
+  }
+  .image2 {
+    width: 140px;
+  }
+  .r23 {
+    width: 140px;
+  }
+  .r24 {
+    width: 140px;
+  }
+  .image3 {
+    width: 140px;
+  }
+  .r26 {
+    width: 140px;
+  }
+  .r27 {
+    width: 140px;
+  }
+  .circleWrap {
+    top: 278px;
+    right: -74px;
+    bottom: -72px;
+    left: 70px;
+    width: 144px;
+    height: 144px;
+    transform: matrix(1, 0, 0, 1, -72, 0);
+    padding: 12px;
+  }
+  .r29 {
+    width: 120px;
+    height: 120px;
+  }
+  .big {
+    width: 120px;
+    height: 120px;
+  }
+  .ellipse1 {
+    width: 120px;
+    height: 120px;
+    aspect-ratio: 1 / 1;
+  }
+  .icon {
+    top: 40px;
+    right: 40px;
+    bottom: 40px;
+    left: 40px;
+  }
+  .r35 {
+    width: 104px;
+    height: 104px;
+  }
+  .r36 {
+    width: 104px;
+    height: 104px;
+  }
+  .r37 {
+    width: 104px;
+    height: 104px;
+    transform: matrix(0.70265, 0.711536, -0.711536, 0.70265, 0, 0);
+  }
+  .image4 {
+    width: 140px;
+  }
+  .r44 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 140px;
+    height: 135px;
+    border-radius: 16px;
+  }
+  .r45 {
+    width: 140px;
+    height: 135px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 408 / 270;
+    border-radius: 16px;
+  }
+  .abstractDesign4 {
+    position: absolute;
+    top: -33px;
+    right: -24px;
+    bottom: 124px;
+    left: 120px;
+    width: 44px;
+    height: 44px;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    flex-shrink: 0;
+  }
+  .r47 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 44px;
+    height: 44px;
+  }
+  .r48 {
+    width: 44px;
+    height: 44px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 45 / 44;
+  }
+  .image5 {
+    width: 140px;
+  }
+  .abstractDesign6 {
+    position: absolute;
+    top: 127px;
+    right: 111px;
+    bottom: -17px;
+    left: -11px;
+    width: 40px;
+    height: 40px;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    flex-shrink: 0;
+  }
+  .r56 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 40px;
+    height: 40px;
+  }
+  .r57 {
+    width: 40px;
+    height: 40px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 41 / 40;
+  }
+}
+
+@media (max-width: 809px) {
+  .cta {
+    width: 358px;
+    height: 358.094px;
+  }
+  .textContainer {
+    width: 358px;
+    height: 118.094px;
+  }
+  .heading {
+    width: 358px;
+    height: 33.5938px;
+  }
+  .r3 {
+    width: 358px;
+    height: 33.5938px;
+    font-size: 28px;
+    line-height: 33.6px;
+    letter-spacing: 0.56px;
+  }
+  .paragraph {
+    width: 358px;
+    height: 76.5px;
+  }
+  .r5 {
+    width: 358px;
+    height: 76.5px;
+  }
+  .subContainer {
+    width: 358px;
+    height: 200px;
+    gap: 8px;
+    row-gap: 8px;
+    column-gap: 8px;
+  }
+  .image {
+    width: 65.1875px;
+    height: 80px;
+    border-radius: 8px;
+  }
+  .r19 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 65.1875px;
+    height: 80px;
+    border-radius: 8px;
+  }
+  .r20 {
+    width: 65.1875px;
+    height: 80px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 408 / 300;
+    border-radius: 8px;
+  }
+  .container {
+    width: 65.2031px;
+    height: 160px;
+    gap: 8px;
+    row-gap: 8px;
+    column-gap: 8px;
+  }
+  .image2 {
+    width: 65.2031px;
+    height: 76px;
+    border-radius: 8px;
+  }
+  .r23 {
+    width: 65.2031px;
+    height: 76px;
+    border-radius: 8px;
+  }
+  .r24 {
+    width: 65.2031px;
+    height: 76px;
+    border-radius: 8px;
+  }
+  .image3 {
+    width: 65.2031px;
+    height: 200px;
+    border-radius: 8px;
+  }
+  .r26 {
+    width: 65.2031px;
+    height: 200px;
+    border-radius: 8px;
+  }
+  .r27 {
+    width: 65.2031px;
+    height: 200px;
+    border-radius: 8px;
+  }
+  .circleWrap {
+    top: 166px;
+    right: -35.3906px;
+    bottom: -34px;
+    left: 32.5938px;
+    width: 68px;
+    height: 68px;
+    transform: matrix(1, 0, 0, 1, -34, 0);
+    padding: 4px;
+  }
+  .r29 {
+    width: 60px;
+    height: 60px;
+  }
+  .big {
+    width: 60px;
+    height: 60px;
+  }
+  .ellipse1 {
+    width: 60px;
+    height: 60px;
+  }
+  .icon {
+    top: 30px;
+    right: 10px;
+    bottom: 10px;
+    left: 30px;
+    width: 20px;
+    height: 20px;
+    transform: matrix(1, 0, 0, 1, -10, -10);
+    aspect-ratio: 1 / 1;
+  }
+  .r33 {
+    width: 20px;
+    height: 20px;
+  }
+  .r34 {
+    width: 20px;
+    height: 20px;
+  }
+  .r35 {
+    top: 4px;
+    right: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: 52px;
+    height: 52px;
+  }
+  .r36 {
+    width: 52px;
+    height: 52px;
+  }
+  .r37 {
+    width: 52px;
+    height: 52px;
+    transform: matrix(0.702203, 0.711977, -0.711977, 0.702203, 0, 0);
+  }
+  .image4 {
+    width: 65.2031px;
+    height: 76px;
+    border-radius: 8px;
+  }
+  .r49 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 65.2031px;
+    height: 76px;
+    border-radius: 8px;
+  }
+  .r50 {
+    width: 65.2031px;
+    height: 76px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 408 / 270;
+    border-radius: 8px;
+  }
+  .image5 {
+    width: 65.2031px;
+    height: 80px;
+    border-radius: 8px;
+  }
+  .r58 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 65.2031px;
+    height: 80px;
+    border-radius: 8px;
+  }
+  .r59 {
+    width: 65.2031px;
+    height: 80px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 408 / 300;
+    border-radius: 8px;
+  }
+}
+
+@media (min-width: 1320px) { .onlyTablet, .onlyPhone { display: none !important; } }
+@media (min-width: 810px) and (max-width: 1319px) { .onlyDesktop, .onlyPhone { display: none !important; } }
+@media (max-width: 809px) { .onlyDesktop, .onlyTablet { display: none !important; } }

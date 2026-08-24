@@ -1,0 +1,146 @@
+/*
+ * Mobile menu. Surfaces and radii reuse the header's values so the panel reads
+ * as part of the same system: ink-950 at 65% behind a heavy blur, 50px pills.
+ */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.open {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.72);
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-out-framer);
+}
+
+.open .scrim {
+  opacity: 1;
+}
+
+.panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  border-radius: 32px;
+  background-color: rgba(15, 15, 15, 0.92);
+  backdrop-filter: blur(100px);
+  -webkit-backdrop-filter: blur(100px);
+  border: 1px solid var(--color-ink-700);
+  transform: translateY(-16px) scale(0.98);
+  opacity: 0;
+  transition: transform 0.35s var(--ease-out-framer),
+    opacity 0.35s var(--ease-out-framer);
+}
+
+.open .panel {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: block;
+  width: 120px;
+  height: 33.75px;
+}
+
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 100px;
+  background-color: var(--color-ink-900);
+  color: var(--color-white);
+  transition: background-color var(--duration-hover) var(--ease-out-framer);
+}
+
+.close:hover {
+  background-color: var(--color-ink-700);
+}
+
+.close svg {
+  width: 24px;
+  height: 24px;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.link {
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  color: var(--color-mist-600);
+  transition: color var(--duration-hover) var(--ease-out-framer),
+    background-color var(--duration-hover) var(--ease-out-framer);
+}
+
+.link:hover {
+  color: var(--color-white);
+  background-color: var(--color-ink-850);
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 55px;
+  padding: 14px 28px;
+  border-radius: 53px;
+  background-color: var(--color-accent);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+  color: var(--color-ink-950);
+}
+
+/* The menu is a tablet/phone affordance only. */
+@media (min-width: 1320px) {
+  .root {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .panel {
+    transition: none;
+  }
+}

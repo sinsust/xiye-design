@@ -66,11 +66,16 @@ xiye-dev.spec
 *.tgz
 postgres-3.4.9.tgz
 
-# 独立模板工程（顶层 /outstand、/genius、/wexo 是独立整站项目，不并入主仓库；
-# 其组件库副本 components/originkit/<name> 与资源 public/originkit/<name> 必须入库）
-/outstand/
-/genius/
-/wexo/
+# 整站模板：必须入库！品牌包下载 packBrand 直接从 process.cwd()/<rootDir> 读取原始目录，
+# 线上部署若缺失会抛 "brand dir not found"。仅提交可交付源码，排除依赖与构建产物。
+# 其组件库副本 components/originkit/<name> 与资源 public/originkit/<name> 同样入库。
+outstand/node_modules/
+outstand/.next/
+outstand/.git/
+genius/node_modules/
+genius/.next/
+wexo/node_modules/
+wexo/.next/
 
 # python 缓存
 __pycache__/

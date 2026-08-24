@@ -1,0 +1,1848 @@
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.pricingPlan {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 959.188px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 60px;
+  row-gap: 60px;
+  column-gap: 60px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.r1 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.r2 {
+  position: relative;
+  width: 1140px;
+  height: 223.188px;
+  flex-shrink: 0;
+}
+.dektop {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 223.188px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.tag {
+  display: flex;
+  position: relative;
+  width: 142.125px;
+  height: 36px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  row-gap: 2px;
+  column-gap: 2px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 6px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.r6 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+}
+.r7 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 20;
+}
+.text {
+  display: flex;
+  position: relative;
+  width: 96.125px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r9 {
+  width: 96.125px;
+  height: 24px;
+  color: rgb(218, 246, 111);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.textContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 177.188px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 150px;
+  padding-left: 150px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.heading {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 115.188px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r12 {
+  width: 840px;
+  height: 115.188px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 57.6px;
+  letter-spacing: 0.96px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r14 {
+  width: 840px;
+  height: 54px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.r15 {
+  position: relative;
+  width: 1140px;
+  height: 676px;
+  flex-shrink: 0;
+}
+.desktopMonthly {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 676px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 40px;
+  row-gap: 40px;
+  column-gap: 40px;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.container {
+  display: flex;
+  position: relative;
+  width: 224.922px;
+  height: 48px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 8px 16px;
+  border-radius: 70px;
+}
+.monthly {
+  display: flex;
+  position: relative;
+  width: 61.1562px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  cursor: pointer;
+}
+.r19 {
+  width: 61.1562px;
+  height: 24px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.toggle {
+  display: flex;
+  position: relative;
+  width: 54px;
+  height: 32px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(26, 26, 26);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  cursor: pointer;
+  padding: 6px 28px 6px 6px;
+  border-radius: 50px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: solid;
+}
+.ellipse2 {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background-color: rgb(205, 241, 64);
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
+  border-radius: 100%;
+}
+.yearly {
+  display: flex;
+  position: relative;
+  width: 45.7656px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  cursor: pointer;
+}
+.r23 {
+  width: 45.7656px;
+  height: 24px;
+  color: rgb(202, 203, 206);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.abstractDesign {
+  position: absolute;
+  top: -38px;
+  right: -153.078px;
+  bottom: 35px;
+  left: 213px;
+  width: 165px;
+  height: 51px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.text2 {
+  display: flex;
+  position: absolute;
+  top: 14px;
+  right: 16.8594px;
+  bottom: 13px;
+  left: 53px;
+  width: 95.1406px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r26 {
+  width: 95.1406px;
+  height: 24px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.design {
+  position: absolute;
+  top: 10px;
+  right: 113px;
+  bottom: 1px;
+  left: 0px;
+  width: 52px;
+  height: 40px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r28 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 52px;
+  height: 40px;
+}
+.r29 {
+  width: 52px;
+  height: 40px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 52 / 40;
+}
+.design2 {
+  position: absolute;
+  top: -1px;
+  right: 0px;
+  bottom: 38px;
+  left: 152px;
+  width: 13px;
+  height: 14px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  transform: matrix(0.990268, -0.139173, 0.139173, 0.990268, 0, 0);
+  flex-shrink: 0;
+}
+.r31 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 13px;
+  height: 14px;
+}
+.r32 {
+  width: 13px;
+  height: 14px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 11 / 12;
+}
+.container2 {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 588px;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start center;
+}
+.card {
+  display: flex;
+  position: relative;
+  width: 369.328px;
+  height: 548px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.textContainer2 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 147px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading2 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r37 {
+  width: 309.328px;
+  height: 33px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.line {
+  position: relative;
+  width: 309.328px;
+  height: 1px;
+  background-color: rgb(31, 31, 31);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.paragraph2 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 81px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r40 {
+  width: 309.328px;
+  height: 81px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.textContainer3 {
+  display: flex;
+  position: relative;
+  width: 150.562px;
+  height: 40px;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  flex-shrink: 0;
+  place-items: flex-end normal;
+  place-content: flex-end center;
+}
+.number {
+  display: flex;
+  position: relative;
+  width: 96.4062px;
+  height: 40px;
+  flex-direction: column;
+  justify-content: center;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal center;
+}
+.r43 {
+  width: 96.4062px;
+  height: 40px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 40px;
+  letter-spacing: 0.8px;
+}
+.text3 {
+  display: flex;
+  position: relative;
+  width: 54.1562px;
+  height: 11.6875px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r45 {
+  width: 54.1562px;
+  height: 11.6875px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 11.68px;
+}
+.itemsContainer {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 156px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+  row-gap: 12px;
+  column-gap: 12px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r47 {
+  position: relative;
+  width: 309.328px;
+  height: 30px;
+  flex-shrink: 0;
+}
+.pointer1 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 30px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgba(20, 20, 20, 0);
+  place-items: center normal;
+  place-content: center flex-start;
+  border-radius: 8px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgba(31, 31, 31, 0);
+  --border-style: solid;
+}
+.iconWrap {
+  display: flex;
+  position: relative;
+  width: 30px;
+  height: 30px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  background-color: rgb(31, 31, 31);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  padding: 6px;
+  border-radius: 100px;
+}
+.icon2 {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.r51 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 18px;
+  height: 18px;
+}
+.r52 {
+  width: 18px;
+  height: 18px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 18 / 18;
+}
+.text4 {
+  display: flex;
+  position: relative;
+  width: 271.328px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r54 {
+  width: 271.328px;
+  height: 24px;
+  color: rgb(176, 177, 181);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.r55 {
+  position: relative;
+  width: 309.328px;
+  height: 55px;
+  flex-shrink: 0;
+}
+.hoverArrow {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 55px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  row-gap: 4px;
+  column-gap: 4px;
+  background-color: rgb(31, 31, 31);
+  place-items: center normal;
+  place-content: center;
+  cursor: pointer;
+  padding: 14px 24px;
+  border-radius: 53px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: solid;
+}
+.hoverArrow {
+  transition: background-color var(--duration-hover) var(--ease-out-framer), color var(--duration-hover) var(--ease-out-framer), opacity var(--duration-hover) var(--ease-out-framer), transform var(--duration-hover) var(--ease-out-framer), box-shadow var(--duration-hover) var(--ease-out-framer);
+}
+.hoverArrow:hover {
+  background-color: rgb(20, 20, 20);
+}
+.text5 {
+  display: flex;
+  position: relative;
+  width: 96.0469px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.text5 {
+  transition: background-color var(--duration-hover) var(--ease-out-framer), color var(--duration-hover) var(--ease-out-framer), opacity var(--duration-hover) var(--ease-out-framer), transform var(--duration-hover) var(--ease-out-framer), box-shadow var(--duration-hover) var(--ease-out-framer);
+}
+.text5:hover {
+  transform: matrix(1, 0, 0, 1, 0.0150427, 0);
+}
+.r58 {
+  width: 96.0469px;
+  height: 27px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+}
+.iconRight {
+  display: flex;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.iconRight {
+  transition: background-color var(--duration-hover) var(--ease-out-framer), color var(--duration-hover) var(--ease-out-framer), opacity var(--duration-hover) var(--ease-out-framer), transform var(--duration-hover) var(--ease-out-framer), box-shadow var(--duration-hover) var(--ease-out-framer);
+}
+.iconRight:hover {
+  transform: matrix(1, 0, 0, 1, -0.0150427, 0);
+}
+.r60 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: contain;
+  aspect-ratio: auto 21 / 20;
+}
+.card2 {
+  display: flex;
+  position: relative;
+  width: 369.344px;
+  height: 588px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  box-shadow: rgb(25, 25, 25) 0px 0px 0px 6px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(205, 241, 64);
+  --border-style: solid;
+}
+.textContainer4 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 151px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.container3 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 37px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.heading3 {
+  display: flex;
+  position: relative;
+  width: 190.781px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r65 {
+  width: 190.781px;
+  height: 33px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.frame856 {
+  display: flex;
+  position: relative;
+  width: 98.5625px;
+  height: 37px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  row-gap: 4px;
+  column-gap: 4px;
+  background-color: rgb(26, 26, 26);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 8px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: solid;
+}
+.icon3 {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r68 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 21 / 21;
+}
+.popular {
+  display: flex;
+  position: relative;
+  width: 50.5625px;
+  height: 21px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r70 {
+  width: 50.5625px;
+  height: 21px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  letter-spacing: 0.28px;
+}
+.line2 {
+  position: relative;
+  width: 309.344px;
+  height: 1px;
+  background-color: rgb(31, 31, 31);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.paragraph3 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 81px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r73 {
+  width: 309.344px;
+  height: 81px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.itemsContainer2 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 192px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+  row-gap: 12px;
+  column-gap: 12px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r75 {
+  position: relative;
+  width: 309.344px;
+  height: 48px;
+  flex-shrink: 0;
+}
+.pointer12 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 48px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgba(20, 20, 20, 0);
+  place-items: center normal;
+  place-content: center flex-start;
+  border-radius: 8px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgba(31, 31, 31, 0);
+  --border-style: solid;
+}
+.text6 {
+  display: flex;
+  position: relative;
+  width: 271.344px;
+  height: 48px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r78 {
+  width: 271.344px;
+  height: 48px;
+  color: rgb(176, 177, 181);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.r79 {
+  position: relative;
+  width: 309.344px;
+  height: 30px;
+  flex-shrink: 0;
+}
+.pointer13 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 30px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgba(20, 20, 20, 0);
+  place-items: center normal;
+  place-content: center flex-start;
+  border-radius: 8px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgba(31, 31, 31, 0);
+  --border-style: solid;
+}
+.text7 {
+  display: flex;
+  position: relative;
+  width: 271.344px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r82 {
+  width: 271.344px;
+  height: 24px;
+  color: rgb(176, 177, 181);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.r83 {
+  position: relative;
+  width: 309.344px;
+  height: 55px;
+  flex-shrink: 0;
+}
+.iconLeftRight {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 55px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  row-gap: 4px;
+  column-gap: 4px;
+  background-color: rgb(205, 241, 64);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center;
+  cursor: pointer;
+  padding: 14px 28px;
+  border-radius: 53px;
+}
+.text8 {
+  display: flex;
+  position: relative;
+  width: 153.516px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r86 {
+  width: 153.516px;
+  height: 27px;
+  color: rgb(15, 15, 15);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+}
+.iconRight2 {
+  display: flex;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.icon4 {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.r89 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 24px;
+  height: 24px;
+}
+.r90 {
+  width: 24px;
+  height: 24px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 20;
+}
+.shine {
+  position: absolute;
+  top: -23px;
+  right: 311.344px;
+  bottom: -2px;
+  left: -7px;
+  width: 5px;
+  height: 80px;
+  background-image: linear-gradient(177deg, rgba(255, 255, 255, 0) 8%, rgb(255, 255, 255) 84%);
+  z-index: 1;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  filter: blur(2px);
+  transform: matrix(0.866025, 0.5, -0.5, 0.866025, 0, 0);
+  flex-shrink: 0;
+}
+.card3 {
+  display: flex;
+  position: relative;
+  width: 369.328px;
+  height: 558px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.textContainer5 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 149px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading4 {
+  display: flex;
+  position: relative;
+  width: 309px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r95 {
+  width: 309px;
+  height: 33px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.line3 {
+  position: relative;
+  width: 312px;
+  height: 3px;
+  flex-shrink: 0;
+}
+.r97 {
+  width: 312px;
+  height: 3px;
+}
+.r98 {
+  width: 312px;
+  height: 3px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+.text9 {
+  display: flex;
+  position: relative;
+  width: 284.609px;
+  height: 48px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r100 {
+  width: 284.609px;
+  height: 48px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 48px;
+  letter-spacing: 0.8px;
+}
+.text10 {
+  display: flex;
+  position: relative;
+  width: 192.281px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.text10 {
+  transition: background-color var(--duration-hover) var(--ease-out-framer), color var(--duration-hover) var(--ease-out-framer), opacity var(--duration-hover) var(--ease-out-framer), transform var(--duration-hover) var(--ease-out-framer), box-shadow var(--duration-hover) var(--ease-out-framer);
+}
+.text10:hover {
+  transform: matrix(1, 0, 0, 1, 0.0150427, 0);
+}
+.r102 {
+  width: 192.281px;
+  height: 27px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+}
+
+@media (max-width: 1319px) {
+  .pricingPlan {
+    width: 780px;
+    height: 1393px;
+  }
+  .r2 {
+    width: 780px;
+    height: 201px;
+  }
+  .dektop {
+    width: 780px;
+    height: 201px;
+  }
+  .r9 {
+    color: rgb(218, 245, 111);
+  }
+  .textContainer {
+    width: 780px;
+    height: 155px;
+    max-width: 1200px;
+  }
+  .heading {
+    width: 780px;
+    height: 96px;
+  }
+  .r12 {
+    width: 780px;
+    height: 96px;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 0.8px;
+  }
+  .paragraph {
+    width: 686.391px;
+    height: 51px;
+  }
+  .r14 {
+    width: 686.391px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .r15 {
+    width: 780px;
+    height: 1132px;
+    max-width: 810px;
+  }
+  .desktopMonthly {
+    width: 780px;
+    height: 1132px;
+    max-width: 100%;
+  }
+  .container2 {
+    display: grid;
+    width: 780px;
+    height: 1044px;
+    grid-template-columns: 382px 382px;
+    grid-template-rows: 491px 537px;
+    grid-auto-rows: min-content;
+    place-content: normal center;
+  }
+  .card {
+    width: 382px;
+    height: 535px;
+    align-self: start;
+    justify-self: start;
+  }
+  .textContainer2 {
+    width: 322px;
+    height: 139.5px;
+  }
+  .heading2 {
+    width: 322px;
+    height: 30px;
+  }
+  .r37 {
+    width: 322px;
+    height: 30px;
+    font-size: 20px;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .line {
+    width: 322px;
+  }
+  .paragraph2 {
+    width: 322px;
+    height: 76.5px;
+  }
+  .r40 {
+    width: 322px;
+    height: 76.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .textContainer3 {
+    width: 140.922px;
+    height: 36px;
+  }
+  .number {
+    width: 86.7656px;
+    height: 36px;
+  }
+  .r43 {
+    width: 86.7656px;
+    height: 36px;
+    font-size: 36px;
+    line-height: 36px;
+    letter-spacing: 0.72px;
+  }
+  .itemsContainer {
+    width: 322px;
+  }
+  .r47 {
+    width: 322px;
+  }
+  .pointer1 {
+    width: 322px;
+  }
+  .text4 {
+    width: 284px;
+  }
+  .r54 {
+    width: 284px;
+  }
+  .r55 {
+    width: 322px;
+    height: 53.5px;
+  }
+  .hoverArrow {
+    width: 322px;
+    height: 53.5px;
+  }
+  .text5 {
+    width: 90.7188px;
+    height: 25.5px;
+  }
+  .r58 {
+    width: 90.7188px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+  }
+  .card2 {
+    width: 780px;
+    height: 491px;
+    align-self: start;
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .textContainer4 {
+    width: 720px;
+    height: 95.5px;
+  }
+  .container3 {
+    width: 720px;
+  }
+  .heading3 {
+    width: 601.438px;
+    height: 30px;
+  }
+  .r65 {
+    width: 601.438px;
+    height: 30px;
+    font-size: 20px;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .line2 {
+    width: 720px;
+  }
+  .paragraph3 {
+    width: 720px;
+    height: 25.5px;
+  }
+  .r73 {
+    width: 720px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .itemsContainer2 {
+    width: 720px;
+    height: 156px;
+  }
+  .r75 {
+    width: 720px;
+    height: 30px;
+  }
+  .pointer12 {
+    width: 720px;
+    height: 30px;
+  }
+  .text6 {
+    width: 682px;
+    height: 24px;
+  }
+  .r78 {
+    width: 682px;
+    height: 24px;
+  }
+  .r79 {
+    width: 720px;
+  }
+  .pointer13 {
+    width: 720px;
+  }
+  .text7 {
+    width: 682px;
+  }
+  .r82 {
+    width: 682px;
+  }
+  .r83 {
+    width: 720px;
+    height: 53.5px;
+  }
+  .iconLeftRight {
+    width: 720px;
+    height: 53.5px;
+  }
+  .text8 {
+    width: 144.984px;
+    height: 25.5px;
+  }
+  .r86 {
+    width: 144.984px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+  }
+  .shine {
+    right: 722px;
+    height: 78.5px;
+  }
+  .card3 {
+    width: 382px;
+    height: 537px;
+    align-self: start;
+    justify-self: start;
+  }
+  .textContainer5 {
+    width: 322px;
+    height: 141.5px;
+  }
+  .heading4 {
+    height: 30px;
+  }
+  .r95 {
+    height: 30px;
+    font-size: 20px;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .text9 {
+    width: 256.141px;
+    height: 36px;
+  }
+  .r100 {
+    width: 256.141px;
+    height: 36px;
+    font-size: 36px;
+    line-height: 36px;
+    letter-spacing: 0.72px;
+  }
+  .text10 {
+    width: 181.609px;
+    height: 25.5px;
+  }
+  .r102 {
+    width: 181.609px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+  }
+}
+
+@media (max-width: 809px) {
+  .pricingPlan {
+    width: 358px;
+    height: 1984.78px;
+  }
+  .r2 {
+    width: 358px;
+    height: 256.781px;
+  }
+  .dektop {
+    width: 358px;
+    height: 256.781px;
+    justify-content: center;
+    place-content: center;
+  }
+  .textContainer {
+    width: 358px;
+    height: 210.781px;
+    max-width: 900px;
+  }
+  .heading {
+    width: 358px;
+    height: 100.781px;
+  }
+  .r12 {
+    width: 358px;
+    height: 100.781px;
+    color: rgb(242, 242, 243);
+    font-size: 28px;
+    line-height: 33.6px;
+    letter-spacing: 0.56px;
+  }
+  .paragraph {
+    width: 358px;
+    height: 102px;
+  }
+  .r14 {
+    width: 358px;
+    height: 102px;
+  }
+  .r15 {
+    width: 358px;
+    height: 1668px;
+  }
+  .desktopMonthly {
+    width: 358px;
+    height: 1668px;
+  }
+  .abstractDesign {
+    right: -65.0781px;
+    bottom: 48px;
+    left: 159px;
+    width: 131px;
+    height: 38px;
+  }
+  .text2 {
+    top: 1px;
+    right: 14px;
+    bottom: 16px;
+    left: 33.75px;
+    width: 83.25px;
+    height: 21px;
+  }
+  .r26 {
+    width: 83.25px;
+    height: 21px;
+    font-size: 14px;
+    line-height: 21px;
+    letter-spacing: 0.28px;
+  }
+  .design {
+    top: 16px;
+    right: 95px;
+    bottom: -4.92188px;
+    left: 1px;
+    width: 35px;
+    height: 26.9219px;
+    transform: matrix(0.829038, -0.559193, 0.559193, 0.829038, 0, 0);
+    aspect-ratio: 1.3 / 1;
+  }
+  .r28 {
+    width: 35px;
+    height: 26.9219px;
+  }
+  .r29 {
+    width: 35px;
+    height: 26.9219px;
+  }
+  .design2 {
+    top: -9px;
+    right: 4px;
+    bottom: 33px;
+    left: 114px;
+  }
+  .container2 {
+    display: flex;
+    width: 358px;
+    height: 1580px;
+    flex-direction: column;
+    align-items: flex-start;
+    place-items: flex-start normal;
+    place-content: flex-start center;
+  }
+  .card {
+    width: 358px;
+    height: 501px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+    border-radius: 14px;
+  }
+  .textContainer2 {
+    width: 310px;
+    height: 135.5px;
+    gap: 14px;
+    row-gap: 14px;
+    column-gap: 14px;
+  }
+  .heading2 {
+    width: 310px;
+  }
+  .r37 {
+    width: 310px;
+  }
+  .line {
+    width: 310px;
+  }
+  .paragraph2 {
+    width: 310px;
+  }
+  .r40 {
+    width: 310px;
+  }
+  .itemsContainer {
+    width: 310px;
+  }
+  .r47 {
+    width: 310px;
+  }
+  .pointer1 {
+    width: 310px;
+  }
+  .text4 {
+    width: 272px;
+  }
+  .r54 {
+    width: 272px;
+  }
+  .r55 {
+    width: 310px;
+  }
+  .hoverArrow {
+    width: 310px;
+  }
+  .card2 {
+    width: 358px;
+    height: 544px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+    border-radius: 14px;
+  }
+  .textContainer4 {
+    width: 310px;
+    height: 142.5px;
+    gap: 14px;
+    row-gap: 14px;
+    column-gap: 14px;
+  }
+  .container3 {
+    width: 310px;
+  }
+  .heading3 {
+    width: 191.438px;
+  }
+  .r65 {
+    width: 191.438px;
+  }
+  .line2 {
+    width: 310px;
+  }
+  .paragraph3 {
+    width: 310px;
+    height: 76.5px;
+  }
+  .r73 {
+    width: 310px;
+    height: 76.5px;
+  }
+  .itemsContainer2 {
+    width: 310px;
+    height: 192px;
+  }
+  .r75 {
+    width: 310px;
+    height: 48px;
+  }
+  .pointer12 {
+    width: 310px;
+    height: 48px;
+  }
+  .text6 {
+    width: 272px;
+    height: 48px;
+  }
+  .r78 {
+    width: 272px;
+    height: 48px;
+  }
+  .r79 {
+    width: 310px;
+  }
+  .pointer13 {
+    width: 310px;
+  }
+  .text7 {
+    width: 272px;
+  }
+  .r82 {
+    width: 272px;
+  }
+  .r83 {
+    width: 310px;
+  }
+  .iconLeftRight {
+    width: 310px;
+  }
+  .shine {
+    right: 312px;
+  }
+  .card3 {
+    width: 358px;
+    height: 503px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+    border-radius: 14px;
+  }
+  .textContainer5 {
+    width: 310px;
+    height: 137.5px;
+    gap: 14px;
+    row-gap: 14px;
+    column-gap: 14px;
+  }
+}
+
+/* --- billing toggle state (added post-generation) --- */
+
+/* Price boxes were captured at the monthly string's width, so switching to
+ * the wider yearly figure overflowed into the "/month" suffix. Let the value
+ * and its wrapper size to their content. */
+.priceValue {
+  width: auto !important;
+  white-space: nowrap;
+}
+
+div:has(> .priceValue) {
+  width: auto !important;
+  min-width: max-content;
+  flex: 0 0 auto;
+}
+
+.toggle {
+  cursor: pointer;
+}
+
+.ellipse2 {
+  transition: transform 0.3s var(--ease-out-framer);
+}
+
+/* Knob travels the track width minus its own size and padding. */
+.container[data-yearly='true'] .ellipse2 {
+  transform: translateX(22px);
+}
+
+.container[data-yearly='true'] .monthly p {
+  color: var(--color-mist-500);
+}
+
+.container[data-yearly='true'] .yearly p {
+  color: var(--color-accent);
+}
+
+.container .yearly p {
+  color: var(--color-mist-500);
+}
+
+.container[data-yearly='true'] .monthly p,
+.container .monthly p {
+  transition: color 0.3s var(--ease-out-framer);
+}

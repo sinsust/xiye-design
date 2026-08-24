@@ -1,0 +1,270 @@
+/*
+ * Footer. Measured from the export at 1440 / 1024 / 390.
+ *
+ * The export shipped three <footer> elements (Desktop / Tablet / Phone); this
+ * is one element with media queries, which produces the same result.
+ */
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+  padding: 0 30px 30px;
+  background-color: var(--color-ink-950);
+}
+
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+  width: 100%;
+  padding: 100px 100px 24px;
+  border-radius: 24px;
+  background-color: var(--color-ink-900);
+  overflow: hidden;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+
+.upper {
+  display: flex;
+  align-items: flex-start;
+  gap: 60px;
+  width: 100%;
+  max-width: 1180px;
+}
+
+/* ---- Call-to-action block ------------------------------------------ */
+
+.ctaBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 507.39px;
+  flex: 0 0 auto;
+}
+
+.eyebrow {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  color: var(--color-mist-600);
+}
+
+.headline {
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 36px;
+  letter-spacing: 0.6px;
+  color: var(--color-mist-400);
+}
+
+/* The two phrases the export picks out in the brand accent. */
+.headline em {
+  font-style: normal;
+  color: var(--color-accent);
+}
+
+.ctaButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  gap: 4px;
+  height: 55px;
+  padding: 14px 28px;
+  border-radius: 53px;
+  background-color: var(--color-accent);
+  overflow: hidden;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+  color: var(--color-ink-950);
+  white-space: nowrap;
+}
+
+/* ---- Link columns --------------------------------------------------- */
+
+.columns {
+  display: flex;
+  gap: 24px;
+  flex: 1 0 0;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1 0 0;
+}
+
+.columnTitle {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+  color: var(--color-white);
+  margin-bottom: 4px;
+}
+
+.columnList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.columnLink {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  color: var(--color-mist-500);
+  transition: color var(--duration-hover) var(--ease-out-framer);
+}
+
+.columnLink:hover {
+  color: var(--color-accent);
+}
+
+/* The "Pages" column renders at weight 500 in the export; the rest at 400. */
+.columnPages .columnLink {
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+/* ---- Bottom bar ------------------------------------------------------ */
+
+.bottom {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1180px;
+  padding: 20px 0;
+  border-top: 1px solid var(--color-ink-700);
+}
+
+.copyright,
+.backToTop {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  color: var(--color-mist-600);
+}
+
+.backToTop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color var(--duration-hover) var(--ease-out-framer);
+}
+
+.backToTop:hover {
+  color: var(--color-accent);
+}
+
+/* Clips the arrow while it morphs on hover — see the arrow-morph rule in
+ * globals.css, which matches this asset site-wide. */
+.arrowContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  overflow: hidden;
+}
+
+.arrowContainer img {
+  width: 18px;
+  height: 18px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Tablet — 810px to 1319px
+ * ------------------------------------------------------------------ */
+@media (max-width: 1319px) {
+  .container {
+    gap: 60px;
+    padding: 80px 60px 20px;
+    border-radius: 20px;
+  }
+
+  .upper {
+    flex-direction: column;
+    gap: 50px;
+    max-width: 780px;
+  }
+
+  .ctaBlock {
+    width: 100%;
+  }
+
+  .columns {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .bottom {
+    max-width: 780px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Phone — 809px and below
+ * ------------------------------------------------------------------ */
+@media (max-width: 809px) {
+  .footer {
+    padding: 0 16px 24px;
+  }
+
+  .container {
+    gap: 40px;
+    padding: 40px 16px 24px;
+    border-radius: 16px;
+  }
+
+  .upper {
+    gap: 50px;
+    max-width: 326px;
+  }
+
+  .ctaBlock {
+    gap: 24px;
+  }
+
+  .columns {
+    flex-wrap: wrap;
+    gap: 36px;
+  }
+
+  .column {
+    flex: 0 0 calc(50% - 18px);
+  }
+
+  .bottom {
+    max-width: 326px;
+  }
+
+  .headline {
+    font-size: 26px;
+    line-height: 32px;
+  }
+}

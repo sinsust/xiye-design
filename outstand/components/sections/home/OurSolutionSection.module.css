@@ -1,0 +1,1337 @@
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.ourSolutionSection {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 1044.19px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 60px;
+  row-gap: 60px;
+  column-gap: 60px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r1 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.r2 {
+  position: relative;
+  width: 1140px;
+  height: 223.188px;
+  flex-shrink: 0;
+}
+.dektop {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 223.188px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.tag {
+  display: flex;
+  position: relative;
+  width: 107.844px;
+  height: 36px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  row-gap: 2px;
+  column-gap: 2px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 6px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.r6 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+}
+.r7 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 20;
+}
+.text {
+  display: flex;
+  position: relative;
+  width: 61.8438px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r9 {
+  width: 61.8438px;
+  height: 24px;
+  color: rgb(218, 246, 111);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.textContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 177.188px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 150px;
+  padding-left: 150px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.heading {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 115.188px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r12 {
+  width: 840px;
+  height: 115.188px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 57.6px;
+  letter-spacing: 0.96px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r14 {
+  width: 840px;
+  height: 54px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.subContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 761px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.container {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 494px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.r17 {
+  position: relative;
+  width: 450px;
+  height: 494px;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+.desktop {
+  display: flex;
+  position: relative;
+  width: 450px;
+  height: 494px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.iconContainer {
+  display: flex;
+  position: relative;
+  width: 52px;
+  height: 52px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  padding: 14px;
+  border-radius: 10px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon2 {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r21 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 24px;
+  height: 24px;
+}
+.r22 {
+  width: 24px;
+  height: 24px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 28 / 28;
+}
+.textContainer2 {
+  display: flex;
+  position: relative;
+  width: 390px;
+  height: 92px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading2 {
+  display: flex;
+  position: relative;
+  width: 390px;
+  height: 30px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r25 {
+  width: 390px;
+  height: 30px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+}
+.paragraph2 {
+  display: flex;
+  position: relative;
+  width: 390px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r27 {
+  width: 390px;
+  height: 54px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.image {
+  position: absolute;
+  top: 258px;
+  right: 101px;
+  bottom: -148px;
+  left: 30px;
+  width: 319px;
+  height: 384px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.r29 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 319px;
+  height: 384px;
+}
+.r30 {
+  width: 319px;
+  height: 384px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: contain;
+}
+.subContainer2 {
+  display: flex;
+  position: relative;
+  width: 674px;
+  height: 494px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.container2 {
+  display: flex;
+  position: relative;
+  width: 674px;
+  height: 254px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r33 {
+  position: relative;
+  width: 329px;
+  height: 254px;
+  align-self: stretch;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+.noImage {
+  display: flex;
+  position: relative;
+  width: 329px;
+  height: 254px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.textContainer3 {
+  display: flex;
+  position: relative;
+  width: 269px;
+  height: 122px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading3 {
+  display: flex;
+  position: relative;
+  width: 269px;
+  height: 60px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r37 {
+  width: 269px;
+  height: 60px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+}
+.paragraph3 {
+  display: flex;
+  position: relative;
+  width: 269px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r39 {
+  width: 269px;
+  height: 54px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.r40 {
+  position: relative;
+  width: 329px;
+  height: 254px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+.container3 {
+  display: flex;
+  position: relative;
+  width: 674px;
+  height: 224px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r42 {
+  position: relative;
+  width: 329px;
+  height: 224px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+.noImage2 {
+  display: flex;
+  position: relative;
+  width: 329px;
+  height: 224px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.textContainer4 {
+  display: flex;
+  position: relative;
+  width: 269px;
+  height: 92px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading4 {
+  display: flex;
+  position: relative;
+  width: 269px;
+  height: 30px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r46 {
+  width: 269px;
+  height: 30px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+}
+.r47 {
+  position: relative;
+  width: 329px;
+  height: 224px;
+  align-self: stretch;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+.container4 {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 251px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.subContainer3 {
+  display: flex;
+  position: relative;
+  width: 562px;
+  height: 251px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 14px;
+  row-gap: 14px;
+  column-gap: 14px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r50 {
+  position: relative;
+  width: 274px;
+  height: 251px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+.noImage3 {
+  display: flex;
+  position: relative;
+  width: 274px;
+  height: 251px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.textContainer5 {
+  display: flex;
+  position: relative;
+  width: 214px;
+  height: 119px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading5 {
+  display: flex;
+  position: relative;
+  width: 214px;
+  height: 30px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r54 {
+  width: 214px;
+  height: 30px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+}
+.paragraph4 {
+  display: flex;
+  position: relative;
+  width: 214px;
+  height: 81px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r56 {
+  width: 214px;
+  height: 81px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.r57 {
+  position: relative;
+  width: 562px;
+  height: 251px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+.tablet {
+  display: flex;
+  position: relative;
+  width: 562px;
+  height: 251px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.textContainer6 {
+  display: flex;
+  position: relative;
+  width: 502px;
+  height: 119px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 270px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading6 {
+  display: flex;
+  position: relative;
+  width: 232px;
+  height: 30px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r61 {
+  width: 232px;
+  height: 30px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+}
+.paragraph5 {
+  display: flex;
+  position: relative;
+  width: 232px;
+  height: 81px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r63 {
+  width: 232px;
+  height: 81px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.image2 {
+  position: absolute;
+  top: 51px;
+  right: 30px;
+  bottom: -102px;
+  left: 303px;
+  width: 229px;
+  height: 302px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.r65 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 229px;
+  height: 302px;
+}
+.r66 {
+  width: 229px;
+  height: 302px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: contain;
+}
+
+@media (max-width: 1319px) {
+  .ourSolutionSection {
+    width: 780px;
+    height: 1415px;
+  }
+  .r2 {
+    width: 780px;
+    height: 201px;
+  }
+  .dektop {
+    width: 780px;
+    height: 201px;
+  }
+  .r9 {
+    color: rgb(218, 245, 111);
+  }
+  .textContainer {
+    width: 780px;
+    height: 155px;
+    max-width: 1200px;
+  }
+  .heading {
+    width: 780px;
+    height: 96px;
+  }
+  .r12 {
+    width: 780px;
+    height: 96px;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 0.8px;
+  }
+  .paragraph {
+    width: 686.391px;
+    height: 51px;
+  }
+  .r14 {
+    width: 686.391px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .subContainer {
+    width: 780px;
+    height: 1154px;
+  }
+  .container {
+    width: 780px;
+    height: 686px;
+    flex-direction: column;
+  }
+  .r17 {
+    width: 780px;
+    height: 218px;
+  }
+  .desktop {
+    width: 780px;
+    height: 218px;
+  }
+  .textContainer2 {
+    width: 720px;
+    height: 86px;
+    padding-right: 270px;
+  }
+  .heading2 {
+    width: 450px;
+    height: 27px;
+  }
+  .r25 {
+    width: 450px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .paragraph2 {
+    width: 450px;
+    height: 51px;
+  }
+  .r27 {
+    width: 450px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .image {
+    top: 51px;
+    right: 30px;
+    bottom: -102px;
+    left: 521px;
+    width: 229px;
+    height: 269px;
+  }
+  .r29 {
+    width: 229px;
+    height: 269px;
+  }
+  .r30 {
+    width: 229px;
+    height: 269px;
+  }
+  .subContainer2 {
+    width: 780px;
+    height: 452px;
+  }
+  .container2 {
+    width: 780px;
+    height: 218px;
+  }
+  .r33 {
+    width: 382px;
+    height: 218px;
+  }
+  .noImage {
+    width: 382px;
+    height: 218px;
+  }
+  .textContainer3 {
+    width: 322px;
+    height: 86px;
+  }
+  .heading3 {
+    width: 322px;
+    height: 27px;
+  }
+  .r37 {
+    width: 322px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .paragraph3 {
+    width: 322px;
+    height: 51px;
+  }
+  .r39 {
+    width: 322px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .r40 {
+    width: 382px;
+    height: 218px;
+  }
+  .container3 {
+    width: 780px;
+    height: 218px;
+  }
+  .r42 {
+    width: 382px;
+    height: 218px;
+  }
+  .noImage2 {
+    width: 382px;
+    height: 218px;
+  }
+  .textContainer4 {
+    width: 322px;
+    height: 86px;
+  }
+  .heading4 {
+    width: 322px;
+    height: 27px;
+  }
+  .r46 {
+    width: 322px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .r47 {
+    width: 382px;
+    height: 218px;
+  }
+  .container4 {
+    width: 780px;
+    height: 452px;
+    flex-direction: column;
+  }
+  .subContainer3 {
+    width: 780px;
+    height: 218px;
+  }
+  .r50 {
+    width: 383px;
+    height: 218px;
+    align-self: stretch;
+  }
+  .noImage3 {
+    width: 383px;
+    height: 218px;
+  }
+  .textContainer5 {
+    width: 323px;
+    height: 86px;
+  }
+  .heading5 {
+    width: 323px;
+    height: 27px;
+  }
+  .r54 {
+    width: 323px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .paragraph4 {
+    width: 323px;
+    height: 51px;
+  }
+  .r56 {
+    width: 323px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .r57 {
+    width: 780px;
+    height: 218px;
+  }
+  .tablet {
+    width: 780px;
+    height: 218px;
+  }
+  .textContainer6 {
+    width: 720px;
+    height: 86px;
+  }
+  .heading6 {
+    width: 450px;
+    height: 27px;
+  }
+  .r61 {
+    width: 450px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .paragraph5 {
+    width: 450px;
+    height: 51px;
+  }
+  .r63 {
+    width: 450px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .image2 {
+    left: 521px;
+    height: 269px;
+  }
+  .r65 {
+    height: 269px;
+  }
+  .r66 {
+    height: 269px;
+  }
+}
+
+@media (max-width: 809px) {
+  .ourSolutionSection {
+    width: 358px;
+    height: 2502.69px;
+  }
+  .r2 {
+    width: 358px;
+    height: 223.188px;
+  }
+  .dektop {
+    width: 358px;
+    height: 223.188px;
+    justify-content: center;
+    place-content: center;
+  }
+  .textContainer {
+    width: 358px;
+    height: 177.188px;
+    max-width: 900px;
+  }
+  .heading {
+    width: 358px;
+    height: 67.1875px;
+  }
+  .r12 {
+    width: 358px;
+    height: 67.1875px;
+    color: rgb(242, 242, 243);
+    font-size: 28px;
+    line-height: 33.6px;
+    letter-spacing: 0.56px;
+  }
+  .paragraph {
+    width: 358px;
+    height: 102px;
+  }
+  .r14 {
+    width: 358px;
+    height: 102px;
+  }
+  .subContainer {
+    width: 358px;
+    height: 2219.5px;
+  }
+  .container {
+    width: 358px;
+    height: 1349.5px;
+  }
+  .r17 {
+    width: 358px;
+    height: 413.5px;
+  }
+  .desktop {
+    width: 358px;
+    height: 413.5px;
+    padding: 30px 30px 200px 30px;
+  }
+  .textContainer2 {
+    width: 298px;
+    height: 111.5px;
+  }
+  .heading2 {
+    width: 298px;
+  }
+  .r25 {
+    width: 298px;
+  }
+  .paragraph2 {
+    width: 298px;
+    height: 76.5px;
+  }
+  .r27 {
+    width: 298px;
+    height: 76.5px;
+  }
+  .image {
+    top: 245.5px;
+    right: 47px;
+    bottom: -169px;
+    left: 30px;
+    width: 281px;
+    height: 337px;
+  }
+  .r29 {
+    width: 281px;
+    height: 337px;
+  }
+  .r30 {
+    width: 281px;
+    height: 337px;
+  }
+  .subContainer2 {
+    width: 358px;
+    height: 920px;
+  }
+  .container2 {
+    width: 358px;
+    height: 452px;
+    flex-direction: column;
+  }
+  .r33 {
+    width: 358px;
+  }
+  .noImage {
+    width: 358px;
+  }
+  .textContainer3 {
+    width: 298px;
+  }
+  .heading3 {
+    width: 298px;
+  }
+  .r37 {
+    width: 298px;
+  }
+  .paragraph3 {
+    width: 298px;
+  }
+  .r39 {
+    width: 298px;
+  }
+  .r40 {
+    width: 358px;
+  }
+  .container3 {
+    width: 358px;
+    height: 452px;
+    flex-direction: column;
+  }
+  .r42 {
+    width: 358px;
+  }
+  .noImage2 {
+    width: 358px;
+  }
+  .textContainer4 {
+    width: 298px;
+  }
+  .heading4 {
+    width: 298px;
+  }
+  .r46 {
+    width: 298px;
+  }
+  .r47 {
+    width: 358px;
+  }
+  .container4 {
+    width: 358px;
+    height: 854px;
+  }
+  .subContainer3 {
+    width: 358px;
+    height: 450px;
+    flex-direction: column;
+  }
+  .r50 {
+    width: 358px;
+  }
+  .noImage3 {
+    width: 358px;
+  }
+  .textContainer5 {
+    width: 298px;
+  }
+  .heading5 {
+    width: 298px;
+  }
+  .r54 {
+    width: 298px;
+  }
+  .paragraph4 {
+    width: 298px;
+  }
+  .r56 {
+    width: 298px;
+  }
+  .r57 {
+    width: 358px;
+    height: 388px;
+  }
+  .tablet {
+    width: 358px;
+    height: 388px;
+    padding: 30px 30px 200px 30px;
+  }
+  .textContainer6 {
+    width: 298px;
+  }
+  .heading6 {
+    width: 298px;
+  }
+  .r61 {
+    width: 298px;
+  }
+  .paragraph5 {
+    width: 298px;
+  }
+  .r63 {
+    width: 298px;
+  }
+  .image2 {
+    top: 220px;
+    right: 47px;
+    bottom: -169px;
+    left: 30px;
+    width: 281px;
+    height: 337px;
+  }
+  .r65 {
+    width: 281px;
+    height: 337px;
+  }
+  .r66 {
+    width: 281px;
+    height: 337px;
+  }
+}

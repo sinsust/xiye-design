@@ -1,0 +1,78 @@
+/*
+ * Design tokens.
+ *
+ * Every value here was read out of the original Framer export's colour tokens
+ * and typography rules — none of it is an approximation. The semantic names on
+ * the left are the ones you edit; the `--token-*` aliases at the bottom keep the
+ * original Framer identifiers working so nothing has to be renamed twice.
+ *
+ * Change a brand colour once here and it propagates across every section.
+ */
+
+:root {
+  /* ---- Brand accent (lime) ---------------------------------------- */
+  --color-accent: rgb(205, 241, 64);
+  --color-accent-soft: rgb(212, 244, 88);
+  --color-accent-muted: rgb(218, 246, 111);
+  --color-accent-tint: rgb(248, 253, 231);
+
+  /* ---- Dark surfaces (page background → raised cards) -------------- */
+  --color-ink-950: rgb(15, 15, 15);
+  --color-ink-900: rgb(20, 20, 20);
+  --color-ink-850: rgb(26, 26, 26);
+  --color-ink-800: rgb(31, 31, 31);
+  --color-ink-700: rgb(38, 38, 38);
+  --color-ink-600: rgb(46, 46, 46);
+  --color-ink-500: rgb(64, 64, 64);
+
+  /* ---- Neutral text / borders ------------------------------------- */
+  --color-mist-600: rgb(150, 151, 156);
+  --color-mist-500: rgb(176, 177, 181);
+  --color-mist-400: rgb(202, 203, 206);
+  --color-mist-300: rgb(228, 229, 230);
+  --color-mist-200: rgb(242, 242, 243);
+  --color-mist-100: rgb(247, 247, 248);
+  --color-white: rgb(255, 255, 255);
+
+  /* ---- Typography -------------------------------------------------- */
+  --font-heading: 'Rethink Sans', 'Rethink Sans Placeholder', sans-serif;
+  --font-body: 'Manrope', 'Manrope Placeholder', sans-serif;
+  --font-ui: 'Inter', 'Inter Placeholder', sans-serif;
+
+  /* ---- Layout ------------------------------------------------------ */
+  /* The centred content column measures 1140px on desktop in the export. */
+  --shell-max-width: 1140px;
+  --shell-gutter-desktop: 0px;
+  --shell-gutter-tablet: 40px;
+  --shell-gutter-phone: 20px;
+
+  /* Fixed header height, measured from the export at each breakpoint. */
+  --header-height: 115px;
+
+  /* ---- Motion ------------------------------------------------------ */
+  /* Framer's default appear-animation curve and duration. */
+  --ease-out-framer: cubic-bezier(0.44, 0, 0.56, 1);
+  --duration-appear: 0.8s;
+  --duration-hover: 0.3s;
+
+  /* ---- Framer token aliases ---------------------------------------- */
+  /* Preserved so styles carried over from the export resolve unchanged. */
+  --token-f625cd9c-eaf7-4830-9abe-885d260206dd: var(--color-white);
+  --token-811502d1-0eed-443f-8478-80af7a468fd8: var(--color-accent);
+  --token-f5bc7a34-0c77-443b-b684-8cedb1c2c074: var(--color-accent-soft);
+  --token-3e615b24-d9fc-4c54-b2ad-169116039064: var(--color-accent-muted);
+  --token-228bd8b7-61e7-4bd9-9cd4-ea1fc74f8329: var(--color-accent-tint);
+  --token-c243089d-22fa-4f8f-8f22-cf56670552cd: var(--color-ink-950);
+  --token-d9454b2f-ce3c-4b90-86b5-27e17ad46d27: var(--color-ink-900);
+  --token-6947ca58-4a1b-4b95-ba60-8472824a92a1: var(--color-ink-850);
+  --token-04c52171-4de3-44b2-8dbe-ce34f70099a7: var(--color-ink-800);
+  --token-a1e15573-407a-4e05-aad1-ccea5b623206: var(--color-ink-700);
+  --token-e797afbf-7d45-44fe-9d79-b9d6850b7078: var(--color-ink-600);
+  --token-add9e850-86ea-475b-bee1-1fe2d98fb1fd: var(--color-ink-500);
+  --token-1ea94bb4-e366-48b2-a582-2a7d341cfb0a: var(--color-mist-600);
+  --token-50b92554-c06b-4234-9dc3-b4fb95be4c7b: var(--color-mist-500);
+  --token-dd2900f6-9f5b-418d-8242-22e7260df7e5: var(--color-mist-400);
+  --token-d1a42c1e-80d4-439d-895a-21aa57395645: var(--color-mist-300);
+  --token-44907ccf-0ea5-4a3d-95f6-21bbb86df999: var(--color-mist-200);
+  --token-efc87095-b4a7-4589-8808-09a99b6bac39: var(--color-mist-100);
+}

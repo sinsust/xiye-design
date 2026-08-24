@@ -1,0 +1,772 @@
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.ourStory {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 599.594px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 60px;
+  row-gap: 60px;
+  column-gap: 60px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.r1 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.r2 {
+  position: relative;
+  width: 1140px;
+  height: 165.594px;
+  flex-shrink: 0;
+}
+.dektop {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 165.594px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.tag {
+  display: flex;
+  position: relative;
+  width: 119.094px;
+  height: 36px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  row-gap: 2px;
+  column-gap: 2px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 6px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.r6 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+}
+.r7 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+}
+.text {
+  display: flex;
+  position: relative;
+  width: 73.0938px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r9 {
+  width: 73.0938px;
+  height: 24px;
+  color: rgb(218, 246, 111);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.textContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 119.594px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 150px;
+  padding-left: 150px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.heading {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 57.5938px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r12 {
+  width: 840px;
+  height: 57.5938px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 57.6px;
+  letter-spacing: 0.96px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r14 {
+  width: 840px;
+  height: 54px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.container {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 374px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.subContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 374px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 40px;
+  row-gap: 40px;
+  column-gap: 40px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.container2 {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 320px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.card {
+  display: flex;
+  position: relative;
+  width: 369.328px;
+  height: 320px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.number {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: center;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal center;
+  word-break: break-word;
+}
+.r20 {
+  width: 309.328px;
+  height: 54px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 54px;
+}
+.container3 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 176px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading2 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r23 {
+  width: 309.328px;
+  height: 33px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.text2 {
+  display: flex;
+  position: relative;
+  width: 309.328px;
+  height: 135px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r25 {
+  width: 309.328px;
+  height: 135px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.card2 {
+  display: flex;
+  position: relative;
+  width: 369.344px;
+  height: 320px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.number2 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: center;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal center;
+  word-break: break-word;
+}
+.r28 {
+  width: 309.344px;
+  height: 54px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 54px;
+}
+.container4 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 176px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading3 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r31 {
+  width: 309.344px;
+  height: 33px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.text3 {
+  display: flex;
+  position: relative;
+  width: 309.344px;
+  height: 135px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r33 {
+  width: 309.344px;
+  height: 135px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.progressBar {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 14px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.line {
+  position: relative;
+  width: 150px;
+  height: 2px;
+  background-color: rgb(31, 31, 31);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.circle {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  background-color: rgb(205, 241, 64);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  border-radius: 100px;
+}
+.line2 {
+  position: relative;
+  width: 369px;
+  height: 2px;
+  background-color: rgb(31, 31, 31);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+
+@media (max-width: 1319px) {
+  .ourStory {
+    width: 780px;
+    height: 576.5px;
+  }
+  .r2 {
+    width: 780px;
+    height: 153px;
+  }
+  .dektop {
+    width: 780px;
+    height: 153px;
+  }
+  .r9 {
+    color: rgb(218, 245, 111);
+  }
+  .textContainer {
+    width: 780px;
+    height: 107px;
+    max-width: 1200px;
+  }
+  .heading {
+    width: 780px;
+    height: 48px;
+  }
+  .r12 {
+    width: 780px;
+    height: 48px;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 0.8px;
+  }
+  .paragraph {
+    width: 686.391px;
+    height: 51px;
+  }
+  .r14 {
+    width: 686.391px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .container {
+    width: 780px;
+    height: 363.5px;
+    justify-content: flex-start;
+    place-content: center flex-start;
+  }
+  .subContainer {
+    height: 363.5px;
+  }
+  .container2 {
+    height: 309.5px;
+  }
+  .card {
+    height: 309.5px;
+  }
+  .container3 {
+    height: 165.5px;
+  }
+  .heading2 {
+    height: 30px;
+  }
+  .r23 {
+    height: 30px;
+    font-size: 20px;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .text2 {
+    height: 127.5px;
+  }
+  .r25 {
+    height: 127.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .card2 {
+    height: 309.5px;
+  }
+  .container4 {
+    height: 165.5px;
+  }
+  .heading3 {
+    height: 30px;
+  }
+  .r31 {
+    height: 30px;
+    font-size: 20px;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .text3 {
+    height: 127.5px;
+  }
+  .r33 {
+    height: 127.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+}
+
+@media (max-width: 809px) {
+  .ourStory {
+    width: 358px;
+    height: 1191.09px;
+    gap: 50px;
+    row-gap: 50px;
+    column-gap: 50px;
+  }
+  .r2 {
+    width: 358px;
+    height: 164.094px;
+  }
+  .dektop {
+    width: 358px;
+    height: 164.094px;
+    justify-content: center;
+    place-content: center;
+  }
+  .textContainer {
+    width: 358px;
+    height: 118.094px;
+    max-width: 900px;
+  }
+  .heading {
+    width: 358px;
+    height: 33.5938px;
+  }
+  .r12 {
+    width: 358px;
+    height: 33.5938px;
+    color: rgb(242, 242, 243);
+    font-size: 28px;
+    line-height: 33.6px;
+    letter-spacing: 0.56px;
+  }
+  .paragraph {
+    width: 358px;
+    height: 76.5px;
+  }
+  .r14 {
+    width: 358px;
+    height: 76.5px;
+  }
+  .container {
+    width: 358px;
+    height: 977px;
+  }
+  .subContainer {
+    width: 358px;
+    height: 977px;
+    gap: 12px;
+    row-gap: 12px;
+    column-gap: 12px;
+    flex-grow: 1;
+    flex-basis: 0px;
+  }
+  .container2 {
+    width: 312px;
+    height: 977px;
+    flex-direction: column;
+    flex-grow: 1;
+    flex-basis: 0px;
+  }
+  .card {
+    width: 312px;
+    height: 315px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+  }
+  .number {
+    width: 264px;
+  }
+  .r20 {
+    width: 264px;
+  }
+  .container3 {
+    width: 264px;
+    height: 189px;
+    gap: 6px;
+    row-gap: 6px;
+    column-gap: 6px;
+  }
+  .heading2 {
+    width: 264px;
+  }
+  .r23 {
+    width: 264px;
+  }
+  .text2 {
+    width: 264px;
+    height: 153px;
+  }
+  .r25 {
+    width: 264px;
+    height: 153px;
+  }
+  .card2 {
+    width: 312px;
+    height: 315px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+  }
+  .number2 {
+    width: 264px;
+  }
+  .r28 {
+    width: 264px;
+  }
+  .container4 {
+    width: 264px;
+    height: 189px;
+    gap: 6px;
+    row-gap: 6px;
+    column-gap: 6px;
+  }
+  .heading3 {
+    width: 264px;
+  }
+  .r31 {
+    width: 264px;
+  }
+  .text3 {
+    width: 264px;
+    height: 153px;
+  }
+  .r33 {
+    width: 264px;
+    height: 153px;
+  }
+  .progressBar {
+    width: 34px;
+    height: 977px;
+    flex-direction: column;
+    align-self: stretch;
+  }
+  .line {
+    width: 1px;
+    height: 100px;
+  }
+  .line2 {
+    width: 1px;
+    height: 337.5px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Timeline alignment below the desktop breakpoint.
+ *
+ * The milestone card is narrower than its row (312 inside 358 at phone)
+ * and the original pushes it to the right, leaving the gap the vertical
+ * timeline line and its dots occupy. Defaulting to the left made the
+ * card sit on top of the line and stranded the dots in empty space.
+ * ------------------------------------------------------------------ */
+@media (max-width: 1319px) {
+  .container2 {
+    margin-left: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Drop the timeline rail on phones.
+ *
+ * The vertical line and its dots only line up at the captured width; at
+ * any other phone size the column stayed frozen and the rail drifted
+ * inward, away from the cards it should sit beside. Removing it leaves a
+ * clean stack of milestone cards, and the gutter it occupied is returned
+ * to the cards so they fill the column.
+ * ------------------------------------------------------------------ */
+@media (max-width: 809px) {
+  .line,
+  .line2,
+  .circle {
+    display: none;
+  }
+
+  .container2 {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,682 @@
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.benefitsSection {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 704.594px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 60px;
+  row-gap: 60px;
+  column-gap: 60px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r1 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.r2 {
+  position: relative;
+  width: 1140px;
+  height: 138.594px;
+  flex-shrink: 0;
+}
+.dektop {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 138.594px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.tag {
+  display: flex;
+  position: relative;
+  width: 107.844px;
+  height: 36px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  row-gap: 2px;
+  column-gap: 2px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 6px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.r6 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+}
+.r7 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 20;
+}
+.text {
+  display: flex;
+  position: relative;
+  width: 61.8438px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r9 {
+  width: 61.8438px;
+  height: 24px;
+  color: rgb(218, 246, 111);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.textContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 92.5938px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 150px;
+  padding-left: 150px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.heading {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 57.5938px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r12 {
+  width: 840px;
+  height: 57.5938px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 57.6px;
+  letter-spacing: 0.96px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r14 {
+  width: 840px;
+  height: 27px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.subContainer {
+  display: grid;
+  position: relative;
+  width: 1140px;
+  height: 506px;
+  justify-content: center;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  flex-shrink: 0;
+  grid-template-columns: 285px 285px 285px 285px;
+  grid-template-rows: 253px 253px;
+  grid-auto-rows: minmax(0px, 1fr);
+  place-content: normal center;
+}
+.r16 {
+  position: relative;
+  width: 285px;
+  height: 253px;
+  align-self: start;
+  flex-shrink: 0;
+  justify-self: start;
+}
+.desktopTablet {
+  display: flex;
+  position: relative;
+  width: 285px;
+  height: 253px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  row-gap: 24px;
+  column-gap: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 30px;
+  --border-top-width: 0px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 0px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: dashed;
+}
+.r18 {
+  display: flex;
+  position: relative;
+  width: 52px;
+  height: 52px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  padding: 14px;
+  border-radius: 10px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.iconContainer {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r20 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 24px;
+  height: 24px;
+}
+.r21 {
+  width: 24px;
+  height: 24px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 24 / 24;
+}
+.textContainer2 {
+  display: flex;
+  position: relative;
+  width: 225px;
+  height: 117px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 6px;
+  row-gap: 6px;
+  column-gap: 6px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading2 {
+  display: flex;
+  position: relative;
+  width: 225px;
+  height: 30px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r24 {
+  width: 225px;
+  height: 30px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+.paragraph2 {
+  display: flex;
+  position: relative;
+  width: 225px;
+  height: 81px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r26 {
+  width: 225px;
+  height: 81px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.desktopTablet2 {
+  display: flex;
+  position: relative;
+  width: 285px;
+  height: 253px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  row-gap: 24px;
+  column-gap: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 30px;
+  --border-top-width: 0px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 0px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: dashed;
+}
+.desktopTablet3 {
+  display: flex;
+  position: relative;
+  width: 285px;
+  height: 253px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  row-gap: 24px;
+  column-gap: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 30px;
+  --border-top-width: 0px;
+  --border-right-width: 0px;
+  --border-bottom-width: 1px;
+  --border-left-width: 0px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: dashed;
+}
+.desktopTablet4 {
+  display: flex;
+  position: relative;
+  width: 285px;
+  height: 253px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  row-gap: 24px;
+  column-gap: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 30px;
+  --border-top-width: 0px;
+  --border-right-width: 1px;
+  --border-bottom-width: 0px;
+  --border-left-width: 0px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: dashed;
+}
+.desktopTablet5 {
+  display: flex;
+  position: relative;
+  width: 285px;
+  height: 253px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  row-gap: 24px;
+  column-gap: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 30px;
+  --border-top-width: 0px;
+  --border-right-width: 1px;
+  --border-bottom-width: 0px;
+  --border-left-width: 0px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: dashed;
+}
+.desktopTablet6 {
+  display: flex;
+  position: relative;
+  width: 285px;
+  height: 253px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  row-gap: 24px;
+  column-gap: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 30px;
+  --border-top-width: 0px;
+  --border-right-width: 1px;
+  --border-bottom-width: 0px;
+  --border-left-width: 0px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: dashed;
+}
+.desktopTablet7 {
+  display: flex;
+  position: relative;
+  width: 285px;
+  height: 253px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 24px;
+  row-gap: 24px;
+  column-gap: 24px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 30px;
+  --border-top-width: 0px;
+  --border-right-width: 0px;
+  --border-bottom-width: 0px;
+  --border-left-width: 0px;
+  --border-color: rgb(38, 38, 38);
+  --border-style: dashed;
+}
+
+@media (max-width: 1319px) {
+  .benefitsSection {
+    width: 780px;
+    height: 1093px;
+  }
+  .r2 {
+    width: 780px;
+    height: 153px;
+  }
+  .dektop {
+    width: 780px;
+    height: 153px;
+  }
+  .r9 {
+    color: rgb(218, 245, 111);
+  }
+  .textContainer {
+    width: 780px;
+    height: 107px;
+    max-width: 1200px;
+  }
+  .heading {
+    width: 780px;
+    height: 48px;
+  }
+  .r12 {
+    width: 780px;
+    height: 48px;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 0.8px;
+  }
+  .paragraph {
+    width: 686.391px;
+    height: 51px;
+  }
+  .r14 {
+    width: 686.391px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .subContainer {
+    width: 780px;
+    height: 880px;
+    grid-template-columns: 390px 390px;
+    grid-template-rows: 220px 220px 220px 220px;
+  }
+  .r16 {
+    width: 390px;
+    height: 220px;
+  }
+  .desktopTablet {
+    width: 390px;
+    height: 220px;
+  }
+  .textContainer2 {
+    width: 330px;
+    height: 84px;
+  }
+  .heading2 {
+    width: 330px;
+    height: 27px;
+  }
+  .r24 {
+    width: 330px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .paragraph2 {
+    width: 330px;
+    height: 51px;
+  }
+  .r26 {
+    width: 330px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .desktopTablet2 {
+    width: 390px;
+    height: 220px;
+    --border-right-width: 0px;
+  }
+  .desktopTablet3 {
+    width: 390px;
+    height: 220px;
+  }
+  .desktopTablet4 {
+    width: 390px;
+    height: 220px;
+    --border-bottom-width: 1px;
+  }
+  .desktopTablet5 {
+    width: 390px;
+    height: 220px;
+    --border-right-width: 0px;
+    --border-bottom-width: 1px;
+  }
+  .desktopTablet6 {
+    width: 390px;
+    height: 220px;
+  }
+  .desktopTablet7 {
+    width: 390px;
+    height: 220px;
+  }
+}
+
+@media (max-width: 809px) {
+  .benefitsSection {
+    width: 358px;
+    height: 1984.09px;
+  }
+  .r2 {
+    width: 358px;
+    height: 164.094px;
+  }
+  .dektop {
+    width: 358px;
+    height: 164.094px;
+    justify-content: center;
+    place-content: center;
+  }
+  .textContainer {
+    width: 358px;
+    height: 118.094px;
+    max-width: 900px;
+  }
+  .heading {
+    width: 358px;
+    height: 33.5938px;
+  }
+  .r12 {
+    width: 358px;
+    height: 33.5938px;
+    color: rgb(242, 242, 243);
+    font-size: 28px;
+    line-height: 33.6px;
+    letter-spacing: 0.56px;
+  }
+  .paragraph {
+    width: 358px;
+    height: 76.5px;
+  }
+  .r14 {
+    width: 358px;
+    height: 76.5px;
+  }
+  .subContainer {
+    width: 358px;
+    height: 1760px;
+    grid-template-columns: 358px;
+    grid-template-rows: 220px 220px 220px 220px 220px 220px 220px 220px;
+  }
+  .r16 {
+    width: 358px;
+  }
+  .desktopTablet {
+    width: 358px;
+    --border-right-width: 0px;
+  }
+  .textContainer2 {
+    width: 298px;
+  }
+  .heading2 {
+    width: 298px;
+  }
+  .r24 {
+    width: 298px;
+  }
+  .paragraph2 {
+    width: 298px;
+  }
+  .r26 {
+    width: 298px;
+  }
+  .desktopTablet2 {
+    width: 358px;
+  }
+  .desktopTablet3 {
+    width: 358px;
+  }
+  .desktopTablet4 {
+    width: 358px;
+    --border-right-width: 0px;
+  }
+  .desktopTablet5 {
+    width: 358px;
+  }
+  .desktopTablet6 {
+    width: 358px;
+    --border-right-width: 0px;
+    --border-bottom-width: 1px;
+  }
+  .desktopTablet7 {
+    width: 358px;
+  }
+}

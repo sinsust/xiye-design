@@ -1,0 +1,1388 @@
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.hero {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 1187.8px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  padding-top: 180px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.backgroundImage {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: -46.2031px;
+  left: 0px;
+  width: 100%;
+  height: 1234px;
+  z-index: 0;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.rightGlow {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 441px;
+  left: 926px;
+  width: 514px;
+  height: 793px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.glowRight {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 88px;
+  left: 0px;
+  width: 514px;
+  height: 705px;
+  flex-shrink: 0;
+}
+.r4 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 514px;
+  height: 705px;
+}
+.r5 {
+  width: 514px;
+  height: 705px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 513 / 793;
+}
+.leftGlow {
+  position: absolute;
+  top: 0px;
+  right: 926px;
+  bottom: 441px;
+  left: 0px;
+  width: 514px;
+  height: 793px;
+  flex-shrink: 0;
+}
+.glowLeft {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 514px;
+  height: 793px;
+  flex-shrink: 0;
+}
+.r8 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 514px;
+  height: 793px;
+}
+.r9 {
+  width: 514px;
+  height: 793px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 513 / 793;
+}
+.container {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 1007.8px;
+  max-width: 1140px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 60px;
+  row-gap: 60px;
+  column-gap: 60px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.r17 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.r18 {
+  position: relative;
+  width: 1140px;
+  height: 138.594px;
+  flex-shrink: 0;
+}
+.dektop {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 138.594px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.tag {
+  display: flex;
+  position: relative;
+  width: 131.297px;
+  height: 36px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  row-gap: 2px;
+  column-gap: 2px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 6px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.r22 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+}
+.r23 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+}
+.text {
+  display: flex;
+  position: relative;
+  width: 85.2969px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r25 {
+  width: 85.2969px;
+  height: 24px;
+  color: rgb(218, 246, 111);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.textContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 92.5938px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 150px;
+  padding-left: 150px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.heading {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 57.5938px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r28 {
+  width: 840px;
+  height: 57.5938px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 57.6px;
+  letter-spacing: 0.96px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r30 {
+  width: 840px;
+  height: 27px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.subContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 809.203px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.container2 {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 411.203px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 40px;
+  row-gap: 40px;
+  column-gap: 40px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 50px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.r33 {
+  display: flex;
+  position: relative;
+  width: 500px;
+  height: 311.203px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.container3 {
+  display: flex;
+  position: relative;
+  width: 500px;
+  height: 244px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.r35 {
+  display: flex;
+  position: relative;
+  width: 500px;
+  height: 46px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  cursor: default;
+}
+.r36 {
+  position: relative;
+  width: 500px;
+  height: 46px;
+  background-color: rgb(15, 15, 15);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+.r37 {
+  display: inline-block;
+  width: 500px;
+  height: 46px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans";
+  font-size: 15px;
+  line-height: 18px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  white-space: nowrap;
+  cursor: text;
+  padding: 14px 20px;
+}
+.r38 {
+  display: flex;
+  position: relative;
+  width: 500px;
+  height: 120px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  cursor: default;
+}
+.r39 {
+  position: relative;
+  width: 500px;
+  height: 120px;
+  min-height: 120px;
+  background-color: rgb(15, 15, 15);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+.r40 {
+  display: flex;
+  width: 500px;
+  height: 120px;
+  min-height: 120px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans";
+  font-size: 15px;
+  line-height: 18px;
+  overflow: hidden auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  white-space: break-spaces;
+  cursor: text;
+  padding: 14px 20px;
+}
+.r41 {
+  position: relative;
+  width: 175.344px;
+  height: 47.2031px;
+  flex-shrink: 0;
+}
+.default {
+  display: flex;
+  position: relative;
+  width: 175.344px;
+  height: 47.2031px;
+  justify-content: center;
+  align-items: center;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  background-color: rgb(205, 241, 64);
+  box-shadow: rgba(205, 241, 64, 0.867) -0.0398096px 0.636953px 2.16987px -1.125px, rgba(205, 241, 64, 0.804) -0.120725px 1.9316px 6.58027px -2.25px, rgba(205, 241, 64, 0.643) -0.319133px 5.10612px 17.3947px -3.375px, rgba(205, 241, 64, 0.1) -1px 16px 54.5061px -4.5px;
+  text-align: center;
+  place-items: center normal;
+  place-content: center;
+  cursor: pointer;
+  padding: 14px 24px;
+  border-radius: 53px;
+}
+.r43 {
+  display: flex;
+  position: relative;
+  width: 127.344px;
+  height: 19.2031px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r44 {
+  width: 127.344px;
+  height: 19.2031px;
+  color: rgb(15, 15, 15);
+  font-family: Inter, "Inter Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 19.2px;
+}
+.r45 {
+  position: relative;
+  width: 500px;
+  height: 311.203px;
+  align-self: stretch;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+}
+.r46 {
+  display: flex;
+  position: relative;
+  width: 500px;
+  height: 311.203px;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: center normal;
+  place-content: normal center;
+  border-radius: 12px;
+}
+.r47 {
+  width: 500px;
+  height: 311.203px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+}
+.container4 {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 382px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.card {
+  display: flex;
+  position: relative;
+  width: 369.328px;
+  height: 382px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 10px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.subContainer2 {
+  display: flex;
+  position: relative;
+  width: 349.328px;
+  height: 80px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  row-gap: 12px;
+  column-gap: 12px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 20px;
+}
+.image {
+  position: relative;
+  width: 60px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+.r52 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 60px;
+  height: 40px;
+  border-radius: 8px;
+}
+.r53 {
+  width: 60px;
+  height: 40px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.text2 {
+  display: flex;
+  position: relative;
+  width: 237.328px;
+  height: 30px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r55 {
+  width: 237.328px;
+  height: 30px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+}
+.subContainer3 {
+  display: flex;
+  position: relative;
+  width: 349.328px;
+  height: 282px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  background-color: rgb(15, 15, 15);
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 24px;
+  border-radius: 12px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.container5 {
+  display: flex;
+  position: relative;
+  width: 301.328px;
+  height: 44px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.iconContainer {
+  display: flex;
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  background-color: rgb(26, 26, 26);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  padding: 12px;
+  border-radius: 8px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon2 {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+.r60 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 20;
+}
+.text3 {
+  display: flex;
+  position: relative;
+  width: 247.328px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r62 {
+  width: 247.328px;
+  height: 27px;
+  color: rgb(176, 177, 181);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.r63 {
+  display: inline;
+  width: auto;
+  height: auto;
+  cursor: pointer;
+}
+.container6 {
+  display: flex;
+  position: relative;
+  width: 301.328px;
+  height: 54px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.text4 {
+  display: flex;
+  position: relative;
+  width: 247.328px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.card2 {
+  display: flex;
+  position: relative;
+  width: 369.344px;
+  height: 382px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 10px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.subContainer4 {
+  display: flex;
+  position: relative;
+  width: 349.344px;
+  height: 80px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  row-gap: 12px;
+  column-gap: 12px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 20px;
+}
+.image2 {
+  position: relative;
+  width: 60px;
+  height: 40px;
+  flex-shrink: 0;
+  aspect-ratio: 1.5 / 1;
+  border-radius: 8px;
+}
+.text5 {
+  display: flex;
+  position: relative;
+  width: 237.344px;
+  height: 30px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r70 {
+  width: 237.344px;
+  height: 30px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+  letter-spacing: 0.4px;
+}
+.subContainer5 {
+  display: flex;
+  position: relative;
+  width: 349.344px;
+  height: 282px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  background-color: rgb(15, 15, 15);
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 24px;
+  border-radius: 12px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.container7 {
+  display: flex;
+  position: relative;
+  width: 301.344px;
+  height: 44px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.text6 {
+  display: flex;
+  position: relative;
+  width: 247.344px;
+  height: 27px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r74 {
+  width: 247.344px;
+  height: 27px;
+  color: rgb(176, 177, 181);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.container8 {
+  display: flex;
+  position: relative;
+  width: 301.344px;
+  height: 54px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.text7 {
+  display: flex;
+  position: relative;
+  width: 247.344px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+
+@media (max-width: 1319px) {
+  .hero {
+    height: 1934.2px;
+    padding-right: 60px;
+    padding-left: 60px;
+  }
+  .backgroundImage {
+    display: contents;
+    width: auto;
+    height: auto;
+  }
+  .background {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 1334.2px;
+    left: 0px;
+    width: 100%;
+    height: 600px;
+    z-index: 0;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+  .r11 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    height: 600px;
+  }
+  .r12 {
+    width: 100%;
+    height: 600px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 1620 / 1200;
+  }
+  .container {
+    width: 780px;
+    height: 1754.2px;
+    max-width: 780px;
+  }
+  .r18 {
+    width: 780px;
+    height: 153px;
+  }
+  .dektop {
+    width: 780px;
+    height: 153px;
+  }
+  .r25 {
+    color: rgb(218, 245, 111);
+  }
+  .textContainer {
+    width: 780px;
+    height: 107px;
+    max-width: 1200px;
+  }
+  .heading {
+    width: 780px;
+    height: 48px;
+  }
+  .r28 {
+    width: 780px;
+    height: 48px;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 0.8px;
+  }
+  .paragraph {
+    width: 686.391px;
+    height: 51px;
+  }
+  .r30 {
+    width: 686.391px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .subContainer {
+    width: 780px;
+    height: 1541.2px;
+  }
+  .container2 {
+    width: 780px;
+    height: 751.203px;
+    flex-direction: column;
+  }
+  .r33 {
+    width: 680px;
+    align-items: center;
+    place-items: center normal;
+    place-content: center flex-start;
+  }
+  .container3 {
+    width: 680px;
+  }
+  .r35 {
+    width: 680px;
+  }
+  .r36 {
+    width: 680px;
+  }
+  .r37 {
+    width: 680px;
+  }
+  .r38 {
+    width: 680px;
+  }
+  .r39 {
+    width: 680px;
+  }
+  .r40 {
+    width: 680px;
+  }
+  .r45 {
+    width: 680px;
+    height: 300px;
+  }
+  .r46 {
+    width: 680px;
+    height: 300px;
+  }
+  .r47 {
+    width: 680px;
+    height: 300px;
+  }
+  .container4 {
+    display: grid;
+    width: 780px;
+    height: 774px;
+    justify-content: center;
+    grid-template-columns: 382px 382px;
+    grid-template-rows: 379px 379px;
+    grid-auto-rows: min-content;
+    place-content: normal center;
+  }
+  .card {
+    width: 382px;
+    height: 379px;
+    align-self: start;
+    justify-self: start;
+  }
+  .subContainer2 {
+    width: 362px;
+  }
+  .text2 {
+    width: 250px;
+    height: 27px;
+  }
+  .r55 {
+    width: 250px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .subContainer3 {
+    width: 362px;
+    height: 279px;
+  }
+  .container5 {
+    width: 314px;
+  }
+  .text3 {
+    width: 260px;
+    height: 25.5px;
+  }
+  .r62 {
+    width: 260px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .container6 {
+    width: 314px;
+    height: 51px;
+  }
+  .text4 {
+    width: 260px;
+    height: 51px;
+  }
+  .card2 {
+    width: 382px;
+    height: 379px;
+    align-self: start;
+    justify-self: start;
+  }
+  .subContainer4 {
+    width: 362px;
+  }
+  .text5 {
+    width: 250px;
+    height: 27px;
+  }
+  .r70 {
+    width: 250px;
+    height: 27px;
+    font-size: 18px;
+    line-height: 27px;
+    letter-spacing: 0.36px;
+  }
+  .subContainer5 {
+    width: 362px;
+    height: 279px;
+  }
+  .container7 {
+    width: 314px;
+  }
+  .text6 {
+    width: 260px;
+    height: 25.5px;
+  }
+  .r74 {
+    width: 260px;
+    height: 25.5px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .container8 {
+    width: 314px;
+    height: 51px;
+  }
+  .text7 {
+    width: 260px;
+    height: 51px;
+  }
+}
+
+@media (max-width: 809px) {
+  .hero {
+    height: 2321.89px;
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+  .background2 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 1721.89px;
+    left: 0px;
+    width: 100%;
+    height: 600px;
+    z-index: 0;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+  .r14 {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    height: 600px;
+  }
+  .r15 {
+    width: 100%;
+    height: 600px;
+    overflow: clip;
+    overflow-x: clip;
+    overflow-y: clip;
+    object-fit: cover;
+    aspect-ratio: auto 780 / 1200;
+  }
+  .container {
+    width: 358px;
+    height: 2141.89px;
+    max-width: 528px;
+    gap: 50px;
+    row-gap: 50px;
+    column-gap: 50px;
+  }
+  .r18 {
+    width: 358px;
+    height: 197.688px;
+  }
+  .dektop {
+    width: 358px;
+    height: 197.688px;
+    justify-content: center;
+    place-content: center;
+  }
+  .textContainer {
+    width: 358px;
+    height: 151.688px;
+    max-width: 900px;
+  }
+  .heading {
+    width: 358px;
+    height: 67.1875px;
+  }
+  .r28 {
+    width: 358px;
+    height: 67.1875px;
+    color: rgb(242, 242, 243);
+    font-size: 28px;
+    line-height: 33.6px;
+    letter-spacing: 0.56px;
+  }
+  .paragraph {
+    width: 358px;
+    height: 76.5px;
+  }
+  .r30 {
+    width: 358px;
+    height: 76.5px;
+  }
+  .subContainer {
+    width: 358px;
+    height: 1894.2px;
+  }
+  .container2 {
+    width: 358px;
+    height: 709.203px;
+    padding: 24px;
+  }
+  .r33 {
+    width: 310px;
+    height: 321.203px;
+    gap: 30px;
+    row-gap: 30px;
+    column-gap: 30px;
+  }
+  .container3 {
+    width: 310px;
+  }
+  .r35 {
+    width: 310px;
+  }
+  .r36 {
+    width: 310px;
+  }
+  .r37 {
+    width: 310px;
+  }
+  .r38 {
+    width: 310px;
+  }
+  .r39 {
+    width: 310px;
+  }
+  .r40 {
+    width: 310px;
+  }
+  .r41 {
+    width: 310px;
+  }
+  .default {
+    width: 310px;
+  }
+  .r45 {
+    width: 310px;
+  }
+  .r46 {
+    width: 310px;
+  }
+  .r47 {
+    width: 310px;
+  }
+  .container4 {
+    display: flex;
+    width: 358px;
+    height: 1169px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    place-items: flex-start normal;
+    place-content: flex-start;
+  }
+  .card {
+    width: 358px;
+  }
+  .subContainer2 {
+    width: 338px;
+  }
+  .text2 {
+    width: 226px;
+  }
+  .r55 {
+    width: 226px;
+  }
+  .subContainer3 {
+    width: 338px;
+  }
+  .container5 {
+    width: 290px;
+  }
+  .text3 {
+    width: 236px;
+  }
+  .r62 {
+    width: 236px;
+  }
+  .container6 {
+    width: 290px;
+  }
+  .text4 {
+    width: 236px;
+  }
+  .card2 {
+    width: 358px;
+  }
+  .subContainer4 {
+    width: 338px;
+  }
+  .text5 {
+    width: 226px;
+  }
+  .r70 {
+    width: 226px;
+  }
+  .subContainer5 {
+    width: 338px;
+  }
+  .container7 {
+    width: 290px;
+  }
+  .text6 {
+    width: 236px;
+  }
+  .r74 {
+    width: 236px;
+  }
+  .container8 {
+    width: 290px;
+  }
+  .text7 {
+    width: 236px;
+  }
+}
+
+@media (min-width: 1320px) { .onlyTablet, .onlyPhone { display: none !important; } }
+@media (min-width: 810px) and (max-width: 1319px) { .onlyDesktop, .onlyPhone { display: none !important; } }
+@media (max-width: 809px) { .onlyDesktop, .onlyTablet { display: none !important; } }

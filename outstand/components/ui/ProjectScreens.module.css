@@ -1,0 +1,19 @@
+.root {
+  display: contents;
+}
+
+/* Brief crossfade while the two images exchange sources, so the swap reads as
+ * a transition rather than a jump cut. */
+.root img {
+  transition: opacity 0.13s var(--ease-out-framer);
+}
+
+.swapping {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root img {
+    transition: none;
+  }
+}

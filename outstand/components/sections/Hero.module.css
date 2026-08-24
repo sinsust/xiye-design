@@ -1,0 +1,440 @@
+/* Homepage hero. Values measured from the export at 1440 / 1024 / 390. */
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-top: 150px;
+  padding-bottom: 32px;
+  background-color: var(--color-ink-950);
+  overflow: hidden;
+}
+
+/* ---- Background stack ---------------------------------------------- */
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 729px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pattern {
+  position: absolute;
+  inset: 0;
+}
+
+.pattern img {
+  width: 100%;
+  height: 729px;
+  object-fit: cover;
+}
+
+/* Fades the pattern into the page background. */
+.fade {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    rgba(15, 15, 15, 0),
+    rgb(15, 15, 15) 83.4488%
+  );
+}
+
+/* Two glow sprites that drift in from the upper corners on load. */
+.light {
+  position: absolute;
+  top: 0;
+  width: 406px;
+  height: 330px;
+  opacity: 0;
+  overflow: hidden;
+  animation: light-in 1.2s var(--ease-out-framer) 0.15s forwards;
+}
+
+.lightLeft {
+  left: 0;
+  transform: translate(-200px, -200px) scale(0.5);
+}
+
+.lightRight {
+  right: 0;
+  transform: translate(200px, -200px) scale(0.5);
+}
+
+.light img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes light-in {
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- Foreground ----------------------------------------------------- */
+
+.container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: var(--shell-max-width);
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
+  width: 100%;
+}
+
+.headingBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+/* ---- Rating badge ---------------------------------------------------- */
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+}
+
+.badgeText {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--color-mist-500);
+}
+
+/* ---- Headline -------------------------------------------------------- */
+
+.textContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 850px;
+  max-width: 100%;
+}
+
+.heading {
+  font-family: var(--font-heading);
+  font-size: 58px;
+  font-weight: 700;
+  line-height: 69.6px;
+  letter-spacing: 1.16px;
+  text-align: center;
+  color: var(--color-mist-200);
+}
+
+.subheading {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.4px;
+  text-align: center;
+  color: var(--color-mist-600);
+}
+
+/* ---- CTA + note ------------------------------------------------------ */
+
+.ctaBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 55px;
+  padding: 14px 28px;
+  border-radius: 53px;
+  background-color: var(--color-accent);
+  overflow: hidden;
+  z-index: 1;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+  color: var(--color-ink-950);
+  white-space: nowrap;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 27px;
+  color: var(--color-mist-500);
+}
+
+/* ---- Stats ----------------------------------------------------------- */
+
+.lower {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+  width: 100%;
+}
+
+.statsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Hairline that fades out at both ends. */
+.rule {
+  width: 100%;
+  height: 1px;
+  background-image: linear-gradient(
+    270deg,
+    rgba(31, 31, 31, 0),
+    rgba(31, 31, 31, 0.9) 48.6486%,
+    rgba(31, 31, 31, 0)
+  );
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 0 0;
+  padding: 40px 20px;
+  border-radius: 20px;
+  background-color: var(--color-ink-900);
+  /* Painted by the [data-border] ::after rule in globals.css. */
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+
+.statValue {
+  font-family: var(--font-heading);
+  font-size: 55px;
+  font-weight: 800;
+  line-height: 82.5px;
+  letter-spacing: 1.1px;
+  text-align: center;
+  color: var(--color-mist-200);
+}
+
+.statLabel {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+  color: var(--color-mist-600);
+}
+
+/* ---- Client logo marquee --------------------------------------------- */
+
+.marquee {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  width: 918px;
+  max-width: 100%;
+}
+
+.marqueeTitle {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+  color: var(--color-white);
+}
+
+.marqueeViewport {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  overflow: hidden;
+  /* Feathered edges, matching the export's masked track. */
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+.marqueeTrack {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  width: max-content;
+  height: 64px;
+  animation: marquee 28s linear infinite;
+}
+
+.marqueeTrack img {
+  width: 135px;
+  height: 45px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/* Track holds two identical halves, so -50% is a seamless loop. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marqueeTrack {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Tablet
+ * ------------------------------------------------------------------ */
+@media (max-width: 1319px) {
+  .hero {
+    padding-top: 176px;
+  }
+
+  .heading {
+    font-size: 48px;
+    line-height: 57.6px;
+    letter-spacing: 0.96px;
+  }
+
+  .textContainer {
+    width: 100%;
+  }
+
+  .statValue {
+    font-size: 44px;
+    line-height: 66px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Phone
+ * ------------------------------------------------------------------ */
+@media (max-width: 809px) {
+  .hero {
+    padding-top: 192px;
+  }
+
+  .container {
+    max-width: 528px;
+    padding-inline: 20px;
+    gap: 50px;
+  }
+
+  .intro {
+    gap: 30px;
+  }
+
+  .light {
+    width: 190px;
+    height: 154.42px;
+  }
+
+  .heading {
+    font-size: 36px;
+    line-height: 43.2px;
+    letter-spacing: 0.72px;
+  }
+
+  .subheading {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .cta {
+    height: 53.5px;
+  }
+
+  .note {
+    font-size: 16px;
+    line-height: 25.5px;
+  }
+
+  .stats {
+    flex-wrap: wrap;
+    gap: 24px 20px;
+  }
+
+  .stat {
+    flex: 0 0 calc(50% - 10px);
+  }
+
+  .statValue {
+    font-size: 40px;
+    line-height: 60px;
+  }
+}

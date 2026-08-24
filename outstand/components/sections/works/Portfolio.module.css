@@ -1,0 +1,1909 @@
+/* Generated from the original export's computed styles.
+ * Desktop is the base; tablet and phone override only what differs.
+ * Breakpoints match the Framer original: 1320px and 810px. */
+
+.portfolio {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 1422.09px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 60px;
+  row-gap: 60px;
+  column-gap: 60px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.r1 {
+  display: contents;
+  width: auto;
+  height: auto;
+}
+.r2 {
+  position: relative;
+  width: 1140px;
+  height: 165.594px;
+  flex-shrink: 0;
+}
+.dektop {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 165.594px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.tag {
+  display: flex;
+  position: relative;
+  width: 110.156px;
+  height: 36px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  row-gap: 2px;
+  column-gap: 2px;
+  background-color: rgb(20, 20, 20);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 6px 12px;
+  border-radius: 42px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.r6 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 20px;
+  height: 20px;
+}
+.r7 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+}
+.text {
+  display: flex;
+  position: relative;
+  width: 64.1562px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r9 {
+  width: 64.1562px;
+  height: 24px;
+  color: rgb(218, 246, 111);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.32px;
+}
+.textContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 119.594px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding-right: 150px;
+  padding-left: 150px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.heading {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 57.5938px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r12 {
+  width: 840px;
+  height: 57.5938px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 57.6px;
+  letter-spacing: 0.96px;
+  text-align: center;
+}
+.paragraph {
+  display: flex;
+  position: relative;
+  width: 840px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r14 {
+  width: 840px;
+  height: 54px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: center;
+}
+.subContainer {
+  display: flex;
+  position: relative;
+  width: 1140px;
+  height: 1196.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  padding-right: 50px;
+  padding-left: 50px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.r16 {
+  display: flex;
+  position: relative;
+  width: 1040px;
+  height: 1196.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.r17 {
+  position: relative;
+  width: 1040px;
+  height: 367.5px;
+  flex-shrink: 0;
+}
+.desktop1 {
+  display: flex;
+  position: relative;
+  width: 1040px;
+  height: 367.5px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.container {
+  display: flex;
+  position: relative;
+  width: 350px;
+  height: 307.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.imageContainer {
+  display: flex;
+  position: relative;
+  width: 350px;
+  height: 243.5px;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-end normal;
+  place-content: flex-end center;
+  border-radius: 12px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(30, 30, 30);
+  --border-style: solid;
+}
+.r21 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 350px;
+  height: 243.5px;
+  border-radius: 12px;
+}
+.r22 {
+  width: 350px;
+  height: 243.5px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.tabsContainer {
+  display: flex;
+  position: relative;
+  width: 260px;
+  height: 68px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(20, 20, 20);
+  border-radius: 12px 12px 0px 0px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 8px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 0px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.image {
+  position: relative;
+  width: 76px;
+  height: 52px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  cursor: pointer;
+  border-radius: 6px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(45, 45, 45);
+  --border-style: solid;
+}
+.r25 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 76px;
+  height: 52px;
+  border-radius: 6px;
+}
+.r26 {
+  width: 76px;
+  height: 52px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.overlay {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 76px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+.image2 {
+  position: relative;
+  width: 76px;
+  height: 52px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.r29 {
+  width: 76px;
+  height: 52px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  border-radius: 6px;
+}
+.overlay2 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 76px;
+  height: 52px;
+  background-color: rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+.r31 {
+  position: relative;
+  width: 350px;
+  height: 48px;
+  flex-shrink: 0;
+}
+.projectButton {
+  display: flex;
+  position: relative;
+  width: 350px;
+  height: 48px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(26, 26, 26);
+  place-items: center normal;
+  place-content: center;
+  cursor: pointer;
+  padding: 12px 20px;
+  border-radius: 50px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.projectButton {
+  transition: background-color var(--duration-hover) var(--ease-out-framer), color var(--duration-hover) var(--ease-out-framer), opacity var(--duration-hover) var(--ease-out-framer), transform var(--duration-hover) var(--ease-out-framer), box-shadow var(--duration-hover) var(--ease-out-framer);
+}
+.projectButton:hover {
+  background-color: rgb(31, 31, 31);
+}
+.content {
+  display: flex;
+  position: relative;
+  width: 236.703px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.contentWrap {
+  display: flex;
+  position: relative;
+  width: 236.703px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.r35 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 21;
+}
+.text2 {
+  display: flex;
+  position: relative;
+  width: 208.703px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r37 {
+  width: 208.703px;
+  height: 24px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.container2 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 307.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.subContainer2 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 102px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+  row-gap: 12px;
+  column-gap: 12px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.container3 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 36px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+}
+.heading2 {
+  display: flex;
+  position: relative;
+  width: 67.3125px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r42 {
+  width: 67.3125px;
+  height: 33px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.subContainer3 {
+  display: flex;
+  position: relative;
+  width: 83.0938px;
+  height: 36px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(31, 31, 31);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  padding: 6px 14px;
+  border-radius: 50px;
+}
+.text3 {
+  display: flex;
+  position: relative;
+  width: 55.0938px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r45 {
+  width: 55.0938px;
+  height: 24px;
+  color: rgb(228, 229, 230);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.pixIsTheUltimateFramerPortfolioTemplateForDesignersAndDevelopersUnveilYourWorkSeamlesslyWithItsSleekDesign {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r47 {
+  width: 600px;
+  height: 54px;
+  color: rgb(202, 203, 206);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.subContainer4 {
+  display: flex;
+  position: relative;
+  width: 280.578px;
+  height: 41.5px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(26, 26, 26);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 8px 14px 8px 10px;
+  border-radius: 100px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.r49 {
+  width: 20px;
+  height: 20px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  aspect-ratio: auto 20 / 20;
+}
+.text4 {
+  display: flex;
+  position: relative;
+  width: 228.578px;
+  height: 25.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r51 {
+  width: 228.578px;
+  height: 25.5px;
+  color: rgb(202, 203, 206);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 17px;
+  line-height: 25.5px;
+}
+.textContainer2 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 124px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 6px;
+  row-gap: 6px;
+  column-gap: 6px;
+  background-color: rgb(26, 26, 26);
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 20px 24px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.heading3 {
+  display: flex;
+  position: relative;
+  width: 552px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r54 {
+  width: 552px;
+  height: 24px;
+  color: rgb(242, 242, 243);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: 0.4px;
+}
+.paragraph2 {
+  display: flex;
+  position: relative;
+  width: 552px;
+  height: 54px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r56 {
+  width: 552px;
+  height: 54px;
+  color: rgb(150, 151, 156);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.r75 {
+  position: relative;
+  width: 1040px;
+  height: 394.5px;
+  flex-shrink: 0;
+}
+.desktop12 {
+  display: flex;
+  position: relative;
+  width: 1040px;
+  height: 394.5px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.container6 {
+  display: flex;
+  position: relative;
+  width: 350px;
+  height: 334.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-self: stretch;
+  gap: 16px;
+  row-gap: 16px;
+  column-gap: 16px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.imageContainer2 {
+  display: flex;
+  position: relative;
+  width: 350px;
+  height: 270.5px;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  row-gap: 10px;
+  column-gap: 10px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-end normal;
+  place-content: flex-end center;
+  border-radius: 12px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(30, 30, 30);
+  --border-style: solid;
+}
+.r79 {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 350px;
+  height: 270.5px;
+  border-radius: 12px;
+}
+.r80 {
+  width: 350px;
+  height: 270.5px;
+  overflow: clip;
+  overflow-x: clip;
+  overflow-y: clip;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.content2 {
+  display: flex;
+  position: relative;
+  width: 254.672px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.contentWrap2 {
+  display: flex;
+  position: relative;
+  width: 254.672px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.text7 {
+  display: flex;
+  position: relative;
+  width: 226.672px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r84 {
+  width: 226.672px;
+  height: 24px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.container7 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 334.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.subContainer9 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 129px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+  row-gap: 12px;
+  column-gap: 12px;
+  flex-shrink: 0;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading6 {
+  display: flex;
+  position: relative;
+  width: 91.0156px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r88 {
+  width: 91.0156px;
+  height: 33px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.pixIsTheUltimateFramerPortfolioTemplateForDesignersAndDevelopersUnveilYourWorkSeamlesslyWithItsSleekDesign4 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 81px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+  word-break: break-word;
+}
+.r90 {
+  width: 600px;
+  height: 81px;
+  color: rgb(202, 203, 206);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 18px;
+  line-height: 27px;
+  letter-spacing: 0.36px;
+  text-align: left;
+}
+.subContainer10 {
+  display: flex;
+  position: relative;
+  width: 308.922px;
+  height: 41.5px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(26, 26, 26);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 8px 14px 8px 10px;
+  border-radius: 100px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.text8 {
+  display: flex;
+  position: relative;
+  width: 256.922px;
+  height: 25.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r93 {
+  width: 256.922px;
+  height: 25.5px;
+  color: rgb(202, 203, 206);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 17px;
+  line-height: 25.5px;
+}
+.r98 {
+  position: relative;
+  width: 1040px;
+  height: 394.5px;
+  flex-shrink: 0;
+}
+.desktop13 {
+  display: flex;
+  position: relative;
+  width: 1040px;
+  height: 394.5px;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 30px;
+  row-gap: 30px;
+  column-gap: 30px;
+  background-color: rgb(20, 20, 20);
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  place-items: flex-start normal;
+  place-content: flex-start;
+  padding: 30px;
+  border-radius: 16px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.content3 {
+  display: flex;
+  position: relative;
+  width: 255.016px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 0px;
+  row-gap: 0px;
+  column-gap: 0px;
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.contentWrap3 {
+  display: flex;
+  position: relative;
+  width: 255.016px;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+}
+.text9 {
+  display: flex;
+  position: relative;
+  width: 227.016px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r103 {
+  width: 227.016px;
+  height: 24px;
+  color: rgb(205, 241, 64);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.container8 {
+  display: flex;
+  position: relative;
+  width: 600px;
+  height: 334.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 20px;
+  row-gap: 20px;
+  column-gap: 20px;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0px;
+  place-items: flex-start normal;
+  place-content: flex-start;
+}
+.heading9 {
+  display: flex;
+  position: relative;
+  width: 88.7969px;
+  height: 33px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r106 {
+  width: 88.7969px;
+  height: 33px;
+  color: rgb(255, 255, 255);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 33px;
+  letter-spacing: 0.44px;
+}
+.subContainer11 {
+  display: flex;
+  position: relative;
+  width: 82.8125px;
+  height: 36px;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(31, 31, 31);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center;
+  padding: 6px 14px;
+  border-radius: 50px;
+}
+.text10 {
+  display: flex;
+  position: relative;
+  width: 54.8125px;
+  height: 24px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r109 {
+  width: 54.8125px;
+  height: 24px;
+  color: rgb(228, 229, 230);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.subContainer12 {
+  display: flex;
+  position: relative;
+  width: 260.438px;
+  height: 41.5px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+  column-gap: 8px;
+  background-color: rgb(26, 26, 26);
+  flex-shrink: 0;
+  place-items: center normal;
+  place-content: center flex-start;
+  padding: 8px 14px 8px 10px;
+  border-radius: 100px;
+  --border-top-width: 1px;
+  --border-right-width: 1px;
+  --border-bottom-width: 1px;
+  --border-left-width: 1px;
+  --border-color: rgb(31, 31, 31);
+  --border-style: solid;
+}
+.text11 {
+  display: flex;
+  position: relative;
+  width: 208.438px;
+  height: 25.5px;
+  flex-direction: column;
+  justify-content: flex-start;
+  white-space: pre;
+  flex-shrink: 0;
+  place-content: normal flex-start;
+}
+.r112 {
+  width: 208.438px;
+  height: 25.5px;
+  color: rgb(202, 203, 206);
+  font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+  font-size: 17px;
+  line-height: 25.5px;
+}
+
+@media (max-width: 1319px) {
+  .portfolio {
+    width: 780px;
+    height: 2135.5px;
+  }
+  .r2 {
+    width: 780px;
+    height: 153px;
+  }
+  .dektop {
+    width: 780px;
+    height: 153px;
+  }
+  .r9 {
+    color: rgb(218, 245, 111);
+  }
+  .textContainer {
+    width: 780px;
+    height: 107px;
+    max-width: 1200px;
+  }
+  .heading {
+    width: 780px;
+    height: 48px;
+  }
+  .r12 {
+    width: 780px;
+    height: 48px;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 0.8px;
+  }
+  .paragraph {
+    width: 686.391px;
+    height: 51px;
+  }
+  .r14 {
+    width: 686.391px;
+    height: 51px;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+  }
+  .subContainer {
+    width: 780px;
+    height: 1922.5px;
+  }
+  .r16 {
+    width: 780px;
+    height: 1922.5px;
+  }
+  .r17 {
+    width: 780px;
+    height: 619px;
+  }
+  .desktop1 {
+    width: 780px;
+    height: 619px;
+    flex-direction: column;
+  }
+  .container {
+    width: 720px;
+    height: 430px;
+  }
+  .imageContainer {
+    width: 720px;
+    height: 366px;
+  }
+  .r21 {
+    width: 720px;
+    height: 366px;
+  }
+  .r22 {
+    width: 720px;
+    height: 366px;
+  }
+  .r31 {
+    width: 720px;
+  }
+  .projectButton {
+    width: 720px;
+  }
+  .container2 {
+    width: 720px;
+    height: 99px;
+  }
+  .subContainer5 {
+    display: flex;
+    position: relative;
+    width: 720px;
+    height: 99px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 12px;
+    row-gap: 12px;
+    column-gap: 12px;
+    flex-shrink: 0;
+    place-items: flex-start normal;
+    place-content: flex-start;
+  }
+  .container4 {
+    display: flex;
+    position: relative;
+    width: 720px;
+    height: 36px;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    row-gap: 10px;
+    column-gap: 10px;
+    flex-shrink: 0;
+    place-items: center normal;
+    place-content: center flex-start;
+  }
+  .heading4 {
+    display: flex;
+    position: relative;
+    width: 61.1875px;
+    height: 30px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r60 {
+    width: 61.1875px;
+    height: 30px;
+    color: rgb(255, 255, 255);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .subContainer6 {
+    display: flex;
+    position: relative;
+    width: 83.0938px;
+    height: 36px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    row-gap: 8px;
+    column-gap: 8px;
+    background-color: rgb(31, 31, 31);
+    flex-shrink: 0;
+    place-items: center normal;
+    place-content: center;
+    padding: 6px 14px;
+    border-radius: 50px;
+  }
+  .text5 {
+    display: flex;
+    position: relative;
+    width: 55.0938px;
+    height: 24px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r63 {
+    width: 55.0938px;
+    height: 24px;
+    color: rgb(228, 229, 230);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .pixIsTheUltimateFramerPortfolioTemplateForDesignersAndDevelopersUnveilYourWorkSeamlesslyWithItsSleekDesign2 {
+    display: flex;
+    position: relative;
+    width: 720px;
+    height: 51px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre-wrap;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+    word-break: break-word;
+  }
+  .r65 {
+    width: 720px;
+    height: 51px;
+    color: rgb(202, 203, 206);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+    text-align: left;
+  }
+  .r75 {
+    width: 780px;
+    height: 619px;
+  }
+  .desktop12 {
+    width: 780px;
+    height: 619px;
+    flex-direction: column;
+  }
+  .container6 {
+    width: 720px;
+    height: 430px;
+  }
+  .imageContainer2 {
+    width: 720px;
+    height: 366px;
+  }
+  .r79 {
+    width: 720px;
+    height: 366px;
+  }
+  .r80 {
+    width: 720px;
+    height: 366px;
+  }
+  .container7 {
+    width: 720px;
+    height: 99px;
+  }
+  .heading7 {
+    display: flex;
+    position: relative;
+    width: 82.75px;
+    height: 30px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r95 {
+    width: 82.75px;
+    height: 30px;
+    color: rgb(255, 255, 255);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .r98 {
+    width: 780px;
+    height: 644.5px;
+  }
+  .desktop13 {
+    width: 780px;
+    height: 644.5px;
+    flex-direction: column;
+  }
+  .container8 {
+    width: 720px;
+    height: 124.5px;
+  }
+  .subContainer13 {
+    display: flex;
+    position: relative;
+    width: 720px;
+    height: 124.5px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 12px;
+    row-gap: 12px;
+    column-gap: 12px;
+    flex-shrink: 0;
+    place-items: flex-start normal;
+    place-content: flex-start;
+  }
+  .heading10 {
+    display: flex;
+    position: relative;
+    width: 80.7344px;
+    height: 30px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r115 {
+    width: 80.7344px;
+    height: 30px;
+    color: rgb(255, 255, 255);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .subContainer14 {
+    display: flex;
+    position: relative;
+    width: 82.8125px;
+    height: 36px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    row-gap: 8px;
+    column-gap: 8px;
+    background-color: rgb(31, 31, 31);
+    flex-shrink: 0;
+    place-items: center normal;
+    place-content: center;
+    padding: 6px 14px;
+    border-radius: 50px;
+  }
+  .text12 {
+    display: flex;
+    position: relative;
+    width: 54.8125px;
+    height: 24px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r118 {
+    width: 54.8125px;
+    height: 24px;
+    color: rgb(228, 229, 230);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .pixIsTheUltimateFramerPortfolioTemplateForDesignersAndDevelopersUnveilYourWorkSeamlesslyWithItsSleekDesign5 {
+    display: flex;
+    position: relative;
+    width: 720px;
+    height: 76.5px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre-wrap;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+    word-break: break-word;
+  }
+  .r120 {
+    width: 720px;
+    height: 76.5px;
+    color: rgb(202, 203, 206);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+    text-align: left;
+  }
+}
+
+@media (max-width: 809px) {
+  .portfolio {
+    width: 358px;
+    height: 2076.59px;
+    gap: 50px;
+    row-gap: 50px;
+    column-gap: 50px;
+  }
+  .r2 {
+    width: 358px;
+    height: 189.594px;
+  }
+  .dektop {
+    width: 358px;
+    height: 189.594px;
+    justify-content: center;
+    place-content: center;
+  }
+  .textContainer {
+    width: 358px;
+    height: 143.594px;
+    max-width: 900px;
+  }
+  .heading {
+    width: 358px;
+    height: 33.5938px;
+  }
+  .r12 {
+    width: 358px;
+    height: 33.5938px;
+    color: rgb(242, 242, 243);
+    font-size: 28px;
+    line-height: 33.6px;
+    letter-spacing: 0.56px;
+  }
+  .paragraph {
+    width: 358px;
+    height: 102px;
+  }
+  .r14 {
+    width: 358px;
+    height: 102px;
+  }
+  .subContainer {
+    width: 358px;
+    height: 1837px;
+  }
+  .r16 {
+    width: 358px;
+    height: 1837px;
+  }
+  .r17 {
+    width: 358px;
+    height: 582px;
+  }
+  .desktop1 {
+    width: 358px;
+    height: 582px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+  }
+  .container {
+    width: 310px;
+    height: 360px;
+  }
+  .imageContainer {
+    width: 310px;
+    height: 296px;
+  }
+  .r21 {
+    width: 310px;
+    height: 296px;
+  }
+  .r22 {
+    width: 310px;
+    height: 296px;
+  }
+  .r31 {
+    width: 310px;
+  }
+  .projectButton {
+    width: 310px;
+  }
+  .container2 {
+    width: 310px;
+    height: 150px;
+  }
+  .subContainer7 {
+    display: flex;
+    position: relative;
+    width: 310px;
+    height: 150px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 12px;
+    row-gap: 12px;
+    column-gap: 12px;
+    flex-shrink: 0;
+    place-items: flex-start normal;
+    place-content: flex-start;
+  }
+  .container5 {
+    display: flex;
+    position: relative;
+    width: 310px;
+    height: 36px;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    place-items: center normal;
+    place-content: center space-between;
+  }
+  .heading5 {
+    display: flex;
+    position: relative;
+    width: 61.1875px;
+    height: 30px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r69 {
+    width: 61.1875px;
+    height: 30px;
+    color: rgb(255, 255, 255);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .subContainer8 {
+    display: flex;
+    position: relative;
+    width: 83.0938px;
+    height: 36px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    row-gap: 8px;
+    column-gap: 8px;
+    background-color: rgb(31, 31, 31);
+    flex-shrink: 0;
+    place-items: center normal;
+    place-content: center;
+    padding: 6px 14px;
+    border-radius: 50px;
+  }
+  .text6 {
+    display: flex;
+    position: relative;
+    width: 55.0938px;
+    height: 24px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r72 {
+    width: 55.0938px;
+    height: 24px;
+    color: rgb(228, 229, 230);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .pixIsTheUltimateFramerPortfolioTemplateForDesignersAndDevelopersUnveilYourWorkSeamlesslyWithItsSleekDesign3 {
+    display: flex;
+    position: relative;
+    width: 310px;
+    height: 102px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre-wrap;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+    word-break: break-word;
+  }
+  .r74 {
+    width: 310px;
+    height: 102px;
+    color: rgb(202, 203, 206);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+    text-align: left;
+  }
+  .r75 {
+    width: 358px;
+    height: 582px;
+  }
+  .desktop12 {
+    width: 358px;
+    height: 582px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+  }
+  .container6 {
+    width: 310px;
+    height: 360px;
+  }
+  .imageContainer2 {
+    width: 310px;
+    height: 296px;
+  }
+  .r79 {
+    width: 310px;
+    height: 296px;
+  }
+  .r80 {
+    width: 310px;
+    height: 296px;
+  }
+  .container7 {
+    width: 310px;
+    height: 150px;
+  }
+  .heading8 {
+    display: flex;
+    position: relative;
+    width: 82.75px;
+    height: 30px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r97 {
+    width: 82.75px;
+    height: 30px;
+    color: rgb(255, 255, 255);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .r98 {
+    width: 358px;
+    height: 633px;
+  }
+  .desktop13 {
+    width: 358px;
+    height: 633px;
+    gap: 24px;
+    row-gap: 24px;
+    column-gap: 24px;
+    padding: 24px;
+  }
+  .container8 {
+    width: 310px;
+    height: 201px;
+  }
+  .subContainer15 {
+    display: flex;
+    position: relative;
+    width: 310px;
+    height: 201px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 12px;
+    row-gap: 12px;
+    column-gap: 12px;
+    flex-shrink: 0;
+    place-items: flex-start normal;
+    place-content: flex-start;
+  }
+  .heading11 {
+    display: flex;
+    position: relative;
+    width: 80.7344px;
+    height: 30px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r123 {
+    width: 80.7344px;
+    height: 30px;
+    color: rgb(255, 255, 255);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 30px;
+    letter-spacing: 0.4px;
+  }
+  .subContainer16 {
+    display: flex;
+    position: relative;
+    width: 82.8125px;
+    height: 36px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    row-gap: 8px;
+    column-gap: 8px;
+    background-color: rgb(31, 31, 31);
+    flex-shrink: 0;
+    place-items: center normal;
+    place-content: center;
+    padding: 6px 14px;
+    border-radius: 50px;
+  }
+  .text13 {
+    display: flex;
+    position: relative;
+    width: 54.8125px;
+    height: 24px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+  }
+  .r126 {
+    width: 54.8125px;
+    height: 24px;
+    color: rgb(228, 229, 230);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .pixIsTheUltimateFramerPortfolioTemplateForDesignersAndDevelopersUnveilYourWorkSeamlesslyWithItsSleekDesign6 {
+    display: flex;
+    position: relative;
+    width: 310px;
+    height: 153px;
+    flex-direction: column;
+    justify-content: flex-start;
+    white-space: pre-wrap;
+    flex-shrink: 0;
+    place-content: normal flex-start;
+    word-break: break-word;
+  }
+  .r128 {
+    width: 310px;
+    height: 153px;
+    color: rgb(202, 203, 206);
+    font-family: "Rethink Sans", "Rethink Sans Placeholder", sans-serif;
+    font-size: 17px;
+    line-height: 25.5px;
+    letter-spacing: 0.34px;
+    text-align: left;
+  }
+}
+
+@media (min-width: 1320px) { .onlyTablet, .onlyPhone { display: none !important; } }
+@media (min-width: 810px) and (max-width: 1319px) { .onlyDesktop, .onlyPhone { display: none !important; } }
+@media (max-width: 809px) { .onlyDesktop, .onlyTablet { display: none !important; } }

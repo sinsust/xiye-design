@@ -353,7 +353,7 @@ const STYLE_KEYWORDS: { kws: string[]; id: string; desc: string }[] = [
   { kws: ["温馨", "温暖", "柔和", "亲和", "治愈", "可爱", "软萌", " cozy"], id: "editorial-luxury", desc: "温馨治愈" },
   { kws: ["创意", "机构", "活泼", "多彩", "agency"], id: "truus-aurora", desc: "创意机构" },
   { kws: ["科技", "智能", "saas", "企业", "专业", "数据", "金融", "后台"], id: "tech-blue", desc: "科技/企业冷蓝" },
-  { kws: ["空灵", "玻璃", "通透", "轻盈"], id: DEFAULT_STYLE_ID, desc: "空灵玻璃" },
+  { kws: ["空灵", "玻璃", "通透", "轻盈"], id: "ethereal-glass", desc: "空灵玻璃" },
 ];
 
 function resolveVisualStyle(text: string, typeId: string | null, fallbackId: string): string {
