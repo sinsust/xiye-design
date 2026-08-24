@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { CheckCircle2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// AuthMenu 挂载时会先读这个缓存立即渲染用户信息，避免跳转后头像/邮箱迟迟不出现
+const AUTH_CACHE_KEY = "xiye-auth-cache";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +15,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,15 +27,39 @@ export default function LoginPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    setLoading(false);
+    const j = await res.json().catch(() => null);
     if (res.ok) {
-      router.push("/builder");
-      router.refresh();
+      // 缓存用户信息，让跳转后右上角立即显示头像+邮箱
+      try {
+        if (j?.user) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(j.user));
+      } catch {
+        /* ignore */
+      }
+      setLoading(false);
+      setDone(true);
+      redirectTimer.current = setTimeout(() => {
+        router.push("/builder");
+        router.refresh();
+      }, 1200);
       return;
     }
-    const j = await res.json().catch(() => null);
+    setLoading(false);
     setError(
       j?.error === "invalid_credentials" ? "邮箱或密码错误" : "登录失败，请重试",
+    );
+  }
+
+  if (done) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <CheckCircle2 className="mx-auto size-10 text-primary" />
+          <h1 className="mt-3 text-lg font-semibold text-foreground">登录成功</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            正在进入搭页面…欢迎回来，{email}
+          </p>
+        </div>
+      </main>
     );
   }
 

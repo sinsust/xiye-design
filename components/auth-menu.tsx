@@ -11,6 +11,9 @@ interface MeUser {
   email: string;
 }
 
+// 注册/登录成功后写入，AuthMenu 挂载时先读它立即渲染（免网络往返）
+const AUTH_CACHE_KEY = "xiye-auth-cache";
+
 export function AuthMenu() {
   const router = useRouter();
   const [user, setUser] = useState<MeUser | null>(null);
@@ -19,10 +22,37 @@ export function AuthMenu() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // 先读缓存秒显（注册/登录刚跳转过来时）
+    try {
+      const cached = localStorage.getItem(AUTH_CACHE_KEY);
+      if (cached) {
+        const u = JSON.parse(cached);
+        if (u?.id && u?.email) setUser(u);
+      }
+    } catch {
+      /* ignore */
+    }
+    // 再后台 fetch 校验真实会话；失效则清除缓存回退未登录
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : { user: null }))
-      .then((d) => setUser(d.user ?? null))
-      .catch(() => setUser(null))
+      .then((d) => {
+        const u = (d.user ?? null) as MeUser | null;
+        setUser(u);
+        try {
+          if (u) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(u));
+          else localStorage.removeItem(AUTH_CACHE_KEY);
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => {
+        try {
+          localStorage.removeItem(AUTH_CACHE_KEY);
+        } catch {
+          /* ignore */
+        }
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -38,6 +68,11 @@ export function AuthMenu() {
 
   async function doLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      localStorage.removeItem(AUTH_CACHE_KEY);
+    } catch {
+      /* ignore */
+    }
     setUser(null);
     setOpen(false);
     router.push("/");
