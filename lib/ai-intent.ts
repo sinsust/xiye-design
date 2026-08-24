@@ -16,7 +16,7 @@ import { TECH_STACKS } from "@/data/tech-stacks";
 import { UI_LIBRARIES } from "@/data/ui-libraries";
 import { VISUAL_STYLE_MAP } from "@/data/visual-styles";
 import { SKELETON_PAGE_MAP } from "@/data/skeletons";
-import { DEFAULT_STYLE_ID } from "@/lib/project-generator";
+import { DEFAULT_STYLE_ID } from "@/data/visual-styles";
 
 // ───────────────────────────── 输出类型 ─────────────────────────────
 
@@ -32,6 +32,19 @@ export interface IntentRecPage {
   components: IntentRecComponent[];
 }
 /** 产品构想与 PRD 依据：AI 一句话在同一轮产出的「产品叙事」，供 docs/PRD.md 与市场契合说明复用 */
+export interface ProductPage {
+  /** 页面名称，如「简历上传与解析页」 */
+  name: string;
+  /** 建议路由，如 /resume/parse */
+  path?: string;
+  /** 页面功能描述：这个页面做什么、为谁解决什么问题 */
+  description: string;
+  /** 关联的核心功能名（来自 coreFeatures） */
+  relatedFeatures: string[];
+  /** 开发优先级 */
+  priority: "P0" | "P1" | "P2";
+}
+
 export interface IntentNarrative {
   /** 产品愿景一句话 */
   vision: string;
@@ -41,6 +54,8 @@ export interface IntentNarrative {
   targetAudience: string[];
   /** 核心功能（名称 + 解决什么） */
   coreFeatures: { name: string; why: string }[];
+  /** 业务专属页面（由核心功能推导，AI 产出或本地启发式兜底），用于 PRD「页面与信息架构」功能驱动章节 */
+  pages?: ProductPage[];
   /** 本期非目标 */
   nonGoals: string[];
   /** 成功指标 */
@@ -316,22 +331,103 @@ const ENTERPRISE_TYPES = new Set([
   "b2b_crm",
 ]);
 
-const STYLE_KEYWORDS: { kws: string[]; id: string }[] = [
-  { kws: ["贵", "奢华", "高端", "营销", "编辑风格", "杂志"], id: "editorial-luxury" },
-  { kws: ["暗", "开发者", "终端", "黑客", "代码", "科技深色", "monospace"], id: "dark-developer" },
-  { kws: ["极简", "简约", "干净", "minimal"], id: "minimalist-editorial" },
-  { kws: ["创意", "机构", "活泼", "多彩", "agency"], id: "truus-aurora" },
-  { kws: ["空灵", "玻璃", "通透", "轻盈"], id: DEFAULT_STYLE_ID },
+const STYLE_KEYWORDS: { kws: string[]; id: string; desc: string }[] = [
+  // —— 行业/情绪 → 风格：把「业务属于哪个领域、想传达什么情绪」映射到贴合的色系（优先级最高）——
+  // 母婴 / 亲子 / 育儿 / 家庭：温馨暖奶油 + 鼠尾草绿
+  { kws: ["母婴", "亲子", "育儿", "婴儿", "儿童", "宝宝", "妈妈", "奶瓶", "奶粉", "孕", " babysitter", " childcare", " infant", " newborn", " toddler"], id: "editorial-luxury", desc: "母婴/亲子 → 温馨暖奶油" },
+  // 宠物 / 园艺 / 有机 / 健康生活：清新自然绿
+  { kws: ["宠物", "猫咪", "猫粮", "狗粮", "犬", "猫", "动物", "毛孩子", "园艺", "绿植", "有机", "健康食品", "养生", "度假", "生态", " pet ", " organic"], id: "nature-green", desc: "宠物/自然 → 清新自然绿" },
+  // 奢侈品 / 高端 / 商务送礼：奢华衬线
+  { kws: ["奢侈", "高端", "商务送礼", "高定", "珠宝", "腕表", "名表", "私享", "vip", "premium"], id: "luxury", desc: "高端 → 奢华质感" },
+  // 纯白 / 优雅 / 化妆品 / 展示型品牌：极简编辑暖白
+  { kws: ["纯白", "留白", "优雅", "彩妆", "护肤", "香水", "时尚", "女装", "高级感", "极简", "简约", "干净", "minimal"], id: "minimalist-editorial", desc: "纯白/优雅 → 极简编辑暖白" },
+  // 玩具 / 儿童乐园 / 亲子娱乐 / 教育 / 节日：活泼多彩
+  { kws: ["玩具", "乐园", "亲子娱乐", "游乐园", "启蒙", "教育", "培训", "课程", "kids", "playground"], id: "truus-aurora", desc: "玩具/教育 → 活泼多彩" },
+  // 食品 / 餐饮 / 小食 / 农产品：暖橙有食欲
+  { kws: ["食品", "餐饮", "美食", "小吃", "烘焙", "咖啡", "茶饮", "外卖", "菜", "零食", " food ", " coffee"], id: "warm-orange", desc: "餐饮食品 → 暖橙有食欲" },
+  // 服装 / 品牌零售 / 电商营销：极简编辑或暖橙
+  { kws: ["服装", "潮牌", "零售", "shopping", "retail"], id: "warm-orange", desc: "零售/电商 → 暖橙活力" },
+  // —— 通用形容词（情绪/质感直接点名）——
+  { kws: ["贵", "奢华", "高端", "营销", "编辑风格", "杂志"], id: "editorial-luxury", desc: "奢华/杂志" },
+  { kws: ["暗", "开发者", "终端", "黑客", "代码", "科技深色", "monospace"], id: "dark-developer", desc: "暗色开发者" },
+  { kws: ["温馨", "温暖", "柔和", "亲和", "治愈", "可爱", "软萌", " cozy"], id: "editorial-luxury", desc: "温馨治愈" },
+  { kws: ["创意", "机构", "活泼", "多彩", "agency"], id: "truus-aurora", desc: "创意机构" },
+  { kws: ["科技", "智能", "saas", "企业", "专业", "数据", "金融", "后台"], id: "tech-blue", desc: "科技/企业冷蓝" },
+  { kws: ["空灵", "玻璃", "通透", "轻盈"], id: DEFAULT_STYLE_ID, desc: "空灵玻璃" },
 ];
 
-function resolveVisualStyle(text: string, fallbackId: string): string {
+function resolveVisualStyle(text: string, typeId: string | null, fallbackId: string): string {
+  const lower = text.toLowerCase();
   for (const s of STYLE_KEYWORDS) {
-    if (score(text, s.kws) > 0) return s.id;
+    if (s.kws.some((k) => k && lower.includes(k.toLowerCase()))) return s.id;
   }
-  return fallbackId;
+  // 由项目类型兜底：公众展示 / 电商等默认给暖色调，后台给企业蓝，避免一律套深色/玻璃
+  return typeStyleByType(typeId) ?? fallbackId;
+}
+
+function typeStyleByType(typeId: string | null): string | null {
+  switch (typeId) {
+    case "ecommerce":
+    case "marketplace":
+    case "local_life":
+      return "warm-orange";
+    case "independent_site":
+      return "minimalist-editorial";
+    case "education":
+      return "truus-aurora";
+    case "health":
+      return "nature-green";
+    case "fintech":
+      return "slate-gray";
+    default:
+      return null; // saas/internal/devtool 等走 fallback
+  }
 }
 
 // ───────────────────────── 产品叙事 / PRD 依据（启发式） ─────────────────────────
+
+/**
+ * 本地启发式：从核心功能推导「业务专属页面」。
+ * 即使 AI 没返回 pages（未配 DeepSeek / 解析失败），PRD 第 4 节也能把功能映射到要开发的页面。
+ * 规则：先用关键词匹配常见功能→页面模板，未命中则按功能名泛化为「XX 页」。
+ */
+export function deriveFeaturePages(
+  features: { name: string; why: string }[],
+): ProductPage[] {
+  const ruleMap: { kw: string[]; page: Omit<ProductPage, "relatedFeatures"> }[] = [
+    { kw: ["简历", "resume", "cv", "履历"], page: { name: "简历上传与解析页", path: "/resume/parse", description: "用户上传 PDF/Word 简历，系统提取技能、经验、期望薪资、地点等结构化字段，供后续匹配使用。", priority: "P0" } },
+    { kw: ["匹配", "matching", "match", "推荐岗位"], page: { name: "岗位匹配结果页", path: "/jobs/match", description: "展示与用户简历加权匹配后的岗位列表，输出匹配分数与命中原因（关键词/薪资/地点/经验）。", priority: "P0" } },
+    { kw: ["推送", "push", "每日", "daily", "订阅提醒"], page: { name: "推送设置页", path: "/settings/push", description: "用户设定每日推送时间与频次，选择推送渠道，管理已订阅的匹配岗位流。", priority: "P1" } },
+    { kw: ["岗位详情", "job detail", "职位详情"], page: { name: "岗位详情页", path: "/jobs/[id]", description: "展示单个岗位的原始链接、匹配点、薪资对比、公司信息，支持收藏 / 忽略反馈。", priority: "P0" } },
+    { kw: ["数据源", "爬虫", "crawl", "api 接入", "采集"], page: { name: "数据源接入配置页", path: "/admin/sources", description: "管理爬虫 / API / UGC 三类数据源，配置解析规则与调度，查看抓取状态。", priority: "P1" } },
+    { kw: ["简历解析", "解析"], page: { name: "简历解析结果页", path: "/resume/result", description: "展示解析后的结构化简历字段，支持用户校正与补充。", priority: "P1" } },
+    { kw: ["仪表盘", "dashboard", "看板", "数据概览"], page: { name: "数据仪表盘", path: "/dashboard", description: "聚合核心指标、任务看板与通知中心的运营视图。", priority: "P1" } },
+    { kw: ["对话", "chat", "ai 对话", "copilot"], page: { name: "AI 对话工作台", path: "/chat", description: "提供对话窗口、输入区与建议提示，承载 AI 交互主流程。", priority: "P1" } },
+    { kw: ["定价", "pricing", "订阅", "计费"], page: { name: "定价与订阅页", path: "/pricing", description: "展示定价卡片、功能对比表与定价 FAQ，承载付费转化。", priority: "P2" } },
+    { kw: ["认证", "登录", "注册", "auth"], page: { name: "认证页", path: "/auth", description: "分屏布局的登录 / 注册表单，承载账号体系入口。", priority: "P0" } },
+  ];
+
+  const out: ProductPage[] = [];
+  for (const f of features) {
+    const lower = f.name.toLowerCase();
+    const hit = ruleMap.find((r) => r.kw.some((k) => lower.includes(k.toLowerCase())));
+    if (hit) {
+      out.push({ ...hit.page, relatedFeatures: [f.name] });
+    } else {
+      // 泛化兜底：功能名 → 「XX 页」，保证每个功能都有对应页面被点出
+      const name = f.name.replace(/页$|界面$|功能$|模块$/, "") + "页";
+      out.push({
+        name,
+        description: `承载「${f.name}」能力，供用户或运营在独立页面上完成相关操作。`,
+        relatedFeatures: [f.name],
+        priority: "P1",
+      });
+    }
+  }
+  // 去重（按页面名）
+  const seen = new Set<string>();
+  return out.filter((p) => (seen.has(p.name) ? false : (seen.add(p.name), true)));
+}
 
 /** 从已识别的项目类型 + 选型推导一套默认「产品叙事」，保证启发式兜底也有完整 PRD */
 function buildNarrative(
@@ -357,6 +453,7 @@ function buildNarrative(
     positioning: t.positioning ?? t.description,
     targetAudience: t.audience ? [t.audience] : [],
     coreFeatures,
+    pages: deriveFeaturePages(coreFeatures),
     nonGoals: ["本期不做完整多语言 / 地域化", "不做核心主流程之外的增值模块"],
     successMetrics: ["注册 / 激活率", "核心功能留存", "关键路径转化率"],
     marketFit: `面向当前主流的「${t.name}」形态构建，套用贴合当下审美的「${visualStyleName}」视觉契约，信息架构遵循主流站点结构（${pageNames.slice(0, 4).join("、") || "核心页面"}），让初始上线即具备完整、可展示、可转化的产品骨架。`,
@@ -381,8 +478,8 @@ export function interpretIntent(text: string): IntentRecommendation {
     TECH_STACKS.find((t) => t.recommendedFor.includes(typeId)) ??
     TECH_STACKS[0];
 
-  // 视觉风格：优先让输入里的形容词决定，否则用当前首页选中的风格作联想默认
-  const visualStyle = VISUAL_STYLE_MAP[resolveVisualStyle(trimmed, DEFAULT_STYLE_ID)];
+  // 视觉风格：优先让输入里的行业/情绪/形容词决定，其次按项目类型给贴合色系，最后才回退全局默认
+  const visualStyle = VISUAL_STYLE_MAP[resolveVisualStyle(trimmed, typeId, DEFAULT_STYLE_ID)];
 
   // UI 主库：企业型后台用 Ant Design，面向公众用 shadcn/ui
   const mainLib =

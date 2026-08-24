@@ -1,6 +1,6 @@
 # 知识库 · 组织规则（Obsidian Vault）
 
-> 本文档定义知识库的 **定位、分类、新增落位规则**。Obsidian 打开本目录（`d:\workspace\xiye\knowledge`）即视为一个 vault。
+> 本文档定义知识库的 **定位、分类、新增落位规则**。Obsidian 打开本目录（仓库根下的 `knowledge/` 文件夹）即视为一个 vault。
 
 ---
 

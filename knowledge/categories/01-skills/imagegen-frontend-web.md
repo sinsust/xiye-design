@@ -8,6 +8,7 @@ related: [imagegen-frontend-mobile, image-to-code]
 tags: [网页, 图像, 设计]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/codeswithroh/tastemaker
 ---
 # 网页设计图像生成（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：落地页/营销站先做 section 级视觉稿、统一版面调性时。
 - **不要用**：直接写代码时，参考图作为还原来源，最终走 `image-to-code`。
-- **替代**：`image-to-code`（图转代码）、`imagegen-frontend-mobile`（移动端出图）。
+- **替代**：`image-to-code`（图转代码）、`imagegen-frontend-mobile`（移动端出图）。在线同主题的"以真实参考图锚定设计、产出高质感视觉"开源技能是 [codeswithroh/tastemaker](https://github.com/codeswithroh/tastemaker)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

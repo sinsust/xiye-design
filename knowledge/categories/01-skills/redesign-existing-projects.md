@@ -8,6 +8,7 @@ related: [high-end-visual-design, design-taste-frontend]
 tags: [重设计, 审计, UI]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/codeswithroh/tastemaker
 ---
 # 现有项目重设计（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：改造存量站点/接手有提升空间的既有产品时。
 - **不要用**：全新从零设计时，从 `design-taste-frontend` / `design-kungfu` 起步。
-- **替代**：`design-kungfu`、`high-end-visual-design`（标准本身）。
+- **替代**：`design-kungfu`、`high-end-visual-design`（标准本身）。在线同主题的"基于真实参考图 + 品味画像重设计、替代盲设默认"开源技能是 [codeswithroh/tastemaker](https://github.com/codeswithroh/tastemaker)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

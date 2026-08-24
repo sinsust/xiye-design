@@ -18,6 +18,8 @@ export interface KnowledgeEntry {
   tags?: string[];
   status?: string;
   updated?: string;
+  /** 添加时间（毫秒时间戳，来自 knowledge_entries.created_at）；内置本地条目无此字段 */
+  createdAt?: number;
   /** GitHub / 仓库地址（如 https://github.com/...），方便随时贴给 AI 工具 */
   repoUrl?: string;
   /** 官网 / 文档地址 */
@@ -26,6 +28,8 @@ export interface KnowledgeEntry {
   localPath?: string;
   /** 是否为「新增条目」后用户自建的条目（仅此类允许删除） */
   userAdded?: boolean;
+  /** 云端共享条目的贡献人邮箱（内置条目无此字段）。用于展示「贡献人：邮箱」链接。 */
+  contributorEmail?: string;
   body: string;
 }
 

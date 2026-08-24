@@ -25,6 +25,7 @@ import {
   Quote,
   Tags,
   ChevronDown,
+  ChevronRight,
   UserRound,
   LayoutDashboard,
   Table,
@@ -73,7 +74,7 @@ import { inferProjectTypeName, inferFeatureDetails } from "@/lib/project-narrati
 import { resolveContent } from "@/lib/content-resolver";
 import { summarizeCopyChanges } from "@/lib/copy-generator";
 import { VISUAL_STYLES, VISUAL_STYLE_MAP, FONT_STACK } from "@/data/visual-styles";
-import { SKELETON_PAGES, SKELETON_PAGE_MAP, findVariant } from "@/data/skeletons";
+import { SKELETON_PAGES, SKELETON_PAGE_MAP, findVariant, type SkeletonPage } from "@/data/skeletons";
 import { ComponentPreview, styleVars, applyMotionPreview, CtaStyleProvider, designTokenBridgeCss } from "./previews";
 import { applyButtonStyleToCode, findButtonStyle } from "@/lib/button-styles";
 
@@ -88,12 +89,13 @@ import { findComponentMotion } from "@/data/component-motions";
 import { ensureWebFonts } from "@/lib/web-fonts";
 import { FONT_OPTIONS } from "@/data/design-presets";
 
-// —— 页面 tab 分组：骨架按用途归类展示 ——
+// —— 页面分组：一级「用途」→ 二级「页面」，左侧栏层级树展示 ——
 const PAGE_GROUPS: { label: string; ids: string[] }[] = [
-  { label: "营销", ids: ["home", "product", "pricing", "portfolio"] },
-  { label: "门户", ids: ["auth", "about", "contact"] },
-  { label: "内容", ids: ["blog", "docs"] },
-  { label: "后台", ids: ["dashboard", "ai-chat", "misc", "feedback"] },
+  { label: "营销落地页", ids: ["home", "product", "pricing", "portfolio"] },
+  { label: "品牌与内容", ids: ["about", "contact", "blog"] },
+  { label: "文档中心", ids: ["docs"] },
+  { label: "应用工作台", ids: ["dashboard", "ai-chat", "feedback"] },
+  { label: "账号与系统", ids: ["auth", "misc"] },
 ];
 
 const PAGE_ICONS: Record<string, LucideIcon> = {
@@ -186,6 +188,13 @@ export default function BuilderPage() {
       setInFlow(true);
     }
   }, []);
+  // 若持久化的 visualStyle 指向已从预设列表删除的预设（悬空 id，如旧版绿色预设），
+  // 自动复位为默认「粗野」，避免刷新后展示失效预设且列表里选不到。
+  useEffect(() => {
+    if (visualStyle && !VISUAL_STYLE_MAP[visualStyle]) {
+      setVisualStyle(PREVIEW_DEFAULT_STYLE_ID);
+    }
+  }, [visualStyle, setVisualStyle]);
   const picks = useSkeletonStore((s) => s.picks);
   const pickVariant = useSkeletonStore((s) => s.pickVariant);
   const content = useSkeletonStore((s) => s.content);
@@ -219,7 +228,24 @@ export default function BuilderPage() {
   const [tokenOpen, setTokenOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [blueprintOpen, setBlueprintOpen] = useState(false);
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  // 侧边栏分类树的展开状态：默认展开当前页所在一级分组
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
+    const g = PAGE_GROUPS.find((x) => x.ids.includes(activePageId));
+    return { [g?.label ?? PAGE_GROUPS[0].label]: true };
+  });
+  // 二级分类（页面）的展开状态：默认展开；再次点当前页可折叠其三级组件清单
+  const [expandedPages, setExpandedPages] = useState<Record<string, boolean>>({});
+
+  // 二级页面交互：点新页 = 选中并展开；点当前页 = 折叠/展开其三级组件
+  const togglePage = (p: SkeletonPage) => {
+    if (p.id === activePageId) {
+      setExpandedPages((prev) => ({ ...prev, [p.id]: !(prev[p.id] ?? true) }));
+      setDrawerOpen(false);
+    } else {
+      selectPage(p.id);
+      setExpandedPages((prev) => ({ ...prev, [p.id]: true }));
+    }
+  };
   const [styleQuery, setStyleQuery] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const topbarRef = useRef<HTMLDivElement>(null);
@@ -231,7 +257,6 @@ export default function BuilderPage() {
       if (e.key === "Escape") {
         setDrawerOpen(false);
         setBlueprintOpen(false);
-        setOpenGroup(null);
         setStyleOpen(false);
         setTokenOpen(false);
       }
@@ -273,7 +298,6 @@ export default function BuilderPage() {
       if (blueprintPanelRef.current?.contains(t)) return;
       setStyleOpen(false);
       setTokenOpen(false);
-      setOpenGroup(null);
       setBlueprintOpen(false);
     };
     document.addEventListener("mousedown", onDown);
@@ -297,7 +321,15 @@ export default function BuilderPage() {
     setDrawerOpen(true);
   };
 
+  // 侧边栏选中页面：切页并收起变体抽屉
+  const selectPage = (pid: string) => {
+    setActivePageId(pid);
+    setActiveComponentId(null);
+    setDrawerOpen(false);
+  };
+
   const page = SKELETON_PAGES.find((p) => p.id === activePageId) ?? SKELETON_PAGES[0];
+  const PageIcon = PAGE_ICONS[page.icon] ?? Home;
   const pagePicks = picks[activePageId] ?? {};
 
   // 默认选中第一个组件；变体选择读 picks（即时持久化，未选回退第一个）
@@ -405,19 +437,19 @@ export default function BuilderPage() {
   const gotoFlowGenerate = () => {
     setBuilderReturnStep(4);
     goToStep(4);
-    router.push("/flow");
+    router.push("/workflow");
   };
 
   // 回程：回到进入骨架时的流程步骤，保证链路不丢上下文
   const gotoFlowReturn = () => {
     goToStep(builderReturnStep);
-    router.push("/flow");
+    router.push("/workflow");
   };
 
   // 前进：从骨架回到流程，并推进到「下一步」（进入前的步骤 +1，封顶第 4 步）
   const gotoFlowForward = () => {
     goToStep(Math.min(builderReturnStep + 1, 4));
-    router.push("/flow");
+    router.push("/workflow");
   };
 
   // 变体示意预览：用 GSAP 替代原 CSS 关键帧（motionAnim）。
@@ -542,68 +574,14 @@ export default function BuilderPage() {
       {/* 顶栏：页面 Tab + 视觉风格切换 */}
       <div ref={topbarRef} className="flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-2.5">
         <div className="flex flex-1 items-center gap-1.5">
-          {/* 页面分组入口：使用产品全局 Tailwind token，不跟随当前页面视觉风格 */}
-          <div className="flex items-center gap-1.5">
-            {PAGE_GROUPS.map((g) => (
-              <div key={g.label} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setOpenGroup(openGroup === g.label ? null : g.label)}
-                  className={[
-                    "inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors",
-                    openGroup === g.label
-                      ? "border-primary bg-primary/10 font-medium text-primary"
-                      : "border-border bg-background text-muted-foreground hover:border-foreground/20 hover:text-foreground",
-                  ].join(" ")}
-                >
-                  {g.label}
-                  <ChevronDown className={"size-3.5 transition-transform " + (openGroup === g.label ? "rotate-180" : "")} />
-                  {g.ids.some((pid) => blueprintCount(pid) > 0) && (
-                    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
-                      {g.ids.reduce((n, pid) => n + (blueprintCount(pid) || 0), 0)}
-                    </span>
-                  )}
-                </button>
-                {openGroup === g.label && (
-                  <div className="absolute left-0 top-full z-50 mt-2 min-w-max whitespace-nowrap rounded-xl border border-border bg-popover p-2 shadow-lg">
-                    <div className="flex items-center gap-1.5">
-                      {g.ids.map((pid) => {
-                        const p = SKELETON_PAGES.find((x) => x.id === pid);
-                        if (!p) return null;
-                        const Icon = PAGE_ICONS[p.icon] ?? Home;
-                        const active = activePageId === p.id;
-                        return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            onClick={() => {
-                              setActivePageId(p.id);
-                              setActiveComponentId(null);
-                              setDrawerOpen(false);
-                              setOpenGroup(null);
-                            }}
-                            className={[
-                              "inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors",
-                              active
-                                ? "border-primary bg-primary/10 font-medium text-primary"
-                                : "border-border bg-background text-muted-foreground hover:border-foreground/20 hover:text-foreground",
-                            ].join(" ")}
-                          >
-                            <Icon className="size-4 text-primary" />
-                            {resolveText(p.name)}
-                            {blueprintCount(p.id) > 0 && (
-                              <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
-                                {blueprintCount(p.id)}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+          {/* 当前页面定位：一级/二级页面的切换已收进左侧栏层级树 */}
+          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{PAGE_GROUPS.find((g) => g.ids.includes(activePageId))?.label ?? "页面结构"}</span>
+            <ChevronRight className="size-3.5 opacity-60" />
+            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+              <PageIcon className="size-4 text-primary" />
+              {resolveText(page.name)}
+            </span>
           </div>
         </div>
 
@@ -655,6 +633,18 @@ export default function BuilderPage() {
                   />
                 </div>
                 <div className="grid max-h-60 grid-cols-3 gap-1.5 overflow-auto">
+                  {style.id !== "aw-brutalist" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVisualStyle(PREVIEW_DEFAULT_STYLE_ID);
+                        setStyleOpen(false);
+                      }}
+                      className="col-span-3 flex items-center gap-1.5 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-2 text-left text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+                    >
+                      ↺ 重置为「粗野」（默认风格）
+                    </button>
+                  )}
                   {VISUAL_STYLES.filter((s) => s.name.includes(styleQuery.trim())).map((s) => (
                     <button
                       key={s.id}
@@ -809,11 +799,9 @@ export default function BuilderPage() {
         <aside className={["flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-background transition-[width] duration-200", sidebarCollapsed ? "w-12" : "w-60"].join(" ")}>
           <div className="flex items-center justify-between px-3 py-2.5">
             {sidebarCollapsed ? (
-              <span className="mx-auto text-xs font-semibold text-muted-foreground">{page.components.length}</span>
+              <span className="mx-auto text-xs font-semibold text-muted-foreground">{SKELETON_PAGES.length}</span>
             ) : (
-              <span className="text-xs font-semibold text-muted-foreground">
-                {page.name} · 区块组件（{page.components.length}）
-              </span>
+              <span className="truncate text-xs font-semibold text-muted-foreground">页面结构 · {SKELETON_PAGES.length} 页</span>
             )}
             <button
               type="button"
@@ -824,49 +812,161 @@ export default function BuilderPage() {
               {sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {page.components.map((c) => {
-              const Icon = COMPONENT_ICONS[c.icon] ?? LayoutGrid;
-              const active = activeComponent?.id === c.id;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    openComponent(c.id);
-                  }}
-                  title={resolveText(c.name)}
-                  className={[
-                    "group mb-0.5 flex w-full items-center rounded-lg text-left transition-all",
-                    sidebarCollapsed ? "justify-center px-0 py-2.5" : "gap-2.5 px-3 py-2",
-                    active ? "bg-primary/10 text-primary" : "hover:bg-muted",
-                  ].join(" ")}
-                >
-                  <Icon className={["size-4 shrink-0", active ? "text-primary" : "text-muted-foreground"].join(" ")} />
-                  {!sidebarCollapsed && (
-                    <span className="min-w-0 flex-1">
-                      <span className={["block truncate text-sm font-medium", active ? "text-primary" : "text-foreground"].join(" ")}>
-                        {resolveText(c.name)}
-                      </span>
-                    </span>
-                  )}
-                  {!sidebarCollapsed && isInBlueprint(page.id, c.id) && (
-                    <span
-                      className="shrink-0 rounded-md bg-primary/10 p-1 text-primary"
-                      title="已加入蓝图（AI 回填或手动）"
+
+          {sidebarCollapsed ? (
+            /* 收起态：图标快捷跳页 */
+            <div className="min-h-0 flex flex-1 flex-col items-center gap-1 overflow-y-auto p-1">
+              {SKELETON_PAGES.map((p) => {
+                const Icon = PAGE_ICONS[p.icon] ?? Home;
+                const active = p.id === activePageId;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => selectPage(p.id)}
+                    title={resolveText(p.name)}
+                    className={[
+                      "flex w-full items-center justify-center rounded-lg py-2.5 transition-all",
+                      active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ].join(" ")}
+                  >
+                    <Icon className="size-4 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            /* 层级树：一级「用途」→ 二级「页面」→ 三级「区块组件」 */
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+              {PAGE_GROUPS.map((g) => {
+                const pages = g.ids
+                  .map((pid) => SKELETON_PAGES.find((p) => p.id === pid))
+                  .filter((p): p is SkeletonPage => Boolean(p));
+                const hasActive = pages.some((p) => p.id === activePageId);
+                const open = expandedGroups[g.label] ?? true;
+                return (
+                  <div key={g.label} className="mb-1">
+                    {/* 一级：分类（可折叠） */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedGroups((prev) => ({ ...prev, [g.label]: !(prev[g.label] ?? true) }))
+                      }
+                      className={[
+                        "mb-0.5 flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-left transition hover:bg-muted",
+                        hasActive ? "text-primary" : "text-muted-foreground",
+                      ].join(" ")}
                     >
-                      <Check className="size-3" />
-                    </span>
-                  )}
-                  {!sidebarCollapsed && (
-                    <span className="shrink-0 rounded-full border border-border/60 bg-background px-1.5 py-0.5 text-xs text-muted-foreground">
-                      {c.variants.length}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                      <ChevronDown
+                        className={["size-3.5 shrink-0 transition-transform", open ? "rotate-180" : ""].join(" ")}
+                      />
+                      <span
+                        className={[
+                          "flex-1 truncate text-xs font-semibold uppercase tracking-wide",
+                          hasActive ? "text-primary" : "text-muted-foreground",
+                        ].join(" ")}
+                      >
+                        {g.label}
+                      </span>
+                      <span className="rounded-full border border-border/60 bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        {pages.length}
+                      </span>
+                    </button>
+
+                    {open && (
+                      <div className="ml-2 border-l border-border pl-1">
+                        {pages.map((p) => {
+                          const Icon = PAGE_ICONS[p.icon] ?? Home;
+                          const isActive = p.id === activePageId;
+                          const pCount = blueprintCount(p.id);
+                          const pageOpen = expandedPages[p.id] ?? true;
+                          return (
+                            <div key={p.id}>
+                              {/* 二级：页面（点当前页可折叠其三级组件） */}
+                              <button
+                                type="button"
+                                onClick={() => togglePage(p)}
+                                className={[
+                                  "mb-0.5 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition",
+                                  isActive ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted",
+                                ].join(" ")}
+                              >
+                                <ChevronDown
+                                  className={[
+                                    "size-3 shrink-0 text-muted-foreground transition-transform",
+                                    isActive && pageOpen ? "rotate-180" : "",
+                                  ].join(" ")}
+                                />
+                                <Icon
+                                  className={[
+                                    "size-3.5 shrink-0",
+                                    isActive ? "text-primary" : "text-muted-foreground",
+                                  ].join(" ")}
+                                />
+                                <span
+                                  className={[
+                                    "min-w-0 flex-1 truncate text-sm font-medium",
+                                    isActive ? "text-primary" : "text-foreground",
+                                  ].join(" ")}
+                                >
+                                  {resolveText(p.name)}
+                                </span>
+                                {pCount > 0 && (
+                                  <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
+                                    {pCount}
+                                  </span>
+                                )}
+                              </button>
+
+                              {/* 三级：当前页的区块组件（可被折叠） */}
+                              {isActive && pageOpen && (
+                                <div className="mb-1 ml-2 flex flex-col gap-0.5 border-l border-border pl-1.5">
+                                  {p.components.map((c) => {
+                                    const CIcon = COMPONENT_ICONS[c.icon] ?? LayoutGrid;
+                                    const cActive = activeComponent?.id === c.id;
+                                    return (
+                                      <button
+                                        key={c.id}
+                                        type="button"
+                                        onClick={() => openComponent(c.id)}
+                                        title={resolveText(c.name)}
+                                        className={[
+                                          "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition",
+                                          cActive ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted",
+                                        ].join(" ")}
+                                      >
+                                        <CIcon
+                                          className={[
+                                            "size-3.5 shrink-0",
+                                            cActive ? "text-primary" : "text-muted-foreground",
+                                          ].join(" ")}
+                                        />
+                                        <span className="min-w-0 flex-1 truncate text-sm">{resolveText(c.name)}</span>
+                                        {isInBlueprint(p.id, c.id) && (
+                                          <span className="shrink-0 rounded-md bg-primary/10 p-1 text-primary" title="已加入蓝图">
+                                            <Check className="size-3" />
+                                          </span>
+                                        )}
+                                        <span className="shrink-0 rounded-full border border-border/60 bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                          {c.variants.length}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </aside>
 
         {/* 变体抽屉（点按打开；点空白 / Esc / 关闭按钮收起） */}

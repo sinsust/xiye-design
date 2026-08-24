@@ -1697,6 +1697,10 @@ ${meta.runnable ? "启动后首页即显示已套用视觉 token 的壳页面，
 - 主色 \`primary\` = \`${primary}\`；全部 token 在 \`globals.css\` 的 \`:root\`，主题映射见 \`tailwind.config.ts\`。
 - 字体、圆角、密度、暗色模式：以 \`${prefix}styles/globals.css\` 的 \`:root\` 为唯一真值（\`docs/DESIGN_SPEC.md\` 是其文档化呈现，二者同源）。**任何偏离需用户明确授权。**
 
+## 开发边界规范（通用，开工前必读）
+
+视觉品味（反 AI 味）、代码整洁、工程协作、安全守则见 \`${prefix}docs/GUARD_NORMS.md\`。进入任意页面开发前先按其自查，避免产出泛型的 AI 味道实现。
+
 ## 架构边界
 
 目录结构、分层、数据流以 \`${prefix}docs/ARCHITECTURE.md\` 为准。**不得改扁平、不得跨层引用。**

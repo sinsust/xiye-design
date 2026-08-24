@@ -8,6 +8,7 @@ related: [ui-ux-pro-max, design-kungfu]
 tags: [设计系统, Stitch, UI]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/google-labs-code/design.md
 ---
 # Google Stitch 设计系统（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：要给项目定一套有辨识度、非模板化的设计系统规范文字稿时。
 - **不要用**：需要的是可选风格库而非一份规范时，用 `ui-ux-pro-max` 搜索即可。
-- **替代**：`design-kungfu`（推荐风格+系统）、`high-end-visual-design`（贵感标准）。
+- **替代**：`design-kungfu`（推荐风格+系统）、`high-end-visual-design`（贵感标准）。在线同主题的 "DESIGN.md 可执行设计系统规范" 格式见 [google-labs-code/design.md](https://github.com/google-labs-code/design.md)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

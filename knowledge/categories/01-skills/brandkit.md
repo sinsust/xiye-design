@@ -8,6 +8,7 @@ related: [one-shot-to-prd]
 tags: [品牌, 视觉, logo, 设计系统]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/google-labs-code/design.md
 ---
 # brandkit（skill）
 
@@ -17,10 +18,10 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：新项目/改版启动时，需要快速建立一个有辨识度的品牌基调；给 AI 一句话扩写后的产品愿景配套一套品牌视觉。
 - **不要用 / 注意**：只把它当"帆样式演示"而不落成可复用的 token；对十位极致的商标/字体细节要人工再打磨，别盲信自动生成。
-- **替代**：`brand-design-md`（从 getdesign.md 拉真实品牌规范）、`1688-sourcing-inquiry`（纯采购，非视觉）。
+- **替代**：`brand-design-md`（从 getdesign.md 拉真实品牌规范）、`1688-sourcing-inquiry`（纯采购，非视觉）。品牌视觉规范格式可参考 Google Labs 的 [design.md](https://github.com/google-labs-code/design.md)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
-1. 通过 skill 仓库 `D:/workspace/skill/.agents/skills/brandkit` 复制到目标项目 `skills/`。
+1. 本技能为**作者本地私有技能，暂未公开**：内容仅供了解其能力边界；如需接入目标项目，请沿用其公开同主题的替代路线（见下）。
 2. 输入品牌名/定位 → 生成品牌规范板 + Logo + 视觉世界。
 3. 把产出回填进视觉 token，作为后续组件建模的依据。
 

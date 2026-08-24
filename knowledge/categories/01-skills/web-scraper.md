@@ -8,6 +8,7 @@ related: [1688-sourcing-inquiry]
 tags: [爬虫, 数据采集, 抓取]
 status: active
 updated: 2026-08-22
+source: https://github.com/anthropics/skills
 ---
 # 网页内容抓取（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：需要把某个网页内容结构化摘取下来（数据采集、竞品/资料调研、语料整理）。
 - **不要用 / 注意**：遵守目标站 robots/版权；需要动态渲染的页面可能要配合无头浏览器。
-- **替代**：`1688-sourcing-inquiry`（采购询盘场景）；浏览器自动化逐站操作。
+- **替代**：`1688-sourcing-inquiry`（采购询盘场景）；浏览器自动化逐站操作。可在线复现同款能力的开源实现是 [firecrawl/cli](https://github.com/firecrawl/cli) 或 Anthropic 官方 [anthropics/skills](https://github.com/anthropics/skills) 中的 web-scraper（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

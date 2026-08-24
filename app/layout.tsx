@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
+import { FlowLeaveGuard } from "@/components/flow-leave-guard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="zh-CN"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
@@ -37,10 +39,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;700&display=swap"
           rel="stylesheet"
         />
-        {/* 主题初始化：hydration 前同步套 .dark，避免闪烁（FOUC） */}
+        {/* 主题初始化：hydration 前同步套 .dark + 主题预设，避免闪烁（FOUC） */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem("theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);var p=localStorage.getItem("theme-preset");document.documentElement.setAttribute("data-theme-preset",p||"brutalist")}catch(e){}})();`,
           }}
         />
       </head>
@@ -49,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="flex-1 w-full min-h-0">
           <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-4 py-8">{children}</div>
         </main>
+        <FlowLeaveGuard />
       </body>
     </html>
   );

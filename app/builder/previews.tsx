@@ -12,6 +12,7 @@ import { deepMerge } from "@/lib/content-resolver";
 import { resolveStyleVars, cssToVars } from "@/lib/style-resolver";
 import { Selectable } from "@/components/selectable";
 import { findButtonStyle } from "@/lib/button-styles";
+import ButtonResource from "@/components/originkit/ui/button-resource";
 import {
   RADIUS_TOKENS,
   DENSITY_TOKENS,
@@ -20,7 +21,12 @@ import {
 } from "@/data/design-tokens";
 import type { DesignSystem } from "@/lib/store/flow-store";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { premiumImage, resolvePlaceholder, type PlaceholderRole } from "@/lib/placeholder-images";
 import { Zap, ShieldCheck, Blocks, Mail, Phone, MapPin, FileText, PenLine, BarChart3, Code } from "lucide-react";
+
+// 精选占位图池：按区块角色取图——签名视觉走精图层，量大场景走摩雷大池（见 lib/placeholder-images.ts）。
+const ph = (role: PlaceholderRole, idx: number, w?: number, h?: number) =>
+  resolvePlaceholder(role, idx, w || h ? { w: w ?? undefined, h: h ?? undefined } : {});
 
 // 预览器实时内容：默认 DEMO_CONTENT，ComponentPreview 渲染时按面板覆盖更新。
 let PREVIEW_CONTENT: DemoContent = DEMO_CONTENT;
@@ -154,7 +160,7 @@ export function CtaStyleProvider({ value, children }: { value: string | null; ch
   return <CtaStyleContext.Provider value={value}>{children}</CtaStyleContext.Provider>;
 }
 
-/** 图片占位：默认渲染中性色块；传入 src 时渲染真实图片（免费图源，如 picsum.photos） */
+/** 图片占位：默认渲染中性色块；传入 src 时渲染真实图片（取用精选占位图池，见 lib/placeholder-images.ts） */
 function Img({ label = "图片", src }: { label?: string; src?: string }) {
   if (src)
     return (
@@ -287,6 +293,16 @@ const Btn = ({
   if (primary && ctaDef.id !== "solid") {
     if (ctaDef.round) btnClass = btnClass.replace(ctaDef.round.from, ctaDef.round.to);
     if (ctaDef.className) btnClass += " " + ctaDef.className;
+  }
+  if (primary && ctaDef.component) {
+    const label = typeof children === "string" ? children : undefined;
+    return (
+      <Selectable label="按钮" display="inline-flex">
+        <div className="inline-flex max-w-full items-center justify-center overflow-hidden py-1">
+          <ButtonResource style={ctaDef.component} label={label} fontSize={16} />
+        </div>
+      </Selectable>
+    );
   }
   return (
     <Selectable label="按钮" display="inline-flex">
@@ -615,7 +631,7 @@ function NavbarPreview({ variantId }: { variantId: string }) {
             <span>{PREVIEW_CONTENT.nav.pricing}</span>
             <span>{PREVIEW_CONTENT.nav.faq}</span>
           </div>
-          <span className="rounded-full px-3 py-1 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
+          <span className="rounded-full px-3 py-1 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
           <span className="flex size-6 flex-col items-center justify-center gap-[3px] sm:hidden">
             <span className="h-px w-3.5" style={{ background: "var(--foreground)" }} />
             <span className="h-px w-3.5" style={{ background: "var(--foreground)" }} />
@@ -651,7 +667,7 @@ function HeroPreview({ variantId }: { variantId: string }) {
           <Btn>查看演示</Btn>
         </div>
         <div className="group mt-5 overflow-hidden rounded-lg border p-2" style={{ borderColor: "var(--border)" }}>
-          <Img label="产品截图" src="https://picsum.photos/seed/xiye-hero-product/1200/720" />
+          <Img label="产品截图" src={ph("hero", 0, 1200)} />
         </div>
       </div>
     );
@@ -665,7 +681,7 @@ function HeroPreview({ variantId }: { variantId: string }) {
           <div className="mt-3 flex gap-2"><Btn primary glow>{PREVIEW_CONTENT.cta.secondary}</Btn><Btn>预约演示</Btn></div>
         </div>
         <div className="rounded-xl border p-1.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <Img label="产品界面" src="https://picsum.photos/seed/xiye-app-ui/1000/700" />
+          <Img label="产品界面" src={ph("hero", 1, 1000)} />
         </div>
       </div>
     );
@@ -680,7 +696,7 @@ function HeroPreview({ variantId }: { variantId: string }) {
           </div>
         </div>
         <div className="flex items-center justify-center bg-gradient-to-br from-[color-mix(in_srgb,var(--primary)_35%,transparent)] to-[color-mix(in_srgb,var(--secondary)_40%,transparent)]">
-          <Img label="品牌视觉" src="https://picsum.photos/seed/xiye-brand/900/900" />
+          <Img label="品牌视觉" src={ph("brand", 2, 900)} />
         </div>
       </div>
     );
@@ -768,7 +784,7 @@ function HeroPreview({ variantId }: { variantId: string }) {
               </div>
             ))}
           </div>
-          <span className="mt-3 inline-block rounded-full px-4 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>开启合作</span>
+          <span className="mt-3 inline-block rounded-full px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>开启合作</span>
         </div>
       </div>
     );
@@ -912,14 +928,14 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
   if (variantId === "feat_image_list")
     return (
       <div className="grid items-center gap-5 px-6 py-6 sm:grid-cols-2">
-        <div className="rounded-xl border p-1" style={{ borderColor: "var(--border)" }}><Img label="功能预览" src="https://picsum.photos/seed/xiye-feature/900/640" /></div>
+        <div className="rounded-xl border p-1" style={{ borderColor: "var(--border)" }}><Img label="功能预览" src={ph("feature", 3, 900)} /></div>
         <div>
           <h3 className="text-base font-bold">{title}</h3>
           <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{subtitle}</p>
           <ul className="mt-3 space-y-2">
             {items.map((f) => (
               <li key={f.title} className="flex items-center gap-2 text-xs">
-                <span className="flex size-4 items-center justify-center rounded-full text-[9px] text-white" style={{ background: "var(--primary)" }}>✓</span>
+                <span className="flex size-4 items-center justify-center rounded-full text-[9px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✓</span>
                 {f.title}：{f.desc}
               </li>
             ))}
@@ -950,7 +966,7 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
         <h3 className="mb-2 text-center text-base font-bold">{title}</h3>
         <div className="mb-3 flex gap-1 rounded-full border p-1" style={{ borderColor: "var(--border)" }}>
           {items.slice(0, 3).map((t, i) => (
-            <span key={t.title} className={"rounded-full px-3 py-1 text-xs font-medium " + (i === 0 ? "text-white" : "")} style={i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t.title}</span>
+            <span key={t.title} className={"rounded-full px-3 py-1 text-xs font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t.title}</span>
           ))}
         </div>
         <div className="grid gap-2.5 sm:grid-cols-3">
@@ -1201,7 +1217,7 @@ function CursorCta() {
       <div className="relative">
         <h3 className="text-lg font-bold">让每一次点击，都有回应</h3>
         <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "var(--muted-foreground)" }}>把想法变成产品，几分钟的事。</p>
-        <span className="mt-3 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>免费开始</span>
+        <span className="mt-3 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费开始</span>
       </div>
     </div>
   );
@@ -1211,7 +1227,7 @@ function CtaPreview({ variantId }: { variantId: string }) {
   if (variantId === "cta_solid")
     return (
       <div className="px-6 py-6">
-        <div className="rounded-xl px-6 py-8 text-center text-white" style={{ background: "var(--primary)" }}>
+        <div className="rounded-xl px-6 py-8 text-center text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           <h3 className="text-lg font-bold">{PREVIEW_CONTENT.cta.title}</h3>
           <p className="mx-auto mt-1 max-w-xs text-xs text-white/80">{PREVIEW_CONTENT.cta.subheading}</p>
           <span className="mt-3 inline-block rounded-md bg-white px-4 py-1.5 text-xs font-medium text-slate-900">{PREVIEW_CONTENT.cta.button} →</span>
@@ -1236,7 +1252,7 @@ function CtaPreview({ variantId }: { variantId: string }) {
         <div className="relative z-10 mx-auto max-w-xs rounded-2xl border border-white/20 p-5 text-center text-white" style={{ background: "color-mix(in srgb, var(--surface) 50%, transparent)", backdropFilter: "blur(16px)" }}>
           <h3 className="text-base font-bold">别错过你的下一个增长</h3>
           <p className="mt-1 text-xs text-white/80">把想法变成现实。</p>
-          <span className="mt-3 inline-block rounded-md px-4 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>开始体验</span>
+          <span className="mt-3 inline-block rounded-md px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>开始体验</span>
         </div>
       </div>
     );
@@ -1245,7 +1261,7 @@ function CtaPreview({ variantId }: { variantId: string }) {
       <div className="mx-auto max-w-sm border-t px-6 py-8 text-center" style={{ borderColor: "var(--border)" }}>
         <h3 className="text-base font-bold">准备好提升效率了吗？</h3>
         <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>现在就{PREVIEW_CONTENT.cta.primary}，随时可以取消。</p>
-        <span className="mt-3 inline-block rounded-md px-4 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>免费注册</span>
+        <span className="mt-3 inline-block rounded-md px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
       </div>
     );
   if (variantId === "cta_newsletter")
@@ -1255,7 +1271,7 @@ function CtaPreview({ variantId }: { variantId: string }) {
         <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>每周一封，随时退订。</p>
         <div className="mx-auto mt-3 flex max-w-xs gap-1.5">
           <span className="flex-1 rounded-md border px-3 py-1.5 text-xs" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>you@example.com</span>
-          <span className="rounded-md px-3.5 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>订阅</span>
+          <span className="rounded-md px-3.5 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>订阅</span>
         </div>
         <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>我们重视隐私，绝不发送垃圾邮件。</p>
       </div>
@@ -1280,7 +1296,7 @@ function CtaPreview({ variantId }: { variantId: string }) {
         <div className="relative overflow-hidden rounded-2xl border p-8 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent), 0 30px 80px -40px color-mix(in srgb, var(--primary) 45%, transparent)" }}>
           <h3 className="text-lg font-bold">把下一个增长，交给数据</h3>
           <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "var(--muted-foreground)" }}>加入 5 万+ 团队，今天就开始。</p>
-          <span className="mt-3 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>免费注册</span>
+          <span className="mt-3 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
         </div>
       </div>
     );
@@ -1350,7 +1366,7 @@ function FooterPreview({ variantId }: { variantId: string }) {
           </div>
           <div className="flex w-full max-w-xs gap-1.5">
             <span className="flex-1 rounded-md border px-3 py-1.5 text-xs" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>you@example.com</span>
-            <span className="rounded-md px-3.5 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>订阅</span>
+            <span className="rounded-md px-3.5 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>订阅</span>
           </div>
         </div>
         <div className="mt-4 flex justify-between text-[10px]" style={{ color: "var(--muted-foreground)" }}>
@@ -1381,7 +1397,7 @@ function FooterPreview({ variantId }: { variantId: string }) {
               <p className="text-xs font-semibold">订阅</p>
               <div className="mt-1.5 flex gap-1.5">
                 <span className="flex-1 rounded-md border px-2 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>you@ex.com</span>
-                <span className="rounded-md px-2.5 py-1.5 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>→</span>
+                <span className="rounded-md px-2.5 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>→</span>
               </div>
             </div>
           </div>
@@ -1657,7 +1673,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
         <span className="text-2xl" style={{ color: "var(--primary)" }}>"</span>
         <blockquote className="mx-auto mt-1 max-w-xs text-base font-semibold leading-snug">"{featured.q}"</blockquote>
         <div className="mt-3 flex items-center justify-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
+          <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
           <span className="text-xs"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
@@ -1746,7 +1762,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
             <figure className="relative rounded-2xl border p-5 shadow-[var(--shadow)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-sm font-semibold leading-snug">"{featured.q}"</p>
               <figcaption className="mt-3 flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
+                <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
                 <span className="text-[10px]"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
               </figcaption>
             </figure>
@@ -1760,7 +1776,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
         <figure className="flex flex-col justify-center rounded-2xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="text-sm font-semibold leading-snug">"{featured.q}"</p>
           <figcaption className="mt-3 flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
+            <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
             <span className="text-[10px]"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
           </figcaption>
         </figure>
@@ -1784,7 +1800,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
             <span className="text-sm" style={{ color: "var(--primary)" }}>"</span>
             <p className="mt-1 flex-1 text-[10px] leading-relaxed">{t.q}</p>
             <div className="mt-2 flex items-center gap-1.5">
-              <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-white" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
+              <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
               <div>
                 <p className="text-[10px] font-semibold">{t.n}</p>
                 <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{t.r}</p>
@@ -1807,7 +1823,7 @@ function PricingPreview({ variantId }: { variantId: string }) {
         <div className="mx-auto mt-3 max-w-xs rounded-xl border p-5 text-center" style={{ borderColor: "var(--primary)", background: "var(--surface)" }}>
           <p className="text-[length:var(--text-h1)] font-black">$19<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
           <p className="mt-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>包括所有功能，无隐藏费用。</p>
-          <span className="mt-3 block rounded-md py-2 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
+          <span className="mt-3 block rounded-md py-2 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
           <ul className="mt-3 space-y-1 text-left text-[10px]">
             {["无限项目", "所有集成", "优先支持"].map((f) => (
               <li key={f} className="flex items-center gap-1.5"><span className="text-green-600">✓</span>{f}</li>
@@ -1834,7 +1850,7 @@ function PricingPreview({ variantId }: { variantId: string }) {
             <div key={t.n} className="rounded-lg border p-3 transition-all duration-200 hover:-translate-y-0.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[10px] font-semibold">{t.n}</p>
               <p className="mt-1 text-lg font-black tabular-nums transition-all">{billing === "y" ? t.y : t.m}<span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
-              <span className="mt-2 block cursor-pointer rounded-md py-1.5 text-center text-[10px] font-medium text-white transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ background: "var(--primary)" }}>选择</span>
+              <span className="mt-2 block cursor-pointer rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ background: "var(--primary)" }}>选择</span>
             </div>
           ))}
         </div>
@@ -1899,7 +1915,7 @@ function PricingPreview({ variantId }: { variantId: string }) {
           return (
             <div key={t.name} className={["relative rounded-lg border p-3 transition-all duration-200 hover:-translate-y-1", pop ? "shadow-lg ring-2 ring-[var(--primary)]/30" : ""].join(" ")} style={{ borderColor: pop ? "var(--primary)" : "var(--border)", background: "var(--surface)" }}>
               {pop && (
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-white" style={{ background: "var(--primary)" }}>最受欢迎</span>
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>
               )}
               <p className="text-[10px] font-semibold">{t.name}</p>
               <p className="mt-1 text-lg font-black">{t.price}{t.period && <span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>{t.period}</span>}</p>
@@ -1920,7 +1936,7 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
         <h3 className="text-center text-sm font-bold">一个价格，全部功能</h3>
         <div className="mx-auto mt-3 max-w-xs rounded-xl border-2 p-5 text-center" style={{ borderColor: "var(--primary)", background: "var(--surface)" }}>
           <p className="text-[length:var(--text-h1)] font-black">$19<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
-          <span className="mt-3 block rounded-md py-2 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
+          <span className="mt-3 block rounded-md py-2 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
           <ul className="mt-3 space-y-1 text-left text-[10px]">
             {["无限项目", "所有集成", "优先支持"].map((f) => (
               <li key={f} className="flex items-center gap-1.5"><span className="text-green-600">✓</span>{f}</li>
@@ -1947,7 +1963,7 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
             <div key={t.n} className="rounded-lg border p-2.5 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[10px] font-semibold">{t.n}</p>
               <p className="mt-1 text-base font-black">{t.p}</p>
-              <span className="mt-1.5 block rounded-md py-1 text-[9px] font-medium text-white" style={{ background: "var(--primary)" }}>选择</span>
+              <span className="mt-1.5 block rounded-md py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>选择</span>
             </div>
           ))}
         </div>
@@ -1961,7 +1977,7 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
             <p className="text-[10px] font-semibold">免费</p><p className="mt-1 text-base font-black">$0</p>
             <span className="mt-1.5 block rounded-md border py-1 text-center text-[9px]" style={{ borderColor: "var(--border)" }}>开始</span>
           </div>
-          <div className="rounded-lg p-2.5 text-white" style={{ background: "var(--primary)" }}>
+          <div className="rounded-lg p-2.5 text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
             <p className="text-[10px] font-semibold">专业</p><p className="mt-1 text-base font-black">$29</p>
             <span className="mt-1.5 block rounded-md bg-white py-1 text-center text-[9px] font-medium text-slate-900">升级</span>
           </div>
@@ -1983,7 +1999,7 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
           { n: "企业", p: "定制", pop: false },
         ].map((t) => (
           <div key={t.n} className={["relative rounded-lg border p-2.5", t.pop ? "scale-[1.04] shadow-lg" : ""].join(" ")} style={{ borderColor: t.pop ? "var(--primary)" : "var(--border)", background: "var(--surface)" }}>
-            {t.pop && <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-white" style={{ background: "var(--primary)" }}>最受欢迎</span>}
+            {t.pop && <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>}
             <p className="text-[10px] font-semibold">{t.n}</p>
             <p className="mt-1 text-base font-black">{t.p}</p>
             <span className="mt-1.5 block rounded-md py-1 text-center text-[9px] font-medium" style={t.pop ? { background: "var(--primary)", color: "#fff" } : { border: "1px solid var(--border)" }}>选择</span>
@@ -2031,7 +2047,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
                 <th className="p-2 text-left font-semibold">功能</th>
                 {tierNames.map((p, i) => (
                   <th key={p} className={"p-2 text-center font-semibold " + (i === 1 ? "bg-primary/10" : "")}>
-                    {p}{i === 1 && <span className="mt-0.5 block rounded-full py-0.5 text-[8px] font-medium text-white" style={{ background: "var(--primary)" }}>最受欢迎</span>}
+                    {p}{i === 1 && <span className="mt-0.5 block rounded-full py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>}
                   </th>
                 ))}
               </tr>
@@ -2058,8 +2074,8 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
           </div>
           {rows.map((r) => (
             <div key={r.f} className="flex items-center justify-between border-b py-2.5" style={{ borderColor: "var(--border)" }}>
-              <span className="text-[9px] font-medium">{r.f}</span>
-              <div className="flex gap-6">{r.v.map((v, i) => <span key={i} className="w-10 text-center text-[9px]" style={{ fontFamily: "var(--font-heading)", color: i === 1 ? "var(--primary)" : "var(--foreground)" }}>{v}</span>)}</div>
+              <span className="text-[10px] font-medium">{r.f}</span>
+              <div className="flex gap-6">{r.v.map((v, i) => <span key={i} className="w-10 text-center text-[10px]" style={{ fontFamily: "var(--font-heading)", color: i === 1 ? "var(--primary)" : v === "✓" ? "var(--foreground)" : "var(--muted-foreground)" }}>{v === "✓" ? <b>✓</b> : v}</span>)}</div>
             </div>
           ))}
         </div>
@@ -2148,7 +2164,7 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
             {field(PREVIEW_CONTENT.auth.email, "you@example.com")}
             {field(PREVIEW_CONTENT.auth.password, "••••••••")}
           </div>
-          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>登录</span>
+          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
         </div>
       </div>
     );
@@ -2161,7 +2177,7 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
             <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
             <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
           </div>
-          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>登录</span>
+          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
         </div>
       </div>
     );
@@ -2172,7 +2188,7 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
           <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
           <h3 className="mt-5 text-base font-bold">登录</h3>
           <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com")}{field(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>登录</span>
+          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
           <span className="mt-2 block rounded-md border py-1.5 text-center text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>使用 Google 登录</span>
         </div>
       </div>
@@ -2182,12 +2198,12 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
       <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--background)), var(--background) 55%, color-mix(in srgb, var(--secondary) 10%, var(--background)))" }}>
         <div className="w-full max-w-xs rounded-2xl border p-5" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>
           <div className="text-center">
-            <span className="mx-auto flex size-9 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: "var(--primary)", boxShadow: "0 10px 24px color-mix(in srgb, var(--primary) 35%, transparent)" }}>A</span>
+            <span className="mx-auto flex size-9 items-center justify-center rounded-lg text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 10px 24px color-mix(in srgb, var(--primary) 35%, transparent)" }}>A</span>
             <h3 className="mt-2 text-sm font-bold">欢迎回来</h3>
             <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
           </div>
           <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com")}{field(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-          <span className="mt-3 block rounded-lg py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</span>
+          <span className="mt-3 block rounded-lg py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</span>
         </div>
       </div>
     );
@@ -2202,7 +2218,7 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
             <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
             <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
           </div>
-          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>登录</span>
+          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
         </div>
       </div>
     );
@@ -2224,7 +2240,7 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
     <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
       <div className="w-full max-w-xs rounded-xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <div className="text-center">
-          <span className="mx-auto flex size-9 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: "var(--primary)" }}>A</span>
+          <span className="mx-auto flex size-9 items-center justify-center rounded-lg text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
           <h3 className="mt-2 text-sm font-bold">欢迎回来</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
         </div>
@@ -2233,7 +2249,7 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
           <label className="flex items-center gap-1"><input type="checkbox" className="accent-[var(--primary)]" /> 记住我</label>
           <a style={{ color: "var(--primary)" }}>忘记{PREVIEW_CONTENT.auth.password}？</a>
         </div>
-        <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>登录</span>
+        <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
         <div className="my-3 flex items-center gap-2 text-[9px]" style={{ color: "var(--muted-foreground)" }}><span className="h-px flex-1" style={{ background: "var(--border)" }} />或<span className="h-px flex-1" style={{ background: "var(--border)" }} /></div>
         <div className="grid grid-cols-2 gap-2">
           <span className="rounded-md border py-1 text-center text-[9px] font-medium" style={{ borderColor: "var(--border)" }}>Google</span>
@@ -2310,7 +2326,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
         <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>you@example.com</span>
         <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>••••••••</span>
       </div>
-      <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>登录</span>
+      <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
     </div>
   );
   if (variantId === "asplit_dark")
@@ -2360,7 +2376,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
               <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
               <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
             </div>
-            <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>登录</span>
+            <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
           </div>
         </div>
       </div>
@@ -2394,7 +2410,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
         <div className="mx-auto w-full max-w-xs">
           <h3 className="text-sm font-bold">创建企业账号</h3>
           <div className="mt-3 grid grid-cols-2 gap-2">{f("公司名", "{PREVIEW_CONTENT.brand} Inc.")}{f("团队规模", "1-10 人")}{f("工作{PREVIEW_CONTENT.auth.email}", "you@company.com")}</div>
-          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>创建账号</span>
+          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>创建账号</span>
         </div>
       </div>
     );
@@ -2409,7 +2425,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
           </div>
           <p className="mt-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>第 1 步，共 2 步</p>
           <div className="mt-2 space-y-2">{f("姓名", "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}</div>
-          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>下一步</span>
+          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>下一步</span>
         </div>
       </div>
     );
@@ -2420,7 +2436,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
           <h3 className="text-sm font-bold">创建账号</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
           <div className="mt-3 space-y-2">{f("姓名", "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}{f(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-          <span className="mt-2.5 block rounded-lg py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>免费注册</span>
+          <span className="mt-2.5 block rounded-lg py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>免费注册</span>
         </div>
       </div>
     );
@@ -2435,7 +2451,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
             <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
             <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
           </div>
-          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>免费注册</span>
+          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
         </div>
       </div>
     );
@@ -2459,7 +2475,7 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
         <h3 className="text-sm font-bold">创建账号</h3>
         <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
         <div className="mt-3 space-y-2">{f("姓名", "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}{f(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-        <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>免费注册</span>
+        <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
       </div>
     </div>
   );
@@ -2471,7 +2487,7 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
   if (variantId === "dsb_icon")
     return (
       <div className="flex h-56 w-14 flex-col items-center border-r py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-        <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-white" style={{ background: "var(--primary)" }}>A</span>
+        <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
         <div className="mt-4 flex flex-1 flex-col items-center gap-1.5">
           {["▦", "▤", "📊", "⚙"].map((ic, i) => (
             <span key={i} className="flex size-8 items-center justify-center rounded-lg text-xs" style={i === 0 ? { background: "var(--primary)", color: "#fff" } : { color: "var(--muted-foreground)" }}>{ic}</span>
@@ -2482,10 +2498,10 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
   if (variantId === "dsb_dark")
     return (
       <div className="flex h-56 w-44 flex-col bg-slate-900 p-2.5 text-slate-100">
-        <p className="flex items-center gap-1.5 px-2 py-2 text-xs font-bold"><span className="flex size-6 items-center justify-center rounded-md text-[10px] text-white" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}</p>
+        <p className="flex items-center gap-1.5 px-2 py-2 text-xs font-bold"><span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}</p>
         <div className="mt-1 flex-1 space-y-1">
           {items.map((i, idx) => (
-            <p key={i} className={"rounded-md px-2.5 py-1.5 text-[10px] " + (idx === 0 ? "text-white" : "text-slate-400")} style={idx === 0 ? { background: "var(--primary)" } : {}}>{i}</p>
+            <p key={i} className={"rounded-md px-2.5 py-1.5 text-[10px] " + (idx === 0 ? "text-[var(--on-primary)]" : "text-slate-400")} style={idx === 0 ? { background: "var(--primary)" } : {}}>{i}</p>
           ))}
         </div>
         <p className="border-t border-white/10 px-2.5 py-2 text-[10px] text-slate-300">张三</p>
@@ -2495,7 +2511,7 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
     return (
       <div className="flex h-56 w-44 flex-col border-r p-2" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 70%, transparent)", backdropFilter: "blur(16px)" }}>
         <p className="flex items-center gap-1.5 px-2 py-2 text-xs font-bold">
-          <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-white" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}
+          <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}
         </p>
         <div className="flex-1 space-y-1">
           {items.map((i, idx) => (
@@ -2520,7 +2536,7 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
   return (
     <div className="flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <p className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold">
-        <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-white" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}
+        <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}
       </p>
       <div className="flex-1 space-y-1 px-2">
         {items.map((i, idx) => (
@@ -2657,7 +2673,7 @@ function DashChartPreview({ variantId }: { variantId: string }) {
         <span className="text-xl">📊</span>
         <p className="mt-2 text-xs font-semibold">还没有数据</p>
         <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>接入数据源后展示分析图表。</p>
-        <span className="mt-2.5 rounded-md px-3 py-1 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>接入数据源</span>
+        <span className="mt-2.5 rounded-md px-3 py-1 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>接入数据源</span>
       </div>
     );
   if (variantId === "dchart_line")
@@ -2794,7 +2810,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
         <div className="divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {(dash.notifications.length ? dash.notifications : [{ text: "新的评论待审阅", time: "2 分钟前" }]).map((m) => (
             <div key={m.text} className="flex items-center gap-2.5 px-3 py-2.5">
-              <span className="relative flex size-7 items-center justify-center rounded-full text-[9px] font-bold text-white" style={{ background: "var(--primary)" }}>
+              <span className="relative flex size-7 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
                 {m.text.slice(0, 1)}
               </span>
               <p className="min-w-0 flex-1 truncate text-[10px]"><span className="font-semibold">{m.text}</span></p>
@@ -2856,7 +2872,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
             {T.map((r) => (
               <tr key={r.n} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
                 <td className="p-2.5">
-                  <span className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-md text-[8px] font-bold text-white" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>{r.n}</span>
+                  <span className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-md text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>{r.n}</span>
                 </td>
                 <td className="p-2.5"><span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium" style={{ color: r.c }}><span className="size-1 rounded-full" style={{ background: r.c }} />{r.s}</span></td>
                 <td className="p-2.5 text-right">⋯</td>
@@ -2884,7 +2900,7 @@ function DashTopbarPreview({ variantId }: { variantId: string }) {
             <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full" style={{ background: "var(--primary)" }} />
           </span>
           <span className="h-4 w-px" style={{ background: "var(--border)" }} />
-          <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-white" style={{ background: "var(--primary)" }}>{initial}</span>
+          <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{initial}</span>
         </div>
       </div>
     );
@@ -2905,9 +2921,36 @@ function DashTopbarPreview({ variantId }: { variantId: string }) {
       <div className="flex items-center gap-2 px-4 py-3" style={{ border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 55%, transparent)", borderRadius: "16px", backdropFilter: "blur(12px)" }}>
         <span className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>⌕ 搜索</span>
         <span className="text-[10px]">🔔</span>
-        <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-white" style={{ background: "var(--primary)" }}>{initial}</span>
+        <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{initial}</span>
       </div>
     );
+  if (variantId === "dtop_ops_modebar") {
+    const modes = ["运营", "议价", "订单", "任务", "审核", "数据", "配置"];
+    return (
+      <div className="flex items-center gap-2 border-b px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
+          {modes.map((m, i) => (
+            <span
+              key={m}
+              className={["whitespace-nowrap px-2 py-1 text-[10px] font-medium transition", i === 0 ? "" : ""].join(" ")}
+              style={
+                i === 0
+                  ? { color: "var(--primary)", boxShadow: "inset 0 -2px 0 0 var(--primary)" }
+                  : { color: "var(--muted-foreground)" }
+              }
+            >
+              {m}
+            </span>
+          ))}
+        </nav>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="rounded-md border px-1.5 py-0.5 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌘K 命令中心</span>
+          <span className="rounded-md px-2 py-1 text-[9px] font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>+ 新建</span>
+          <span className="flex size-5 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{initial}</span>
+        </div>
+      </div>
+    );
+  }
   return null;
 }
 
@@ -3118,7 +3161,7 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex gap-1 border-b p-2" style={{ borderColor: "var(--border)" }}>
             {tabs.map((t, i) => (
-              <span key={t} className={"rounded px-2.5 py-1 text-[10px] font-medium " + (i === 0 ? "text-white" : "")} style={i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
+              <span key={t} className={"rounded px-2.5 py-1 text-[10px] font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
             ))}
           </div>
           <div className="p-8 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
@@ -3144,7 +3187,7 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
       <div className="px-6 py-6">
         <div className="inline-flex gap-1 rounded-full border p-1" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)", backdropFilter: "blur(10px)" }}>
           {tabs.map((t, i) => (
-            <span key={t} className={"cursor-pointer rounded-full px-3 py-1 text-[10px] font-medium " + (i === 0 ? "text-white" : "")} style={i === 0 ? { background: "var(--primary)", boxShadow: "0 4px 16px -6px var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
+            <span key={t} className={"cursor-pointer rounded-full px-3 py-1 text-[10px] font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)", boxShadow: "0 4px 16px -6px var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
           ))}
         </div>
       </div>
@@ -3159,7 +3202,7 @@ function DashFiltersPreview({ variantId }: { variantId: string }) {
       <div className="px-6 py-6">
         <div className="flex flex-wrap items-center gap-1.5">
           {filters.map((c, i) => (
-            <span key={c} className={"cursor-pointer rounded-full px-2.5 py-1 text-[9px] font-medium " + (i === 1 ? "text-white" : "")} style={i === 1 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
+            <span key={c} className={"cursor-pointer rounded-full px-2.5 py-1 text-[9px] font-medium " + (i === 1 ? "text-[var(--on-primary)]" : "")} style={i === 1 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
           ))}
           <button className="text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button>
         </div>
@@ -3172,7 +3215,7 @@ function DashFiltersPreview({ variantId }: { variantId: string }) {
           <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1.5 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌕ 搜索项目、成员…</div>
           <div className="flex flex-wrap gap-1.5">
             {filters.slice(1).map((c, i) => (
-              <span key={c} className={"cursor-pointer rounded px-2 py-1 text-[9px] font-medium " + (i === 0 ? "text-white" : "")} style={i === 0 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
+              <span key={c} className={"cursor-pointer rounded px-2 py-1 text-[9px] font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
             ))}
             <button className="px-1 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button>
           </div>
@@ -3256,7 +3299,7 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
           <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
             {perms.map((r, i) => (
               <li key={r} className="flex items-center gap-2 px-3 py-2">
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white" style={{ background: "var(--primary)" }}>{r.slice(0, 1)}</span>
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.slice(0, 1)}</span>
                 <span className="min-w-0 flex-1 truncate text-[10px] font-medium">{r}</span>
                 <span className="rounded-full px-1.5 py-0.5 text-[8px] font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{perms[(i + 1) % perms.length]}</span>
                 <span className="text-[8px] font-medium" style={{ color: i % 2 === 0 ? "#059669" : "var(--muted-foreground)" }}>编辑</span>
@@ -3477,7 +3520,7 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
               { n: "导出 Excel", primary: false },
               { n: "定时同步", primary: false },
             ].map((a) => (
-              <button key={a.n} className={"rounded-md px-2.5 py-1 text-[9px] font-medium " + (a.primary ? "text-white" : "")} style={a.primary ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--foreground)" }}>{a.n}</button>
+              <button key={a.n} className={"rounded-md px-2.5 py-1 text-[9px] font-medium " + (a.primary ? "text-[var(--on-primary)]" : "")} style={a.primary ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--foreground)" }}>{a.n}</button>
             ))}
           </div>
         </div>
@@ -3546,14 +3589,14 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
             <p className="text-sm font-bold">{port.title}</p>
             <div className="flex gap-1.5">
               {["全部", proj[1] || "Branding", "Web"].map((f, i) => (
-                <span key={f} className={"rounded-full px-2 py-0.5 text-[8px] " + (i === 0 ? "text-white" : "border")} style={i === 0 ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{f}</span>
+                <span key={f} className={"rounded-full px-2 py-0.5 text-[8px] " + (i === 0 ? "text-[var(--on-primary)]" : "border")} style={i === 0 ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{f}</span>
               ))}
             </div>
           </div>
           <div className="mt-4 columns-2 gap-3">
             {proj.slice(0, 4).map((w, i) => (
               <div key={w} className="group relative mb-3 overflow-hidden rounded-lg">
-                <img src={"https://picsum.photos/seed/xiye-work-" + (i + 1) + "/600/" + (800 - i * 110)} alt={w} loading="lazy" className="w-full object-cover" />
+                <img src={ph("work", 4 + i, 600)} alt={w} loading="lazy" className="w-full object-cover" />
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">{w}</span>
               </div>
             ))}
@@ -3565,7 +3608,7 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
     return (
       <div className="grid gap-5 px-6 py-6 sm:grid-cols-2">
         <a className="block">
-          <img src="https://picsum.photos/seed/xiye-work-hero/900/1000" alt={proj[0]} className="w-full rounded-xl object-cover" />
+          <img src={ph("work", 5, 900)} alt={proj[0]} className="w-full rounded-xl object-cover" />
           <p className="mt-2 text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{port.subtitle}</p>
           <p className="text-base font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{proj[0]}</p>
         </a>
@@ -3587,7 +3630,7 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
           {proj.slice(0, 6).map((w, i) => (
             <div key={w} className="group w-44 shrink-0 snap-start">
               <div className="overflow-hidden rounded-lg">
-                <img src={"https://picsum.photos/seed/xiye-work-" + (i + 1) + "/700/500"} alt={w} loading="lazy" className="aspect-[7/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+                <img src={ph("work", 6 + i, 700)} alt={w} loading="lazy" className="aspect-[7/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
               </div>
               <p className="mt-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{("0" + (i + 1)).slice(-2)} / {("0" + Math.min(proj.length, 6)).slice(-2)}</p>
             </div>
@@ -3613,7 +3656,7 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
               <div key={m.l}><p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{m.l}</p><p className="text-xs font-bold">{m.v}</p></div>
             ))}
           </div>
-          <img src="https://picsum.photos/seed/xiye-case-hero/1200/700" alt={featured} className="mt-4 w-full rounded-xl object-cover" />
+          <img src={ph("case", 7, 1100)} alt={featured} className="mt-4 w-full rounded-xl object-cover" />
         </div>
       </div>
     );
@@ -3626,7 +3669,7 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
             <div key={t} className="flex items-center gap-3 border-b pb-3 last:border-0" style={{ borderColor: "var(--border)" }}>
               <span className="text-base font-black" style={{ color: "var(--primary)" }}>{"0" + (i + 1)}</span>
               <p className="flex-1 text-xs font-semibold">{t}</p>
-              <img src={"https://picsum.photos/seed/xiye-case-" + (i + 1) + "/600/400"} alt={t} loading="lazy" className="hidden h-10 w-16 rounded object-cover sm:block" />
+              <img src={ph("case", 8 + i, 600)} alt={t} loading="lazy" className="hidden h-10 w-16 rounded object-cover sm:block" />
             </div>
           ))}
         </div>
@@ -3747,7 +3790,7 @@ function RingPreviewImpl({ preset }: { preset: "circle" | "alt" }) {
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [count, setCount] = useState(12);
 
-  const photos = useMemo(() => Array.from({ length: count }, (_, i) => "https://picsum.photos/seed/xiye-ring-" + (i + 1) + "/400/300"), [count]);
+  const photos = useMemo(() => Array.from({ length: count }, (_, i) => premiumImage(9 + i, { w: 400 })), [count]);
   const cards = useMemo(() => {
     const ringN = Math.max(1, Math.round(rings));
     const rnd = mulberry32(0x9e3779b1);
@@ -3853,7 +3896,7 @@ function BlogListPreview({ variantId }: { variantId: string }) {
         <div className="mx-auto grid max-w-lg gap-3 sm:grid-cols-3">
           {posts.slice(0, 3).map((p) => (
             <div key={p.t} className="rounded-lg border p-1.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-              <img src={"https://picsum.photos/seed/xiye-blog-" + (p.i + 1) + "/600/380"} alt={p.t} loading="lazy" className="aspect-[16/10] w-full rounded-md object-cover" />
+              <img src={ph("blog", 10 + p.i, 600)} alt={p.t} loading="lazy" className="aspect-[16/10] w-full rounded-md object-cover" />
               <div className="p-1.5">
                 <span className="rounded-full px-1.5 py-0.5 text-[7px] font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{p.c}</span>
                 <p className="mt-1 text-[10px] font-semibold leading-snug">{p.t}</p>
@@ -3885,7 +3928,7 @@ function BlogListPreview({ variantId }: { variantId: string }) {
       <div className="px-6 py-6">
         <div className="mx-auto grid max-w-lg gap-4 sm:grid-cols-[1.5fr_1fr]">
           <div>
-            <img src="https://picsum.photos/seed/xiye-blog-feat/1000/600" alt={posts[0]?.t || "精选文章"} className="aspect-[5/3] w-full rounded-lg object-cover" />
+            <img src={ph("blog", 11, 1000)} alt={posts[0]?.t || "精选文章"} className="aspect-[5/3] w-full rounded-lg object-cover" />
             <p className="mt-1.5 text-xs font-bold leading-snug">{posts[0]?.t}</p>
             <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{posts[0]?.d} · 6 分钟</p>
           </div>
@@ -3919,7 +3962,7 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
             <p>{body}</p>
             <blockquote className="border-l-2 pl-3 italic" style={{ borderColor: "var(--primary)", color: "var(--muted-foreground)" }}>"一致性的价值，在于它让用户不用每次重新学习。"</blockquote>
             <pre className="overflow-x-auto rounded-md p-2.5 text-[9px]" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>export const tokens = {"{ radius: \"12px\" }"};</pre>
-            <img src="https://picsum.photos/seed/xiye-blog-post/900/520" alt={title} className="w-full rounded-lg" />
+            <img src={ph("blog", 12, 900)} alt={title} className="w-full rounded-lg" />
           </div>
         </div>
       </div>
@@ -3933,7 +3976,7 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
           <div className="mt-2.5 space-y-2 text-[10px] leading-relaxed">
             <p className="font-semibold">引言</p>
             <p>{body}</p>
-            <img src="https://picsum.photos/seed/xiye-blog-ai/900/500" alt={title} className="w-full rounded-lg" />
+            <img src={ph("blog", 13, 900)} alt={title} className="w-full rounded-lg" />
             <p className="font-semibold">总结</p>
             <p>会用 AI 的设计师会取代不会用 AI 的。</p>
           </div>
@@ -3978,7 +4021,7 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
           <p className="text-sm font-bold">{blog.subtitle}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {tagsData.map((t) => (
-              <span key={t.t} className={"rounded-full px-3 py-1 text-[9px] " + (t.active ? "text-white" : "border")} style={t.active ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{t.t} {t.n}</span>
+              <span key={t.t} className={"rounded-full px-3 py-1 text-[9px] " + (t.active ? "text-[var(--on-primary)]" : "border")} style={t.active ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{t.t} {t.n}</span>
             ))}
           </div>
         </div>
@@ -4025,10 +4068,10 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
       <div className="px-6 py-6">
         <div className="mx-auto max-w-xs">
           <div className="group relative overflow-hidden rounded-xl">
-            <span className="absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[8px] font-medium text-white" style={{ background: "var(--primary)" }}>新品</span>
+            <span className="absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>新品</span>
             <img
               key={active}
-              src={active === 0 ? "https://picsum.photos/seed/xiye-prod-main/800/1000" : "https://picsum.photos/seed/xiye-prod-" + active + "/800/1000"}
+              src={ph("product", active, 800)}
               alt="商品主图"
               className="aspect-[4/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               style={{ animation: "galleryIn 0.35s cubic-bezier(0.16,1,0.3,1)" }}
@@ -4043,7 +4086,7 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
                 aria-label={"缩略图 " + i}
                 className={"overflow-hidden rounded-md transition " + (active === i ? "ring-2 ring-[var(--primary)]" : "opacity-60 hover:opacity-100")}
               >
-                <img src={"https://picsum.photos/seed/xiye-prod-" + i + "/400/500"} alt={"缩略图 " + i} className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-110" />
+                <img src={ph("thumb", 18 + i, 400)} alt={"缩略图 " + i} className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-110" />
               </button>
             ))}
           </div>
@@ -4055,10 +4098,10 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
   if (variantId === "pgallery_split")
     return (
       <div className="grid gap-3 px-6 py-6 sm:grid-cols-[1.1fr_1fr]">
-        <img src="https://picsum.photos/seed/xiye-prod-a/700/900" alt="商品图 A" className="aspect-[3/4] w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
+        <img src={ph("product", 22, 700)} alt="商品图 A" className="aspect-[3/4] w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
         <div className="grid gap-3">
-          <img src="https://picsum.photos/seed/xiye-prod-b/700/500" alt="商品图 B" className="w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
-          <img src="https://picsum.photos/seed/xiye-prod-c/700/500" alt="商品图 C" className="w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
+          <img src={ph("product", 23, 700)} alt="商品图 B" className="w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
+          <img src={ph("product", 24, 700)} alt="商品图 C" className="w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
         </div>
       </div>
     );
@@ -4086,11 +4129,11 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
           <p className="mt-3 text-[10px] font-medium">尺码</p>
           <div className="mt-1.5 flex gap-1.5">
             {["S", "M", "L"].map((s, i) => (
-              <span key={s} className={"rounded border px-2 py-0.5 text-[9px] " + (i === 1 ? "text-white" : "")} style={i === 1 ? { background: "var(--primary)", borderColor: "var(--primary)" } : { borderColor: "var(--border)" }}>{s}</span>
+              <span key={s} className={"rounded border px-2 py-0.5 text-[9px] " + (i === 1 ? "text-[var(--on-primary)]" : "")} style={i === 1 ? { background: "var(--primary)", borderColor: "var(--primary)" } : { borderColor: "var(--border)" }}>{s}</span>
             ))}
           </div>
           <div className="mt-4 flex gap-2">
-            <span className="flex-1 rounded-md py-2 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>加入购物车</span>
+            <span className="flex-1 rounded-md py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>加入购物车</span>
             <span className="flex-1 rounded-md border py-2 text-center text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>立即购买</span>
           </div>
         </div>
@@ -4110,7 +4153,7 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
               </div>
             ))}
           </div>
-          <span className="mt-4 block rounded-full py-2 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>加入购物车</span>
+          <span className="mt-4 block rounded-full py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>加入购物车</span>
         </div>
       </div>
     );
@@ -4119,8 +4162,8 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
 
 function ProductGridPreview({ variantId }: { variantId: string }) {
   const products = PREVIEW_CONTENT.shop.products.length
-    ? PREVIEW_CONTENT.shop.products.map((p, i) => ({ t: p.name, d: p.desc, p: p.price, img: "https://picsum.photos/seed/xiye-prod-" + (i + 1) + "/600/750" }))
-    : [{ t: "经典款", d: "", p: "¥299", img: "https://picsum.photos/seed/xiye-prod-1/600/750" }];
+    ? PREVIEW_CONTENT.shop.products.map((p, i) => ({ t: p.name, d: p.desc, p: p.price, img: ph("product", 25 + i, 600) }))
+    : [{ t: "经典款", d: "", p: "¥299", img: ph("product", 26, 600) }];
   if (variantId === "pgrid_card")
     return (
       <div className="px-6 py-6">
@@ -4154,7 +4197,7 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
 
 function ProductCartPreview({ variantId }: { variantId: string }) {
   const goods = PREVIEW_CONTENT.shop.products.length
-    ? PREVIEW_CONTENT.shop.products.slice(0, 2).map((g, i) => ({ t: g.name, p: 699 - i * 370, q: i + 1, img: "https://picsum.photos/seed/xiye-prod-" + (i + 1) + "/200/250" }))
+    ? PREVIEW_CONTENT.shop.products.slice(0, 2).map((g, i) => ({ t: g.name, p: 699 - i * 370, q: i + 1, img: ph("thumb", 27 + i, 300) }))
     : [];
   const subtotal = goods.reduce((s, g) => s + g.p * g.q, 0);
   if (variantId === "pcart_list")
@@ -4184,7 +4227,7 @@ function ProductCartPreview({ variantId }: { variantId: string }) {
             ))}
             <div className="flex justify-between border-t pt-2 text-xs" style={{ borderColor: "var(--border)" }}><b>合计</b><b>¥{Math.round(subtotal * 0.9)}</b></div>
           </div>
-          <span className="mt-3 block rounded-md py-2 text-center text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>去结算</span>
+          <span className="mt-3 block rounded-md py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>去结算</span>
         </div>
       </div>
     );
@@ -4226,7 +4269,7 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
           </div>
         </div>
         <div className="relative">
-          <img src="https://picsum.photos/seed/xiye-about-story/800/1000" alt="工作室" className="w-full rounded-xl object-cover sm:sticky sm:top-0" />
+          <img src={ph("about", 28, 800)} alt="工作室" className="w-full rounded-xl object-cover sm:sticky sm:top-0" />
           <p className="mt-1.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>图：2016 年的第一间办公室 · 滚动时图片吸顶</p>
         </div>
       </div>
@@ -4246,8 +4289,8 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
 
 function AboutTeamPreview({ variantId }: { variantId: string }) {
   const team = PREVIEW_CONTENT.about.team.length
-    ? PREVIEW_CONTENT.about.team.map((m, i) => ({ n: m.name, r: m.role, img: "https://picsum.photos/seed/xiye-team-" + (i + 1) + "/400/500" }))
-    : [{ n: "林一", r: "联合创始人", img: "https://picsum.photos/seed/xiye-team-1/400/500" }, { n: "王越", r: "设计负责人", img: "https://picsum.photos/seed/xiye-team-2/400/500" }];
+    ? PREVIEW_CONTENT.about.team.map((m, i) => ({ n: m.name, r: m.role, img: ph("avatar", 29 + i, 400) }))
+    : [{ n: "林一", r: "联合创始人", img: ph("avatar", 29, 400) }, { n: "王越", r: "设计负责人", img: ph("avatar", 30, 400) }];
   if (variantId === "ateam_grid")
     return (
       <div className="px-6 py-6">
@@ -4334,7 +4377,7 @@ function ContactFormPreview({ variantId }: { variantId: string }) {
             <label className="text-[10px] font-medium">留言</label>
             <span className="rounded-md border px-2.5 py-4 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>简单描述你的需求…</span>
           </div>
-          <span className="inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>{contact.formTitle}</span>
+          <span className="inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{contact.formTitle}</span>
         </div>
       </div>
     );
@@ -4350,7 +4393,7 @@ function ContactFormPreview({ variantId }: { variantId: string }) {
             ))}
           </div>
         </div>
-        <div className="space-y-2">{field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"))}{field(fNames[1] || "邮箱", "you@example.com")}{field("留言", "简单描述你的需求…")}<span className="inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>{contact.formTitle}</span></div>
+        <div className="space-y-2">{field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"))}{field(fNames[1] || "邮箱", "you@example.com")}{field("留言", "简单描述你的需求…")}<span className="inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{contact.formTitle}</span></div>
       </div>
     );
   return null;
@@ -4428,7 +4471,7 @@ function Misc404Preview({ variantId }: { variantId: string }) {
         <p className="text-5xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>404</p>
         <p className="mt-2 text-sm font-medium">{nf.title}</p>
         <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{nf.subtitle}</p>
-        <span className="mt-4 rounded-md px-4 py-1.5 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>{nf.button}</span>
+        <span className="mt-4 rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{nf.button}</span>
       </div>
     );
   if (variantId === "e404_creative")
@@ -4453,12 +4496,12 @@ function MiscComingPreview({ variantId }: { variantId: string }) {
   if (variantId === "coming_email")
     return (
       <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-        <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-white" style={{ background: "var(--primary)" }}>✦</span>
+        <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
         <p className="mt-3 text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>Coming Soon</p>
         <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{cm.title}<span style={{ fontStyle: "italic", color: "var(--primary)" }}>。</span></h3>
         <div className="mt-3 flex w-full max-w-60 items-center gap-1.5 rounded-full border p-1 pl-3" style={{ borderColor: "var(--border)" }}>
           <span className="min-w-0 flex-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>you@example.com</span>
-          <span className="shrink-0 rounded-full px-3 py-1 text-[9px] font-medium text-white" style={{ background: "var(--primary)" }}>{cm.button}</span>
+          <span className="shrink-0 rounded-full px-3 py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{cm.button}</span>
         </div>
       </div>
     );
@@ -4629,8 +4672,8 @@ function ChatWindowPreview({ variantId }: { variantId: string }) {
       <div className="mx-auto flex max-w-sm flex-col gap-3 rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         {chatMessages.map((m, i) => (
           <div key={i} className={"flex items-start gap-2 " + (m.from === "user" ? "flex-row-reverse" : "")}>
-            {m.from === "ai" && <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] text-white" style={{ background: "var(--primary)" }}>✦</span>}
-            <div className={"max-w-[78%] rounded-xl px-3 py-2 text-[10px] " + (m.from === "user" ? "text-white" : "")} style={m.from === "user" ? { background: "var(--primary)" } : { background: "var(--background)" }}>{m.text}</div>
+            {m.from === "ai" && <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>}
+            <div className={"max-w-[78%] rounded-xl px-3 py-2 text-[10px] " + (m.from === "user" ? "text-[var(--on-primary)]" : "")} style={m.from === "user" ? { background: "var(--primary)" } : { background: "var(--background)" }}>{m.text}</div>
           </div>
         ))}
         <p className="text-center text-[8px]" style={{ color: "var(--muted-foreground)" }}>AI 生成内容，请注意甄别</p>
@@ -4647,7 +4690,7 @@ function ChatInputPreview({ variantId }: { variantId: string }) {
         <div className="mx-auto flex max-w-sm items-center gap-2 rounded-full border p-1.5 pl-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>＋</span>
           <span className="min-w-0 flex-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{chatPlaceholder}</span>
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] text-white" style={{ background: "var(--primary)" }}>↑</span>
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>↑</span>
         </div>
       </div>
     );
@@ -4659,9 +4702,9 @@ function ChatInputPreview({ variantId }: { variantId: string }) {
           <div className="flex items-center justify-between border-t pt-2" style={{ borderColor: "var(--border)" }}>
             <div className="flex gap-1.5">
               <span className="rounded-full border px-2 py-0.5 text-[8px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>智能模型 v2</span>
-              <span className="rounded-full px-2 py-0.5 text-[8px] font-medium text-white" style={{ background: "var(--primary)" }}>对话</span>
+              <span className="rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>对话</span>
             </div>
-            <span className="flex size-7 items-center justify-center rounded-full text-[10px] text-white" style={{ background: "var(--primary)" }}>↑</span>
+            <span className="flex size-7 items-center justify-center rounded-full text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>↑</span>
           </div>
         </div>
       </div>
@@ -4985,7 +5028,7 @@ function ContactPreview({ variantId }: { variantId: string }) {
               <div className="mt-1 h-7 border-b" style={{ borderColor: "var(--border)" }} />
             </div>
           ))}
-          <div className="rounded-md py-2 text-center text-[10px] font-semibold text-white" style={{ background: "var(--primary)" }}>发送</div>
+          <div className="rounded-md py-2 text-center text-[10px] font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>发送</div>
         </div>
       </div>
     );
@@ -5080,7 +5123,7 @@ function LoaderButtonPreview({ variantId }: { variantId: string }) {
   void variantId;
   return (
     <div className="flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
-      <button className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white opacity-80" style={{ background: "var(--primary)" }} disabled>
+      <button className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-[var(--on-primary)] opacity-80" style={{ background: "var(--primary)" }} disabled>
         <span className="size-4 animate-spin rounded-full border-2" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
         提交中…
       </button>

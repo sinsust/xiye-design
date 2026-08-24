@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowUpRight,
+  AtSign,
   Check,
   Code2,
   Copy,
@@ -17,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { KNOWLEDGE_TYPE_META, type KnowledgeEntry } from "@/lib/knowledge-types";
 
-type FilterId = KnowledgeEntry["type"] | "all";
+type FilterId = KnowledgeEntry["type"] | "all" | "recent";
 
 const STATUS_LABEL: Record<string, string> = {
   active: "已接入",
@@ -500,6 +501,25 @@ export function KnowledgeBrowser({
   const [deleted, setDeleted] = useState<Set<string>>(new Set());
   const [confirmKey, setConfirmKey] = useState<string | null>(null);
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 当前登录用户邮箱：云端共享条目仅「贡献人本人」可见编辑/删除
+  const [myEmail, setMyEmail] = useState<string | null>(null);
+
+  // 云端条目仅贡献人本人可管理；内置条目 userAdded 为空，一律不可管理
+  const canManage = (e: KnowledgeEntry) =>
+    Boolean(e.userAdded) && (!e.contributorEmail || e.contributorEmail === myEmail);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.user?.email) setMyEmail(d.user.email);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const keyOf = (e: KnowledgeEntry) => `${e.type}/${e.slug}`;
 
@@ -551,8 +571,9 @@ export function KnowledgeBrowser({
     () =>
       [
         { id: "all" as FilterId, label: "全部" },
+        { id: "recent" as FilterId, label: "最近添加" },
         ...KNOWLEDGE_TYPE_META.map((m) => ({ id: m.id as FilterId, label: m.label })),
-      ].filter((t) => t.id === "all" || (counts[t.id] ?? 0) > 0),
+      ].filter((t) => t.id === "all" || t.id === "recent" || (counts[t.id] ?? 0) > 0),
     [counts],
   );
 
@@ -561,11 +582,15 @@ export function KnowledgeBrowser({
     const keep = (e: KnowledgeEntry) => !deleted.has(keyOf(e));
     const base = entries.map(patch).filter(keep);
     const add = extra.map(patch).filter(keep);
-    const list =
-      active === "all"
-        ? [...add, ...base]
-        : [...add, ...base].filter((e) => e.type === active);
-    return list;
+    const all = [...add, ...base];
+    if (active === "all") return all;
+    if (active === "recent") {
+      // 按添加时间倒序；无 createdAt 的内置条目沉到末尾
+      return all
+        .slice()
+        .sort((a, b) => (b.createdAt ?? -Infinity) - (a.createdAt ?? -Infinity));
+    }
+    return all.filter((e) => e.type === active);
   }, [active, entries, extra, patched, deleted]);
 
   const typeLabel = (t: KnowledgeEntry["type"]) =>
@@ -647,6 +672,24 @@ export function KnowledgeBrowser({
                   </span>
                 ))}
               </div>
+              {e.contributorEmail && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <AtSign className="size-3 shrink-0" />
+                  <span>贡献人</span>
+                  <a
+                    href={`mailto:${e.contributorEmail}`}
+                    className="min-w-0 flex-1 truncate text-primary hover:underline"
+                    onClick={(ev) => ev.stopPropagation()}
+                  >
+                    {e.contributorEmail}
+                  </a>
+                </div>
+              )}
+              {e.createdAt && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  添加于 {new Date(e.createdAt).toLocaleDateString("zh-CN")}
+                </div>
+              )}
               <div className="mt-4 flex items-center gap-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => setOpen(e)}>
                   查看条目
@@ -654,7 +697,7 @@ export function KnowledgeBrowser({
                 </Button>
                 {e.body && <CopyIconButton text={e.body} label="复制原文" />}
                 {addr && <CopyIconButton text={addr} label="复制地址" />}
-                {e.userAdded && (
+                {canManage(e) && (
                   <>
                     <Button
                       variant="ghost"
@@ -675,7 +718,7 @@ export function KnowledgeBrowser({
                           : "text-muted-foreground hover:text-destructive"
                       }
                       onClick={() => onDeleteClick(e)}
-                      title="删除这条记录（md 文件将一并删除）"
+                      title="删除这条记录（云端共享条目将一并移除）"
                       aria-label="删除条目"
                     >
                       {confirmKey === keyOf(e) ? "确认删除" : <Trash2 className="size-3.5" />}
@@ -708,7 +751,7 @@ export function KnowledgeBrowser({
                   <StatusBadge status={open.status} />
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {open.userAdded && (
+                  {canManage(open) && (
                     <>
                       <Button
                         variant="ghost"
@@ -732,7 +775,7 @@ export function KnowledgeBrowser({
                             : "text-muted-foreground hover:text-destructive"
                         }
                         onClick={() => onDeleteClick(open)}
-                        title="删除这条记录（md 文件将一并删除）"
+                        title="删除这条记录（云端共享条目将一并移除）"
                         aria-label="删除条目"
                       >
                         {confirmKey === keyOf(open) ? "确认删除" : <Trash2 className="size-4" />}
@@ -753,6 +796,23 @@ export function KnowledgeBrowser({
                         作用
                       </dt>
                       <dd className="mt-1 text-foreground">{open.summary}</dd>
+                    </div>
+                  )}
+                  {open.contributorEmail && (
+                    <div className="sm:col-span-2">
+                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                        贡献人
+                      </dt>
+                      <dd className="mt-1 flex items-center gap-2">
+                        <AtSign className="size-3.5 text-muted-foreground" />
+                        <a
+                          href={`mailto:${open.contributorEmail}`}
+                          className="min-w-0 flex-1 truncate text-sm text-primary hover:underline"
+                        >
+                          {open.contributorEmail}
+                        </a>
+                        <CopyIconButton text={open.contributorEmail} label="复制邮箱" />
+                      </dd>
                     </div>
                   )}
                   {open.useCase && (
@@ -789,6 +849,16 @@ export function KnowledgeBrowser({
                         更新
                       </dt>
                       <dd className="mt-1 text-foreground">{open.updated}</dd>
+                    </div>
+                  )}
+                  {open.createdAt && (
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                        添加于
+                      </dt>
+                      <dd className="mt-1 text-foreground">
+                        {new Date(open.createdAt).toLocaleDateString("zh-CN")}
+                      </dd>
                     </div>
                   )}
                   {open.repoUrl && <CopyableLink label="GitHub / 仓库" href={open.repoUrl} />}

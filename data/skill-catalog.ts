@@ -19,9 +19,17 @@ export interface Skill {
   description: string;
   category: "ai" | "data" | "ui" | "devops" | "integration" | "utility";
   filePath: string; // 在 skill 仓库中的相对路径
-  fileType: string; // 文件类型（md/json/yaml/ts/py 等）
+  fileType: string; // 文件类型（md/json/yaml/ts/py 源等）
   compatibleStacks: string[]; // 兼容的技术栈 ID（空数组 = 通用，适用任何栈）
   tags: string[]; // 标签
+  /** 适用开发场景（用于流程中按当前任务自动装配）：如 视觉规范 / 代码健康度 / 动效 / 文案 / 架构 */
+  scenario?: string[];
+  /** GitHub / 仓库地址（AI 发现或贡献的技能填；本地仓库技能留空，走 filePath 复制安装） */
+  github?: string;
+  /** 来源：local=本地 skill 仓库；github=外部仓库；auto=AI 联网发现并自动贡献 */
+  source?: "local" | "github" | "auto";
+  /** 贡献人（邮箱/账号）；本地内置为空，auto 类由当前登录账号自动带 */
+  contributor?: string;
 }
 
 export const SKILL_CATEGORIES = [
@@ -83,6 +91,8 @@ export const SKILL_CATALOG: Skill[] = [
     fileType: "md",
     compatibleStacks: [],
     tags: ["质量", "lint", "安全", "测试"],
+    scenario: ["代码健康度", "质量门禁", "安全", "测试"],
+    source: "local",
   },
   {
     id: "design-kungfu",
@@ -105,6 +115,8 @@ export const SKILL_CATALOG: Skill[] = [
     fileType: "md",
     compatibleStacks: UI,
     tags: ["前端", "设计", "landing"],
+    scenario: ["视觉规范", "前端设计", "landing"],
+    source: "local",
   },
   {
     id: "design-taste-frontend-v1",
@@ -127,6 +139,8 @@ export const SKILL_CATALOG: Skill[] = [
     fileType: "md",
     compatibleStacks: [],
     tags: ["skill", "发现", "安装"],
+    scenario: ["技能发现", "技能安装"],
+    source: "local",
   },
   {
     id: "full-output-enforcement",
@@ -160,6 +174,8 @@ export const SKILL_CATALOG: Skill[] = [
     fileType: "md",
     compatibleStacks: UI,
     tags: ["视觉", "高端", "设计"],
+    scenario: ["视觉规范", "高端设计"],
+    source: "local",
   },
   {
     id: "imagegen-frontend-mobile",

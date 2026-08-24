@@ -25,6 +25,8 @@ const isPg = Boolean(DATABASE_URL);
 let db: any;
 let users: any;
 let projects: any;
+let agentSettings: any;
+let knowledgeEntries: any;
 let schema: any;
 
 if (isPg) {
@@ -37,6 +39,8 @@ if (isPg) {
   db = drizzle(client, { schema: schemaPg });
   users = schemaPg.users;
   projects = schemaPg.projects;
+  agentSettings = schemaPg.agentSettings;
+  knowledgeEntries = schemaPg.knowledgeEntries;
   schema = schemaPg;
 } else {
   const [{ default: Database }, { drizzle: drizzleSqlite }, schemaSqlite] =
@@ -48,10 +52,30 @@ if (isPg) {
   const sqlite = new Database(process.env.SQLITE_PATH || "./xiye.db");
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
+  // 本地零运维：直接幂等建 knowledge_entries（避免每次手动 drizzle-kit push）
+  sqlite.exec(`create table if not exists knowledge_entries (
+    slug text primary key,
+    type text not null,
+    name text not null,
+    summary text,
+    use_case text,
+    stack text,
+    tags text,
+    status text,
+    updated text,
+    repo_url text,
+    source text,
+    contributor_email text,
+    body text not null,
+    created_at integer not null,
+    updated_at integer not null
+  );`);
   db = drizzleSqlite(sqlite, { schema: schemaSqlite });
   users = schemaSqlite.users;
   projects = schemaSqlite.projects;
+  agentSettings = schemaSqlite.agentSettings;
+  knowledgeEntries = schemaSqlite.knowledgeEntries;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, schema };

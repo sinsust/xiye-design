@@ -52,9 +52,12 @@ const SECTION_ICON: Record<string, { icon: typeof Target; label: string }> = {
 export function IntentExplorer({
   defaultValue = "",
   className = "",
+  resetRequested = false,
 }: {
   defaultValue?: string;
   className?: string;
+  /** 为 true 时挂载即整体重置历史状态（新开一个项目），不恢复缓存会话 */
+  resetRequested?: boolean;
 }) {
   const [phase, setPhase] = useState<"input" | "chat">(
     defaultValue.trim() ? "chat" : "input",
@@ -104,6 +107,14 @@ export function IntentExplorer({
       !!cached &&
       cached.messages[0]?.content?.trim() === defaultValue.trim();
 
+    // 明确的新开项目（首页提交带 reset=1）：整体清空历史，无论是否与缓存首条相同都不恢复
+    if (resetRequested) {
+      startedRef.current = true;
+      useFlowStore.getState().resetAll(1);
+      if (defaultValue.trim()) startFromInput(defaultValue.trim());
+      return;
+    }
+
     if (wantsNew && !sameStart) {
       startedRef.current = true;
       clearIntentSession();
@@ -131,6 +142,7 @@ export function IntentExplorer({
   }, [
     hydrated,
     defaultValue,
+    resetRequested,
     intentSession,
     setProductBrief,
     setIntentNarrative,
@@ -160,6 +172,25 @@ export function IntentExplorer({
       st.setIntentNarrative(briefToNarrative(brief));
     });
   }, [brief]);
+
+  // 把 AI 建议的产品名 / 描述回填到「项目信息」，作为默认值，用户随时可在顶部锚点或第三步覆盖。
+  // 尊重手改：仅当 projectInfo.projectName 为空、或仍等于上一次 AI 自动回填的名字时才覆盖，
+  // 一旦用户手动改过（两者不等），AI 不再抢回编辑权。
+  const lastSyncNameRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!brief?.name?.trim()) return;
+    const st = useFlowStore.getState();
+    const cur = st.projectInfo?.projectName?.trim() ?? "";
+    const canOverride = !cur || cur === lastSyncNameRef.current;
+    if (canOverride && cur !== brief.name.trim()) {
+      st.setProjectInfo({
+        projectName: brief.name.trim(),
+        projectDescription:
+          brief.description?.trim() || st.projectInfo?.projectDescription || "",
+      });
+    }
+    lastSyncNameRef.current = brief.name.trim();
+  }, [brief?.name, brief?.description]);
 
   const callApi = async (next: DiscoverMessage[], currentBrief: ProductBrief | null) => {
     setThinking(true);
@@ -238,10 +269,8 @@ export function IntentExplorer({
     setDone(false);
     setError(null);
     startedRef.current = false;
-    clearIntentSession();
-    setProductBrief(null);
-    setIntentNarrative(null);
-    clearBlueprint();
+    // 「重新设计」= 整体清空历史项目（会话/PRD/类型/视觉/蓝图等），开全新工程
+    useFlowStore.getState().resetAll(1);
   };
 
   // ───────── 快速生成（次级路径：单轮一键组合） ─────────

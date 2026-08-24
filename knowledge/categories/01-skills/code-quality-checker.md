@@ -8,6 +8,7 @@ related: [full-output-enforcement]
 tags: [质量, lint, 安全, 测试, devops]
 status: active
 updated: 2026-08-22
+source: https://github.com/obra/superpowers
 ---
 # 代码质量检测（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：代码更新完成、想系统确认没有明显漏洞/坏味道/覆盖率缺口时；接入 CI 前拦截。
 - **不要用**：只是改了几行、想要超轻量检查时，可只抓 lint 层即可。
-- **替代**：`tsc --noEmit` + ESLint + npm audit 的单点组合；或 CI 里的专门 job。
+- **替代**：`tsc --noEmit` + ESLint + npm audit 的单点组合；或 CI 里的专门 job。在线可参考含代码质量复盘技能框架的 [obra/superpowers](https://github.com/obra/superpowers)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

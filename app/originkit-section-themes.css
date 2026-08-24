@@ -34,3 +34,10 @@
   --font-tight: "Inter Tight", Inter, ui-sans-serif, sans-serif;
   --animate-logo-marquee: logo-marquee 28s linear infinite;
 }
+
+/* originkit:hero-04 */
+/* components/originkit/hero-04.css */
+@theme {
+  --font-instrument-serif: "Instrument Serif", Inter, ui-sans-serif, sans-serif;
+  --font-tight: "Inter Tight", Inter, ui-sans-serif, sans-serif;
+}

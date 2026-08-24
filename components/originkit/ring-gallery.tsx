@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { premiumImage } from "@/lib/placeholder-images";
 
 // 环形旋转图廊 · 完整参数版（Originkit Ingestion：Image Group Circle）
 // 由 app/builder/previews.tsx → RingPreviewImpl 抽取为可复用组件。
@@ -65,7 +66,7 @@ export function RingGallery(props: Partial<RingConfig>) {
     () =>
       Array.from(
         { length: count },
-        (_, i) => "https://picsum.photos/seed/xiye-ring-" + (i + 1) + "/400/300",
+        (_, i) => premiumImage(i + 1, { w: 400 }),
       ),
     [count],
   );

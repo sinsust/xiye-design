@@ -34,6 +34,10 @@ export interface BriefRole {
   scope: string;
 }
 export interface ProductBrief {
+  /** AI 建议的产品名（随访谈丰满逐渐具象）；用户手改后以用户为准，仅在尊重手改前提下回填 */
+  name?: string;
+  /** AI 建议的一句产品描述（对外使用，如品牌副标题 / 档案摘要）；随访谈丰满逐渐演化为最终描述 */
+  description?: string;
   vision: string;
   positioning: string;
   targetAudience: string[];
@@ -41,6 +45,8 @@ export interface ProductBrief {
   chosenDirections: string[];
   phases: BriefPhase[];
   roles: BriefRole[];
+  /** 业务专属页面（由核心模块推导，AI 在多轮访谈中生长产出） */
+  pages?: ProductPage[];
   /** 柔性字段：模型可补充本产品特有的结构化要点（如定价模式 / 渠道分发 / 冷启动策略），不被固定字段框死 */
   extra?: Record<string, string | string[]>;
 }
@@ -63,6 +69,8 @@ export interface DiscoverRequest {
 
 export function emptyBrief(): ProductBrief {
   return {
+    name: "",
+    description: "",
     vision: "",
     positioning: "",
     targetAudience: [],
@@ -70,6 +78,7 @@ export function emptyBrief(): ProductBrief {
     chosenDirections: [],
     phases: [],
     roles: [],
+    pages: [],
     extra: {},
   };
 }
@@ -79,6 +88,8 @@ export function emptyBrief(): ProductBrief {
 /** 把生长中的 brief 综合成一段结构化文本，供 interpretIntentSmart 产出更精准的组合 */
 export function synthesizeBriefToText(brief: ProductBrief): string {
   const lines: string[] = [];
+  if (brief.name?.trim()) lines.push(`产品名：${brief.name.trim()}`);
+  if (brief.description?.trim()) lines.push(`产品描述：${brief.description.trim()}`);
   if (brief.vision) lines.push(`产品愿景：${brief.vision}`);
   if (brief.positioning) lines.push(`定位/差异：${brief.positioning}`);
   if (brief.targetAudience.length)
@@ -131,17 +142,23 @@ export function asExtra(v: unknown): Record<string, string | string[]> {
 
 // ───────────────────────── 合成：brief → IntentNarrative（回填叙事） ─────────────────────────
 
-import type { IntentNarrative } from "@/lib/ai-intent";
+import type { IntentNarrative, ProductPage } from "@/lib/ai-intent";
+import { deriveFeaturePages } from "@/lib/ai-intent";
 
 /** 把丰满后的 brief 转成 flow-store 已有的 IntentNarrative，便于 docs/PRD.md 复用 */
 export function briefToNarrative(brief: ProductBrief): IntentNarrative {
+  const coreFeatures = brief.coreModules.length
+    ? brief.coreModules.map((m) => ({ name: m.name, why: m.detail }))
+    : [];
   return {
     vision: brief.vision || "（待补充）",
     positioning: brief.positioning || "（待补充）",
     targetAudience: brief.targetAudience.length ? brief.targetAudience : [],
-    coreFeatures: brief.coreModules.length
-      ? brief.coreModules.map((m) => ({ name: m.name, why: m.detail }))
-      : [],
+    coreFeatures,
+    pages:
+      brief.pages && brief.pages.length
+        ? brief.pages
+        : deriveFeaturePages(coreFeatures),
     nonGoals: [],
     successMetrics: [],
     marketFit: [
@@ -192,4 +209,26 @@ export function asRoles(v: unknown): BriefRole[] {
       scope: typeof x?.scope === "string" ? x.scope.trim() : "",
     }))
     .filter((r: BriefRole) => r.role);
+}
+export function asPages(v: unknown): ProductPage[] {
+  if (!Array.isArray(v)) return [];
+  const out: ProductPage[] = [];
+  const seen = new Set<string>();
+  for (const x of v) {
+    const name = typeof x?.name === "string" ? x.name.trim() : "";
+    if (!name) continue;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const related = Array.isArray(x?.relatedFeatures)
+      ? x.relatedFeatures.map((r: any) => String(r)).filter(Boolean)
+      : [];
+    out.push({
+      name,
+      path: typeof x?.path === "string" ? x.path.trim() : undefined,
+      description: typeof x?.description === "string" ? x.description.trim() : "",
+      relatedFeatures: related,
+      priority: ["P0", "P1", "P2"].includes(x?.priority) ? x.priority : "P1",
+    });
+  }
+  return out;
 }

@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-tmp/
 /out/
 
 # production
@@ -56,14 +57,20 @@ xiye-dev.spec
 
 # Trae IDE 配置（不入库）
 .trae/
+# 调试用的报错快照 / 日志（含转义类名，会被 Tailwind 内容扫描误当成类源，勿入库）
+.trae-err*.html
+.trae-build.log
+.next-tmp/
 
 # 临时 npm pack 调试产物
 *.tgz
 postgres-3.4.9.tgz
 
-# 独立模板工程（仅顶层 /outstand 是独立项目，不并入主仓库；
-# components/originkit/outstand 与 public/originkit/outstand 是组件库源码+资源，必须入库）
+# 独立模板工程（顶层 /outstand、/genius、/wexo 是独立整站项目，不并入主仓库；
+# 其组件库副本 components/originkit/<name> 与资源 public/originkit/<name> 必须入库）
 /outstand/
+/genius/
+/wexo/
 
 # python 缓存
 __pycache__/
@@ -77,3 +84,11 @@ __pycache__/
 
 # 临时分析报告产物
 section-analysis-report.md
+
+# 调试/临时产物（勿入库）
+dev-server.log
+diag.mjs
+*.bak
+*.removed
+pnpm-lock.yaml
+pnpm-workspace.yaml

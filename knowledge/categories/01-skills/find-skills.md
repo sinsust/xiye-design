@@ -8,6 +8,7 @@ related: [setup-matt-pocock-skills]
 tags: [skill, 发现, 安装]
 status: active
 updated: 2026-08-22
+source: https://github.com/anthropics/skills/tree/main/skills
 ---
 # 发现并安装 Skill（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：进入一个新项目/想补能力、不确定该装什么时，先跑它做发现。
 - **不要用**：已经明确要某个 skill 时直接 `find-skills` 安装清单即可，或在仓库里复制。
-- **替代**：手动从 `D:/workspace/skill/.agents/skills/` 复制。
+- **替代**：本技能为**作者本地私有技能，暂未公开**；如需在线可安装的开源 Skill 集合，请使用 Anthropic 官方 [anthropics/skills](https://github.com/anthropics/skills)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

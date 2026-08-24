@@ -79,6 +79,52 @@ function SwatchStrip({
   );
 }
 
+/** 按钮样本条：每个样本是一个「真实按钮缩略图 + 标签」卡片 */
+function ButtonSwatchStrip({
+  options,
+  value,
+  onChange,
+}: {
+  options: SwatchDef[];
+  value: string | null;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const active = value === o.id;
+        return (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(o.id)}
+            title={o.label}
+            className={[
+              "group flex flex-col items-center gap-1.5 rounded-xl border p-1.5 transition-all",
+              active
+                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                : "border-transparent hover:border-border hover:bg-muted/60",
+            ].join(" ")}
+          >
+            <span className="grid h-10 w-[46px] place-items-center rounded-lg border border-border/40 bg-gradient-to-b from-background to-muted/30 px-1">
+              {o.thumb}
+            </span>
+            <span
+              className={[
+                "leading-none",
+                active ? "font-medium text-primary" : "text-muted-foreground",
+              ].join(" ")}
+              style={{ fontSize: "9px" }}
+            >
+              {o.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** 分组标题（hairline 分隔） */
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -214,8 +260,8 @@ export function DesignTokensPanel({
 
   const style =
     VISUAL_STYLE_MAP[visualStyle ?? VISUAL_STYLES[0].id] ?? VISUAL_STYLES[0];
-  const primary = style.palette.accent;
-  const secondary = style.palette.accent2;
+  const primary = ds?.colorPrimary ?? style.palette.accent;
+  const secondary = ds?.colorSecondary ?? style.palette.accent2;
 
   // ── 每个维度转成可视缩略图 ──
   const radiusSwatches: SwatchDef[] = RADIUS_TOKENS.map((r) => {
@@ -298,24 +344,23 @@ export function DesignTokensPanel({
   const buttonStyle = (id: string): CSSProperties => {
     switch (id) {
       case "btn_solid":
-        return { background: primary, color: "#fff" };
+        return { background: primary, color: "#fff", borderRadius: "7px", boxShadow: "0 1px 2px rgba(0,0,0,.12)" };
       case "btn_outline":
-        return { border: `1.5px solid ${primary}`, color: primary };
+        return { border: `1.5px solid ${primary}`, color: primary, borderRadius: "7px" };
       case "btn_ghost":
-        return { color: primary };
+        return { color: primary, borderRadius: "7px" };
+      case "btn_pill":
+        return { background: primary, color: "#fff", borderRadius: "9999px", boxShadow: "0 1px 2px rgba(0,0,0,.12)" };
       // btn_gradient
       default:
-        return { background: `linear-gradient(135deg, ${primary}, ${secondary})`, color: "#fff" };
+        return { background: `linear-gradient(135deg, ${primary}, ${secondary})`, color: "#fff", borderRadius: "9999px", boxShadow: "0 1px 2px rgba(0,0,0,.12)" };
     }
   };
   const buttonSwatches: SwatchDef[] = buttonVariants.map((b) => ({
     id: b.id,
     label: b.name,
     thumb: (
-      <span
-        className="block rounded px-2 py-[3px] text-[10px] font-medium leading-none"
-        style={{ ...buttonStyle(b.id), borderRadius: b.id === "btn_gradient" ? "9999px" : "6px" }}
-      >
+      <span className="block whitespace-nowrap px-2 py-1 text-[10px] font-medium leading-none" style={buttonStyle(b.id)}>
         按钮
       </span>
     ),
@@ -433,7 +478,7 @@ export function DesignTokensPanel({
       {/* 组件默认：按钮直接看效果 */}
       <div>
         <SectionLabel>组件默认 · 按钮</SectionLabel>
-        <SwatchStrip options={buttonSwatches} value={cv?.button ?? null} onChange={(id) => setComponentVariant("button", id)} />
+        <ButtonSwatchStrip options={buttonSwatches} value={cv?.button ?? null} onChange={(id) => setComponentVariant("button", id)} />
         <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
           {buttonOpts.find((o) => o.id === (cv?.button ?? null))?.name ?? "跟随风格默认"}
         </div>

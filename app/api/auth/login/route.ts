@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -17,6 +18,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`auth:login:${getClientIp(req)}`, 10, 60_000)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {

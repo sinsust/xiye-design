@@ -8,6 +8,7 @@ related: [shadcn-ui, design-taste-frontend, ui-ux-pro-max]
 tags: [设计, 推荐, shadcn]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/s5uy/ui-craft
 ---
 # 智能设计推荐（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：需求清晰但不确定走哪种设计风格/视觉语言时，作为选型起点。
 - **不要用**：早已定死风格、或只要极简模板时，直接走 `minimalist-ui` 更省事。
-- **替代**：`ui-ux-pro-max`（本地可搜的设计智能库）；`design-taste-frontend`（落地页反模板）。
+- **替代**：`ui-ux-pro-max`（本地可搜的设计智能库）；`design-taste-frontend`（落地页反模板）。可在线复现同款"风格推荐 + premium 设计方向"的开源实现是 [s5uy/ui-craft](https://github.com/s5uy/ui-craft)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

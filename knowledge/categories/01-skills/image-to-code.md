@@ -8,6 +8,7 @@ related: [imagegen-frontend-web, imagegen-frontend-mobile, design-taste-frontend
 tags: [图像, 代码, 前端]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/abi/screenshot-to-code
 ---
 # 图像转代码（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：已有设计图/概念图，需要高质量还原成真实页面时。
 - **不要用 / 注意**：图我非最终版时先出 `imagegen-*` 定稿；还原度受参考图质量影响。
-- **替代**：直接按文字 brief 用 `design-taste-frontend` 设计开发。
+- **替代**：直接按文字 brief 用 `design-taste-frontend` 设计开发。可在线复现同款能力的开源实现是 [abi/screenshot-to-code](https://github.com/abi/screenshot-to-code)（把截图/草图转成可运行前端代码，公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

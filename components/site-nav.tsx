@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ThemePresetToggle } from "@/components/theme-preset-toggle";
 import { AuthMenu } from "@/components/auth-menu";
+import { BrandLogo } from "@/components/brand-logo";
 
 const NAV_LINKS = [
-  { href: "/flow", label: "流程工作台" },
+  { href: "/workflow", label: "工作流" },
   { href: "/builder", label: "页面搭建" },
   { href: "/components", label: "组件库" },
   { href: "/library", label: "知识库" },
@@ -20,12 +21,7 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="relative mx-auto flex h-14 max-w-7xl items-center px-4">
-        <Link
-          href="/"
-          className="font-heading text-lg tracking-tight text-foreground"
-        >
-          xiye
-        </Link>
+        <BrandLogo />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 sm:flex">
           {NAV_LINKS.map((link) => {
             const isActive =

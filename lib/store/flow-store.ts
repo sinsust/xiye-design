@@ -52,6 +52,34 @@ export interface IntentSession {
   updatedAt: number;
 }
 
+// —— 多 Agent 会诊结果：collab 协同阶段产出，贯通到 refine 方案完善阶段复用 ——
+export type PanelOutput = Record<string, AgentOutput>;
+
+export interface AgentOutput {
+  status: AgentStatus;
+  progress: number;
+  summary: string;
+  details: string[];
+}
+
+export type AgentStatus = "standby" | "thinking" | "producing" | "done";
+
+// —— 交付产物：deliver 阶段生成后落 store，避免离开/刷新丢失需重生成 ——
+export type ArtifactStatus = "idle" | "generating" | "done" | "skip";
+
+export interface DeliverArtifact {
+  status: ArtifactStatus;
+  progress: number;
+  content: string;
+}
+
+export interface DeliverArtifacts {
+  prd: DeliverArtifact;
+  blueprint: DeliverArtifact;
+  architecture: DeliverArtifact;
+  deploy: DeliverArtifact;
+}
+
 export interface FlowState {
   currentStep: number; // 当前步骤，1..4
 
@@ -107,6 +135,12 @@ export interface FlowState {
   // —— Step 1 探索式访谈缓存：消息 / brief / 完成状态 ——
   intentSession: IntentSession | null;
 
+  // —— 多 Agent 会诊结果（collab → refine 贯通）——
+  panelOutput: PanelOutput | null;
+
+  // —— 交付产物缓存（deliver 阶段，跨离开/刷新保留）——
+  deliverArtifacts: DeliverArtifacts | null;
+
   setProjectType: (type: string) => void;
   toggleAiCapability: (id: string) => void;
   setTechStack: (id: string) => void;
@@ -126,6 +160,8 @@ export interface FlowState {
   setProductBrief: (b: ProductBrief | null) => void;
   setIntentSession: (s: IntentSession | null) => void;
   clearIntentSession: () => void;
+  setPanelOutput: (o: PanelOutput | null) => void;
+  setDeliverArtifacts: (a: DeliverArtifacts | null) => void;
   savedProjectId: string | null;
   setSavedProjectId: (id: string | null) => void;
   captureFlowSnapshot: () => Record<string, unknown>;
@@ -133,6 +169,8 @@ export interface FlowState {
   nextStep: () => void;
   prevStep: () => void;
   goToStep: (step: number) => void;
+  /** 整体重置：清空全部历史项目字段并回到指定步骤（默认第 1 步）。用于「新开一个项目」「首页输入新想法」。 */
+  resetAll: (toStep?: number) => void;
 }
 
 // 短流程共 4 步：AI 意图 / 骨架搭建 / 收尾配置 / 生成项目。
@@ -160,6 +198,8 @@ export const useFlowStore = create<FlowState>()(
   intentNarrative: null,
   productBrief: null,
   intentSession: null,
+  panelOutput: null,
+  deliverArtifacts: null,
   savedProjectId: null,
 
   setProjectType: (type) => set({ projectType: type }),
@@ -262,10 +302,14 @@ export const useFlowStore = create<FlowState>()(
   setProductBrief: (b) => set({ productBrief: b }),
   setIntentSession: (s) => set({ intentSession: s }),
   clearIntentSession: () => set({ intentSession: null }),
+  setPanelOutput: (o) => set({ panelOutput: o }),
+  setDeliverArtifacts: (a) => set({ deliverArtifacts: a }),
   setSavedProjectId: (id) => set({ savedProjectId: id }),
   captureFlowSnapshot: () => {
     const s = get();
     return {
+      currentStep: s.currentStep,
+      builderReturnStep: s.builderReturnStep,
       projectType: s.projectType,
       aiCapabilities: s.aiCapabilities,
       techStack: s.techStack,
@@ -280,6 +324,8 @@ export const useFlowStore = create<FlowState>()(
       intentNarrative: s.intentNarrative,
       productBrief: s.productBrief,
       intentSession: s.intentSession,
+      panelOutput: s.panelOutput,
+      deliverArtifacts: s.deliverArtifacts,
       savedProjectId: s.savedProjectId,
     };
   },
@@ -306,6 +352,26 @@ export const useFlowStore = create<FlowState>()(
   nextStep: () => set((s) => ({ currentStep: clampStep(s.currentStep + 1) })),
   prevStep: () => set((s) => ({ currentStep: clampStep(s.currentStep - 1) })),
   goToStep: (step) => set({ currentStep: clampStep(step) }),
+  resetAll: (toStep = 1) =>
+    set({
+      currentStep: clampStep(toStep),
+      projectType: null,
+      aiCapabilities: [],
+      techStack: null,
+      designSystem: null,
+      uiLibrary: null,
+      componentVariants: null,
+      projectInfo: null,
+      apiKeys: {},
+      visualStyle: null,
+      motionSelections: {},
+      pageBlueprint: [],
+      intentNarrative: null,
+      productBrief: null,
+      intentSession: null,
+      panelOutput: null,
+      deliverArtifacts: null,
+    }),
     }),
     {
       name: "xiye-flow-design",
@@ -330,6 +396,8 @@ export const useFlowStore = create<FlowState>()(
         intentNarrative: state.intentNarrative,
         productBrief: state.productBrief,
         intentSession: state.intentSession,
+        panelOutput: state.panelOutput,
+        deliverArtifacts: state.deliverArtifacts,
         savedProjectId: state.savedProjectId,
       }),
     },

@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Audiowide&family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Hedvig+Letters+Serif:opsz@12..24&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Manrope:wght@400;500;600;700&family=Monda:wght@400;500;600;700&family=Outfit:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&family=Red+Hat+Display:wght@400;500;600;700&family=Rethink+Sans:wght@400;500;600;700&family=Tillana:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap");
@@ -182,6 +183,66 @@ main > div {
 
 @media (prefers-reduced-motion: reduce) {
   main > div {
+    animation: none;
+  }
+}
+
+/* 后宫智囊团：头像「卖力工作」抖动（漫画式） */
+@keyframes xiye-work-shake {
+  0% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-11deg) scale(1.06);
+  }
+  45% {
+    transform: rotate(8deg);
+  }
+  70% {
+    transform: rotate(-5deg);
+  }
+  90% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+.xiye-work-shake {
+  animation: xiye-work-shake 0.42s linear infinite;
+  transform-origin: 50% 80%;
+}
+
+/* 完成气泡：出现 → 停顿 → 消失（一条关键帧走完全程） */
+@keyframes xiye-bubble-life {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 7px) scale(0.7);
+  }
+  8% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.05);
+  }
+  14% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.94);
+  }
+}
+.xiye-bubble {
+  animation: xiye-bubble-life 2.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xiye-work-shake {
+    animation: none;
+  }
+  .xiye-bubble {
     animation: none;
   }
 }

@@ -9,6 +9,9 @@
 
 export type StyleFont = "serif" | "sans" | "mono" | "grotesk";
 
+/** 未选择视觉风格时的默认回退预设（粗野风）。定义在此叶子模块，避免 lib 层循环依赖 */
+export const DEFAULT_STYLE_ID = "aw-brutalist";
+
 export interface VisualStyle {
   id: string;
   name: string;

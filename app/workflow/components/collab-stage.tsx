@@ -1,0 +1,642 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { FileText, LoaderCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ChatStream } from "./chat-stream";
+import { type AgentId } from "../agents";
+import { personaPayload, useAgent, useAgentList } from "../agents-store";
+import {
+  AgentAvatar,
+  AgentStatusBadge,
+  AvatarZoom,
+  type AgentState,
+  type AgentStatus,
+} from "./agent-common";
+import { useFlowStore, type AgentOutput } from "@/lib/store/flow-store";
+import { TECH_STACKS } from "@/data/tech-stacks";
+import { VISUAL_STYLES } from "@/data/visual-styles";
+import { type DiscoverMessage, type ProductBrief } from "@/lib/ai-discover";
+
+/* ------------------------------------------------------------------ */
+/* 状态推导：基于对话深度 + 会诊结果，给出合理的专家状态 */
+
+function deriveAgentStates(
+  messages: DiscoverMessage[],
+  productBrief: ProductBrief | null,
+  consulting: boolean,
+  panel?: Record<AgentId, AgentState>,
+): Record<AgentId, AgentState> {
+  const empty: Record<AgentId, AgentState> = {
+    moderator: { status: "standby", progress: 0, summary: "等待访谈开始，老鸨子会先陪你聊清楚需求。", details: [] },
+    pm: { status: "standby", progress: 0, summary: "等待产品定义素材。", details: [] },
+    architect: { status: "standby", progress: 0, summary: "等待技术需求明确。", details: [] },
+    designer: { status: "standby", progress: 0, summary: "等待风格方向输入。", details: [] },
+    guard: { status: "standby", progress: 0, summary: "等待开发边界规范输入。", details: [] },
+  };
+
+  if (messages.length === 0) return empty;
+
+  if (panel) {
+    if (consulting) {
+      return (Object.keys(panel) as AgentId[]).reduce((acc, id) => {
+        const s = panel[id];
+        acc[id] = {
+          ...s,
+          status: s.progress >= 95 ? "done" : s.status === "done" ? "producing" : s.status,
+        };
+        return acc;
+      }, {} as Record<AgentId, AgentState>);
+    }
+    return panel;
+  }
+
+  const depth = Math.min(messages.length * 10, 40);
+  return {
+    moderator: { status: "producing", progress: depth, summary: "正在陪你梳理想法、提取关键信息。", details: [] },
+    pm: {
+      status: messages.length >= 2 ? "thinking" : "standby",
+      progress: Math.max(0, depth - 8),
+      summary: messages.length >= 2 ? "尝试从对话中提取产品定位。" : "等待更多产品信息。",
+      details: [],
+    },
+    architect: {
+      status: messages.length >= 3 ? "thinking" : "standby",
+      progress: Math.max(0, depth - 16),
+      summary: messages.length >= 3 ? "开始根据需求轮廓思考技术方案。" : "等待功能范围明确。",
+      details: [],
+    },
+    designer: {
+      status: messages.length >= 3 ? "thinking" : "standby",
+      progress: Math.max(0, depth - 22),
+      summary: messages.length >= 3 ? "从描述中提取可能的视觉倾向。" : "等待风格线索。",
+      details: [],
+    },
+    guard: {
+      status: messages.length >= 3 ? "thinking" : "standby",
+      progress: Math.max(0, depth - 28),
+      summary: messages.length >= 3 ? "开始构思冷启动与获客路径。" : "等待用户与场景明确。",
+      details: [],
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* 后宫智囊团：逐一完成 · 卖力抖动 · 完成气泡                          */
+/* 会诊是「伪装」的：后端一次性返回，前端把同一批结果排成逐一完成的节奏。 */
+
+/** 每组首次出现 −0.4s 交给协调员，其余按 pm→architect→designer→guard 排队完成 */
+const PANEL_ORDER: AgentId[] = ["pm", "architect", "designer", "guard", "moderator"];
+
+/** 每位成员完成时的宠溺称呼与专属交卷文案（互不重复，贴合各自职责） */
+const BUBBLE_TEXTS: Record<AgentId, string> = {
+  pm: "亲爱的，需求我帮你捋顺啦",
+  architect: "老公，技术方案我拍板好了",
+  designer: "宝贝，这套视觉基调准没错",
+  guard: "哈尼，开发规范我给备齐啦",
+  moderator: "爷，姐妹们都交卷了，我这就来汇总",
+};
+
+/** 每位成员「开工偏移 + 产出耗时」，错开起跳 → 逐人落袋 */
+const STAGGER: Record<AgentId, { start: number; dur: number }> = {
+  pm: { start: 0, dur: 2500 },
+  architect: { start: 700, dur: 2500 },
+  designer: { start: 1400, dur: 2500 },
+  guard: { start: 2100, dur: 2500 },
+  moderator: { start: 2900, dur: 2400 },
+};
+
+function emptyProgress(): Record<AgentId, number> {
+  return { pm: 0, architect: 0, designer: 0, guard: 0, moderator: 0 };
+}
+
+/** 完成气泡：出现 → 停顿 → 消失，由父容器在逾时后卸载 */
+function WorkBubble({ text }: { text: string }) {
+  return (
+    <span
+      className="xiye-bubble pointer-events-none absolute bottom-[calc(100%+4px)] left-1/2 z-20 whitespace-nowrap rounded-lg border border-primary/30 bg-card px-2.5 py-1 text-[11px] font-medium text-foreground shadow-sm"
+    >
+      {text}
+    </span>
+  );
+}
+
+/**
+ * 会诊期间的「逐一完成」动画：consulting 升沿触发一次完整错峰演出；
+ * 演出未结束前展示动画进度，结束后保持全员已完成，等真实结果回来后切换为真实状态。
+ */
+function usePanelStagger(
+  consulting: boolean,
+  span: number,
+  baseAgents: Record<AgentId, AgentState>,
+): {
+  displayAgents: Record<AgentId, AgentState>;
+  bubbles: Partial<Record<AgentId, boolean>>;
+} {
+  const [runId, setRunId] = useState(0);
+  const prevConsulting = useRef(consulting);
+  const playedSpanRef = useRef(0);
+  const [progress, setProgress] = useState<Record<AgentId, number>>(emptyProgress());
+  const [bubbles, setBubbles] = useState<Partial<Record<AgentId, boolean>>>({});
+  const sawRun = runId > 0;
+  const timeoutsRef = useRef<number[]>([]);
+
+  // 只有当「新一轮会诊」且「消息份额确实变大」时才播一次错峰演出；
+  // 同一次内容的重渲染/重复会诊不会重播，避免「完成又重新生成」
+  useEffect(() => {
+    if (consulting && !prevConsulting.current && span !== playedSpanRef.current) {
+      playedSpanRef.current = span;
+      setRunId((i) => i + 1);
+    }
+    prevConsulting.current = consulting;
+  }, [consulting, span]);
+
+  useEffect(() => {
+    if (runId === 0) {
+      setProgress(emptyProgress());
+      setBubbles({});
+      return;
+    }
+    setProgress(emptyProgress());
+    setBubbles({});
+    const start = Date.now();
+    const firing = new Set<AgentId>();
+    const interval = window.setInterval(() => {
+      const el = Date.now() - start;
+      const nextP = emptyProgress();
+      let allDone = true;
+      for (const id of PANEL_ORDER) {
+        const s = STAGGER[id];
+        const p = el < s.start ? 0 : Math.min(100, Math.round(((el - s.start) / s.dur) * 100));
+        nextP[id] = p;
+        if (p < 100) allDone = false;
+        if (p >= 100 && !firing.has(id)) {
+          firing.add(id);
+          setBubbles((b) => ({ ...b, [id]: true }));
+          timeoutsRef.current.push(
+            window.setTimeout(() => setBubbles((b) => ({ ...b, [id]: false })), 2500),
+          );
+        }
+      }
+      setProgress(nextP);
+      if (allDone) {
+        window.clearInterval(interval);
+      }
+    }, 70);
+    return () => {
+      window.clearInterval(interval);
+      timeoutsRef.current.forEach((t) => window.clearTimeout(t));
+      timeoutsRef.current = [];
+    };
+  }, [runId]);
+
+  const displayAgents: Record<AgentId, AgentState> = useMemo(() => {
+    if (!consulting || !sawRun) return baseAgents;
+    return PANEL_ORDER.reduce((acc, id) => {
+      const b = baseAgents[id];
+      const p = progress[id] ?? b.progress;
+      const st: AgentStatus = p >= 100 ? "done" : p < 45 ? "thinking" : "producing";
+      acc[id] = { ...b, progress: p, status: st };
+      return acc;
+    }, {} as Record<AgentId, AgentState>);
+  }, [consulting, sawRun, progress, baseAgents]);
+
+  return { displayAgents, bubbles };
+}
+
+/* ------------------------------------------------------------------ */
+/* 右栏 · 顶部专家状态条（融合原专家面板） */
+
+function ExpertStrip({
+  agents,
+  active,
+  onSelect,
+  bubbles,
+}: {
+  agents: Record<AgentId, AgentState>;
+  active: AgentId;
+  onSelect: (id: AgentId) => void;
+  bubbles?: Partial<Record<AgentId, boolean>>;
+}) {
+  const busy = (st: AgentStatus) => st === "thinking" || st === "producing";
+  const ags = useAgentList();
+  return (
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(76px,1fr))] gap-2 border-b border-border/70 pb-3">
+      {ags.map((a) => {
+        const s = agents[a.id];
+        const isActive = a.id === active;
+        const working = busy(s.status);
+        return (
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => onSelect(a.id)}
+            className={[
+              "flex flex-col items-center gap-1 rounded-xl border px-1.5 py-2 transition",
+              isActive
+                ? "border-primary bg-primary/10"
+                : "border-border/70 bg-background hover:border-primary/50",
+            ].join(" ")}
+          >
+            <div className="relative flex size-7 items-center justify-center">
+              {bubbles?.[a.id] && <WorkBubble text={BUBBLE_TEXTS[a.id]} />}
+              {working && (
+                <span className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
+              )}
+              <div className={working ? "xiye-work-shake" : "relative"}>
+                <AgentAvatar role={a.id} className="relative size-7" />
+              </div>
+            </div>
+            <p className="max-w-full truncate text-[11px] font-medium text-foreground">{a.name}</p>
+            <AgentStatusBadge status={s.status} />
+            <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={["h-full rounded-full bg-primary transition-all", working ? "animate-pulse" : ""].join(" ")}
+                style={{ width: `${s.progress}%` }}
+              />
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 右栏 · 各专家负责产出的内容（按角色分组，替代独立文档区） */
+
+function DetailsBlock({
+  title,
+  details,
+  tone = "default",
+}: {
+  title: string;
+  details: string[];
+  tone?: "default" | "risk";
+}) {
+  if (!details.length) return null;
+  return (
+    <div className="mt-3 border-t border-border/70 pt-3">
+      <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">{title}</p>
+      <ul className="space-y-1.5">
+        {details.map((d, i) => (
+          <li key={i} className="flex gap-2 text-xs leading-snug text-foreground">
+            <span
+              className={[
+                "mt-1.5 size-1 shrink-0 rounded-full",
+                tone === "risk" ? "bg-destructive" : "bg-primary",
+              ].join(" ")}
+            />
+            <span>{d}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const DETAILS_META: Record<AgentId, { title: string; tone: "default" | "risk" }> = {
+  pm: { title: "产品侧建议", tone: "default" },
+  designer: { title: "设计要点", tone: "default" },
+  architect: { title: "选型理由与风险", tone: "default" },
+  guard: { title: "开发边界规范", tone: "default" },
+  moderator: { title: "风险与待补项", tone: "risk" },
+};
+
+function ExpertContent({ role, hasDetails = false }: { role: AgentId; hasDetails?: boolean }) {
+  const productBrief = useFlowStore((s) => s.productBrief);
+  const pageBlueprint = useFlowStore((s) => s.pageBlueprint);
+  const techStackId = useFlowStore((s) => s.techStack);
+  const visualStyleId = useFlowStore((s) => s.visualStyle);
+
+  const techName = TECH_STACKS.find((t) => t.id === techStackId)?.name ?? techStackId;
+  const styleName = VISUAL_STYLES.find((v) => v.id === visualStyleId)?.name ?? visualStyleId;
+  const pages = productBrief?.pages ?? [];
+  const pageCount = new Set(pageBlueprint.map((e) => e.pageSlug)).size;
+
+  if (role === "pm") {
+    return productBrief?.vision || productBrief?.description ? (
+      <div className="space-y-3 text-sm text-muted-foreground">
+        {productBrief.description && <p>{productBrief.description}</p>}
+        {productBrief.vision && <p>{productBrief.vision}</p>}
+        {productBrief.positioning && (
+          <p>
+            <span className="text-foreground">定位：</span>
+            {productBrief.positioning}
+          </p>
+        )}
+        {productBrief.targetAudience?.length ? (
+          <div className="flex flex-wrap gap-2">
+            {productBrief.targetAudience.map((a) => (
+              <span key={a} className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-xs text-foreground">
+                {a}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    ) : (
+      <p className="text-sm text-muted-foreground/70">等待老鸨子访谈，产品定义将在此生长。</p>
+    );
+  }
+
+  if (role === "designer") {
+    return pages.length ? (
+      <div className="grid grid-cols-2 gap-2">
+        {pages.slice(0, 8).map((p) => (
+          <div key={p.name} className="rounded-lg border border-border/70 bg-background p-2 text-xs">
+            <p className="font-medium text-foreground">{p.name}</p>
+            {p.description && <p className="mt-0.5 text-muted-foreground">{p.description}</p>}
+          </div>
+        ))}
+      </div>
+    ) : pageCount ? (
+      <p className="text-sm text-muted-foreground">已规划 {pageCount} 个页面（来自蓝图骨架）。</p>
+    ) : (
+      <p className="text-sm text-muted-foreground/70">页面清单将随访谈产出。</p>
+    );
+  }
+
+  if (role === "architect") {
+    if (techName || styleName) {
+      return (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {techName && (
+            <div className="rounded-lg border border-border/70 bg-background p-2">
+              <p className="text-muted-foreground">技术栈</p>
+              <p className="mt-1 font-medium text-foreground">{techName}</p>
+            </div>
+          )}
+          {styleName && (
+            <div className="rounded-lg border border-border/70 bg-background p-2">
+              <p className="text-muted-foreground">视觉风格</p>
+              <p className="mt-1 font-medium text-foreground">{styleName}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (hasDetails) return null; // 会诊已给出选型要点，交由 DetailsBlock 展示
+    return (
+      <p className="text-sm text-muted-foreground/70">技术选型将在专家会诊后补齐。</p>
+    );
+  }
+
+  // guard：规范守门员（无独立 store 字段，内容主要来自会诊 details）
+  if (role === "guard") {
+    if (hasDetails) return null; // 会诊已给出开发边界规范要点，交由 DetailsBlock 展示
+    return (
+      <p className="text-sm text-muted-foreground/70">
+        视觉 token 唯一真值、代码验收与反 AI 味边界将在专家会诊后产出。
+      </p>
+    );
+  }
+
+  // moderator：风险与下一步
+  if (productBrief?.extra && Object.keys(productBrief.extra).length) {
+    return (
+      <div className="space-y-2 text-sm text-muted-foreground">
+        {Object.entries(productBrief.extra).map(([k, v]) => (
+          <p key={k}>
+            <span className="text-foreground">{k}：</span>
+            {Array.isArray(v) ? v.join("、") : v}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  if (hasDetails) return null; // 会诊已标记风险点，交由 DetailsBlock 展示
+  return (
+    <p className="text-sm text-muted-foreground/70">风险与待补项由审校专家在会诊中标记。</p>
+  );
+}
+
+function ExpertSection({ role, agent }: { role: AgentId; agent: AgentState }) {
+  const meta = DETAILS_META[role];
+  const profile = useAgent(role);
+  return (
+    <div className="rounded-2xl border border-primary/40 bg-card">
+      <div className="flex items-center gap-3 border-b border-border/70 px-4 py-3">
+        <AvatarZoom role={role} className="size-12 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">{profile.name}</p>
+          <p className="truncate text-[11px] text-muted-foreground">{profile.specialty}</p>
+        </div>
+        <span
+          className="max-w-[45%] shrink-0 truncate text-right text-[11px] text-muted-foreground"
+          title={agent.summary || "等待访谈开始"}
+        >
+          {agent.summary || "等待访谈开始"}
+        </span>
+        <AgentStatusBadge status={agent.status} />
+      </div>
+      <div className="px-4 py-3">
+        <ExpertContent role={role} hasDetails={(agent.details?.length ?? 0) > 0} />
+        <DetailsBlock title={meta.title} details={agent.details ?? []} tone={meta.tone} />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 主组件 */
+
+interface CollabStageProps {
+  onAdvance: () => void;
+}
+
+/** 四个具体产出角色（不含主控人/协调员） */
+const AGENT_ROLES: AgentId[] = ["pm", "architect", "designer", "guard"];
+
+export function CollabStage({ onAdvance }: CollabStageProps) {
+  const [activeRole, setActiveRole] = useState<AgentId>("moderator");
+  const [consulting, setConsulting] = useState(false);
+  const [messages, setMessages] = useState<DiscoverMessage[]>([]);
+  const [panelAgents, setPanelAgents] = useState<Record<AgentId, AgentState> | undefined>();
+  const [needsConsult, setNeedsConsult] = useState(false);
+  const productBrief = useFlowStore((s) => s.productBrief);
+  const setPanelOutput = useFlowStore((s) => s.setPanelOutput);
+  const rounds = messages.filter((m) => m.role === "user").length;
+  // 轻量门槛：产品愿景或描述已生成才允许进入搭建，避免空 PRD 直接进 build
+  const canAdvance = Boolean(productBrief?.vision || productBrief?.description);
+
+  // 镜像最新会话，供异步会诊完成后判断「用户是否已重置」，避免迟到结果污染
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  });
+
+  const agents = deriveAgentStates(messages, productBrief, consulting, panelAgents);
+  const { displayAgents, bubbles } = usePanelStagger(consulting, messages.length, agents);
+
+  const handleSummon = useCallback(async () => {
+    if (messages.length === 0) return;
+    // 会诊一开始就记录本轮已覆盖的消息数，避免同一次内容的重复自动会诊（生成好就是生成好）
+    lastConsultedRef.current = messages.length;
+    setConsulting(true);
+    try {
+      const res = await fetch("/api/ai/panel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brief: productBrief,
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          agents: personaPayload(),
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          agents?: { id: AgentId; status: AgentStatus; progress: number; summary: string; details?: unknown }[];
+        };
+        if (Array.isArray(data.agents)) {
+          // 用户已在会诊期间重置会话：丢弃迟到结果，不写入
+          if (messagesRef.current.length === 0) return;
+          const next: Record<AgentId, AgentState> = {
+            moderator: { status: "standby", progress: 0, summary: "", details: [] },
+            pm: { status: "standby", progress: 0, summary: "", details: [] },
+            architect: { status: "standby", progress: 0, summary: "", details: [] },
+            designer: { status: "standby", progress: 0, summary: "", details: [] },
+            guard: { status: "standby", progress: 0, summary: "", details: [] },
+          };
+          for (const a of data.agents) {
+            if (a.id in next)
+              next[a.id] = {
+                status: a.status,
+                progress: a.progress,
+                summary: a.summary,
+                details: Array.isArray(a.details) ? a.details.filter((d) => typeof d === "string" && d.trim()) : [],
+              };
+          }
+          setPanelAgents(next);
+          // 写入 store，供 refine 方案完善阶段跨阶段复用
+          setPanelOutput(
+            (Object.keys(next) as AgentId[]).reduce((acc, id) => {
+              const s = next[id];
+              acc[id] = { status: s.status, progress: s.progress, summary: s.summary, details: s.details ?? [] };
+              return acc;
+            }, {} as Record<string, AgentOutput>),
+          );
+        }
+      }
+    } catch {
+      // 网络异常：保留当前状态，不中断
+    } finally {
+      setConsulting(false);
+    }
+  }, [messages, productBrief, setPanelOutput]);
+
+  // 记录已会诊到的消息数：会诊期间的新消息会在会诊结束后再补触发
+  const lastConsultedRef = useRef(0);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setPanelAgents(undefined);
+      setPanelOutput(null);
+      lastConsultedRef.current = 0;
+      setNeedsConsult(false);
+      return;
+    }
+    if (messages.length > lastConsultedRef.current) setNeedsConsult(true);
+  }, [messages, setPanelOutput]);
+
+  useEffect(() => {
+    if (!needsConsult || consulting) return;
+    const timer = setTimeout(() => {
+      const lenAtStart = messages.length;
+      void handleSummon().then(() => {
+        lastConsultedRef.current = lenAtStart;
+      });
+      setNeedsConsult(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [needsConsult, consulting, handleSummon, messages.length]);
+
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden max-xl:grid-rows-2 xl:grid-cols-[1fr_440px]">
+        {/* 左列：真实对话流（独立滚动） */}
+        <div className="min-h-0 overflow-hidden xl:col-start-1">
+          <ChatStream
+            onConversationChange={({ messages: ms }) => setMessages(ms)}
+            onSummon={handleSummon}
+            consulting={consulting}
+          />
+        </div>
+
+        {/* 右列：后宫智囊团产出流（独立滚动） */}
+        <Card className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 p-0 shadow-sm xl:col-start-2">
+          <CardHeader className="shrink-0 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <FileText className="size-4 text-primary" />
+              <CardTitle className="text-base">后宫智囊团</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-3">
+            <ExpertStrip agents={displayAgents} active={activeRole} onSelect={setActiveRole} bubbles={bubbles} />
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+              {activeRole === "moderator" ? (
+                <>
+                  {AGENT_ROLES.map((r) => (
+                    <ExpertSection key={r} role={r} agent={agents[r]} />
+                  ))}
+                  {(agents.moderator.details?.length ?? 0) > 0 && (
+                    <div className="rounded-2xl border border-primary/40 bg-card px-4 py-3">
+                      <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">老鸨子小结</p>
+                      <ul className="space-y-1.5">
+                        {(agents.moderator.details ?? []).map((d, i) => (
+                          <li key={i} className="flex gap-2 text-xs leading-snug text-foreground">
+                            <span className="mt-1.5 size-1 shrink-0 rounded-full bg-destructive" />
+                            <span>{d}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <ExpertSection role={activeRole} agent={agents[activeRole]} />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 底部状态操作条 */}
+      <Card className="shrink-0 rounded-2xl border-border/70 p-0 shadow-sm">
+        <CardContent className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              </span>
+              {consulting ? "后宫智囊团会诊中" : "协同生成方案"}
+            </div>
+            {consulting && (
+              <div className="flex items-center gap-2">
+                <LoaderCircle className="size-4 animate-spin" />
+                <span>各成员正卖力产出中…</span>
+              </div>
+            )}
+            <span className="hidden h-4 w-px bg-border sm:block" />
+            <span>已对话 {rounds} 轮</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {!canAdvance && (
+              <span className="text-xs text-muted-foreground">
+                先和专家把产品方向聊清楚，生成产品愿景后即可进入搭建
+              </span>
+            )}
+            <Button size="sm" variant="outline" onClick={() => void handleSummon()} disabled={consulting || messages.length === 0}>
+              召集智囊团
+            </Button>
+            <Button size="sm" onClick={onAdvance} disabled={!canAdvance}>
+              进入方案落地
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

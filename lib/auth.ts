@@ -1,9 +1,15 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
+import { randomBytes } from "node:crypto";
 
+// 生产环境必须显式配置 AUTH_SECRET；未配置时用进程内随机值兜底（session 重启失效，但绝不可被伪造）。
+// 开发环境用固定 dev 值，方便本地调试。
 const SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "dev-insecure-secret-change-me-in-prod",
+  process.env.AUTH_SECRET ||
+    (process.env.NODE_ENV === "production"
+      ? randomBytes(32).toString("hex")
+      : "dev-insecure-secret-change-me-in-prod"),
 );
 
 export const SESSION_COOKIE = "xiye_session";

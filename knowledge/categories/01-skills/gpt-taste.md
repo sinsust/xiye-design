@@ -8,6 +8,7 @@ related: [high-end-visual-design]
 tags: [UX, 动效, GSAP]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/s5uy/ui-craft
 ---
 # UX/UI & GSAP 动效（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：品牌/展示类页面，想要精致布局与有克制的动效质感、而非静态堆砌时。
 - **不要用 / 注意**：无动效偏好或纯工具型后台，动效会冗余；GSAP 引入依赖。
-- **替代**：`high-end-visual-design`（静态高端标准本体）、`industrial-brutalist-ui`（若走野兽派风格）。
+- **替代**：`high-end-visual-design`（静态高端标准本体）、`industrial-brutalist-ui`（若走野兽派风格）。在线同主题的"premium UI/动效方向生成"是 [s5uy/ui-craft](https://github.com/s5uy/ui-craft)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

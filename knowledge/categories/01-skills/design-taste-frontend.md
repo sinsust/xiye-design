@@ -8,6 +8,7 @@ related: [design-taste-frontend-v1, high-end-visual-design]
 tags: [前端, 设计, landing]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/Koomook/claude-frontend-skills
 ---
 # Anti-slop 前端设计（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：做落地页/展示站，希望有设计辨识度、别千篇一律时。
 - **不要用**：旧项目与 v2 行为不兼容时，改用 `design-taste-frontend-v1`。
-- **替代**：`design-kungfu`（按需求选风格）、`high-end-visual-design`（高端"显得贵"标准）。
+- **替代**：`design-kungfu`（按需求选风格）、`high-end-visual-design`（高端"显得贵"标准）。可在线复现同款"反 AI slop、产出有辨识度界面"的开源实现是 [Koomook/claude-frontend-skills](https://github.com/Koomook/claude-frontend-skills)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

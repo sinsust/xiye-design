@@ -8,6 +8,7 @@ related: [design-taste-frontend]
 tags: [前端, 设计, 兼容]
 status: frozen
 updated: 2026-08-22
+source: https://github.com/Koomook/claude-frontend-skills
 ---
 # 设计品味 v1（skill）
 
@@ -17,7 +18,7 @@ design-taste 的 v1 原版保留。功能等同 v2，但行为与默认 v2 不�
 ## 适用场景
 - **该用（仅此）**：已有项目锁定 v1 行为、迁移 v2 成本过高时。
 - **不要用**：任何新项目都应直接用默认 `design-taste-frontend`（v2）。
-- **替代**：v2 `design-taste-frontend`。
+- **替代**：v2 `design-taste-frontend`；在线同主题参考 [Koomook/claude-frontend-skills](https://github.com/Koomook/claude-frontend-skills)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到目标旧项目 `skills/`，避免与 v2 同时装载冲突。

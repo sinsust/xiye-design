@@ -4,6 +4,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
+import { premiumImage } from "@/lib/placeholder-images";
 
 /**
  * The fan of payment cards — Figma `Group 2147241479` (desktop 499:1978,
@@ -168,16 +169,16 @@ const CARD_GRADIENTS: CSSProperties[] = [
   },
 ];
 
-/** 4 张卡各用一个固定 seed 的免费占位图，保证每次加载同一张。 */
-const CARD_PHOTOS = ["card1", "card2", "card3", "card4"];
+/** 4 张卡各用一张精选池占位图，保证每次加载同一张。 */
+const CARD_PHOTOS = [2, 5, 8, 11];
 
 const gradientCardStyle = (index: number): CSSProperties => {
   const base = CARD_GRADIENTS[index % CARD_GRADIENTS.length] ?? CARD_GRADIENTS[0];
-  const photo = CARD_PHOTOS[index % CARD_PHOTOS.length];
+  const photoIdx = CARD_PHOTOS[index % CARD_PHOTOS.length];
   return {
     ...base,
     // 图片优先，渐变垫底——图加载失败时仍显示渐变底色，不会空白。
-    backgroundImage: `url("https://picsum.photos/seed/${encodeURIComponent(photo)}/400/600")`,
+    backgroundImage: `url("${premiumImage(photoIdx, { w: 400 })}")`,
     backgroundSize: "cover",
     backgroundPosition: "center",
     borderRadius: 12,

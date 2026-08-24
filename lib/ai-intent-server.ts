@@ -12,12 +12,14 @@ import { VISUAL_STYLE_MAP } from "@/data/visual-styles";
 import { SKELETON_PAGE_MAP } from "@/data/skeletons";
 import {
   interpretIntent,
+  deriveFeaturePages,
   type IntentRecommendation,
   type IntentNarrative,
   type IntentRecPage,
   type IntentRecComponent,
 } from "@/lib/ai-intent";
 import { METHODOLOGY_INJECTION } from "@/lib/ai-methodology";
+import { SKILL_ASSEMBLY_INJECTION } from "@/lib/skill-assembly";
 
 // AI 对话理解（意图解构）固定使用 DeepSeek。
 // LLM_MODEL_*（Qwen）预留给其它场景，稍后由调用方按需接入，不在此处抢优先级。
@@ -74,6 +76,15 @@ const SYSTEM_PROMPT = `你是一位资深产品架构师。用户会告诉你一
 6. 用户的想法可能只有一句话甚至几个词。请结合你对当前行业与市场主流产品形态、主流视觉趋势的了解，把它合理扩展为一个可落地、完整、具体的产品构想；尤其要说明「为什么这套视觉风格与信息架构符合当下市场主流审美」。不要因为输入简短就产出单薄的结果。
 7. 【方法论框架强制套用】叙事与 PRD 必须应用以下顶级产品设计方法论（来源：Amplitude builder-skills，已引入 xiye 知识库「技能」类 amp-*，可在 /library 浏览/复制深做），让产出专业且完整、而非通用套话。具体规则见下方「产品方法论」段：核心功能必须是最被深挖的部分（每个模块带 JTBD 动机与验收标准），并用 JTBD / RICE / craft-spec / PR-FAQ 框架组织。
 8. 只输出一个 JSON 对象，不要 markdown 代码块，不要任何多余文字。
+9. 【视觉风格必须贴合业务/情绪，禁止乱选】visualStyle 这一项要真正读懂用户业务与想传达的情绪，从目录里挑「最契合受众与调性」的那个，绝不能用「既然用户没说就随便给个深色/玻璃/紫色」：
+   - 母婴/亲子/教育/温馨 → 选暖奶油、暖米、淡雅温暖系（如 editorial-luxury / minimalist-editorial / nature-green），禁止深色/纯黑/霓虹紫。
+   - 儿童/玩具/亲子娱乐 → 活泼多彩（truus-aurora）。
+   - 宠物/健康/自然 → 生机暖色或清新自然系（nature-green / warm-orange）。
+   - 高端/奢侈/送礼 → 奢华衬线（luxury / editorial-luxury）。
+   - 纯白优雅/展示型品牌/化妆时尚 → 极简编辑暖白（minimalist-editorial / soft-structuralism）。
+   - 食品/餐饮/零售/电商 → 有食欲的暖橙（warm-orange / nature-green）。
+   - 技术与后台 → 企业蓝/理性灰（tech-blue / slate-gray / shadcn-newyork）。
+   判断依据写进 summary 里的「为什么这套视觉符合目标受众与业务调性」。宁可贴合业务，也不要落入「默认深色/玻璃/紫色」。
 
 输出 JSON 结构：
 {
@@ -91,11 +102,24 @@ const SYSTEM_PROMPT = `你是一位资深产品架构师。用户会告诉你一
     "positioning": "<定位/与同类产品的差异，含 why now>",
     "targetAudience": ["<JTBD：功能性任务>", "<JTBD：社交性任务>", "<JTBD：情感性任务>"],
     "coreFeatures": [ { "name": "<核心功能，按 RICE 轻重排序>", "why": "<解决什么 JTBD 任务 / 当前痛点，附一句验收标准>" } ],
-    "marketFit": "<所选视觉契约/页面结构为何符合当前市场主流审美与产品形态>"
+    "marketFit": "<所选视觉契约/页面结构为何符合当前市场主流审美与产品形态>",
+    "pages": [
+      {
+        "name": "<由核心功能推导出的业务专属页面名，如「简历上传与解析页」「岗位匹配结果页」>",
+        "path": "<建议路由，如 /resume/parse>",
+        "description": "<这个页面做什么、为谁解决什么问题，一句话>",
+        "relatedFeatures": ["<关联的核心功能名，来自上方 coreFeatures>"],
+        "priority": "P0 | P1 | P2"
+      }
+    ]
   }
 }
 
+要求：pages 必须与 coreFeatures 一一对应——每个核心功能都要推导出它落地所需要的「业务专属页面」（区别于首页/认证/仪表盘等通用模板页）。pages 里的 relatedFeatures 必须引用 coreFeatures 中的功能名。优先排 P0 的核心链路页面，辅助能力排 P1/P2。
+
 ${METHODOLOGY_INJECTION}
+
+${SKILL_ASSEMBLY_INJECTION}
 
 以下是可选目录：
 `;
@@ -110,7 +134,15 @@ interface RawOutput {
   uiLibrary?: string;
   blueprint?: unknown[];
   summary?: string;
-  narrative?: Partial<IntentNarrative>;
+  narrative?: Partial<IntentNarrative> & {
+    pages?: Array<{
+      name?: string;
+      path?: string;
+      description?: string;
+      relatedFeatures?: string[];
+      priority?: string;
+    }>;
+  };
 }
 
 async function callDeepSeek(text: string, apiKey: string): Promise<RawOutput> {
@@ -133,7 +165,8 @@ async function callDeepSeek(text: string, apiKey: string): Promise<RawOutput> {
   });
 
   if (!res.ok) {
-    throw new Error(`DeepSeek ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    console.error("DeepSeek intent request failed, status:", res.status);
+    throw new Error("AI 服务暂不可用，请稍后重试");
   }
   const data = await res.json();
   const content: string = data?.choices?.[0]?.message?.content ?? "";
@@ -220,15 +253,20 @@ function sanitize(raw: RawOutput, text: string): IntentRecommendation {
 
   // 产品叙事：LLM 明确的字段覆盖,其余回退启发式兜底
   const rn = raw?.narrative;
+  let pagesFor: IntentNarrative["pages"] | undefined;
   const narrative: IntentNarrative = {
     vision: (rn?.vision?.trim() || fb.narrative.vision),
     positioning: (rn?.positioning?.trim() || fb.narrative.positioning),
     targetAudience:
       (rn?.targetAudience?.length ? rn.targetAudience.map((x) => x.trim()).filter(Boolean) : []) ||
       fb.narrative.targetAudience,
-    coreFeatures:
-      (rn?.coreFeatures?.length ? rn.coreFeatures.map((f) => ({ name: String(f.name ?? ""), why: String(f.why ?? "") })).filter((f) => f.name) : []) ||
-      fb.narrative.coreFeatures,
+    coreFeatures: (() => {
+      const cf = rn?.coreFeatures?.length
+        ? rn.coreFeatures.map((f) => ({ name: String(f.name ?? ""), why: String(f.why ?? "") })).filter((f) => f.name)
+        : fb.narrative.coreFeatures;
+      pagesFor = deriveFeaturePages(cf);
+      return cf;
+    })(),
     nonGoals:
       (rn?.nonGoals?.length ? rn.nonGoals.map((x) => x.trim()).filter(Boolean) : []) ||
       fb.narrative.nonGoals,
@@ -236,6 +274,23 @@ function sanitize(raw: RawOutput, text: string): IntentRecommendation {
       (rn?.successMetrics?.length ? rn.successMetrics.map((x) => x.trim()).filter(Boolean) : []) ||
       fb.narrative.successMetrics,
     marketFit: (rn?.marketFit?.trim() || fb.narrative.marketFit),
+    pages:
+      (rn?.pages?.length
+        ? rn.pages
+            .map((p) => ({
+              name: String(p?.name ?? ""),
+              path: p?.path ? String(p.path) : undefined,
+              description: String(p?.description ?? ""),
+              relatedFeatures: Array.isArray(p?.relatedFeatures)
+                ? p.relatedFeatures.map((x) => String(x))
+                : [],
+              priority: (["P0", "P1", "P2"].includes(p?.priority) ? p.priority : "P1") as
+                | "P0"
+                | "P1"
+                | "P2",
+            }))
+            .filter((p) => p.name)
+        : []) || pagesFor,
   };
 
   return {

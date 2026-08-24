@@ -8,6 +8,7 @@ related: [minimalist-ui, ui-ux-pro-max]
 tags: [UI, 野兽派, dashboard]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/servatj/brutalist-ui-library
 ---
 # 工业野兽派 UI（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：明确要野兽派 / 硬核仪表盘 / 终端 / 工厂风的项目；与 `aw-brutalist` 这类视觉风格呼应。
 - **不要用**：追求柔和、极简商业感的场景，冲突。
-- **替代**：`ui-ux-pro-max`（本地可搜任意风格）、`minimalist-ui`（极简风）。
+- **替代**：`ui-ux-pro-max`（本地可搜任意风格）、`minimalist-ui`（极简风）。在线可用同款野兽派视觉的组件库是 [servatj/brutalist-ui-library](https://github.com/servatj/brutalist-ui-library)（粗边框/硬阴影/等宽字体/零圆角，公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

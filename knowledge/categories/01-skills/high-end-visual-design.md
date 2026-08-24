@@ -8,6 +8,7 @@ related: [gpt-taste, design-taste-frontend, redesign-existing-projects]
 tags: [视觉, 高端, 设计]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/s5uy/ui-craft
 ---
 # 高端视觉设计标准（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：为新设计定基调，或做高端化审计时；与 `redesign-existing-projects` 搭配升级现有站。
 - **不要用 / 注意**：走极简/野兽派等特定风格时标准会冲突，按风格选技能。
-- **替代**：`minimalist-ui`（极简）、`industrial-brutalist-ui`（野兽派）、`stitch-design-taste`（反通用设计系统）。
+- **替代**：`minimalist-ui`（极简）、`industrial-brutalist-ui`（野兽派）、`stitch-design-taste`（反通用设计系统）。在线同主题的"premium、反 gradient/反 slop、层级优先"开源实现是 [s5uy/ui-craft](https://github.com/s5uy/ui-craft)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

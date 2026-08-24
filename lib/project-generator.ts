@@ -25,8 +25,11 @@ import { buildAgentManifest, buildAgentHandoffMd, resolvedTokens } from "@/lib/a
 import { buildCssVariables, buildTailwindConfig } from "@/lib/design-tokens-css";
 import { buildSeedProject, buildAgentMdFiles, resolveSeedTokens } from "@/lib/seed-project";
 import { buildAiKickoffPrompt } from "@/lib/ai-prompt";
+import { buildSecurityGuideMd } from "@/lib/security-guide";
+import { buildGuardNormsMd } from "@/lib/guard-norms";
 import { resolvePositioning, inferProjectTypeName, inferFeatureDetails } from "@/lib/project-narrative";
 import type { IntentNarrative } from "@/lib/ai-intent";
+import { deriveFeaturePages } from "@/lib/ai-intent";
 
 export interface FeatureCard {
   name: string;
@@ -532,7 +535,11 @@ export function buildPrdMd(
   style: VisualStyle,
   narrative: IntentNarrative,
 ): string {
-  const projectName = state.projectInfo?.projectName || "你的产品";
+  const projectName =
+    state.projectInfo?.projectName ||
+    state.productBrief?.name ||
+    narrative.vision?.split(/[，。；;,.!?！？]/)[0]?.slice(0, 40) ||
+    "你的产品";
   const now = new Date().toLocaleString("zh-CN", { hour12: false });
   const pTypeName = inferProjectTypeName(state);
   const stackLabel = state.techStack
@@ -540,12 +547,29 @@ export function buildPrdMd(
     : "未选择";
 
   const targetRows = narrative.targetAudience.length
-    ? narrative.targetAudience.map((t) => `- ${t}`).join("\n")
+    ? narrative.targetAudience
+        .map((t) => `- ${t}`)
+        .join("\n")
     : "- 面向该品类的核心用户与决策者";
-  const featureRows = narrative.coreFeatures.length
-    ? narrative.coreFeatures.map((f) => `| ${f.name} | ${f.why || "—"} |`).join("\n")
-    : "| 核心主流程 | 围绕所选类型搭建的主流程与关键模块 |";
-  // 页面与信息架构：按骨架蓝图分组
+  const featuresForPrd =
+    narrative.coreFeatures && narrative.coreFeatures.length
+      ? narrative.coreFeatures
+      : [{ name: "核心主流程", why: "围绕所选类型搭建的主流程与关键模块" }];
+  // 核心功能按数量分配 P0/P1/P2（约 40% / 40% / 余量），先算好再渲染，避免引用后声明变量
+  const featCount = featuresForPrd.length;
+  const featP0 = Math.max(1, Math.ceil(featCount * 0.4));
+  const featP1 = Math.max(1, Math.ceil(featCount * 0.4));
+  const featureRows = featuresForPrd
+    .map((f, i) => {
+      const matched = state.productBrief?.coreModules?.find(
+        (m) => m.name === f.name || (m.detail && m.detail.includes(f.name)) || (m.name && f.name.includes(m.name)),
+      );
+      const why = f.why || matched?.detail || "围绕核心场景，让用户高效完成关键操作";
+      const prio = i < featP0 ? "P0" : i < featP0 + featP1 ? "P1" : "P2";
+      return `| ${f.name} | ${why} | ${prio} |`;
+    })
+    .join("\n");
+  // 4.1 通用骨架页面（来自骨架工作台选择，属基础站结构）
   const pageGroups: Record<string, string[]> = {};
   for (const e of state.pageBlueprint) {
     const pg = SKELETON_PAGE_MAP[e.pageSlug];
@@ -553,7 +577,7 @@ export function buildPrdMd(
     const comp = pg.components.find((c) => c.id === e.componentId);
     (pageGroups[e.pageSlug] ??= []).push(comp?.name ?? e.componentId);
   }
-  const pageRows = Object.entries(pageGroups).length
+  const skeletonRows = Object.entries(pageGroups).length
     ? Object.entries(pageGroups)
         .map(([slug, comps]) => {
           const pg = SKELETON_PAGE_MAP[slug];
@@ -562,12 +586,137 @@ export function buildPrdMd(
         .join("\n")
     : "- 进入骨架工作台选择页面与区块后自动补全";
 
+  // 4.2 业务专属页面（功能驱动）：从核心功能推导，AI 产出优先、本地启发式兜底
+  const featurePages =
+    narrative.pages && narrative.pages.length
+      ? narrative.pages
+      : deriveFeaturePages(narrative.coreFeatures);
+  const PRIORITY_LABEL: Record<string, string> = { P0: "P0·核心", P1: "P1·重要", P2: "P2·辅助" };
+  const p0 = featurePages.filter((p) => p.priority === "P0").length;
+  const p1 = featurePages.filter((p) => p.priority === "P1").length;
+  const p2 = featurePages.filter((p) => p.priority === "P2").length;
+  const featureRows4 =
+    featurePages.length > 0
+      ? featurePages
+          .map((p) => {
+            const related = p.relatedFeatures?.length
+              ? p.relatedFeatures.join("、")
+              : "（通用）";
+            const path = p.path ? `（${p.path}）` : "";
+            const prio = PRIORITY_LABEL[p.priority] ?? p.priority;
+            return `| ${p.name}${path} | ${prio} | ${related} | ${p.description || "—"} |`;
+          })
+          .join("\n")
+      : "| （暂无） | — | — | 核心功能尚未推导出专属页面 |";
+
+  // 3.1 功能验收标准：为每个核心功能推导开发可用的「任务/结果/边界」验收（确定性生成，保持稳定可落地）
+  const acceptanceRows = featuresForPrd
+    .map((f) => {
+      const name = f.name;
+      const reason = f.why || "围绕核心价值交付可用体验";
+      return (
+        `### ${name}\n` +
+        `> 价值依据：${reason}\n` +
+        `\`\`\`\n` +
+        `- 给定：处于${name}场景的核心用户\n` +
+        `- 当：用户触发「${name}」的主操作（进入/创建/提交/查看）\n` +
+        `- 应：主流程顺畅完成，关键结果立即可见，且符合所选视觉规范（token 一致、响应式、动效克制）\n` +
+        `- 边界：输入为空/非法时有友好提示；加载中与失败态均有明确反馈；数据存取走 DATA_CONTRACT 约定接口\n` +
+        `- 可测：该功能关键路径可被 seed/scripts/verify.mjs 或浏览器手工脚本覆盖，无 TODO/FIXME 遗留\n` +
+        `\`\`\``
+      );
+    })
+    .join("\n\n");
+
+  // 4.3 页面验收标准：P0 页面逐页给出进入条件/主交互/跳出判定
+  const pageAcRows = featurePages
+    .filter((p) => p.priority === "P0")
+    .map((p) => {
+      const path = p.path ? ` \`${p.path}\`` : "";
+      const related = p.relatedFeatures?.length ? `（关联：${p.relatedFeatures.join("、")}）` : "";
+      return `- **${p.name}**${path} ${related}\n  - 进入：从上一页/导航可达；路由挂载正确、渲染不报错\n  - 主交互：${p.description || "完成该页面的核心操作"}，结果即时反馈\n  - 退出：返回上一级或跳转下一环节清晰；空态/加载态/错误态齐备`;
+    })
+    .join("\n") || "- （暂无 P0 页面，见第 4.2 节优先级）";
+
+  // 5. 用户核心旅程：由 P0 页面按序串联（P0 → P0 → P1 的合理推进顺序）
+  const p0Pages = featurePages.filter((p) => p.priority === "P0");
+  const p1Pages = featurePages.filter((p) => p.priority === "P1");
+  const flowChain = [...p0Pages, ...p1Pages].slice(0, 4);
+  const flowRows =
+    flowChain.length > 0
+      ? flowChain
+          .map((p, i) => {
+            const stepName = ["认知/进入", "主操作", "完成/产出", "续用/转化"][i] ?? `第${i + 1}步`;
+            return `- **${stepName}** → \`${p.name}\`${p.path ? `（${p.path}）` : ""}：${p.description || "完成该环节"}`;
+          })
+          .join("\n")
+      : "- 进入首页/登录页，沿导航进入核心操作并完成一次闭环";
+
+  // 6. 关键数据模型：由核心功能推导候选实体与建议字段（AI 开发可细化）
+  const entityRows = featuresForPrd
+    .map((f) => {
+      const n = f.name;
+      let fields = "id、归属主键、状态、创建/更新时间";
+      if (n.includes("匹配") || n.includes("推荐") || n.includes("评分")) {
+        fields = "id、目标输入、评分/命中原因、版本号、时间戳";
+      } else if (n.includes("简历") || n.includes("上传") || n.includes("解析")) {
+        fields = "id、原始文件 URL、结构化字段(JSON)、解析状态、时间戳";
+      } else if (n.includes("对话") || n.includes("通话") || n.includes("AI")) {
+        fields = "id、会话 ID、消息/角色、内容、时间戳";
+      } else if (n.includes("预测") || n.includes("仪表") || n.includes("归因")) {
+        fields = "id、时间维度、指标名、数值、关联对象";
+      } else if (n.includes("库") || n.includes("管理")) {
+        fields = "id、名称、分类、版本、更新时间";
+      } else if (n.includes("采集") || n.includes("数据")) {
+        fields = "id、设备/来源、原始数据、时间戳、同步状态";
+      }
+      const remark = f.why || "支撑核心功能的持久化数据";
+      return `| ${f.name} | ${fields} | ${remark} |`;
+    })
+    .join("\n") || "| 核心主流程 | id、归属主键、状态、创建/更新时间 | 通用主表 |";
+
+  // 9. 里程碑与交付范围
+  const milestoneRows = [
+    `### Phase 0 · 底座跑通（参照 \`seed/\`）\n- 启动工程并确认运行；读交接文档；verify.mjs 全部通过。`,
+    `### Phase 1 · 核心链路（P0，本关系型 - 共 ${p0} 个 P0 页面）\n> 范围：${p0Pages.map((p) => `\`${p.name}\``).join("、") || "核心 P0 页面"}\n- 打通端到端主流程，可被关键路径验收覆盖。`,
+    `### Phase 2 · 完善分层（P1 → P2）\n> 范围：P1 共 ${p1} 个、P2 共 ${p2} 个页面\n- 实现 P1 能力与打磨视觉/动效；P2 按需补齐；非目标（第 8 节）不做。`,
+  ].join("\n\n");
+
+  const nonGoalRows = narrative.nonGoals?.length
+    ? narrative.nonGoals.map((n) => `- ${n}`).join("\n")
+    : "- 不实现超出核心功能与非目标之外的重型增值模块；\n- 不做与当前技术栈不一致的大规模重构。";
+  const metricRows = narrative.successMetrics?.length
+    ? narrative.successMetrics.map((m) => `- ${m}`).join("\n")
+    : "- 注册/激活率\n- 核心功能留存与关键路径转化率\n- 从「可运行底座」到「主流程跑通」的交付完整性";
+
+  // 协作阶段「规范守门员」会诊产出（已一次性生成，此处直接带入，无需在 refine/deliver 重复会诊）
+  const guardSummary = state.panelOutput?.guard;
+  const guardSection =
+    guardSummary && (guardSummary.summary || (guardSummary.details && guardSummary.details.length))
+      ? `## 11.5. 开发规范与边界（AI 生成约束）
+
+> 本节源自工作台多 Agent 会诊的「规范守门员」产出，已在协作阶段一次性生成，此处直接带入，**后续阶段无需重复会诊**。
+
+${guardSummary.summary ? `**核心结论**：${guardSummary.summary}\n\n` : ""}${guardSummary.details?.length ? `**规范清单**：\n${guardSummary.details.map((d, i) => `${i + 1}. ${d}`).join("\n")}\n\n` : ""}更多工程级约束详见交付包 \`docs/AGENTS.md\` / \`docs/CLAUDE.md\` / \`docs/SECURITY.md\`。
+
+`
+      : "";
+
+  // 对话产出的设计系统（brief.extra.visualSpec）优先作为「视觉契约」，无则用 marketFit 兜底
+  const visualSpec = state.productBrief?.extra?.visualSpec;
+  const visualContract =
+    typeof visualSpec === "string" && visualSpec.trim()
+      ? `> 对话中已确认的设计系统（由产品方法论推导，供视觉落地参考）：\n\n${visualSpec.trim()}\n\n> 最终视觉 token 唯一真值以 \`docs/DESIGN_SPEC.md\` 与 \`globals.css\` 为准，此处为方向性参考。`
+      : narrative.marketFit;
+
   return `# ${projectName} · 产品需求文档（PRD）
 
 > 由 xiye 流程工作台生成 · ${now}
 > 一句话：${narrative.vision}
 
 ## 1. 产品概述
+
+> 本产品定位为 **${pTypeName}**（基于 ${stackLabel}），围绕愿景「${narrative.vision}」展开。${narrative.positioning || "聚焦目标用户的核心场景。"}主要服务 ${state.productBrief?.targetAudience?.join("、") || "该品类的核心用户与决策者"}，${state.productBrief?.description || "围绕该场景提供端到端的可用体验"}。
 
 | 项 | 内容 |
 | --- | --- |
@@ -584,21 +733,71 @@ ${targetRows}
 
 ## 3. 核心功能（按 RICE 轻重排序）
 
-| 功能 | 解决什么问题 |
-| --- | --- |
+| 功能 | 价值（解决什么问题） | 优先级 |
+| --- | --- | --- |
 ${featureRows}
 
 > 已按 RICE（Reach×Impact×Confidence%/Effort）思路将核心功能轻重排序；量化优先级详见知识库 \`amp-prioritize\` skill。
 
 ## 4. 页面与信息架构
 
-${pageRows}
+> 由两部分构成：**通用骨架页**（基础站结构，任何项目适用）+ **业务专属页面**（由上方核心功能推导，是本项目必须额外开发的部分）。
 
-## 5. 市场契合与视觉契约
+### 4.1 通用骨架页（基础站结构）
 
-${narrative.marketFit}
+${skeletonRows}
 
-## 6. 价值主张（PR/FAQ 反向验证）
+### 4.2 业务专属页面（功能驱动，需额外开发）
+
+| 页面 | 优先级 | 关联核心功能 | 功能描述 |
+| --- | --- | --- | --- |
+${featureRows4}
+
+> 本期需额外开发 **${featurePages.length}** 个业务专属页面（P0：${p0} · P1：${p1} · P2：${p2}）。这些页面对应「核心功能」章节的具体落地，是本项目区别于通用模板的关键交付；通用骨架页见 4.1。
+
+### 4.3 页面验收标准（P0 页逐页给出，供 AI 开发按此自检）
+
+${pageAcRows}
+
+## 5. 功能验收标准
+
+> 每个核心功能的「任务 / 结果 / 边界 / 可测」验收标准如下，AI 开发须按此实现，并作为自测依据。
+
+${acceptanceRows}
+
+## 6. 用户核心旅程
+
+> 把 P0/P1 页面串成一条可端到端跑通的关键旅程，是「AI 能对着开发不跑偏」的骨架。
+
+${flowRows}
+
+## 7. 关键数据模型（候选实体与建议字段）
+
+> AI 开发时可细化到实际 ORM/Schema；字段命名与接口契约遵循 \`seed/DATA_CONTRACT.md\`。
+
+| 候选实体 | 建议字段 | 备注 |
+| --- | --- | --- |
+${entityRows}
+
+## 8. 里程碑与交付范围
+
+> AI 开发按此 Phase 0 / 1 / 2 逐阶段推进，每阶段完成后输出清单并等待确认，避免遗漏。详见交付包 \`docs/AI_PROMPT.md\`。
+
+${milestoneRows}
+
+## 9. 非本期目标（Explicit Non-Goals）
+
+${nonGoalRows}
+
+## 10. 成功指标与观测
+
+${metricRows}
+
+## 11. 市场契合与视觉契约
+
+${visualContract}
+
+${guardSection}## 12. 价值主张（PR/FAQ 反向验证）
 
 > 已应用 Amazon Working Backwards：先写客户视角新闻稿，再倒推要造什么。
 
@@ -606,7 +805,7 @@ ${narrative.marketFit}
 - **定位差异（why now）**：${narrative.positioning}
 - 若新闻稿痛点不够生动、价值主张像空话，说明想法仍需用 \`amp-jobs-to-be-done\` / \`amp-amazon-working-backwards\` skill 深做。
 
-## 7. 方法论溯源
+## 13. 方法论溯源
 
 本 PRD 由 xiye「AI 一句话」生成，已强制套用 xiye 知识库引入的顶级产品设计方法论：
 
@@ -622,9 +821,22 @@ ${narrative.marketFit}
 
 }
 
+/**
+ * UI 展示与 zip 内 PRD.md 的唯一真值入口：当前 ref 阶段「产品专家」预览
+ * 与最终生成工程包共用同一函数，保证两处内容完全一致。
+ */
+export function buildPrdMdForState(state: FlowState): string {
+  const { style } = resolveStyle(state.visualStyle);
+  const narrative = state.intentNarrative ?? deriveNarrativeFallback(state, style);
+  return buildPrdMd(state, style, narrative);
+}
+
 export function generateProject(state: FlowState): GeneratedProject {
   const { style, usedFallback } = resolveStyle(state.visualStyle);
-  const projectName = state.projectInfo?.projectName || "你的产品";
+  const projectName =
+    state.projectInfo?.projectName ||
+    state.productBrief?.name ||
+    "你的产品";
   const features = buildFeatures(state.aiCapabilities);
   const project = { name: projectName, tagline: "由 xiye 流程工作台生成 · 已套用所选视觉风格", features };
   const designSpec = buildDesignSpec(state, style);
@@ -671,6 +883,8 @@ export function generateProject(state: FlowState): GeneratedProject {
       { filename: "DESIGN_SPEC.md", title: "视觉与技术规范", content: designSpec },
       { filename: "SKELETON.md", title: "页面骨架说明", content: buildSkeletonMd(state) },
       { filename: "MOTION.md", title: "动效规范", content: buildMotionMd(state) },
+      { filename: "SECURITY.md", title: "安全开发注意事项", content: buildSecurityGuideMd() },
+      { filename: "GUARD_NORMS.md", title: "开发边界规范", content: buildGuardNormsMd() },
       // 三件套-A：AI 编码工具打开仓库根即自动读取的顶层约定（zip 根目录）
       ...buildAgentMdFiles(state, "").map((f) => ({ filename: f.path, title: "AI 开发约定", content: f.content })),
     ],

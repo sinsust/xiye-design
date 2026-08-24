@@ -8,6 +8,7 @@ related: [image-to-code]
 tags: [Shopify, Liquid, 电商]
 status: active
 updated: 2026-08-22
+source: https://github.com/Shopify/dawn
 ---
 # Shopify 区块注入（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：在做 Shopify 主题/店铺装修，想把已有 HTML 沉淀成可复用、可预览的 liquid 区块时。
 - **不要用**：非 Shopify 或纯前端 Styling 项目，无需引入 Liquid/meta。
-- **替代**：`image-to-code`（反打 raw HTML）；直接在 Shopify 后台手动建区块。
+- **替代**：`image-to-code`（反打 raw HTML）；直接在 Shopify 后台手动建区块。真正可复用的官方 Liquid 区块参考是 [Shopify/dawn](https://github.com/Shopify/dawn) 主题的 `sections/`（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

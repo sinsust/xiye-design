@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import {
   discover,
   runDiscoveryHeuristic,
@@ -10,6 +11,19 @@ import {
 } from "@/lib/ai-discover";
 
 export const runtime = "nodejs";
+
+// 客户端传来的人群名覆盖（这里只关心老鸨子/主持人姓名）
+function moderatorName(v: unknown): string | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const found = v.find(
+    (x) =>
+      !!x &&
+      typeof x === "object" &&
+      (x as { role?: unknown }).role === "moderator" &&
+      typeof (x as { name?: unknown }).name === "string",
+  );
+  return found ? ((found as { name: string }).name.trim() || undefined) : undefined;
+}
 
 // POST /api/ai/discover
 // body: { messages: DiscoverMessage[], brief: ProductBrief | null }
@@ -23,6 +37,9 @@ function isMessage(v: unknown): v is DiscoverMessage {
 }
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {
+    return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
+  }
   try {
     const body = await req.json().catch(() => null);
     const messages: DiscoverMessage[] = Array.isArray(body?.messages)
@@ -45,7 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const res = await discover(messages, brief, apiKey);
+      const res = await discover(messages, brief, apiKey, moderatorName(body?.agents));
       return NextResponse.json(res);
     } catch (err) {
       // DeepSeek 调用失败：不中断对话，回传降级提示，brief 原样保留

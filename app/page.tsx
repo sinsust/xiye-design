@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import FluidText from "@/components/originkit/ui/fluid-text";
@@ -11,7 +12,6 @@ import {
   Copy,
   Layers,
   Palette,
-  Search,
   Shirt,
   Sparkles,
   X,
@@ -82,6 +82,10 @@ function useFluidTitleFontSize(): number {
 /** 流体文字两套调色板：浅色模式低饱和清新，深色模式高饱和科技 */
 const FLUID_PALETTE_LIGHT = ["#6366F1", "#EC4899", "#10B981", "#F59E0B"];
 const FLUID_PALETTE_DARK = ["#A855F7", "#EC4899", "#3B82F6", "#22D3EE"];
+
+/** 首页副标题文案（Shiny Pill 扫光效果使用，保持原文字与字号） */
+const HERO_SUBTITLE =
+  "用一句话描述你的产品，AI 自动解构类型、技术栈与视觉风格，从页面骨架一路搭到可导出的整站。";
 
 function luminance(hex: string): number {
   if (hex.startsWith("rgba")) return 0;
@@ -165,12 +169,6 @@ function chromeVars(style: VisualStyle): CSSProperties {
     fontFamily: FONT_STACK[style.font],
   } as CSSProperties;
 }
-
-const GROUPS = [
-  { id: "all", name: "全部" },
-  { id: "original", name: "原创预设" },
-  { id: "library", name: "UI 库" },
-] as const;
 
 const TONES = [
   { id: "all", name: "深浅不限" },
@@ -284,25 +282,49 @@ function StyleDialog({
   onApply: (s: VisualStyle, target: "builder" | "flow") => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [offsetTop, setOffsetTop] = useState<number | undefined>(() => {
-    if (!anchorRect) return undefined;
-    return Math.max(16, anchorRect.top - 16);
-  });
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
-  const clampTop = useCallback(() => {
-    if (!anchorRect) return;
+  // 弹窗锚定在卡片附近（卡片已在本页可视区域内），并把弹窗完整约束在视口内，
+  // 不产生任何页面滚动，避免出现弹窗跑偏 / 显示不全。
+  const computePanelPos = useCallback(() => {
     const panel = panelRef.current;
-    const desired = Math.max(16, anchorRect.top - 16);
-    const panelH = panel?.offsetHeight ?? 560;
-    const maxTop = window.innerHeight - panelH - 16;
-    setOffsetTop(Math.max(16, Math.min(desired, maxTop)));
+    if (!anchorRect || !panel) return;
+    const pw = panel.offsetWidth;
+    const ph = panel.offsetHeight;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const margin = 16;
+    // 水平：卡片水平居中，但夹取到视口内
+    let left = Math.min(
+      anchorRect.left + anchorRect.width / 2 - pw / 2,
+      vw - pw - margin,
+    );
+    left = Math.max(left, margin);
+    // 垂直：优先放卡片下方，放不下放上方，仍放不下则垂直居中
+    let top = anchorRect.bottom + 12;
+    if (top + ph > vh - margin) top = anchorRect.top - ph - 12;
+    if (top < margin) top = Math.max(margin, (vh - ph) / 2);
+    setPos({ left, top });
   }, [anchorRect]);
 
   useLayoutEffect(() => {
-    clampTop();
-    window.addEventListener("resize", clampTop);
-    return () => window.removeEventListener("resize", clampTop);
-  }, [clampTop]);
+    computePanelPos();
+  }, [computePanelPos]);
+
+  useEffect(() => {
+    const onResize = () => computePanelPos();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [computePanelPos]);
+
+  // 弹窗打开期间锁定底层滚动，避免背景内容滚动与锚定位置错动
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const p = style.palette;
   const swatches = [
@@ -317,19 +339,21 @@ function StyleDialog({
   const css = styleToCss(style);
   const tw = styleToTailwind(style);
 
-  return (
+  return createPortal(
     <div
-      className={[
-        "fixed inset-0 z-[60] flex justify-center overflow-hidden p-4 sm:p-6",
-        anchorRect ? "items-start" : "items-center",
-      ].join(" ")}
+      className="fixed inset-0 z-[60] overflow-hidden"
       style={{ background: "rgba(0,0,0,0.45)" }}
       onClick={onClose}
     >
       <div
         ref={panelRef}
-        className="modal-panel-enter flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
-        style={{ marginTop: offsetTop }}
+        className="modal-panel-enter absolute flex max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+        style={{
+          width: "min(48rem, calc(100vw - 2rem))",
+          left: pos?.left ?? 0,
+          top: pos?.top ?? 0,
+          visibility: pos ? "visible" : "hidden",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部：紧凑，只放名称、描述、来源与关闭 */}
@@ -469,7 +493,8 @@ function StyleDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -489,7 +514,9 @@ function StyleCard({
   const ink = contrastText(p.accent);
   const ref = useRef<HTMLDivElement>(null);
   const handleSelect = () => {
-    const rect = ref.current?.getBoundingClientRect();
+    // 不滚动页面：卡片本就在可视区域内，直接把其视口坐标传给弹窗做锚定即可
+    const el = ref.current;
+    const rect = el?.getBoundingClientRect();
     onSelect(style, rect);
   };
   return (
@@ -547,7 +574,7 @@ function StyleCard({
   );
 }
 
-/** 首页 AI 意图快速入口：输入后跳转 /flow?intent=... 自动触发分析 */
+/** 首页 AI 意图快速入口：输入后跳转 /workflow?intent=... 自动触发分析 */
 function HomeIntentInput() {
   const router = useRouter();
   const [value, setValue] = useState("");
@@ -555,7 +582,8 @@ function HomeIntentInput() {
   const submit = () => {
     const t = value.trim();
     if (!t) return;
-    router.push(`/flow?intent=${encodeURIComponent(t)}`);
+    // reset=1：明确「新开一个项目」，进入流程后清空上一次的历史状态，避免跳到旧步骤/残留旧字段
+    router.push(`/workflow?intent=${encodeURIComponent(t)}&reset=1`);
   };
 
   return (
@@ -580,9 +608,19 @@ function HomeIntentInput() {
           <Sparkles className="size-3.5 text-primary" />
           AI 将自动匹配类型、技术栈、视觉风格与页面骨架
         </div>
-        <Button size="sm" onClick={submit} disabled={!value.trim()}>
-          让 AI 解构 <ArrowRight className="size-3.5" />
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            render={<Link href="/workflow" />}
+            nativeButton={false}
+            variant="outline"
+            size="sm"
+          >
+            打开流程工作台
+          </Button>
+          <Button size="sm" onClick={submit} disabled={!value.trim()}>
+            让 AI 解构 <ArrowRight className="size-3.5" />
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -596,8 +634,6 @@ export default function Home() {
   const titleLines = 2;
   const titleLineHeight = "1.15em";
   const titleLineHeightRatio = 1.15;
-  const [query, setQuery] = useState("");
-  const [group, setGroup] = useState<string>("all");
   const [tone, setTone] = useState<string>("all");
   const [active, setActive] = useState<{ style: VisualStyle; rect?: DOMRect } | null>(null);
   const [tryOn, setTryOn] = useState<VisualStyle | null>(null);
@@ -653,24 +689,16 @@ export default function Home() {
     target: "builder" | "flow" = "builder",
   ) => {
     useFlowStore.getState().setVisualStyle(style.id);
-    router.push(target === "flow" ? "/flow" : "/builder");
+    router.push(target === "flow" ? "/workflow" : "/builder");
   };
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
     return VISUAL_STYLES.filter((s) => {
-      if (group === "original" && s.libraryId) return false;
-      if (group === "library" && !s.libraryId) return false;
       if (tone === "light" && isDark(s.palette.bg)) return false;
       if (tone === "dark" && !isDark(s.palette.bg)) return false;
-      if (
-        q &&
-        !`${s.name} ${s.sourceSkill} ${s.description}`.toLowerCase().includes(q)
-      )
-        return false;
       return true;
     });
-  }, [query, group, tone]);
+  }, [tone]);
 
   return (
     <div
@@ -707,26 +735,29 @@ export default function Home() {
             style={{ width: "100%", height: "100%", pointerEvents: "auto" }}
           />
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          从极简编辑、暗黑开发者到 Material、DaisyUI、Apple HIG——每个预设都携带真实色板、字体与圆角，即选即用即刻生效。
+        <p className="relative mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
+          <span>{HERO_SUBTITLE}</span>
+          {/* Shiny Pill 扫光：叠加一层同文案的高亮副本，用往复扫过的渐变蒙版露出高光 */}
+          <span
+            aria-hidden
+            className="subtitle-shine pointer-events-none absolute inset-0 select-none text-primary"
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent 28%, #000 50%, transparent 72%)",
+              maskImage:
+                "linear-gradient(to right, transparent 28%, #000 50%, transparent 72%)",
+              WebkitMaskSize: "150% auto",
+              maskSize: "150% auto",
+              animation: "subtitleShineSweep 2s linear infinite",
+            }}
+          >
+            {HERO_SUBTITLE}
+          </span>
         </p>
 
         {/* 首页 AI 意图入口：直接输入，跳转流程工作台自动分析 */}
         <div className="mx-auto mt-8 max-w-2xl">
           <HomeIntentInput />
-        </div>
-
-        <div className="mt-6 flex items-center justify-center gap-4">
-          <Button render={<Link href="/builder" />} nativeButton={false}>
-            进入页面搭建
-          </Button>
-          <Button
-            render={<Link href="/flow" />}
-            nativeButton={false}
-            variant="outline"
-          >
-            打开流程工作台
-          </Button>
         </div>
       </section>
 
@@ -758,35 +789,12 @@ export default function Home() {
               </div>
             </div>
           ))}
-          <Link
-            href="/builder"
-            className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90"
-          >
-            开始搭建 <ArrowUpRight className="size-3.5" />
-          </Link>
         </div>
       </section>
 
-      {/* 筛选工具箱 */}
-      <section className="reveal mt-16 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* 深浅筛选（仅保留 tone：group / 搜索已移除） */}
+      <section className="reveal mt-16 flex justify-center">
         <div className="flex flex-wrap items-center gap-1.5">
-          {GROUPS.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => setGroup(g.id)}
-              className={[
-                "rounded-full border px-3 py-1.5 text-xs transition-colors",
-                group === g.id
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/60",
-              ].join(" ")}
-            >
-              {g.name}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1.5">
           {TONES.map((t) => (
             <button
               key={t.id}
@@ -802,15 +810,6 @@ export default function Home() {
               {t.name}
             </button>
           ))}
-          <div className="relative ml-2">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="搜索风格 / 来源…"
-              className="h-8 w-44 rounded-full border border-border bg-background pl-8 pr-3 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary"
-            />
-          </div>
         </div>
       </section>
 
@@ -880,6 +879,13 @@ export default function Home() {
         @keyframes xiye-modal-in {
           from { opacity: 0; transform: translateY(10px) scale(0.98); }
           to { opacity: 1; transform: none; }
+        }
+        @keyframes subtitleShineSweep {
+          0% { -webkit-mask-position: 200%; mask-position: 200%; }
+          100% { -webkit-mask-position: -100%; mask-position: -100%; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .subtitle-shine { animation: none !important; mask-image: none !important; -webkit-mask-image: none !important; }
         }
       `}</style>
     </div>

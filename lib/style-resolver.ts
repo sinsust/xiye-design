@@ -11,6 +11,40 @@ import {
   DENSITY_TOKENS,
 } from "@/data/design-tokens";
 
+/** sRGB 单通道线性化（WCAG 2.x 公式：≤0.03928 走线性段，否则 gamma 2.4） */
+function srgbToLinear(c: number): number {
+  const v = c / 255;
+  return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+}
+
+/** 相对亮度 L（0~1，WCAG 2.x） */
+export function relativeLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0;
+  const r = srgbToLinear(rgb[0]);
+  const g = srgbToLinear(rgb[1]);
+  const b = srgbToLinear(rgb[2]);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG 对比度 (1~21)，越大越清晰；4.5 = AA 正文，3.0 = AA 大字/次级文本 */
+export function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const [hi, lo] = la >= lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * 兜底前景色：若 candidate 与 bg 的对比度 < 阈值，按 bg 亮度返回深/浅前景。
+ * 亮底用 #0F172A（slate-900），暗底用 #F5F5F5；保证 ≥7:1 的高对比兜底。
+ */
+function ensureReadable(bg: string, candidate: string, minRatio: number): string {
+  if (contrastRatio(bg, candidate) >= minRatio) return candidate;
+  const bgLum = relativeLuminance(bg);
+  return bgLum > 0.5 ? "#0F172A" : "#F5F5F5";
+}
+
 /** 把 token 的 css 片段（如 `--text-h3: 1.5rem;`）解析成 CSS 变量对象 */
 export function cssToVars(css: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -89,8 +123,8 @@ export function resolveStyleVars(
     "--background": style.palette.bg,
     "--surface": style.palette.surface,
     "--border": style.palette.border,
-    "--foreground": style.palette.text,
-    "--muted-foreground": style.palette.muted,
+    "--foreground": ensureReadable(style.palette.bg, style.palette.text, 4.5),
+    "--muted-foreground": ensureReadable(style.palette.bg, style.palette.muted, 3.0),
     "--primary": primaryColor,
     "--secondary": ds?.colorSecondary ?? style.palette.accent2,
     "--on-primary": onPrimary,
@@ -99,11 +133,17 @@ export function resolveStyleVars(
     "--warning": "#d97706",
     "--radius": radiusValue,
     "--font-sans": fontValue,
+    "--font-heading": fontValue,
+    "--muted": `color-mix(in srgb, ${style.palette.text} 8%, ${style.palette.surface})`,
+    "--accent2": style.palette.accent2,
     "--shadow": shadowValue,
     ...buildAccentVars(style.palette),
     ...typeVars,
     ...densityVars,
     fontFamily: "var(--font-sans)",
+    // 显式声明 color：让子元素无 color 字段时（如 nav/hero 的 "text-sm font-bold"）
+    // 自动继承"带对比度保护"的 --foreground，避免和某些浅色背景撞色导致看不见。
+    color: "var(--foreground)",
     ...(scrollBehavior ? { scrollBehavior } : {}),
   } as CSSProperties;
 }
@@ -144,17 +184,21 @@ export function resolveStyleVarsDark(
   const lighten = (rgb: [number, number, number], unit: number) =>
     rgbToHex(rgb[0] + (255 - rgb[0]) * unit, rgb[1] + (255 - rgb[1]) * unit, rgb[2] + (255 - rgb[2]) * unit);
 
+  const darkBg = darken(bg, 0.88);
   const surface = hexToRgb(style.palette.surface);
   const border = hexToRgb(style.palette.border);
   const text = hexToRgb(style.palette.text);
   const muted = hexToRgb(style.palette.muted);
 
+  const foregroundCandidate = text ? lighten(text, 0.92) : "#F5F5F5";
+  const mutedCandidate = muted ? lighten(muted, 0.6) : "#A1A1AA";
+
   const out: Record<string, string> = {
-    "--background": darken(bg, 0.88),
+    "--background": darkBg,
     "--surface": surface ? darken(surface, 0.9) : darken(bg, 0.84),
     "--border": border ? darken(border, 0.55) : "rgba(255,255,255,0.14)",
-    "--foreground": text ? lighten(text, 0.92) : "#F5F5F5",
-    "--muted-foreground": muted ? lighten(muted, 0.6) : "#A1A1AA",
+    "--foreground": ensureReadable(darkBg, foregroundCandidate, 4.5),
+    "--muted-foreground": ensureReadable(darkBg, mutedCandidate, 3.0),
   };
 
   // 投影在暗底上不可见，压暗等级即可

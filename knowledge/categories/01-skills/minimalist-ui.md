@@ -8,6 +8,7 @@ related: [industrial-brutalist-ui, ui-ux-pro-max]
 tags: [UI, 极简, bento]
 status: active
 updated: 2026-08-22
+repoUrl: https://github.com/Koomook/claude-frontend-skills
 ---
 # 极简编辑风 UI（skill）
 
@@ -17,7 +18,7 @@ updated: 2026-08-22
 ## 适用场景
 - **该用**：内容型 / 展示型 / bento 面板 / 偏好克制安静界面的项目。
 - **不要用**：需要强烈视觉张力或硬核工业感时，改 `industrial-brutalist-ui`。
-- **替代**：`ui-ux-pro-max`（任选风格）；`high-end-visual-design`（贵感路线）。
+- **替代**：`ui-ux-pro-max`（任选风格）；`high-end-visual-design`（贵感路线）。在线同主题的"克制、有辨识度、反通用"设计技能是 [Koomook/claude-frontend-skills](https://github.com/Koomook/claude-frontend-skills)（公开参考，非本技能本体）。
 
 ## 用法 / 接入
 1. 复制到项目 `skills/`。

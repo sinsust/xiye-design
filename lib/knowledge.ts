@@ -1,10 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { KNOWLEDGE_TYPE_META, type KnowledgeEntry } from "./knowledge-types";
+import { listCloudKnowledge } from "./knowledge-db";
 
 const VAULT_ROOT = path.join(process.cwd(), "knowledge", "categories");
-/** 用户自建条目根（与内置 categories 隔离，便于 gitignore 且不污染仓库内置知识库） */
-const USER_ROOT = path.join(process.cwd(), "knowledge", "user");
 
 // 轻量 frontmatter 解析：本仓库条目的 frontmatter 均为「key: 标量」或
 // 「key: [a, b]」单行格式，无需引入 js-yaml 这类依赖即可覆盖。
@@ -81,6 +80,14 @@ function scanRoot(root: string): KnowledgeEntry[] {
 }
 
 export function getKnowledgeEntries(): KnowledgeEntry[] {
-  // 内置 categories 优先，用户自建 user/ 追加在后（两者 userAdded 标记区分可写性）
-  return [...scanRoot(VAULT_ROOT), ...scanRoot(USER_ROOT)];
+  // 仅内置 categories（仓库只读条目）。用户贡献统一进云端共享库，见 loadKnowledgeEntries。
+  return scanRoot(VAULT_ROOT);
+}
+
+/**
+ * 完整加载知识库 = 内置文件条目 + 云端共享条目（含贡献人邮箱）。
+ * 异步：云端条目来自 DB（sqlite 本地 / Postgres 线上）。仅服务端调用。
+ */
+export async function loadKnowledgeEntries(): Promise<KnowledgeEntry[]> {
+  return [...getKnowledgeEntries(), ...(await listCloudKnowledge())];
 }
