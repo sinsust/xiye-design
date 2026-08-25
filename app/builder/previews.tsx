@@ -966,50 +966,53 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
         n: String(i + 1).padStart(2, "0"),
       }))
     : [{ icon: iconSeq[0], title: "核心能力", desc: "从骨架到上线的完整方案", n: "01" }];
+  const [active, setActive] = useState(0);
 
   if (variantId === "feat_grid3")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="核心能力" title={title} sub={subtitle} center />
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
-          {items.map((f) => (
-            <Card key={f.title} className="flex flex-col items-center gap-2 text-center">
-              <SFIcon icon={f.icon} />
-              <p className="text-sm font-semibold">{f.title}</p>
-              <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
-            </Card>
+      <div className="pv-stagger relative overflow-hidden px-6 py-7">
+        <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 pv-grid-bg opacity-40" />
+        <div className="relative pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} sub={subtitle} center /></div>
+        <div className="pv-stagger relative mt-5 grid gap-4 md:grid-cols-3">
+          {items.map((f, i) => (
+            <div key={f.title} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <Card className="flex h-full flex-col items-center gap-2 text-center">
+                <SFIcon icon={f.icon} />
+                <p className="text-sm font-semibold">{f.title}</p>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "feat_numbered")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="核心能力" title={title} />
-        <div className="mt-4 divide-y" style={{ borderColor: "var(--border)" }}>
-          {items.map((f) => (
-            <div key={f.title} className="group flex gap-4 py-3.5">
-              <span className="text-2xl font-black opacity-15 transition-colors group-hover:opacity-40" style={{ color: "var(--primary)" }}>{f.n}</span>
-              <div className="flex items-start gap-3">
-                <SFIcon icon={f.icon} />
-                <div>
-                  <p className="text-sm font-semibold">{f.title}</p>
-                  <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
-                </div>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} /></div>
+        {items.map((f, i) => (
+          <div key={f.title} className="pv-in group flex gap-4 border-t py-3.5 first:border-t-0 hover:bg-[color-mix(in_oklch,var(--primary)_4%,transparent)]" style={{ ["--i" as string]: i + 1, borderColor: "var(--border)" } as React.CSSProperties}>
+            <span className="bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] bg-clip-text text-2xl font-black text-transparent transition-transform duration-300 group-hover:scale-110">{f.n}</span>
+            <div className="flex items-start gap-3">
+              <SFIcon icon={f.icon} />
+              <div>
+                <p className="text-sm font-semibold">{f.title}</p>
+                <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     );
   if (variantId === "feat_timeline")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="核心能力" title={title} />
-        <div className="mt-5 space-y-5 border-l pl-6" style={{ borderColor: "var(--border)" }}>
-          {items.map((f) => (
-            <div key={f.title} className="relative">
-              <span className="absolute -left-[31.5px] top-1 size-3 rounded-full" style={{ background: "var(--primary)", boxShadow: "0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent)" }} />
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} /></div>
+        <div className="pv-stagger mt-5 space-y-5 border-l pl-6" style={{ ["--i" as string]: 1, borderColor: "color-mix(in oklch, var(--primary) 45%, var(--border))" } as React.CSSProperties}>
+          {items.map((f, i) => (
+            <div key={f.title} className="pv-in relative" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <span className="absolute -left-[34px] top-1 size-3 rounded-full ring-4" style={{ background: "var(--primary)", boxShadow: "0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent)" }} />
               <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "var(--primary)" }}>步骤 {f.n}</p>
               <p className="text-sm font-semibold">{f.title}</p>
               <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
@@ -1020,30 +1023,42 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "feat_bento" || variantId === "feat_bento_animated")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="核心能力" title={title} center />
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7">
+        {variantId === "feat_bento_animated" && (
+          <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full pv-aurora opacity-50" />
+        )}
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} center /></div>
+        <div className="pv-stagger relative mt-5 grid gap-4 sm:grid-cols-3">
           {items.map((f, i) => (
-            <Card key={f.title + i} className={i === 0 ? "sm:col-span-2" : ""}>
-              <div className="flex items-center gap-2.5">
-                <SFIcon icon={f.icon} />
-                <p className="text-sm font-semibold">{f.title}</p>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
-            </Card>
+            <div key={f.title + i} className={"pv-in " + (i === 0 ? "sm:col-span-2" : "")} style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <Card className={(i === 0 && variantId === "feat_bento_animated" ? "pv-breathe pv-spotlight" : "") + " h-full"}>
+                {i === 0 && variantId === "feat_bento_animated" && (
+                  <span aria-hidden className="mb-2 block h-1 w-12 rounded-full pv-shimmer" />
+                )}
+                <div className="flex items-center gap-2.5">
+                  <SFIcon icon={f.icon} />
+                  <p className="text-sm font-semibold">{f.title}</p>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "feat_image_list")
     return (
-      <div className="grid items-center gap-6 px-6 py-7 sm:grid-cols-2">
-        <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)" }}><Img label="功能预览" src={ph("feature", 3, 900)} /></div>
-        <div>
+      <div className="pv-stagger grid items-center gap-6 px-6 py-7 sm:grid-cols-2">
+        <div className="pv-in pv-tilt-wrap" style={{ ["--i" as string]: 0 }}>
+          <div className="overflow-hidden rounded-xl border pv-tilt pv-spotlight pv-lift" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <Img label="功能预览" src={ph("feature", 3, 900)} />
+          </div>
+        </div>
+        <div className="pv-in" style={{ ["--i" as string]: 1 }}>
           <SectionHead badge="核心能力" title={title} sub={subtitle} />
           <ul className="mt-4 space-y-2.5">
             {items.map((f) => (
-              <li key={f.title} className="flex items-start gap-2.5 rounded-lg border px-3 py-2 text-xs" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <li key={f.title} className="group flex items-start gap-2.5 rounded-lg border px-3 py-2 text-xs transition-all hover:border-[color-mix(in_oklch,var(--primary)_50%,var(--border))] hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
                 <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✓</span>
                 <span><b>{f.title}</b>：{f.desc}</span>
               </li>
@@ -1053,67 +1068,107 @@ function FeaturesPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  if (variantId === "feat_staggered" || variantId === "feat_iconcard")
+  if (variantId === "feat_iconcard")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="核心能力" title={title} sub={subtitle} center />
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {items.map((f) => (
-            <Card key={f.title} className="flex flex-col items-center gap-2 text-center">
-              <SFIcon icon={f.icon} />
-              <p className="text-sm font-semibold">{f.title}</p>
-              <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
-            </Card>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} sub={subtitle} center /></div>
+        <div className="pv-stagger mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {items.map((f, i) => (
+            <div key={f.title} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <div className="group flex h-full flex-col items-center gap-2 rounded-2xl border p-5 text-center pv-glass pv-lift pv-spotlight">
+                <div className="relative">
+                  <SFIcon icon={f.icon} size="size-11" />
+                  <span aria-hidden className="absolute inset-0 -z-10 rounded-[var(--radius)] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" style={{ background: "var(--primary)" }} />
+                </div>
+                <p className="text-sm font-semibold">{f.title}</p>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
     );
-  if (variantId === "feat_tabs")
+  if (variantId === "feat_staggered")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="核心能力" title={title} center />
-        <div className="mt-5 flex gap-1 rounded-full border p-1" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          {items.slice(0, 3).map((t, i) => (
-            <span key={t.title} className={"flex-1 rounded-full px-3 py-1 text-center text-xs font-medium transition-all " + (i === 0 ? "text-[var(--on-primary)] shadow-sm" : "")} style={i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t.title}</span>
-          ))}
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {items.map((f) => (
-            <Card key={f.title}>
-              <SFIcon icon={f.icon} />
-              <p className="mt-2 text-sm font-semibold">{f.title}</p>
-              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
-            </Card>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} sub={subtitle} center /></div>
+        <div className="pv-stagger mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {items.map((f, i) => (
+            <div key={f.title} className={"pv-in " + (i % 2 === 1 ? "sm:mt-8" : "")} style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <Card className="flex h-full flex-col items-center gap-2 text-center">
+                <span className="mb-0.5 h-1 w-8 rounded-full" style={{ background: "color-mix(in oklch, var(--primary) 60%, transparent)" }} />
+                <SFIcon icon={f.icon} />
+                <p className="text-sm font-semibold">{f.title}</p>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
+  if (variantId === "feat_tabs") {
+    const tabs = items.slice(0, Math.min(4, items.length));
+    const a = items[active] ?? items[0];
+    return (
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} center /></div>
+        <div className="pv-in mt-5" style={{ ["--i" as string]: 1 }}>
+          <div className="flex gap-1 rounded-full border p-1 pv-glass" style={{ borderColor: "var(--border)" }}>
+            {tabs.map((t, i) => (
+              <button
+                key={t.title}
+                type="button"
+                onClick={() => setActive(i)}
+                className={"flex-1 cursor-pointer rounded-full px-3 py-1 text-center text-xs font-medium transition-all " + (i === active ? "text-[var(--on-primary)] shadow-sm" : "")}
+                style={i === active ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}
+              >
+                {t.title}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 rounded-xl border p-4 pv-spotlight transition-all" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div className="flex items-start gap-3">
+              <SFIcon icon={a.icon} size="size-10" />
+              <div>
+                <p className="text-sm font-semibold">{a.title}</p>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{a.desc}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (variantId === "feat_3dtilt")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="核心能力" title={title} sub={subtitle} center />
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          {items.map((f) => (
-            <TiltCard key={f.title} className="flex flex-col items-start gap-2">
-              <SFIcon icon={f.icon} />
-              <p className="text-sm font-semibold">{f.title}</p>
-              <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
-            </TiltCard>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} sub={subtitle} center /></div>
+        <div className="pv-stagger mt-5 grid gap-4 sm:grid-cols-3">
+          {items.map((f, i) => (
+            <div key={f.title} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <TiltCard className="flex h-full flex-col items-start gap-2 pv-spotlight">
+                <SFIcon icon={f.icon} />
+                <p className="text-sm font-semibold">{f.title}</p>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
+              </TiltCard>
+            </div>
           ))}
         </div>
       </div>
     );
   // 兜底：未知变体时渲染三卡网格，避免预览区空白
   return (
-    <div className="px-6 py-7">
-      <SectionHead badge="核心能力" title={title} sub={subtitle} center />
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
-        {items.map((f) => (
-          <Card key={f.title} className="flex flex-col items-center gap-2 text-center">
-            <SFIcon icon={f.icon} />
-            <p className="text-sm font-semibold">{f.title}</p>
-            <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
-          </Card>
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="核心能力" title={title} sub={subtitle} center /></div>
+      <div className="pv-stagger mt-5 grid gap-4 md:grid-cols-3">
+        {items.map((f, i) => (
+          <div key={f.title} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+            <Card className="flex h-full flex-col items-center gap-2 text-center">
+              <SFIcon icon={f.icon} />
+              <p className="text-sm font-semibold">{f.title}</p>
+              <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.desc}</p>
+            </Card>
+          </div>
         ))}
       </div>
     </div>

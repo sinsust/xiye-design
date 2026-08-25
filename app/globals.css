@@ -392,10 +392,25 @@ main > div {
   animation: pv-border-flow 4s linear infinite;
 }
 
+/* 呼吸微动：强调卡 / 动画 bento 的克制动感 */
+@keyframes pv-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.015);
+  }
+}
+.pv-breathe {
+  animation: pv-breathe 4.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pv-marquee,
   .pv-shimmer,
-  .pv-border-flow {
+  .pv-border-flow,
+  .pv-breathe {
     animation: none;
   }
   .pv-stagger > .pv-in {
