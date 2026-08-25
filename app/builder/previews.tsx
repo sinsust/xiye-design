@@ -1536,29 +1536,38 @@ function CursorCta() {
 function CtaPreview({ variantId }: { variantId: string }) {
   if (variantId === "cta_solid")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <div className="mt-5 rounded-xl px-6 py-9 text-center text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
-          <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
-          <span className="mt-4 inline-block rounded-md bg-white px-5 py-1.5 text-xs font-semibold text-slate-900 transition-transform duration-150 hover:scale-[1.04] active:scale-95">{PREVIEW_CONTENT.cta.button} →</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in mt-5 pv-spotlight" style={{ ["--i" as string]: 1 }}>
+          <div className="relative overflow-hidden rounded-xl px-6 py-9 text-center text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
+            <span aria-hidden className="absolute inset-x-0 top-0 h-0.5 pv-shimmer opacity-70" />
+            <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+            <span className="mt-4 inline-block rounded-md bg-white px-5 py-1.5 text-xs font-semibold text-slate-900 transition-transform duration-150 hover:scale-[1.04] active:scale-95">{PREVIEW_CONTENT.cta.button} →</span>
+          </div>
         </div>
       </div>
     );
   if (variantId === "cta_gradient")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <div className="mt-5 rounded-xl px-6 py-9 text-center text-white" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, #000), var(--secondary))" }}>
-          <p className="mx-auto mt-1.5 max-w-xs text-xs text-white/85">{PREVIEW_CONTENT.cta.subheading}</p>
-          <span className="mt-4 inline-block rounded-full bg-white px-6 py-1.5 text-xs font-semibold text-slate-900 shadow-lg transition-transform duration-150 hover:scale-[1.04] active:scale-95">立即开始</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in mt-5 pv-spotlight pv-lift" style={{ ["--i" as string]: 1 }}>
+          <div className="relative overflow-hidden rounded-xl px-6 py-9 text-center text-white" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, #000), var(--secondary))" }}>
+            <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-40" />
+            <div className="relative">
+              <p className="mx-auto mt-1.5 max-w-xs text-xs text-white/85">{PREVIEW_CONTENT.cta.subheading}</p>
+              <span className="mt-4 inline-block rounded-full bg-white px-6 py-1.5 text-xs font-semibold text-slate-900 shadow-lg transition-transform duration-150 hover:scale-[1.04] active:scale-95">立即开始</span>
+            </div>
+          </div>
         </div>
       </div>
     );
   if (variantId === "cta_glass")
     return (
-      <div className="relative overflow-hidden rounded-2xl px-6 py-7" style={{ background: "radial-gradient(120% 120% at 20% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 60%), var(--surface)" }}>
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <div className="relative z-10 mx-auto mt-5 max-w-xs rounded-2xl border p-6 text-center" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, var(--border))", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(16px)", color: "var(--foreground)" }}>
+      <div className="pv-stagger relative overflow-hidden rounded-2xl px-6 py-7" style={{ background: "radial-gradient(120% 120% at 20% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 60%), var(--surface)" }}>
+        <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pv-in relative" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in relative z-10 mx-auto mt-5 max-w-xs rounded-2xl border p-6 text-center pv-glass pv-spotlight" style={{ ["--i" as string]: 1, borderColor: "color-mix(in srgb, var(--primary) 20%, var(--border))", color: "var(--foreground)" }}>
           <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
           <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
         </div>
@@ -1566,89 +1575,90 @@ function CtaPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "cta_divider")
     return (
-      <div className="mx-auto max-w-sm border-t px-6 py-8 text-center" style={{ borderColor: "var(--border)" }}>
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>现在就{PREVIEW_CONTENT.cta.primary}，随时可以取消。</p>
-        <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
+      <div className="pv-stagger mx-auto max-w-sm border-t px-6 py-8 text-center" style={{ borderColor: "var(--border)" }}>
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in mt-4" style={{ ["--i" as string]: 1 }}>
+          <div className="mx-auto h-px w-16 bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent" />
+          <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>现在就{PREVIEW_CONTENT.cta.primary}，随时可以取消。</p>
+          <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
+        </div>
       </div>
     );
   if (variantId === "cta_newsletter")
     return (
-      <div className="px-6 py-8 text-center">
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
-        <div className="mx-auto mt-4 flex max-w-xs gap-1.5">
-          <span className="flex-1 rounded-md border px-3 py-1.5 text-xs" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>you@example.com</span>
-          <span className="rounded-md px-4 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ background: "var(--primary)" }}>订阅</span>
+      <div className="pv-stagger px-6 py-8 text-center">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in mt-4" style={{ ["--i" as string]: 1 }}>
+          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+          <div className="mx-auto mt-4 flex max-w-xs gap-1.5">
+            <span className="flex-1 rounded-md border px-3 py-1.5 text-xs pv-glass" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>you@example.com</span>
+            <span className="pv-border-flow rounded-md px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]">{PREVIEW_CONTENT.cta.button}</span>
+          </div>
+          <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>我们重视隐私，绝不发送垃圾邮件。</p>
         </div>
-        <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>我们重视隐私，绝不发送垃圾邮件。</p>
       </div>
     );
   if (variantId === "cta_card_bento")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <div className="mt-5 grid gap-3 rounded-2xl border p-5 sm:grid-cols-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div className="sm:col-span-2">
-            <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>14 天全功能试用，无需信用卡。</p>
-          </div>
-          <div className="flex items-center justify-end">
-            <Btn primary glow>免费开始</Btn>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in mt-5" style={{ ["--i" as string]: 1 }}>
+          <div className="grid gap-3 rounded-2xl border p-5 sm:grid-cols-3 pv-glass pv-spotlight" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div className="sm:col-span-2">
+              <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>14 天全功能试用，无需信用卡。</p>
+            </div>
+            <div className="flex items-center justify-end">
+              <Btn primary glow>免费开始</Btn>
+            </div>
           </div>
         </div>
       </div>
     );
   if (variantId === "cta_glow")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <div className="mt-5 relative overflow-hidden rounded-2xl border p-8 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent), 0 30px 80px -40px color-mix(in srgb, var(--primary) 45%, transparent)" }}>
-          <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
-          <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in mt-5 relative overflow-hidden rounded-2xl border p-8 text-center pv-spotlight" style={{ ["--i" as string]: 1, borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent), 0 30px 80px -40px color-mix(in srgb, var(--primary) 45%, transparent)" }}>
+          <div aria-hidden className="pointer-events-none absolute -inset-10 pv-aurora opacity-30" />
+          <div className="relative">
+            <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+            <span className="mt-4 inline-block rounded-md px-5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.button}</span>
+          </div>
         </div>
       </div>
     );
   if (variantId === "cta_cursor")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="行动号召" title="让每一次点击，都有回应" center />
-        <CursorCta />
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title="让每一次点击，都有回应" center /></div>
+        <div className="pv-in mt-3" style={{ ["--i" as string]: 1 }}><CursorCta /></div>
       </div>
     );
   if (variantId === "cta_dualbtn")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-        <div
-          className="mx-auto mt-5 max-w-sm rounded-2xl border p-5 text-center"
-          style={{ borderColor: "var(--border)", background: "linear-gradient(180deg, color-mix(in srgb, var(--primary) 7%, var(--surface)), var(--surface))" }}
-        >
-          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <span
-              className="rounded-md px-4 py-1.5 text-xs font-semibold text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95"
-              style={{ background: "var(--primary)", boxShadow: "0 12px 26px -14px color-mix(in srgb, var(--primary) 70%, transparent)" }}
-            >
-              {PREVIEW_CONTENT.cta.button}
-            </span>
-            <span
-              className="rounded-md border px-4 py-1.5 text-xs font-medium transition-transform duration-150 hover:scale-[1.03] active:scale-95"
-              style={{ borderColor: "color-mix(in srgb, var(--primary) 35%, var(--border))", background: "var(--surface)", color: "var(--primary)" }}
-            >
-              {PREVIEW_CONTENT.cta.secondary}
-            </span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+        <div className="pv-in mt-5" style={{ ["--i" as string]: 1 }}>
+          <div className="mx-auto max-w-sm rounded-2xl border p-5 text-center pv-glass pv-spotlight" style={{ borderColor: "var(--border)", background: "linear-gradient(180deg, color-mix(in srgb, var(--primary) 7%, var(--surface)), var(--surface))" }}>
+            <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <span className="rounded-md px-4 py-1.5 text-xs font-semibold text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95" style={{ background: "var(--primary)", boxShadow: "0 12px 26px -14px color-mix(in srgb, var(--primary) 70%, transparent)" }}>{PREVIEW_CONTENT.cta.button}</span>
+              <span className="rounded-md border px-4 py-1.5 text-xs font-medium transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ borderColor: "color-mix(in srgb, var(--primary) 35%, var(--border))", background: "var(--surface)", color: "var(--primary)" }}>{PREVIEW_CONTENT.cta.secondary}</span>
+            </div>
+            <p className="mt-3 text-[10px]" style={{ color: "var(--muted-foreground)" }}>✓ 30 天退款保证 · ✓ 无需信用卡</p>
           </div>
-          <p className="mt-3 text-[10px]" style={{ color: "var(--muted-foreground)" }}>✓ 30 天退款保证 · ✓ 无需信用卡</p>
         </div>
       </div>
     );
   // 未匹配变体兜底：双按钮居中
   return (
-    <div className="px-6 py-8 text-center">
-      <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
-      <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
-      <div className="mt-4 flex justify-center gap-2"><Btn primary glow>{PREVIEW_CONTENT.cta.button}</Btn><Btn>联系销售</Btn></div>
-      <p className="mt-3 text-[10px]" style={{ color: "var(--muted-foreground)" }}>✓ 30 天退款保证 · ✓ 无需信用卡</p>
+    <div className="pv-stagger px-6 py-8 text-center">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
+      <div className="pv-in mt-4" style={{ ["--i" as string]: 1 }}>
+        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+        <div className="mt-4 flex justify-center gap-2"><Btn primary glow>{PREVIEW_CONTENT.cta.button}</Btn><Btn>联系销售</Btn></div>
+        <p className="mt-3 text-[10px]" style={{ color: "var(--muted-foreground)" }}>✓ 30 天退款保证 · ✓ 无需信用卡</p>
+      </div>
     </div>
   );
 }
