@@ -2050,11 +2050,13 @@ function StatsPreview({ variantId }: { variantId: string }) {
   const stats = raw.map((s) => ({ n: s.value, l: s.label }));
   if (variantId === "stats_dark")
     return (
-      <div className="bg-slate-900 px-6 py-7 text-white">
-        <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.l}>
-              <p className="text-[length:var(--text-h1)] font-black"><CountUp value={s.n} /></p>
+      <div className="pv-stagger relative overflow-hidden px-6 py-7 text-white" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="pv-stagger relative z-10 grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
+          {stats.map((s, i) => (
+            <div key={s.l} className="pv-in pv-lift pv-spotlight rounded-xl border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "rgba(255,255,255,0.08)" }}>
+              <p className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }}><CountUp value={s.n} /></p>
               <p className="mt-0.5 text-[10px] text-slate-400">{s.l}</p>
             </div>
           ))}
@@ -2063,26 +2065,28 @@ function StatsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "stats_withdesc")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {raw.map((s) => (
-            <Card key={s.label}>
-              <CountUp value={s.value} className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }} />
-              <p className="mt-1 text-sm font-semibold">{s.label}</p>
-              <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>领先同业 · {s.label}专项增长</p>
-            </Card>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center /></div>
+        <div className="pv-stagger mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {raw.map((s, i) => (
+            <div key={s.label} className="pv-in pv-lift" style={{ ["--i" as string]: i + 1 }}>
+              <Card>
+                <CountUp value={s.value} className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }} />
+                <p className="mt-1 text-sm font-semibold">{s.label}</p>
+                <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>领先同业 · {s.label}专项增长</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "stats_inline")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
-        <div className="mt-4 flex justify-center divide-x" style={{ borderColor: "var(--border)" }}>
-          {stats.map((s) => (
-            <div key={s.l} className="px-6 text-center">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center /></div>
+        <div className="pv-stagger mt-4 flex flex-wrap justify-center divide-x" style={{ borderColor: "var(--border)" }}>
+          {stats.map((s, i) => (
+            <div key={s.l} className="pv-in px-6 text-center transition-transform hover:scale-105" style={{ ["--i" as string]: i }}>
               <CountUp value={s.n} className="text-lg font-bold" style={{ color: "var(--primary)" }} />
               <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p>
             </div>
@@ -2092,11 +2096,11 @@ function StatsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "stats_editorial")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
-        <div className="mt-4 grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4" style={{ borderColor: "var(--border)" }}>
-          {stats.map((s) => (
-            <div key={s.l} className="px-6 py-4 text-center sm:text-left">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center /></div>
+        <div className="pv-stagger mt-4 grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4" style={{ borderColor: "var(--border)" }}>
+          {stats.map((s, i) => (
+            <div key={s.l} className="pv-in px-6 py-4 text-center transition-colors hover:text-[var(--primary)] sm:text-left" style={{ ["--i" as string]: i }}>
               <CountUp value={s.n} className="text-3xl font-bold tracking-tight" style={{ color: "var(--foreground)" }} />
               <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p>
             </div>
@@ -2106,13 +2110,13 @@ function StatsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "stats_countup")
     return (
-      <div className="px-6 py-7 text-center">
-        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.l}>
+      <div className="pv-stagger px-6 py-7 text-center">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center /></div>
+        <div className="pv-stagger mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {stats.map((s, i) => (
+            <div key={s.l} className="pv-in pv-lift pv-spotlight rounded-xl border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <CountUp value={s.n} className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }} />
-              <div className="mx-auto mt-1.5 h-px w-8" style={{ background: "var(--primary)" }} />
+              <div className="mx-auto mt-1.5 h-px w-8 transition-all" style={{ background: "var(--primary)" }} />
               <p className="mt-1.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p>
             </div>
           ))}
@@ -2121,26 +2125,30 @@ function StatsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "stats_neon")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-4 gap-3 text-center">
-          {raw.map((s, i) => (
-            <div key={s.label}>
-              <p className="text-lg font-black" style={{ color: ["#22D3EE", "#F472B6", "#34D399", "#F59E0B"][i % 4], textShadow: "0 0 14px " + ["#22D3EE", "#F472B6", "#34D399", "#F59E0B"][i % 4] }}>{s.value}</p>
-            </div>
-          ))}
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-40" />
+        <div className="pv-stagger relative z-10 grid grid-cols-4 gap-3 text-center">
+          {raw.map((s, i) => {
+            const c = ["#22D3EE", "#F472B6", "#34D399", "#F59E0B"][i % 4];
+            return (
+              <div key={s.label} className="pv-in pv-lift rounded-lg border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "color-mix(in srgb, " + c + " 35%, transparent)", background: "color-mix(in srgb, " + c + " 8%, #141416)" }}>
+                <p className="text-lg font-black transition-shadow" style={{ color: c, textShadow: "0 0 14px " + c }}>{s.value}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
   if (variantId === "stats_grid")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center /></div>
+        <div className="pv-stagger mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {stats.map((s, i) => (
             <div
               key={s.l}
-              className="rounded-xl border p-3"
-              style={{ borderColor: "var(--border)", background: i % 2 === 0 ? "color-mix(in srgb, var(--primary) 6%, var(--surface))" : "var(--surface)" }}
+              className="pv-in pv-lift pv-spotlight rounded-xl border p-3 transition-transform hover:-translate-y-1"
+              style={{ ["--i" as string]: i, borderColor: "var(--border)", background: i % 2 === 0 ? "color-mix(in srgb, var(--primary) 6%, var(--surface))" : "var(--surface)" }}
             >
               <CountUp value={s.n} className="text-lg font-black" style={{ color: "var(--primary)" }} />
               <p className="mt-1 text-[10px] font-medium">{s.l}</p>
@@ -2154,11 +2162,11 @@ function StatsPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：四格数字
   return (
-    <div className="px-6 py-7">
-      <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
-      <div className="mt-4 grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.l}>
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center /></div>
+      <div className="pv-stagger mt-4 grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
+        {stats.map((s, i) => (
+          <div key={s.l} className="pv-in pv-lift pv-spotlight rounded-xl border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
             <CountUp value={s.n} className="text-[length:var(--text-h1)] font-black" style={{ color: "var(--primary)" }} />
             <p className="mt-0.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{s.l}</p>
           </div>
