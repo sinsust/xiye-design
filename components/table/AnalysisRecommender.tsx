@@ -1,0 +1,189 @@
+"use client";
+
+/**
+ * 表格分析 —— 分析建议（AI 推荐维度 + 自定义查询）
+ * 默认显示前 4 个高价值维度卡，其余折叠；checkbox 选中 → 底部吸附栏「开始分析 (N)」。
+ * 自定义输入走 userQuery 模式（AI 理解意图后执行）。
+ */
+
+import { useCallback, useState } from "react";
+import { ArrowRight, Check, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import type { AnalysisDimension, TableProfileResult } from "@/lib/table/types";
+
+const CHART_ICONS: Record<string, string> = {
+  line: "📈",
+  bar: "📊",
+  pie: "🥧",
+  scatter: "✨",
+  histogram: "📉",
+  boxplot: "📦",
+  heatmap: "🔥",
+  table: "📋",
+};
+
+export function AnalysisRecommender({
+  profile,
+  tableId,
+  onRun,
+}: {
+  profile: TableProfileResult;
+  tableId: string;
+  onRun: (dimensions: AnalysisDimension[], userQuery: string) => void;
+}) {
+  const [dimensions, setDimensions] = useState<AnalysisDimension[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadRecommendations = useCallback(async () => {
+    if (dimensions.length > 0) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/brain/table/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile, tableId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || data?.error || "推荐失败");
+      setDimensions(data.dimensions ?? []);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [profile, tableId, dimensions.length]);
+
+  // 进入面板即请求推荐（惰性一次）
+  if (dimensions.length === 0 && !loading && !error) {
+    void loadRecommendations();
+  }
+
+  const visible = expanded ? dimensions : dimensions.slice(0, 4);
+  const toggle = (i: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
+
+  return (
+    <div className="flex flex-col px-5 py-4">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">分析建议</div>
+
+      {loading && (
+        <div className="flex items-center justify-center gap-2 py-14 text-xs text-muted-foreground">
+          <Loader2 className="size-4 animate-spin text-primary" />
+          正在分析字段画像，推荐有价值的维度…
+        </div>
+      )}
+      {error && (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {error} <button className="ml-1 text-amber-700 underline" onClick={() => { setError(""); setDimensions([]); void loadRecommendations(); }}>重试</button>
+        </div>
+      )}
+
+      {/* 推荐维度卡片 */}
+      {!loading && dimensions.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {visible.map((d, i) => (
+            <div
+              key={i}
+              className={
+                "flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all duration-200 " +
+                (selected.has(i)
+                  ? "border-primary/50 bg-primary/5 shadow-sm"
+                  : "border-border/70 bg-white hover:border-primary/25 hover:bg-muted/20")
+              }
+            >
+              <button
+                onClick={() => toggle(i)}
+                className={
+                  "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition " +
+                  (selected.has(i) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white")
+                }
+                aria-label="选择"
+              >
+                {selected.has(i) && <Check className="size-3" />}
+              </button>
+              <button onClick={() => toggle(i)} className="min-w-0 flex-1 text-left">
+                <div className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
+                  <span className="shrink-0">{CHART_ICONS[d.chartType] ?? "📊"}</span>
+                  <span className="truncate">{d.name}</span>
+                </div>
+                <div className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {d.description}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {d.fields.slice(0, 4).map((f) => (
+                    <span key={f} className="rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
+                      {f}
+                    </span>
+                  ))}
+                  {d.chartType && (
+                    <span className="rounded bg-primary/8 px-1.5 py-px text-[10px] text-primary">{d.chartType}</span>
+                  )}
+                </div>
+              </button>
+            </div>
+          ))}
+
+          {dimensions.length > 4 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="flex w-full items-center justify-center gap-1 py-1.5 text-[11px] text-muted-foreground transition hover:text-foreground"
+            >
+              {expanded ? "收起" : `展开其余 ${dimensions.length - 4} 个建议`}
+              <ChevronDown className={"size-3 transition-transform " + (expanded ? "rotate-180" : "")} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 自定义查询 */}
+      <div className="mt-5">
+        <div className="mb-1.5 text-[11px] text-muted-foreground">或用自然语言提问</div>
+        <div className="flex gap-2">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && query.trim()) onRun([], query.trim());
+            }}
+            placeholder="例：华东区销售额最高的 5 个区域是哪些？"
+            className="min-w-0 flex-1 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-xs outline-none transition focus:border-primary/50 focus:bg-white"
+          />
+          <button
+            onClick={() => query.trim() && onRun([], query.trim())}
+            disabled={!query.trim()}
+            className="flex shrink-0 items-center gap-1 rounded-lg border border-border/70 px-3 text-xs text-foreground transition hover:border-primary/40 hover:text-primary disabled:opacity-40"
+          >
+            <Sparkles className="size-3.5" />
+            分析
+          </button>
+        </div>
+      </div>
+
+      {/* 底部吸附栏 */}
+      {selected.size > 0 && (
+        <div className="sticky bottom-0 mt-5 -mx-5 border-t border-border/60 bg-white/90 px-5 py-3 backdrop-blur animate-in slide-in-from-bottom-2 duration-200">
+          <button
+            onClick={() => {
+              const dims = [...selected].sort((a, b) => a - b).map((i) => dimensions[i]);
+              onRun(dims, "");
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/85 px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/20 transition-all duration-200 hover:shadow-lg active:scale-[0.98]"
+          >
+            开始分析（{selected.size}）
+            <ArrowRight className="size-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

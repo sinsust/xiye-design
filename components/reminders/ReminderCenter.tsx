@@ -229,7 +229,7 @@ export function ReminderCenter({ onNavigate }: ReminderCenterProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-40 w-[340px] overflow-hidden rounded-xl border border-border bg-white shadow-xl">
+        <div className="absolute right-0 top-11 z-40 w-[340px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-white shadow-2xl shadow-primary/15">
           {/* 标题栏 */}
           <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2.5">
             <span className="text-sm font-semibold text-foreground">

@@ -5081,9 +5081,10 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
 
 /* ───────── Product ───────── */
 function ProductGalleryPreview({ variantId }: { variantId: string }) {
+  // Hook 必须顶层无条件调用（rules-of-hooks）
+  const [active, setActive] = useState(0);
   if (variantId === "pgallery_main") {
     const thumbs = [1, 2, 3, 4];
-    const [active, setActive] = useState(0);
     return (
       <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-xs">

@@ -24,9 +24,10 @@ export function Selectable({
 }) {
   const ctx = useBuilderElementId();
   // 语义化 id（同一组件+变体下稳定，刷新不丢）；无 context 时回退 useId
+  const fallbackId = useId();
   const id = ctx
     ? `${ctx.scope}:${ctx.componentId}:${ctx.variantId}:${ctx.nextSlot()}`
-    : useId();
+    : fallbackId;
   const interactions = useSkeletonStore((s) => s.elementInteractions[id]) ?? [];
 
   const ref = useRef<HTMLDivElement>(null);

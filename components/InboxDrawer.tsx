@@ -191,7 +191,7 @@ export function InboxDrawer({
       {/* 遮罩：直接出现/消失（无过渡动画） */}
       <div
         className={
-          "absolute inset-0 bg-black/30 " + (open ? "opacity-100" : "pointer-events-none opacity-0")
+          "absolute inset-0 bg-black/30 " + (open ? "opacity-100 animate-in fade-in duration-200" : "pointer-events-none opacity-0")
         }
         onClick={onClose}
       />
@@ -199,7 +199,7 @@ export function InboxDrawer({
       <aside
         className={
           "absolute right-0 top-0 flex h-full w-[540px] max-w-full flex-col bg-[#F9FAFB] shadow-2xl " +
-          (open ? "" : "hidden")
+          (open ? "animate-in slide-in-from-right-[28px] fade-in duration-200 ease-out" : "hidden")
         }
       >
         {/* 头部 */}
