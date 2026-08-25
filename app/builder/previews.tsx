@@ -627,41 +627,48 @@ function PreviewFallback({ title }: { title: string }) {
 }
 function NavbarPreview({ variantId }: { variantId: string }) {
   const links = ["功能", PREVIEW_CONTENT.nav.pricing, PREVIEW_CONTENT.nav.faq];
-  const inner = (
-    <>
-      <span className="text-sm font-bold">{PREVIEW_CONTENT.brand}</span>
-      <div className="hidden items-center gap-5 text-xs opacity-70 sm:flex">
-        {links.map((l) => <NavLink key={l}>{l}</NavLink>)}
-      </div>
-      <Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn>
-    </>
+  const brandBadge = (
+    <span className="flex items-center gap-1.5 text-sm font-bold">
+      <span className="flex size-5 items-center justify-center rounded-md text-[9px] font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>
+      {PREVIEW_CONTENT.brand}
+    </span>
+  );
+  const linkRow = (
+    <div className="hidden items-center gap-5 text-xs opacity-70 transition-opacity sm:flex">
+      {links.map((l) => <NavLink key={l}>{l}</NavLink>)}
+    </div>
   );
   if (variantId === "nav_transparent")
     return (
-      <div className="relative flex items-center justify-between px-5 py-3.5">
-        {inner}
+      <div className="pv-stagger relative flex items-center justify-between overflow-hidden px-5 py-3.5">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>{brandBadge}</div>
+        <div className="pv-in" style={{ ["--i" as string]: 1 }}>{linkRow}</div>
+        <div className="pv-in" style={{ ["--i" as string]: 2 }}><Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn></div>
       </div>
     );
   if (variantId === "nav_dark")
     return (
-      <div className="flex items-center justify-between bg-slate-900 px-5 py-3.5 text-slate-50">
-        {inner}
+      <div className="pv-stagger relative flex items-center justify-between overflow-hidden bg-slate-900 px-5 py-3.5 text-slate-50">
+        <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="relative pv-in" style={{ ["--i" as string]: 0 }}><span className="text-sm font-bold">{PREVIEW_CONTENT.brand}</span></div>
+        <div className="relative pv-in hidden items-center gap-5 text-xs opacity-70 sm:flex" style={{ ["--i" as string]: 1 }}>{links.map((l) => <NavLink key={l}>{l}</NavLink>)}</div>
+        <div className="relative pv-in" style={{ ["--i" as string]: 2 }}><Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn></div>
       </div>
     );
   if (variantId === "nav_mega")
     return (
-      <div className="relative flex items-center justify-between border-b px-5 py-3.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-        <span className="text-sm font-bold">{PREVIEW_CONTENT.brand}</span>
-        <div className="hidden items-center gap-5 text-xs opacity-70 sm:flex">
+      <div className="pv-stagger relative flex items-center justify-between border-b px-5 py-3.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><span className="text-sm font-bold">{PREVIEW_CONTENT.brand}</span></div>
+        <div className="pv-in hidden items-center gap-5 text-xs opacity-70 sm:flex" style={{ ["--i" as string]: 1 }}>
           <span className="cursor-default">产品 ▾</span>
           <NavLink>{PREVIEW_CONTENT.nav.pricing}</NavLink>
           <NavLink>{PREVIEW_CONTENT.nav.faq}</NavLink>
         </div>
-        <Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn>
-        <div className="absolute left-16 top-full mt-1 w-56 rounded-xl border p-3 shadow-lg" style={{ borderColor: "var(--border)", background: "var(--surface)", animation: "megaIn 0.4s cubic-bezier(0.16,1,0.3,1)" }}>
+        <div className="pv-in" style={{ ["--i" as string]: 2 }}><Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn></div>
+        <div className="pv-in absolute left-16 top-full z-20 mt-1 w-56 rounded-xl border p-3 shadow-lg" style={{ ["--i" as string]: 3, borderColor: "var(--border)", background: "var(--surface)", animation: "megaIn 0.4s cubic-bezier(0.16,1,0.3,1)" }}>
           <div className="grid grid-cols-2 gap-2">
             {["分析", "自动化", "协作", "集成"].map((f, i) => (
-              <div key={f} className="rounded-md px-2 py-1.5 text-[10px] font-medium" style={{ background: "var(--background)", animation: "megaItem 0.4s cubic-bezier(0.16,1,0.3,1) both", animationDelay: 0.06 * i + "s" }}>{f}</div>
+              <div key={f} className="cursor-pointer rounded-md px-2 py-1.5 text-[10px] font-medium transition-colors hover:text-[var(--primary)]" style={{ background: "var(--background)", animation: "megaItem 0.4s cubic-bezier(0.16,1,0.3,1) both", animationDelay: 0.06 * i + "s" }}>{f}</div>
             ))}
           </div>
           <span className="mt-2 block text-center text-[9px] font-medium" style={{ color: "var(--primary)" }}>查看全部功能 →</span>
@@ -671,26 +678,23 @@ function NavbarPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "nav_minimal")
     return (
-      <div className="border-b px-5 py-3 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-        <span className="text-sm font-semibold tracking-tight">{PREVIEW_CONTENT.brand}</span>
-        <div className="mt-1.5 flex justify-center gap-5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>
-          <span>功能</span>
-          <span>{PREVIEW_CONTENT.nav.pricing}</span>
-          <span>{PREVIEW_CONTENT.nav.faq}</span>
+      <div className="pv-stagger border-b px-5 py-3 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><span className="text-sm font-semibold tracking-tight">{PREVIEW_CONTENT.brand}</span></div>
+        <div className="pv-in mt-1.5 flex justify-center gap-5 text-[10px]" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>
+          {["功能", PREVIEW_CONTENT.nav.pricing, PREVIEW_CONTENT.nav.faq].map((l) => <span key={l} className="cursor-pointer transition-colors hover:text-[var(--primary)]">{l}</span>)}
         </div>
       </div>
     );
   if (variantId === "nav_floating_island")
     return (
-      <div className="flex justify-center px-6 pt-6">
-        <div className="flex w-max items-center gap-5 rounded-full border px-4 py-2" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 70%, transparent)", backdropFilter: "blur(16px)", boxShadow: "0 12px 40px -12px rgba(0,0,0,0.18)" }}>
+      <div className="pv-stagger relative flex justify-center overflow-hidden px-6 pt-6">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-32 pv-aurora opacity-60" />
+        <div className="pv-in relative flex w-max items-center gap-5 rounded-full border px-4 py-2" style={{ ["--i" as string]: 0, borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 70%, transparent)", backdropFilter: "blur(16px)", boxShadow: "0 12px 40px -12px rgba(0,0,0,0.18)" }}>
           <span className="text-xs font-bold">{PREVIEW_CONTENT.brand}</span>
           <div className="hidden items-center gap-4 text-[10px] opacity-70 sm:flex">
-            <span>功能</span>
-            <span>{PREVIEW_CONTENT.nav.pricing}</span>
-            <span>{PREVIEW_CONTENT.nav.faq}</span>
+            {["功能", PREVIEW_CONTENT.nav.pricing, PREVIEW_CONTENT.nav.faq].map((l) => <span key={l} className="cursor-pointer transition-colors hover:text-[var(--primary)]">{l}</span>)}
           </div>
-          <span className="rounded-full px-3 py-1 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
+          <span className="pv-border-flow rounded-full px-3 py-1 text-[10px] font-medium text-[var(--on-primary)]">{PREVIEW_CONTENT.cta.primary}</span>
           <span className="flex size-6 flex-col items-center justify-center gap-[3px] sm:hidden">
             <span className="h-px w-3.5" style={{ background: "var(--foreground)" }} />
             <span className="h-px w-3.5" style={{ background: "var(--foreground)" }} />
@@ -701,38 +705,37 @@ function NavbarPreview({ variantId }: { variantId: string }) {
   if (variantId === "nav_solid")
     return (
       <div
-        className="relative flex items-center justify-between px-5 py-3.5"
+        className="pv-stagger relative flex items-center justify-between px-5 py-3.5"
         style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", boxShadow: "0 8px 22px -20px rgba(0,0,0,0.5)" }}
       >
-        <span className="flex items-center gap-1.5 text-sm font-bold">
-          <span className="flex size-5 items-center justify-center rounded-md text-[9px] font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>
-          {PREVIEW_CONTENT.brand}
-        </span>
-        <div className="hidden items-center gap-1 sm:flex">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>{brandBadge}</div>
+        <div className="pv-in hidden items-center gap-1 sm:flex" style={{ ["--i" as string]: 1 }}>
           {links.map((l, i) => (
             <span
               key={l}
-              className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+              className="cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
               style={i === 0 ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}
             >
               {l}
             </span>
           ))}
         </div>
-        <Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn>
+        <div className="pv-in" style={{ ["--i" as string]: 2 }}><Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn></div>
       </div>
     );
   // blur 毛玻璃（solid 已单独实现，此处兜底）
   return (
     <div
-      className="relative flex items-center justify-between border-b px-5 py-3.5"
+      className="pv-stagger relative flex items-center justify-between border-b px-5 py-3.5"
       style={
         variantId === "nav_blur"
           ? { borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 70%, transparent)", backdropFilter: "blur(12px)" }
           : { borderColor: "var(--border)", background: "var(--surface)" }
       }
     >
-      {inner}
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><span className="text-sm font-bold">{PREVIEW_CONTENT.brand}</span></div>
+      <div className="pv-in hidden items-center gap-5 text-xs opacity-70 sm:flex" style={{ ["--i" as string]: 1 }}>{links.map((l) => <NavLink key={l}>{l}</NavLink>)}</div>
+      <div className="pv-in" style={{ ["--i" as string]: 2 }}><Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn></div>
     </div>
   );
 }
