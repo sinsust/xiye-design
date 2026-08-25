@@ -1670,57 +1670,73 @@ function FooterPreview({ variantId }: { variantId: string }) {
     { t: "资源", links: [PREVIEW_CONTENT.nav.docs, "教程", "社区"] },
     { t: "公司", links: ["关于", PREVIEW_CONTENT.nav.blog, "联系"] },
   ];
+  const socials = (
+    <div className="flex gap-1.5">
+      {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
+        <span key={i} className="pv-lift flex size-6 items-center justify-center rounded-md border transition-colors hover:text-[var(--primary)]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+          <BrandMark name={i} className="size-3" />
+        </span>
+      ))}
+    </div>
+  );
+  const linkList = (links: string[], muted = "var(--muted-foreground)") => (
+    <ul className="mt-1.5 space-y-1.5 text-[11px]" style={{ color: muted }}>
+      {links.map((l) => (
+        <li key={l} className="cursor-default transition-colors hover:text-[var(--primary)]">{l}</li>
+      ))}
+    </ul>
+  );
+
   if (variantId === "footer_simple")
     return (
-      <div className="border-t px-6 py-4" style={{ borderColor: "var(--border)" }}>
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold">{PREVIEW_CONTENT.brand}</span>
-          <span style={{ color: "var(--muted-foreground)" }}>© 2025 {PREVIEW_CONTENT.brand} Inc. All rights reserved.</span>
+      <div className="pv-stagger flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+        <div className="pv-in flex items-center gap-2 font-semibold" style={{ ["--i" as string]: 0 }}>
+          <span className="flex size-5 items-center justify-center rounded-md" style={{ background: "color-mix(in oklch, var(--primary) 16%, transparent)", color: "var(--primary)" }}><BrandMark name="Meta" className="size-3" /></span>
+          {PREVIEW_CONTENT.brand}
         </div>
+        <div className="pv-in flex flex-wrap gap-4 text-xs" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>
+          {["功能", PREVIEW_CONTENT.nav.pricing, PREVIEW_CONTENT.nav.docs, PREVIEW_CONTENT.nav.blog].map((l) => (
+            <span key={l} className="cursor-default transition-colors hover:text-[var(--primary)]">{l}</span>
+          ))}
+        </div>
+        <span className="pv-in text-[10px]" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>© 2025 {PREVIEW_CONTENT.brand} Inc.</span>
       </div>
     );
   if (variantId === "footer_dark")
     return (
-      <div className="bg-slate-900 px-6 py-7 text-slate-50">
-        <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div>
-            <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
-            <p className="mt-1 text-[11px] text-slate-400">{PREVIEW_CONTENT.footer.tagline}</p>
-            <div className="mt-2 flex gap-1.5 text-slate-400">
-              {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
-                <span key={i} className="flex size-5 items-center justify-center rounded border border-white/15 text-[9px]"><BrandMark name={i} className="size-3" /></span>
-              ))}
-            </div>
-          </div>
-          {cols.map((c) => (
-            <div key={c.t}>
-              <p className="text-xs font-semibold">{c.t}</p>
-              <ul className="mt-1.5 space-y-1 text-[11px] text-slate-400">
-                {c.links.map((l) => <li key={l}>{l}</li>)}
-              </ul>
-            </div>
-          ))}
+      <div className="pv-stagger relative overflow-hidden px-6 py-7 text-slate-50" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-30" />
+        <div className="pv-in relative z-10" style={{ ["--i" as string]: 0 }}>
+          <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
+          <p className="mt-1 text-[11px] text-slate-400">{PREVIEW_CONTENT.footer.tagline}</p>
+          <div className="mt-2">{socials}</div>
         </div>
-        <div className="mt-4 flex justify-between border-t border-white/10 pt-3 text-[10px] text-slate-400">
-          <span>© 2025 {PREVIEW_CONTENT.brand} Inc.</span>
-          <span>隐私政策 · 条款</span>
+        {cols.map((c, idx) => (
+          <div key={c.t} className="pv-in relative z-10" style={{ ["--i" as string]: idx + 1 }}>
+            <p className="text-xs font-semibold">{c.t}</p>
+            {linkList(c.links, "#cbd5e1")}
+          </div>
+        ))}
+        <div className="pv-in relative z-10 mt-1 border-t border-white/10 pt-3 text-[10px] text-slate-400 sm:col-span-4" style={{ ["--i" as string]: 4 }}>
+          <div className="flex justify-between"><span>© 2025 {PREVIEW_CONTENT.brand} Inc.</span><span>隐私政策 · 条款</span></div>
         </div>
       </div>
     );
   if (variantId === "footer_cta")
     return (
-      <div className="border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-        <div className="flex flex-col items-center justify-between gap-3 rounded-xl border p-4 sm:flex-row" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <div className="pv-in flex flex-col items-center justify-between gap-3 rounded-xl border p-4 sm:flex-row pv-glass pv-spotlight pv-lift" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
           <div>
             <p className="text-sm font-bold">订阅最新动态</p>
             <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>产品更新与增长技巧，每周一封。</p>
           </div>
           <div className="flex w-full max-w-xs gap-1.5">
             <span className="flex-1 rounded-md border px-3 py-1.5 text-xs" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>you@example.com</span>
-            <span className="rounded-md px-3.5 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>订阅</span>
+            <span className="pv-border-flow pv-lift rounded-md px-3.5 py-1.5 text-xs font-medium" style={{ color: "var(--primary)" }}>订阅</span>
           </div>
         </div>
-        <div className="mt-4 flex justify-between text-[10px]" style={{ color: "var(--muted-foreground)" }}>
+        <div className="pv-in mt-4 flex justify-between text-[10px]" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>
           <span>© 2025 {PREVIEW_CONTENT.brand} Inc.</span>
           <span>隐私 · 条款</span>
         </div>
@@ -1728,31 +1744,25 @@ function FooterPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "footer_bento")
     return (
-      <div className="px-6 py-7">
-        <div className="rounded-2xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
-            <div>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in rounded-2xl border p-5 pv-glass pv-spotlight" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
+          <div className="pv-stagger grid gap-5 sm:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+            <div className="pv-in" style={{ ["--i" as string]: 0 }}>
               <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
               <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.footer.tagline}</p>
-              <div className="mt-2 flex gap-1.5" style={{ color: "var(--muted-foreground)" }}>
-                {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
-                  <span key={i} className="flex size-5 items-center justify-center rounded-md border" style={{ borderColor: "var(--border)" }}><BrandMark name={i} className="size-3" /></span>
-                ))}
-              </div>
+              <div className="mt-2">{socials}</div>
             </div>
-            {cols.map((c) => (
-              <div key={c.t}>
+            {cols.map((c, idx) => (
+              <div key={c.t} className="pv-in" style={{ ["--i" as string]: idx + 1 }}>
                 <p className="text-xs font-semibold">{c.t}</p>
-                <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
-                  {c.links.map((l) => <li key={l}>{l}</li>)}
-                </ul>
+                {linkList(c.links)}
               </div>
             ))}
-            <div>
+            <div className="pv-in" style={{ ["--i" as string]: 4 }}>
               <p className="text-xs font-semibold">订阅</p>
               <div className="mt-1.5 flex gap-1.5">
                 <span className="flex-1 rounded-md border px-2 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>you@ex.com</span>
-                <span className="rounded-md px-2.5 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>→</span>
+                <span className="pv-border-flow pv-lift rounded-md px-2.5 py-1.5 text-[10px] font-medium" style={{ color: "var(--primary)" }}>→</span>
               </div>
             </div>
           </div>
@@ -1761,16 +1771,14 @@ function FooterPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "footer_editorial")
     return (
-      <div className="px-6 py-7">
-        <p className="text-2xl font-bold tracking-tight">{PREVIEW_CONTENT.brand}</p>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
-          <span>功能</span>
-          <span>{PREVIEW_CONTENT.nav.pricing}</span>
-          <span>{PREVIEW_CONTENT.nav.docs}</span>
-          <span>{PREVIEW_CONTENT.nav.blog}</span>
-          <span>联系</span>
+      <div className="pv-stagger px-6 py-7">
+        <p className="pv-in text-3xl font-bold tracking-tight" style={{ ["--i" as string]: 0, backgroundImage: "linear-gradient(90deg, var(--primary), var(--secondary))", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" } as CSSProperties}>{PREVIEW_CONTENT.brand}</p>
+        <div className="pv-in mt-3 flex flex-wrap gap-x-6 gap-y-1.5 text-[11px]" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>
+          {["功能", PREVIEW_CONTENT.nav.pricing, PREVIEW_CONTENT.nav.docs, PREVIEW_CONTENT.nav.blog, "联系"].map((l) => (
+            <span key={l} className="cursor-default transition-colors hover:text-[var(--primary)]">{l}</span>
+          ))}
         </div>
-        <div className="mt-4 border-t pt-3 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+        <div className="pv-in mt-4 border-t pt-3 text-[10px]" style={{ ["--i" as string]: 2, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
           © 2025 {PREVIEW_CONTENT.brand} Inc. 保留所有权利。
         </div>
       </div>
@@ -1778,58 +1786,46 @@ function FooterPreview({ variantId }: { variantId: string }) {
   if (variantId === "footer_multi") {
     const multiCols = [...cols, { t: "法律", links: ["隐私政策", "服务条款", "安全"] }];
     return (
-      <div className="border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
-        <div className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
+        <div className="pv-in flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
           <div>
             <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
             <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.footer.tagline}</p>
           </div>
-          <div className="flex gap-1.5" style={{ color: "var(--muted-foreground)" }}>
-            {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
-              <span key={i} className="flex size-5 items-center justify-center rounded-md border" style={{ borderColor: "var(--border)" }}><BrandMark name={i} className="size-3" /></span>
-            ))}
-          </div>
+          {socials}
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {multiCols.map((c) => (
-            <div key={c.t}>
+        <div className="pv-stagger mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {multiCols.map((c, idx) => (
+            <div key={c.t} className="pv-in" style={{ ["--i" as string]: idx + 1 }}>
               <p className="text-[9px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--muted-foreground)" }}>{c.t}</p>
-              <ul className="mt-2 space-y-1.5 text-[11px]">
-                {c.links.map((l) => <li key={l}>{l}</li>)}
-              </ul>
+              {linkList(c.links)}
             </div>
           ))}
         </div>
-        <div className="mt-5 flex flex-col justify-between gap-1 border-t pt-3 text-[10px] sm:flex-row sm:items-center" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+        <div className="pv-in mt-5 flex flex-col justify-between gap-1 border-t pt-3 text-[10px] sm:flex-row sm:items-center" style={{ ["--i" as string]: 5, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
           <span>© 2025 {PREVIEW_CONTENT.brand} Inc. 保留所有权利。</span>
-          <span className="w-max rounded-md border px-1.5 py-0.5" style={{ borderColor: "var(--border)" }}>简体中文 ▾</span>
+          <span className="w-max cursor-default rounded-md border px-1.5 py-0.5 transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]" style={{ borderColor: "var(--border)" }}>简体中文 ▾</span>
         </div>
       </div>
     );
   }
   // 未匹配变体兜底：品牌列 + 三列链接
   return (
-    <div className="border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-      <div className="grid gap-5 sm:grid-cols-4">
-        <div>
+    <div className="pv-stagger border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger grid gap-5 sm:grid-cols-4">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
           <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
           <p className="mt-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.footer.tagline}</p>
-          <div className="mt-2 flex gap-1.5" style={{ color: "var(--muted-foreground)" }}>
-                {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
-                  <span key={i} className="flex size-5 items-center justify-center rounded-md border" style={{ borderColor: "var(--border)" }}><BrandMark name={i} className="size-3" /></span>
-                ))}
-              </div>
+          <div className="mt-2">{socials}</div>
         </div>
-        {cols.map((c) => (
-          <div key={c.t}>
+        {cols.map((c, idx) => (
+          <div key={c.t} className="pv-in" style={{ ["--i" as string]: idx + 1 }}>
             <p className="text-xs font-semibold">{c.t}</p>
-            <ul className="mt-1.5 space-y-1 text-[11px]" style={{ color: "var(--muted-foreground)" }}>
-              {c.links.map((l) => <li key={l}>{l}</li>)}
-            </ul>
+            {linkList(c.links)}
           </div>
         ))}
       </div>
-      <div className="mt-5 flex flex-col justify-between gap-1 border-t pt-3 text-[10px] sm:flex-row" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+      <div className="pv-in mt-5 flex flex-col justify-between gap-1 border-t pt-3 text-[10px] sm:flex-row" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
         <span>© 2025 {PREVIEW_CONTENT.brand} Inc. 保留所有权利。</span>
         <span>隐私政策 · 服务条款</span>
       </div>
