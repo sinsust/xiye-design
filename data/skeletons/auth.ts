@@ -408,15 +408,15 @@ export const AUTH_PAGE: SkeletonPage = {
           code: `export function SplitAuth() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between p-12 text-white lg:flex" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
+      <div className="hidden flex-col justify-between p-12 text-[var(--on-primary)] lg:flex" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
         <div>
           <p className="text-lg font-bold">{{brand}}</p>
         </div>
         <div>
           <h2 className="text-3xl font-bold leading-tight">让每个团队都高效工作</h2>
-          <p className="mt-3 max-w-sm text-white/80">一站式工作台，从项目到数据全链路打通。</p>
-          <p className="mt-8 text-sm text-white/80">"使用一周就替代了我们三套工具。"</p>
-          <p className="mt-1 text-xs text-white/60">— 张伟，{{brand}} 增长负责人</p>
+          <p className="mt-3 max-w-sm" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>一站式工作台，从项目到数据全链路打通。</p>
+          <p className="mt-8 text-sm" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>"使用一周就替代了我们三套工具。"</p>
+          <p className="mt-1 text-xs" style={{ color: "color-mix(in srgb, var(--on-primary) 60%, transparent)" }}>— 张伟，{{brand}} 增长负责人</p>
         </div>
       </div>
       <div className="flex items-center justify-center px-6 py-12" style={{ background: "var(--background)" }}>
@@ -519,11 +519,11 @@ export const AUTH_PAGE: SkeletonPage = {
           code: `export function SplitAuth() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between p-12 text-white lg:flex" style={{ background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 70%, var(--primary)))" }}>
+      <div className="hidden flex-col justify-between p-12 text-[var(--on-primary)] lg:flex" style={{ background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 70%, var(--primary)))" }}>
         <p className="text-lg font-bold">{{brand}}</p>
         <div>
           <h2 className="text-4xl font-black leading-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>让每个团队<br />都高效工作</h2>
-          <p className="mt-4 max-w-sm text-sm text-white/80">一站式工作台，从项目到数据全链路打通。</p>
+          <p className="mt-4 max-w-sm text-sm" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>一站式工作台，从项目到数据全链路打通。</p>
         </div>
       </div>
       <div className="flex items-center justify-center px-6 py-12" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--background)), var(--background) 60%)" }}>

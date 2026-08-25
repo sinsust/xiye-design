@@ -805,13 +805,13 @@ function HeroPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "hero_gradient")
     return (
-      <div className="pv-stagger px-6 py-10 text-center text-white" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
-        <span className="pv-in inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-white" style={{ ["--i" as string]: 0, borderColor: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.14)" }}>智能驱动</span>
+      <div className="pv-stagger px-6 py-10 text-center text-[var(--on-primary)]" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
+        <span className="pv-in inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--on-primary)]" style={{ ["--i" as string]: 0, borderColor: "color-mix(in srgb, var(--on-primary) 50%, transparent)", background: "color-mix(in srgb, var(--on-primary) 14%, transparent)" }}>智能驱动</span>
         <h3 className="pv-in mt-3 text-[length:var(--text-h3)] font-bold" style={{ ["--i" as string]: 1 }}>开启你的数字之旅</h3>
-        <p className="pv-in mx-auto mt-1.5 max-w-sm text-xs text-white/80" style={{ ["--i" as string]: 2 }}>从零到一，用科技和创意点亮你的品牌。</p>
+        <p className="pv-in mx-auto mt-1.5 max-w-sm text-xs" style={{ ["--i" as string]: 2, color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>从零到一，用科技和创意点亮你的品牌。</p>
         <div className="pv-in mt-4 flex justify-center gap-2" style={{ ["--i" as string]: 3 }}>
           <span className="inline-block cursor-pointer rounded-md bg-white px-3.5 py-1.5 text-xs font-medium text-slate-900 transition-transform duration-200 hover:-translate-y-0.5">免费注册 →</span>
-          <span className="inline-block cursor-pointer rounded-md border border-white/60 px-3.5 py-1.5 text-xs font-medium text-white transition-transform duration-200 hover:-translate-y-0.5">{PREVIEW_CONTENT.cta.secondary}</span>
+          <span className="inline-block cursor-pointer rounded-md border px-3.5 py-1.5 text-xs font-medium text-[var(--on-primary)] transition-transform duration-200 hover:-translate-y-0.5" style={{ borderColor: "color-mix(in srgb, var(--on-primary) 60%, transparent)" }}>{PREVIEW_CONTENT.cta.secondary}</span>
         </div>
       </div>
     );
@@ -902,7 +902,7 @@ function HeroPreview({ variantId }: { variantId: string }) {
             少即是多。把克制，做成一种产品力。
           </p>
           <span
-            className="pv-lift mt-5 inline-block cursor-pointer rounded-full px-6 py-2 text-sm font-medium text-white"
+            className="pv-lift mt-5 inline-block cursor-pointer rounded-full px-6 py-2 text-sm font-medium text-[var(--on-primary)]"
             style={{ background: "var(--primary)" }}
           >
             了解更多
@@ -1552,10 +1552,10 @@ function CtaPreview({ variantId }: { variantId: string }) {
       <div className="pv-stagger px-6 py-7">
         <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center /></div>
         <div className="pv-in mt-5 pv-spotlight pv-lift" style={{ ["--i" as string]: 1 }}>
-          <div className="relative overflow-hidden rounded-xl px-6 py-9 text-center text-white" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, #000), var(--secondary))" }}>
+          <div className="relative overflow-hidden rounded-xl px-6 py-9 text-center text-[var(--on-primary)]" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 88%, #000), var(--secondary))" }}>
             <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-40" />
             <div className="relative">
-              <p className="mx-auto mt-1.5 max-w-xs text-xs text-white/85">{PREVIEW_CONTENT.cta.subheading}</p>
+              <p className="mx-auto mt-1.5 max-w-xs text-xs" style={{ color: "color-mix(in srgb, var(--on-primary) 85%, transparent)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
               <span className="mt-4 inline-block rounded-full bg-white px-6 py-1.5 text-xs font-semibold text-slate-900 shadow-lg transition-transform duration-150 hover:scale-[1.04] active:scale-95">立即开始</span>
             </div>
           </div>
@@ -3051,7 +3051,7 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
   if (variantId === "asplit_glass")
     return (
       <div className="pv-stagger grid min-h-56 sm:grid-cols-2">
-        <div className="pv-in hidden flex-col justify-between p-5 text-white sm:flex" style={{ ["--i" as string]: 0, background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 70%, var(--primary)))" }}>
+        <div className="pv-in hidden flex-col justify-between p-5 text-[var(--on-primary)] sm:flex" style={{ ["--i" as string]: 0, background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 70%, var(--primary)))" }}>
           <p className="text-xs font-bold">{PREVIEW_CONTENT.brand}</p>
           <p className="text-lg font-black leading-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>让每个团队<br />都高效工作</p>
         </div>
@@ -3125,11 +3125,11 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
   // 未匹配变体兜底：品牌渐变 + 表单
   return (
     <div className="pv-stagger grid min-h-56 sm:grid-cols-2">
-      <div className="pv-in hidden flex-col justify-between p-5 text-white sm:flex" style={{ ["--i" as string]: 0, background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
+      <div className="pv-in hidden flex-col justify-between p-5 text-[var(--on-primary)] sm:flex" style={{ ["--i" as string]: 0, background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
         <p className="text-xs font-bold">{PREVIEW_CONTENT.brand}</p>
         <div>
           <p className="text-sm font-semibold leading-snug">让每个团队都高效工作</p>
-          <p className="mt-1 text-[10px] text-white/80">一站式工作台，从项目到数据全链路。</p>
+          <p className="mt-1 text-[10px]" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>一站式工作台，从项目到数据全链路。</p>
         </div>
       </div>
       <div className="pv-in flex items-center justify-center px-6 py-7" style={{ ["--i" as string]: 1 }}>{formCol}</div>

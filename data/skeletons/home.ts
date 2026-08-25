@@ -424,13 +424,13 @@ export const HOME_PAGE: SkeletonPage = {
           code: `export function Hero() {
   return (
     <section
-      className="px-6 py-28 text-center text-white"
+      className="px-6 py-28 text-center text-[var(--on-primary)]"
       style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}
     >
       <h1 className="text-4xl font-bold leading-tight sm:text-6xl">
         开启你的数字之旅
       </h1>
-      <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
+      <p className="mx-auto mt-4 max-w-xl text-lg" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>
         从零到一，我们用科技和创意点亮你的品牌。
       </p>
       <div className="mt-8 flex justify-center gap-3">
@@ -1359,11 +1359,11 @@ export const HOME_PAGE: SkeletonPage = {
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
       <div
-        className="rounded-2xl px-8 py-14 text-center text-white"
+        className="rounded-2xl px-8 py-14 text-center text-[var(--on-primary)]"
         style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}
       >
         <h2 className="text-3xl font-bold">加入 5 万+ 团队</h2>
-        <p className="mx-auto mt-2 max-w-md text-white/80">
+        <p className="mx-auto mt-2 max-w-md" style={{ color: "color-mix(in srgb, var(--on-primary) 80%, transparent)" }}>
           {{cta.secondary}}，10 分钟搭建你的工作流。
         </p>
         <a href="#signup" className="mt-6 inline-block rounded-full bg-white px-7 py-3 text-sm font-medium text-slate-900">
