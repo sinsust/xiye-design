@@ -4,11 +4,13 @@ import {
   listBrainNotes,
   listBrainTasks,
   listBrainStrategies,
+  listBrainProjects,
   listPendingBrainReviews,
   listBrainInboxItems,
   type BrainTask,
   type BrainNote,
   type BrainStrategy,
+  type BrainProject,
 } from "@/lib/brain-db";
 
 export const runtime = "nodejs";
@@ -34,17 +36,25 @@ function toIso(ms: number): string {
   return new Date(ms).toISOString();
 }
 
+/** 距今天数（可为负=已过期）。 */
+function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr + "T00:00:00Z").getTime();
+  const today = new Date().toISOString().slice(0, 10) + "T00:00:00Z";
+  return Math.round((target - Date.parse(today)) / 86400000);
+}
+
 // GET /api/brain/dashboard
 // 一次性返回每日助理面板所需全部数据：今日待办 / 今日复习 / 收件箱 / 本周洞察 / 项目进度。
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const [notes, tasks, strategies, reviews, inbox] = await Promise.all([
+  const [notes, tasks, strategies, reviews, inbox, projects] = await Promise.all([
     listBrainNotes(user.sub),
     listBrainTasks(user.sub),
     listBrainStrategies(user.sub),
     listPendingBrainReviews(user.sub),
     listBrainInboxItems(user.sub),
+    listBrainProjects(user.sub),
   ]);
 
   const now = Date.now();
@@ -142,6 +152,30 @@ export async function GET() {
   }
   strategyReviews.sort((a, b) => b.daysSinceUpdate - a.daysSinceUpdate);
 
+  // —— 项目进度（active 项目，聚合任务统计 + 剩余天数）——
+    const projectsOut = projects
+      .filter((p) => p.status === "active")
+      .map((p) => {
+        const owned = tasks.filter((t) => t.projectId === p.id);
+        const completed = owned.filter((t) => t.status === "done").length;
+        const progress = owned.length ? Math.round((completed / owned.length) * 100) : 0;
+        const daysRemaining = p.dueDate ? daysUntil(p.dueDate) : null;
+        return {
+          id: p.id,
+          name: p.name,
+          color: p.color,
+          totalTasks: owned.length,
+          completedTasks: completed,
+          progress,
+          daysRemaining,
+        };
+      });
+    projectsOut.sort((a, b) => {
+      const aDue = a.daysRemaining ?? Infinity;
+      const bDue = b.daysRemaining ?? Infinity;
+      return aDue - bDue;
+    });
+
   return NextResponse.json({
     today: localDateStr(now),
     tasks: {
@@ -163,7 +197,6 @@ export async function GET() {
       decayAlerts: decayAlertsTop,
       strategyReviews: strategyReviews.slice(0, 5),
     },
-    // 项目进度：待第十阶段「项目表」落地后聚合 brain_projects + brain_tasks，本阶段先留空占位
-    projects: [],
+    projects: projectsOut,
   });
 }

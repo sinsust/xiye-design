@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { listBrainNotes } from "@/lib/brain-db";
-import { organizeNote } from "@/lib/brain-organizer";
+import { organizeNote, findDuplicateNote } from "@/lib/brain-organizer";
 
 export const runtime = "nodejs";
 
@@ -18,7 +18,9 @@ export async function POST(req: NextRequest) {
 
     const existing = await listBrainNotes(user.sub);
     const organized = await organizeNote(content, existing);
-    return NextResponse.json({ draft: organized });
+    // 近似重复检测：提示是否更新已有笔记
+    const duplicate = findDuplicateNote(content, existing);
+    return NextResponse.json({ draft: organized, duplicate });
   } catch (err) {
     console.error("brain organize failed:", err);
     return NextResponse.json({ error: "organize_failed" }, { status: 500 });

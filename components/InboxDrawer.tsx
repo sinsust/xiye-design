@@ -180,19 +180,26 @@ export function InboxDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50" aria-hidden={!open}>
-      {/* 遮罩 */}
+    <div
+      className={
+        "fixed inset-0 z-50 " + (open ? "" : "pointer-events-none")
+      }
+      aria-hidden={!open}
+      // 关闭时 inert：屏幕阅读器 + 焦点 + 点击全部跳过（React 19 原生支持的 HTML 属性）
+      inert={!open}
+    >
+      {/* 遮罩：直接出现/消失（无过渡动画） */}
       <div
         className={
-          "absolute inset-0 bg-black/30 transition-opacity " + (open ? "opacity-100" : "pointer-events-none opacity-0")
+          "absolute inset-0 bg-black/30 " + (open ? "opacity-100" : "pointer-events-none opacity-0")
         }
         onClick={onClose}
       />
-      {/* 抽屉主体 */}
+      {/* 抽屉主体：直接出现（无位移动画）；关闭态 display:none，彻底脱离视口与布局 */}
       <aside
         className={
-          "absolute right-0 top-0 flex h-full w-[540px] max-w-full transform flex-col bg-[#F9FAFB] shadow-2xl transition-transform duration-300 " +
-          (open ? "translate-x-0" : "translate-x-full")
+          "absolute right-0 top-0 flex h-full w-[540px] max-w-full flex-col bg-[#F9FAFB] shadow-2xl " +
+          (open ? "" : "hidden")
         }
       >
         {/* 头部 */}

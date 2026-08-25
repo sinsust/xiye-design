@@ -300,23 +300,37 @@ export function parseRelativeDate(text: string, today: Date = new Date()): strin
   return null;
 }
 
-/** 规范化行动项日期：优先按 text 里的相对时间重算；AI 给的错年份/过去过久的日期清空 */
+/** 规范化行动项日期：优先按 text 里的相对时间重算；AI 给的错年份/过去过久的日期清空；噪音项过滤 */
 export function normalizeActionDates(actions: ActionItem[], today: Date = new Date()): ActionItem[] {
   const nowMs = today.getTime();
   const day = 86400_000;
-  return actions.map((a) => {
-    const rel = parseRelativeDate(a.text, today);
-    if (rel) {
-      const t = new Date(rel + "T00:00:00").getTime();
-      return { ...a, dueDate: t >= nowMs - day ? rel : null };
-    }
-    if (!a.dueDate) return a;
-    const t = new Date(a.dueDate + "T00:00:00").getTime();
-    if (Number.isNaN(t)) return { ...a, dueDate: null };
-    // 已过 14 天以上 → 大概率模型错年份，清空
-    if (t < nowMs - 14 * day) return { ...a, dueDate: null };
-    return a;
-  });
+  return actions
+    .filter((a) => !isNoiseAction(a.text))
+    .map((a) => {
+      const rel = parseRelativeDate(a.text, today);
+      if (rel) {
+        const t = new Date(rel + "T00:00:00").getTime();
+        return { ...a, dueDate: t >= nowMs - day ? rel : null };
+      }
+      if (!a.dueDate) return a;
+      const t = new Date(a.dueDate + "T00:00:00").getTime();
+      if (Number.isNaN(t)) return { ...a, dueDate: null };
+      // 已过 14 天以上 → 大概率模型错年份，清空
+      if (t < nowMs - 14 * day) return { ...a, dueDate: null };
+      return a;
+    });
+}
+
+/** 行动项噪音过滤：负面陈述/转折句/过短碎片不是待办 */
+const ACTION_NOISE_RE =
+  /^(缺点|不足|问题|风险|但|但是|不过|然而|所以|因为|其实|只是|另外|还有|同时|需要注意|值得注意的是|待解决|遗留)/;
+
+export function isNoiseAction(text: string): boolean {
+  const t = text.trim();
+  if (t.length < 4) return true;
+  if (ACTION_NOISE_RE.test(t)) return true;
+  if (/(上不去|下不来|不够用|不足|没预算|打水漂|被砍)/.test(t)) return true;
+  return false;
 }
 
 /** 启发式提取策略：命中"决议/方向/策略/主攻"等词的行收敛为策略标题 */
@@ -437,15 +451,6 @@ function heuristicTitle(content: string): string {
   return line.length > 30 ? line.slice(0, 30) + "…" : line || "未命名想法";
 }
 
-function heuristicCategory(content: string): string {
-  const kws = content.match(/[\u4e00-\u9fa5]{2,6}/g) ?? [];
-  if (kws.some((k) => ["学习", "教程", "课程", "笔记", "学会", "掌握"].includes(k))) return "学习";
-  if (kws.some((k) => ["会议", "周报", "工作", "项目", "客户", "任务"].includes(k))) return "工作";
-  if (kws.some((k) => ["代码", "函数", "接口", "bug", "实现", "报错", "报错"].includes(k))) return "技术";
-  if (kws.some((k) => ["设计", "界面", "配色", "字体", "风格"].includes(k))) return "设计";
-  return "随手记";
-}
-
 /** 基于内容关键词，在已有笔记里找最相关的（标题/摘要/内容关键词重合度） */
 function suggestRelated(content: string, existing: BrainNote[]): { related: string[]; reason: string } {
   const kws = new Set(extractKeywords(content, 8).map((k) => k.toLowerCase()));
@@ -466,6 +471,30 @@ function suggestRelated(content: string, existing: BrainNote[]): { related: stri
     related: scored.map(({ n }) => n.id),
     reason: "内容关键词与已有笔记重合，可能相关",
   };
+}
+
+/** 近似重复匹配：新内容关键词在已有笔记里的覆盖率（≥ threshold 判为重复粘贴/更新） */
+export function findDuplicateNote(
+  content: string,
+  existing: BrainNote[],
+  threshold = 0.62,
+): { id: string; title: string; score: number } | null {
+  const trimmed = content.trim();
+  if (trimmed.length < 40) return null;
+  const kws = new Set(extractKeywords(trimmed, 14).map((k) => k.toLowerCase()));
+  if (kws.size < 3) return null;
+  let best: { id: string; title: string; score: number } | null = null;
+  for (const n of existing) {
+    if (!n.content || n.content.trim().length < 30) continue;
+    const hay = `${n.title} ${n.summary} ${n.content}`.toLowerCase();
+    let hit = 0;
+    for (const k of kws) if (k.length >= 2 && hay.includes(k)) hit++;
+    const score = hit / kws.size;
+    if (score >= threshold && (!best || score > best.score)) {
+      best = { id: n.id, title: n.title || "未命名", score: Math.round(score * 100) };
+    }
+  }
+  return best;
 }
 
 function parseOrganized(raw: string): Partial<OrganizedNote> {
@@ -499,7 +528,7 @@ function parseOrganized(raw: string): Partial<OrganizedNote> {
                   : undefined,
             };
           })
-          .filter((it) => it.text)
+          .filter((it) => it.text && !isNoiseAction(it.text))
           .slice(0, 8)
       : [];
     const metrics: OrganizedNote["metrics"] = Array.isArray(obj.metrics)
@@ -634,17 +663,20 @@ async function callQwen(
     "decisions（字符串数组，明确做出的决议结论；若无则为空数组 []）、" +
     "isSnippet（布尔，原文是否为代码片段；含代码块/函数定义/import 等视为 true，否则 false）、" +
     "language（若 isSnippet=true，此处的编程语言如 python/javascript/typescript/sql/shell，否则空字符串）、" +
-    "codeContent（若 isSnippet=true，严格抽取原文中的代码部分，不含中文解释说明；否则空字符串）、";
+    "codeContent（若 isSnippet=true，严格抽取原文中的代码部分，不含中文解释说明；否则空字符串）、" +
+    "type（字符串：本输入类型，meeting/clip/jotting/markdown/snippet/task 之一。系统启发式初判为「{TYPE}」；请复核：若与内容明显不符（如含会议要素却被判为 clip、纯清单被判为 markdown、带链接的会议纪要），输出纠正后的类型；符合则保持原值。注意：若纠正了 type，rewritten 的结构必须按纠正后的类型重排）、";
 
   /** 按输入类型选择转译 prompt：同一套字段，按类型指定重点与 rewritten 模板 */
   function buildSystemPrompt(type: NoteType): string {
     const tail = "只输出 JSON，不要多余内容。";
+    // 注入启发式初判类型，让模型复核纠正
+    const common = COMMON_FIELDS.replace("{TYPE}", type);
     switch (type) {
       case "meeting":
         return (
           "你是『第二大脑』的会议纪要拆解助手，把杂乱的会议手记重构成专业级结构化纪要。即使原文没有明确总结，也要基于事实主动推导结论与行动。根据内容输出严格 JSON，键为：" +
           "category（「工作」）、" +
-          COMMON_FIELDS +
+          common +
           "attendees（字符串数组：从「参会人/参会」行识别全部参会者姓名或称呼，如 [「我」,「老张」,「小李」,「王姐」,「小陈」,「实习生」]；无法识别则为空数组 []）、" +
           "metrics（数组：从原文抽取全部关键量化指标，每项 {label: 指标名≤12字, value: 数值含单位如 'ROI 1:1.2'/'小红书曝光 +30%'/'市场预算 -15%'/'GMV 目标 +20%'/'尾货 3000件'/'退货率 35%'/'客单价 ¥345'/'整体转化率 2.1%'/'访客 -8%'/'企微 2万·活跃<10%'}；无数字则空数组 []）、" +
           "problemDomains（数组：把内容按「问题域」归类，每项 {domain: 问题域名称≤10字, status: 现状/痛点一句话, conclusion: 初步结论或待决策一句话}；典型域：渠道投放/市场预算/设计产能/夏季尾货/私域运营/新品跟进/双11规划/达人直播/首页改版/会员体系）、" +
@@ -661,7 +693,7 @@ async function callQwen(
         return (
           "你是『第二大脑』的阅读笔记整理助手，把复制粘贴进来的网页/文章转成「来源 + 核心观点 + 我的批注 + 行动」的结构化阅读笔记。长文要提炼而非照抄。根据内容输出严格 JSON，键为：" +
           "category（「阅读」）、" +
-          COMMON_FIELDS +
+          common +
           "source（字符串：原文出处或来源链接；无则空字符串）、" +
           "keyPoints（数组：从原文提炼的核心观点/要点，每项 {point: 一句话≤60字}；3–8 条）、" +
           "insights（数组：基于原文的批注/启发/联想，每条≤60字；无则空数组 []）、" +
@@ -673,7 +705,7 @@ async function callQwen(
         return (
           "你是『第二大脑』的灵感碎片整理助手，把零散的日常记录升华成「要点 + 灵感 + 待办 + 关联」的结构化卡片。根据内容输出严格 JSON，键为：" +
           "category（「随手记」）、" +
-          COMMON_FIELDS +
+          common +
           "keyPoints（数组：从碎片中提炼的要点/事实，每项 {point: 一句话≤50字}；无则空数组 []）、" +
           "insights（数组：碎片引发的想法/灵感/待探究，每条≤60字；无则空数组 []）、" +
           "openQuestions（数组：原文抛出的待探究问题；无则空数组 []）、" +
@@ -685,7 +717,7 @@ async function callQwen(
         return (
           "你是『第二大脑』的文档规范化助手。原文已是 Markdown，不要重新概括或删改语义，只做「规范化重排」：统一标题层级、修正嵌套、若分节≥3 在顶部补一个目录、把表格对齐为规范 Markdown 表格、给代码块标注语言、统一列表与标点。同时抽取元数据。根据内容输出严格 JSON，键为：" +
           "category（「文档」）、" +
-          COMMON_FIELDS +
+          common +
           "source（字符串：若原文含来源链接则填，否则空字符串）、" +
           "keyPoints（[]）、insights（[]）、" +
           "rewritten（字符串：规范化重排后的完整 Markdown 正文，保留全部原文内容与顺序，仅调整格式与可读性，不要删减信息；若原文为代码片段则留空字符串）。" +
@@ -695,7 +727,7 @@ async function callQwen(
         return (
           "你是『第二大脑』的代码片段整理助手。根据内容输出严格 JSON，键为：" +
           "category（「技术」）、" +
-          COMMON_FIELDS +
+          common +
           "rewritten（字符串，代码片段留空字符串）。" +
           tail
         );
@@ -703,7 +735,7 @@ async function callQwen(
         return (
           "你是『第二大脑』的待办整理助手，把待办清单解析成带负责人/截止/优先级的行动项，并按主题或优先级分组。根据内容输出严格 JSON，键为：" +
           "category（「待办」）、" +
-          COMMON_FIELDS +
+          common +
           "keyPoints（[]）、insights（[]）、" +
           "actionItems（清单里每一项都应收录，尽量补全 owner 与 dueDate）、" +
           "rewritten（字符串，把清单重写成分组待办 Markdown，结构：\n## 高优先级\n- [ ] 事项（负责人 · 截止）\n## 中优先级\n## 低优先级\n保留全部待办，能推断的负责人/时间尽量补全）。" +
@@ -838,7 +870,7 @@ export async function organizeNote(
     }
   }
   const kw = suggestRelated(content, existing);
-  return { ...base, related: kw.related, relatedReason: kw.reason };
+  return { ...base, related: kw.related, relatedReason: kw.reason, actionItems: normalizeActionDates(base.actionItems) };
 }
 
 // ---------------- 收件箱意图分类（第九阶段） ----------------

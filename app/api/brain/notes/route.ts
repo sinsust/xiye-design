@@ -13,6 +13,7 @@ import {
   type BrainTaskPriority,
 } from "@/lib/brain-db";
 import { embed, buildListableText } from "@/lib/embedding";
+import { logBrainNoteAccess } from "@/lib/brain-reminder";
 
 export const runtime = "nodejs";
 
@@ -182,6 +183,7 @@ export async function PUT(req: NextRequest) {
     }
     const note = await updateBrainNote(user.sub, id, patch);
     if (!note) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    await logBrainNoteAccess(note.id, "edit");
     return NextResponse.json({ note });
   } catch (err) {
     console.error("brain note update failed:", err);

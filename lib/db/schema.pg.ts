@@ -315,6 +315,59 @@ export const brainTaskComments = pgTable(
   })
 );
 
+// —— 第十二阶段：提醒系统（sqlite 镜像）——
+export const brainReminderRules = pgTable(
+  "brain_reminder_rules",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    enabled: integer("enabled").notNull().default(1),
+    advanceMinutes: integer("advance_minutes"),
+    quietHoursStart: text("quiet_hours_start"),
+    quietHoursEnd: text("quiet_hours_end"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_reminder_rules_user_id_idx").on(t.userId),
+  })
+);
+
+export const brainReminderLog = pgTable(
+  "brain_reminder_log",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    read: integer("read").notNull().default(0),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    readAt: bigint("read_at", { mode: "number" }),
+  },
+  (t) => ({
+    userIdx: index("brain_reminder_log_user_id_idx").on(t.userId),
+  })
+);
+
+export const brainNoteAccessLog = pgTable(
+  "brain_note_access_log",
+  {
+    id: text("id").primaryKey(),
+    noteId: text("note_id")
+      .notNull()
+      .references(() => brainNotes.id, { onDelete: "cascade" }),
+    accessType: text("access_type").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    noteIdx: index("brain_note_access_log_note_id_idx").on(t.noteId),
+  })
+);
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -329,3 +382,6 @@ export type BrainInboxItemRow = typeof brainInboxItems.$inferSelect;
 export type BrainProjectRow = typeof brainProjects.$inferSelect;
 export type BrainTaskTimelineRow = typeof brainTaskTimeline.$inferSelect;
 export type BrainTaskCommentRow = typeof brainTaskComments.$inferSelect;
+export type BrainReminderRuleRow = typeof brainReminderRules.$inferSelect;
+export type BrainReminderLogRow = typeof brainReminderLog.$inferSelect;
+export type BrainNoteAccessLogRow = typeof brainNoteAccessLog.$inferSelect;

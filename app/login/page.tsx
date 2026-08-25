@@ -78,9 +78,16 @@ function LoginInner() {
       }
       setLoading(false);
       setDone(true);
+      // 预取下一页路由（warm /brain 的 chunk），缩短跳转后空白等待
+      try {
+        router.prefetch(next?.startsWith("/") ? next : "/");
+      } catch {
+        /* ignore */
+      }
+      // 用户反馈登录成功→跳转等待太长：从 1200ms 缩短到 400ms（足够看清「登录成功」，但不再卡顿）
       redirectTimer.current = setTimeout(() => {
         router.push(next?.startsWith("/") ? next : "/");
-      }, 1200);
+      }, 400);
       return;
     }
     setLoading(false);

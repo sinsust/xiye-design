@@ -36,6 +36,9 @@ let brainInboxItems: any;
 let brainProjects: any;
 let brainTaskTimeline: any;
 let brainTaskComments: any;
+let brainReminderRules: any;
+let brainReminderLog: any;
+let brainNoteAccessLog: any;
 let userPreferences: any;
 let userImaConfig: any;
 let schema: any;
@@ -61,6 +64,9 @@ if (isPg) {
   brainProjects = schemaPg.brainProjects;
   brainTaskTimeline = schemaPg.brainTaskTimeline;
   brainTaskComments = schemaPg.brainTaskComments;
+  brainReminderRules = schemaPg.brainReminderRules;
+  brainReminderLog = schemaPg.brainReminderLog;
+  brainNoteAccessLog = schemaPg.brainNoteAccessLog;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
   schema = schemaPg;
@@ -288,6 +294,32 @@ if (isPg) {
     created_at integer not null,
     foreign key (task_id) references brain_tasks(id) on delete cascade
   );`);
+  // —— 第十二阶段：提醒系统 ——
+  sqlite.exec(`create table if not exists brain_reminder_rules (
+    id text primary key,
+    user_id text not null,
+    type text not null,
+    enabled integer not null default 1,
+    advance_minutes integer,
+    quiet_hours_start text,
+    quiet_hours_end text,
+    created_at integer not null
+  );`);
+  sqlite.exec(`create table if not exists brain_reminder_log (
+    id text primary key,
+    user_id text not null,
+    type text not null,
+    title text not null,
+    read integer not null default 0,
+    created_at integer not null,
+    read_at integer
+  );`);
+  sqlite.exec(`create table if not exists brain_note_access_log (
+    id text primary key,
+    note_id text not null,
+    access_type text not null,
+    created_at integer not null
+  );`);
   db = drizzleSqlite(sqlite, { schema: schemaSqlite });
   users = schemaSqlite.users;
   projects = schemaSqlite.projects;
@@ -302,9 +334,12 @@ if (isPg) {
   brainProjects = schemaSqlite.brainProjects;
   brainTaskTimeline = schemaSqlite.brainTaskTimeline;
   brainTaskComments = schemaSqlite.brainTaskComments;
+  brainReminderRules = schemaSqlite.brainReminderRules;
+  brainReminderLog = schemaSqlite.brainReminderLog;
+  brainNoteAccessLog = schemaSqlite.brainNoteAccessLog;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, userPreferences, userImaConfig, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, userPreferences, userImaConfig, schema };

@@ -20,8 +20,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
 import { ImaImportModal } from "@/components/ImaImportModal";
+import BatchImportModal from "@/components/BatchImportModal";
+import { MarkdownView } from "@/components/MarkdownView";
+import { ReminderCenter } from "@/components/reminders/ReminderCenter";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { InboxDrawer } from "@/components/InboxDrawer";
+import TaskDetailDrawer from "@/components/tasks/TaskDetailDrawer";
+import ProjectPanel from "@/components/projects/ProjectPanel";
+import GroupedBoard from "@/components/tasks/GroupedBoard";
+import GanttView from "@/components/GanttView";
 import { detectLearningTopics } from "@/lib/brain-path";
 import type { LearningTopic } from "@/lib/brain-path";
 import type {
@@ -132,8 +139,8 @@ const TYPE_LABEL: Record<string, string> = {
   task: "待办清单",
 };
 
-/** 按输入类型自适应渲染 AI 结构化结果；无内容返回 null */
-function StructPreview({ d }: { d: StructViewData }) {
+/** 按输入类型自适应渲染 AI 结构化结果；无内容返回 null。传 onActionItemsChange 时行动项可编辑（工作台用），否则只读 */
+function StructPreview({ d, onActionItemsChange }: { d: StructViewData; onActionItemsChange?: (items: OrganizedActionItem[]) => void }) {
   const type = d.type || "jotting";
   const ai = d.actionItems ?? [];
   const kp = d.keyPoints ?? [];
@@ -257,23 +264,94 @@ function StructPreview({ d }: { d: StructViewData }) {
         </div>
       )}
 
-      {/* 行动项：所有类型通用 */}
+      {/* 行动项：所有类型通用；工作台可编辑，详情只读 */}
       {ai.length > 0 && (
         <div>
           {sectionTitle("行动项")}
-          <ul className="space-y-1">
-            {ai.map((a, i) => (
-              <li
-                key={i}
-                className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs"
+          {onActionItemsChange ? (
+            <div className="space-y-1.5">
+              {ai.map((a, i) => (
+                <div key={i} className="space-y-1 rounded-md border border-border bg-muted/40 p-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={a.text}
+                      onChange={(ev) => {
+                        const next = [...ai];
+                        next[i] = { ...next[i], text: ev.target.value };
+                        onActionItemsChange(next);
+                      }}
+                      className="min-w-0 flex-1 rounded border border-border bg-background px-1.5 py-1"
+                      placeholder="行动内容"
+                    />
+                    <button
+                      onClick={() => onActionItemsChange(ai.filter((_, j) => j !== i))}
+                      className="shrink-0 text-muted-foreground transition hover:text-destructive"
+                      aria-label="删除行动项"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <input
+                      value={a.owner ?? ""}
+                      onChange={(ev) => {
+                        const next = [...ai];
+                        next[i] = { ...next[i], owner: ev.target.value };
+                        onActionItemsChange(next);
+                      }}
+                      className="w-20 rounded border border-border bg-background px-1.5 py-0.5"
+                      placeholder="负责人"
+                    />
+                    <input
+                      type="date"
+                      value={a.dueDate ?? ""}
+                      onChange={(ev) => {
+                        const next = [...ai];
+                        next[i] = { ...next[i], dueDate: ev.target.value || null };
+                        onActionItemsChange(next);
+                      }}
+                      className="rounded border border-border bg-background px-1.5 py-0.5"
+                    />
+                    <select
+                      value={a.priority}
+                      onChange={(ev) => {
+                        const next = [...ai];
+                        next[i] = { ...next[i], priority: ev.target.value as BrainTaskPriority };
+                        onActionItemsChange(next);
+                      }}
+                      className="rounded border border-border bg-background px-1 py-0.5 uppercase"
+                    >
+                      <option value="high">high</option>
+                      <option value="medium">medium</option>
+                      <option value="low">low</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={() =>
+                  onActionItemsChange([...ai, { text: "", owner: "", dueDate: null, priority: "medium" }])
+                }
+                className="text-xs text-primary transition hover:opacity-80"
               >
-                <span className="text-foreground">{a.text}</span>
-                {a.owner && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{a.owner}</span>}
-                {a.dueDate && <span className="text-muted-foreground">{a.dueDate}</span>}
-                <span className="uppercase text-muted-foreground">{a.priority}</span>
-              </li>
-            ))}
-          </ul>
+                + 添加行动项
+              </button>
+            </div>
+          ) : (
+            <ul className="space-y-1">
+              {ai.map((a, i) => (
+                <li
+                  key={i}
+                  className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs"
+                >
+                  <span className="text-foreground">{a.text}</span>
+                  {a.owner && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{a.owner}</span>}
+                  {a.dueDate && <span className="text-muted-foreground">{a.dueDate}</span>}
+                  <span className="uppercase text-muted-foreground">{a.priority}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -489,8 +567,18 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [notes, setNotes] = useState<BrainNote[]>(initial);
   // 第二大脑 · 从用户绑定的腾讯 ima 知识库导入
   const [imaOpen, setImaOpen] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
   const [text, setText] = useState("");
   const [organizing, setOrganizing] = useState(false);
+  // AI 整理失败标记：工作台顶部提示兜底
+  const [organizeError, setOrganizeError] = useState(false);
+  // 近似重复检测：整理时若与已有笔记高度相似则提示更新
+  const [dupWarning, setDupWarning] = useState<{ id: string; title: string; score: number } | null>(null);
+  // embedding 存量回填
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMsg, setBackfillMsg] = useState("");
+  // 工作台「概览」浮层面板开关
+  const [overviewOpen, setOverviewOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   // 问答
@@ -505,6 +593,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   // 编辑态结构化草稿（打开时从 editing.struct 解析，重新整理后刷新）
   const [editStruct, setEditStruct] = useState<OrganizedDraft | null>(null);
   const [reorging, setReorging] = useState(false);
+  // 编辑弹窗正文预览/编辑切换
+  const [editPreview, setEditPreview] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -942,6 +1032,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [wCode, setWCode] = useState("");
   // 深度重写后的规范正文（可编辑）；落库时作为 content
   const [wContent, setWContent] = useState("");
+  // 规范正文预览/编辑切换
+  const [wPreview, setWPreview] = useState(true);
   // 金标结构化字段：参会人 / 指标 / 问题域 / 待决策 / 策略建议
   const [wAttendees, setWAttendees] = useState<string[]>([]);
   const [wMetrics, setWMetrics] = useState<OrganizedMetric[]>([]);
@@ -1002,13 +1094,34 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   // 列表来源过滤（全部 / 手动 / ima）
   const [sourceFilter, setSourceFilter] = useState<"all" | "manual" | "ima">("all");
   // 大脑工作台 Tab（整理笔记 / 向我提问 / 任务看板）
-  const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets">("input");
+  const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets" | "projects">("input");
   // 最近活跃流是否全部展开
   const [activityShowAll, setActivityShowAll] = useState(false);
   // —— 第九阶段：顶层视图（首页=今日助理面板 / 工作台）+ 收件箱抽屉 ——
   const [topView, setTopView] = useState<"dashboard" | "workbench">("dashboard");
   const [inboxOpen, setInboxOpen] = useState(false);
   const [inboxPending, setInboxPending] = useState(0);
+  // —— 第十阶段：任务详情抽屉 + 看板多维分组 + 项目 ——
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
+  const [kanbanGroup, setKanbanGroup] = useState<"status" | "project" | "milestone" | "assignee">("status");
+  const [kanbanView, setKanbanView] = useState<"board" | "gantt">("board");
+  const [projects, setProjects] = useState<{ id: string; name: string; color: string }[]>([]);
+  // —— 第十一阶段：每日助理点项目卡片 → 跳转项目详情 ——
+  const [openProjectId, setOpenProjectId] = useState<string | null>(null);
+  const loadProjects = useCallback(async () => {
+    try {
+      const res = await fetch("/api/brain/projects");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.projects)) {
+        setProjects(data.projects.map((p: { id: string; name: string; color: string }) => ({ id: p.id, name: p.name, color: p.color })));
+      }
+    } catch {
+      /* 忽略 */
+    }
+  }, []);
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
   // 监听复习/任务变更 → 刷新面板
   useEffect(() => {
     const h = () => window.dispatchEvent(new Event("brain:data-changed"));
@@ -1020,6 +1133,21 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     if (v === "workbench" && tab) setWorkTab(tab);
     setTopView(v);
   };
+
+  // 提醒中心跳转：/brain?tab=tasks → 任务看板；/brain?tab=reviews → 复习；/brain?note=xxx → 展开笔记
+  const gotoNav = useCallback((link: string) => {
+    const tabMatch = link.match(/[?&]tab=([^&]+)/);
+    const noteMatch = link.match(/[?&]note=([^&]+)/);
+    if (tabMatch) {
+      const t = tabMatch[1];
+      if (t === "tasks") gotoTop("workbench", "kanban");
+      else if (t === "reviews" || t === "strategies") gotoTop("workbench", (t === "reviews" ? "input" : "strategies") as "input" | "strategies");
+      else gotoTop("workbench", "input");
+    } else if (noteMatch) {
+      gotoTop("workbench", "input");
+      jumpToNote(decodeURIComponent(noteMatch[1]));
+    }
+  }, [gotoTop, jumpToNote]);
 
   const filteredNotes = useMemo(() => {
     const bySource =
@@ -1052,6 +1180,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     const t = text.trim();
     if (!t || organizing) return;
     setOrganizing(true);
+    setOrganizeError(false);
     setRaw(t);
     try {
       const res = await fetch("/api/brain/organize", {
@@ -1061,6 +1190,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error);
+      // 近似重复检测：与已有笔记高度相似时提示更新
+      setDupWarning(data?.duplicate ?? null);
       fillDraft(data.draft);
     } catch {
       fillDraft({
@@ -1088,6 +1219,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         codeContent: "",
         rewritten: "",
       });
+      // 整理失败可见反馈：标记顶部兜底提示
+      setOrganizeError(true);
+      setDupWarning(null);
     } finally {
       setOrganizing(false);
     }
@@ -1144,14 +1278,23 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           summary: wSummary,
           tags: wTags,
           related: wRelated,
-          actionItems: wActionItems,
+          actionItems: wActionItems.filter((a) => a.text.trim()),
           strategies: wStrategies,
           decisions: wDecisions,
           isSnippet: wSnippet,
           language: wLanguage,
           codeContent: wCode,
-          // 完整结构化草稿（金标字段），落库为 struct
-          struct: wStruct,
+          // 完整结构化草稿（金标字段），落库为 struct；同步编辑过的行动项与类型字段
+          struct: wStruct
+            ? {
+                ...wStruct,
+                actionItems: wActionItems.filter((a) => a.text.trim()),
+                type: wType,
+                source: wSource,
+                keyPoints: wKeyPoints,
+                insights: wInsights,
+              }
+            : wStruct,
         }),
       });
       const data = await res.json();
@@ -1159,6 +1302,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setNotes((prev) => [data.note, ...prev]);
       setText("");
       setRaw("");
+      setDupWarning(null);
       setWActionItems([]);
       setWStrategies([]);
       setWDecisions([]);
@@ -1186,6 +1330,86 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setSaving(false);
     }
   };
+
+  // ---------- 导出（前端 Blob 下载，零后端） ----------
+  const downloadText = (name: string, text: string, type = "text/markdown;charset=utf-8") => {
+    const blob = new Blob([text], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const todayStamp = () => {
+    const d = new Date();
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  };
+  const safeName = (t: string) => (t || "note").replace(/[\\/:*?"<>|]/g, "_").slice(0, 60);
+  const noteToMarkdown = (n: BrainNote) =>
+    [
+      `# ${n.title || "未命名"}`,
+      "",
+      `- 分类：${n.category || "随手记"}`,
+      n.summary ? `- 摘要：${n.summary}` : "",
+      n.tags?.length ? `- 标签：${n.tags.join("、")}` : "",
+      "",
+      n.content || "",
+    ]
+      .filter((x) => x !== undefined && x !== "")
+      .join("\n");
+  const exportAllMd = () =>
+    downloadText(`第二大脑-全部笔记-${todayStamp()}.md`, notes.map((n) => noteToMarkdown(n)).join("\n\n---\n\n"));
+  const exportNote = (n: BrainNote) => downloadText(`${safeName(n.title)}.md`, noteToMarkdown(n));
+
+  // ---------- embedding 存量回填 ----------
+  const runBackfill = async () => {
+    if (backfilling) return;
+    setBackfilling(true);
+    setBackfillMsg("");
+    try {
+      const res = await fetch("/api/brain/embedding/backfill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 20 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error);
+      setBackfillMsg(
+        `已补 ${data.processed} 条${data.remaining > 0 ? `，还剩 ${data.remaining} 条可再点` : "，全部补齐"}`,
+      );
+    } catch {
+      setBackfillMsg("回填失败（本地向量模型不可用？）");
+    } finally {
+      setBackfilling(false);
+    }
+  };
+
+  // ---------- 本周行动项聚合（周报深化：来自 struct.actionItems） ----------
+  const weekActionItems = useMemo(() => {
+    const d = new Date();
+    const day = (d.getDay() + 6) % 7;
+    const ws = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day).getTime();
+    const out: { text: string; owner?: string; dueDate?: string; noteTitle: string }[] = [];
+    const seen = new Set<string>();
+    for (const n of notes) {
+      if (n.createdAt < ws || !n.struct) continue;
+      try {
+        const s = JSON.parse(n.struct) as OrganizedDraft;
+        for (const a of s.actionItems ?? []) {
+          const t = a.text.trim();
+          if (!t || seen.has(t)) continue;
+          seen.add(t);
+          out.push({ text: t, owner: a.owner || undefined, dueDate: a.dueDate || undefined, noteTitle: n.title || "未命名" });
+        }
+      } catch {
+        /* 结构损坏忽略 */
+      }
+    }
+    return out
+      .sort((a, b) => (a.dueDate ?? "9999-99-99").localeCompare(b.dueDate ?? "9999-99-99"))
+      .slice(0, 12);
+  }, [notes]);
 
   const ask = async () => {
     const q = question.trim();
@@ -1296,6 +1520,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         onClose={() => setInboxOpen(false)}
         onPendingChange={setInboxPending}
       />
+      {/* 任务详情抽屉（右侧滑出） */}
+      <TaskDetailDrawer
+        taskId={detailTaskId}
+        onClose={() => setDetailTaskId(null)}
+        onChanged={loadTasks}
+      />
       {/* ima 自动同步提示（打开页面后台触发时展示） */}
       {imaSyncAuto && (
         <div className="fixed left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-lg">
@@ -1314,6 +1544,17 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             onImported={(n) => {
               setNotes((prev) => [n, ...prev] as BrainNote[]);
               setImaOpen(false);
+            }}
+          />
+        )}
+        {batchOpen && (
+          <BatchImportModal
+            onClose={() => setBatchOpen(false)}
+            onImported={(notes) => {
+              setNotes((prev) => [...notes, ...prev]);
+              loadTasks();
+              loadStrategies();
+              loadSnippets();
             }}
           />
         )}
@@ -1346,7 +1587,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           {[
             { v: "dashboard" as const, label: "🏠 首页" },
             { v: "input" as const, label: "📝 记一笔" },
+            { v: "ask" as const, label: "💬 向我提问" },
             { v: "kanban" as const, label: "📋 任务看板" },
+            { v: "projects" as const, label: "📁 项目" },
             { v: "strategies" as const, label: "🎯 策略" },
             { v: "snippets" as const, label: "💻 代码片段" },
           ].map((i) => {
@@ -1366,10 +1609,33 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     {taskCounts.todo + taskCounts.in_progress}
                   </span>
                 )}
+                {i.v === "strategies" && strategies.length > 0 && (
+                  <span className="ml-1 rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
+                    {strategies.length}
+                  </span>
+                )}
+                {i.v === "snippets" && snippetFiltered.length > 0 && (
+                  <span className="ml-1 rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
+                    {snippetFiltered.length}
+                  </span>
+                )}
               </button>
             );
           })}
           <div className="ml-auto flex items-center gap-2">
+            {topView !== "dashboard" && (
+              <button
+                onClick={() => setOverviewOpen((v) => !v)}
+                className={
+                  "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition " +
+                  (overviewOpen ? "text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")
+                }
+              >
+                概览
+                {overviewOpen && <span className="size-1.5 rounded-full bg-primary" />}
+              </button>
+            )}
+            <ReminderCenter onNavigate={gotoNav} />
             <button
               onClick={() => setInboxOpen(true)}
               className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
@@ -1390,102 +1656,23 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             onOpenInbox={() => setInboxOpen(true)}
             onGoto={(tab) => gotoTop("workbench", tab as typeof workTab)}
             onNewTask={() => gotoTop("workbench", "kanban")}
+            onOpenProject={(id) => {
+              setOpenProjectId(id);
+              gotoTop("workbench", "projects");
+            }}
+          />
+        ) : workTab === "projects" ? (
+          <ProjectPanel
+            openTask={(id) => setDetailTaskId(id)}
+            onTasksChanged={loadTasks}
+            initialProjectId={openProjectId}
           />
         ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* ============ 左列 · 工作台 ============ */}
-          <div className="space-y-6 lg:col-span-2">
+        <div className="grid grid-cols-1 gap-6">
+          {/* ============ 左列 · 工作台（全宽，概览已移至浮层） ============ */}
+          <div className="space-y-6">
             {/* 大脑工作台（整理/提问 Tab 切换） */}
             <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-              {/* Tab 栏 */}
-              <div className="flex items-center gap-6 border-b border-border/60 pb-2">
-                <button
-                  onClick={() => setWorkTab("input")}
-                  className={
-                    "relative pb-1 text-sm transition " +
-                    (workTab === "input"
-                      ? "font-semibold text-primary"
-                      : "text-muted-foreground hover:text-foreground")
-                  }
-                >
-                  整理笔记
-                  {workTab === "input" && (
-                    <span className="absolute inset-x-0 -bottom-[9px] h-0.5 rounded-full bg-primary" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setWorkTab("ask")}
-                  className={
-                    "relative pb-1 text-sm transition " +
-                    (workTab === "ask"
-                      ? "font-semibold text-primary"
-                      : "text-muted-foreground hover:text-foreground")
-                  }
-                >
-                  向我提问
-                  {workTab === "ask" && (
-                    <span className="absolute inset-x-0 -bottom-[9px] h-0.5 rounded-full bg-primary" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setWorkTab("kanban")}
-                  className={
-                    "relative flex items-center gap-1.5 pb-1 text-sm transition " +
-                    (workTab === "kanban"
-                      ? "font-semibold text-primary"
-                      : "text-muted-foreground hover:text-foreground")
-                  }
-                >
-                  任务看板
-                  {(taskCounts.todo > 0 || taskCounts.in_progress > 0) && (
-                    <span className="rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
-                      {taskCounts.todo + taskCounts.in_progress}
-                    </span>
-                  )}
-                  {workTab === "kanban" && (
-                    <span className="absolute inset-x-0 -bottom-[9px] h-0.5 rounded-full bg-primary" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setWorkTab("strategies")}
-                  className={
-                    "relative flex items-center gap-1.5 pb-1 text-sm transition " +
-                    (workTab === "strategies"
-                      ? "font-semibold text-primary"
-                      : "text-muted-foreground hover:text-foreground")
-                  }
-                >
-                  策略
-                  {strategies.length > 0 && (
-                    <span className="rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
-                      {strategies.length}
-                    </span>
-                  )}
-                  {workTab === "strategies" && (
-                    <span className="absolute inset-x-0 -bottom-[9px] h-0.5 rounded-full bg-primary" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setWorkTab("snippets")}
-                  className={
-                    "relative flex items-center gap-1.5 pb-1 text-sm transition " +
-                    (workTab === "snippets"
-                      ? "font-semibold text-primary"
-                      : "text-muted-foreground hover:text-foreground")
-                  }
-                >
-                  代码片段
-                  {snippetFiltered.length > 0 && (
-                    <span className="rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
-                      {snippetFiltered.length}
-                    </span>
-                  )}
-                  {workTab === "snippets" && (
-                    <span className="absolute inset-x-0 -bottom-[9px] h-0.5 rounded-full bg-primary" />
-                  )}
-                </button>
-              </div>
-
               {workTab === "snippets" ? (
                 <div className="mt-3">
                   {/* 语言过滤 + 搜索 */}
@@ -1682,6 +1869,61 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 </div>
               ) : workTab === "kanban" ? (
                 <div className="mt-3">
+                  {/* 看板 / 甘特图 视图切换 */}
+                  <div className="mb-3 flex items-center gap-1">
+                    {[
+                      { k: "board" as const, label: "📋 看板" },
+                      { k: "gantt" as const, label: "📊 甘特图" },
+                    ].map((v) => (
+                      <button
+                        key={v.k}
+                        onClick={() => setKanbanView(v.k)}
+                        className={"rounded-md px-2.5 py-1 text-[11px] font-medium transition " +
+                          (kanbanView === v.k ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {kanbanView === "gantt" ? (
+                    <GanttView
+                      openTask={(id) => setDetailTaskId(id)}
+                      onChanged={() => { loadTasks(); loadProjects(); }}
+                    />
+                  ) : (
+                  <>
+                  {/* 多维分组切换：状态 / 项目 / 里程碑 / 负责人 */}
+                  <div className="mb-3 flex flex-wrap items-center gap-1">
+                    {[
+                      { k: "status" as const, label: "按状态" },
+                      { k: "project" as const, label: "按项目" },
+                      { k: "milestone" as const, label: "按里程碑" },
+                      { k: "assignee" as const, label: "按负责人" },
+                    ].map((g) => (
+                      <button
+                        key={g.k}
+                        onClick={() => setKanbanGroup(g.k)}
+                        className={"rounded-md px-2.5 py-1 text-[11px] font-medium transition " +
+                          (kanbanGroup === g.k ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {kanbanGroup !== "status" ? (
+                    <GroupedBoard
+                      groupBy={kanbanGroup}
+                      tasks={tasks
+                        .filter((t) => !t.parentTaskId)
+                        .map((t) => ({ id: t.id, title: t.title, status: t.status, dueDate: t.dueDate, priority: t.priority, projectId: t.projectId, milestone: t.milestone, assignee: t.assignee }))}
+                      projects={projects}
+                      openTask={(id) => setDetailTaskId(id)}
+                      onCycle={cycleTask}
+                    />
+                  ) : (
+                  <>  
                   {/* 策略筛选下拉：全部 / 按策略分组 / 指定策略 */}
                   {strategies.length > 0 && (
                     <div className="mb-3 flex items-center gap-1.5">
@@ -1730,6 +1972,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                                   note={notes.find((n) => n.id === t.noteId)}
                                   strategyName={s?.title}
                                   onCycle={() => cycleTask(t.id)}
+                                  onOpen={() => setDetailTaskId(t.id)}
                                 />
                               ))}
                             </div>
@@ -1746,6 +1989,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                                 task={t}
                                 note={notes.find((n) => n.id === t.noteId)}
                                 onCycle={() => cycleTask(t.id)}
+                                onOpen={() => setDetailTaskId(t.id)}
                               />
                             ))}
                           </div>
@@ -1783,6 +2027,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                                   note={notes.find((n) => n.id === t.noteId)}
                                   strategyName={strategyMap.get(t.strategyId ?? "")?.title}
                                   onCycle={() => cycleTask(t.id)}
+                                  onOpen={() => setDetailTaskId(t.id)}
                                 />
                               ))}
                             </div>
@@ -1800,6 +2045,10 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     <div className="mt-4 rounded-[var(--radius)] border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
                       还提取不到任务。在「整理笔记」里投入含待办内容的对话或想法，AI 会自动识别出任务。
                     </div>
+                  )}
+                  </>
+                  )}
+                  </>
                   )}
                 </div>
               ) : workTab === "input" ? (
@@ -1825,6 +2074,10 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     支持拖入 PDF / Word / 音频文件，自动转成可整理文本
                   </div>
                   <div className="mt-3 flex items-center justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setBatchOpen(true)}>
+                      <FileUp className="size-3.5" />
+                      批量导入
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1947,6 +2200,25 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     </button>
                   ))}
                 </div>
+                {/* 导出 / 向量回填 */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={exportAllMd}
+                    className="rounded-[var(--radius)] border border-border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    title="导出全部笔记为 Markdown"
+                  >
+                    导出全部
+                  </button>
+                  <button
+                    onClick={runBackfill}
+                    disabled={backfilling}
+                    className="rounded-[var(--radius)] border border-border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    title="为没有向量的历史笔记补算检索向量（本地模型，零费用）"
+                  >
+                    {backfilling ? "回填中…" : "回填向量"}
+                  </button>
+                  {backfillMsg && <span className="text-[10px] text-muted-foreground">{backfillMsg}</span>}
+                </div>
                 <div className="ml-auto flex flex-wrap gap-1">
                   {["全部", ...categories.map(([c]) => c)].map((c) => (
                     <button
@@ -2007,8 +2279,20 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             </div>
           </div>
 
-          {/* ============ 右列 · 概览 ============ */}
-          <div className="space-y-6 lg:col-span-1">
+          {/* ============ 右列 · 概览（浮层面板：不占布局宽度，可开关） ============ */}
+          {overviewOpen && (
+            <div className="fixed right-4 top-20 z-40 flex max-h-[80vh] w-80 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                <span className="text-sm font-semibold text-foreground">概览</span>
+                <button
+                  onClick={() => setOverviewOpen(false)}
+                  className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  aria-label="关闭概览面板"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="flex-1 space-y-6 overflow-y-auto p-4">
             {/* 知识厚度 */}
             <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -2191,6 +2475,32 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               )}
             </div>
 
+            {/* 本周行动项（周报深化：聚合 struct.actionItems） */}
+            {weekActionItems.length > 0 && (
+              <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Check className="size-3.5" />
+                  </span>
+                  <h2 className="text-sm font-semibold text-foreground">本周行动项</h2>
+                  <span className="text-[11px] text-muted-foreground">来自 AI 整理</span>
+                </div>
+                <ul className="mt-3 space-y-1.5">
+                  {weekActionItems.map((a, i) => (
+                    <li
+                      key={i}
+                      className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/30 px-2.5 py-1.5 text-xs"
+                    >
+                      <span className="min-w-0 flex-1 text-foreground">{a.text}</span>
+                      {a.owner && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{a.owner}</span>}
+                      {a.dueDate && <span className="text-muted-foreground">{a.dueDate}</span>}
+                      <span className="max-w-28 truncate text-[10px] text-muted-foreground/70">{a.noteTitle}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* 图谱（独立一行，全宽） */}
             {graphEntries.length > 0 && (
               <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
@@ -2266,7 +2576,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 </div>
               </div>
             )}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
         )}
       </div>
@@ -2290,6 +2602,41 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 <X className="size-4" />
               </Button>
             </div>
+
+            {/* 整理失败提示 */}
+            {organizeError && (
+              <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
+                AI 整理失败，已用基础整理兜底 —— 可点左下「重新生成」重试。
+              </div>
+            )}
+
+            {/* 近似重复提示 */}
+            {dupWarning && (
+              <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
+                <span className="flex-1">
+                  检测到与已有笔记「{dupWarning.title}」相似（{dupWarning.score}%），建议更新该笔记避免重复积累。
+                </span>
+                <button
+                  onClick={() => {
+                    const n = notes.find((x) => x.id === dupWarning.id);
+                    if (n) {
+                      setWorkspaceOpen(false);
+                      setDupWarning(null);
+                      startEdit(n);
+                    }
+                  }}
+                  className="rounded bg-amber-600/10 px-2 py-0.5 font-medium text-amber-900 transition hover:bg-amber-600/20"
+                >
+                  去更新
+                </button>
+                <button
+                  onClick={() => setDupWarning(null)}
+                  className="rounded px-1.5 py-0.5 text-amber-700 transition hover:bg-amber-600/10 hover:text-amber-900"
+                >
+                  忽略
+                </button>
+              </div>
+            )}
 
             {/* 左右分屏 */}
             <div className="grid flex-1 grid-cols-1 overflow-hidden md:grid-cols-2">
@@ -2384,17 +2731,51 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     />
                   </div>
 
-                  {/* 规范正文（AI 深度重写，可编辑） */}
+                  {/* 规范正文（AI 深度重写，可编辑/预览切换） */}
                   <div>
-                    <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      规范正文 · AI 深度重写
-                    </label>
-                    <textarea
-                      value={wContent}
-                      onChange={(ev) => setWContent(ev.target.value)}
-                      className={inputCls + " mt-1.5 min-h-40 resize-y font-mono text-xs leading-relaxed"}
-                      placeholder="AI 会把杂乱原文重写成结构清晰的 Markdown 正文，你可继续微调…"
-                    />
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        规范正文 · AI 深度重写
+                      </label>
+                      <div className="flex items-center gap-1 rounded-md border border-border p-0.5 text-[10px]">
+                        <button
+                          onClick={() => setWPreview(false)}
+                          className={
+                            "rounded px-1.5 py-0.5 transition " +
+                            (!wPreview ? "bg-primary text-white" : "text-muted-foreground")
+                          }
+                        >
+                          编辑
+                        </button>
+                        <button
+                          onClick={() => setWPreview(true)}
+                          className={
+                            "rounded px-1.5 py-0.5 transition " +
+                            (wPreview ? "bg-primary text-white" : "text-muted-foreground")
+                          }
+                        >
+                          预览
+                        </button>
+                      </div>
+                    </div>
+                    {wPreview ? (
+                      wContent.trim() ? (
+                        <div className="mt-1.5 max-h-72 overflow-auto rounded-lg border border-border bg-muted/20 p-3">
+                          <MarkdownView md={wContent} />
+                        </div>
+                      ) : (
+                        <p className="mt-1.5 text-xs text-muted-foreground">
+                          暂无重写正文（可能为代码片段或兜底整理）。
+                        </p>
+                      )
+                    ) : (
+                      <textarea
+                        value={wContent}
+                        onChange={(ev) => setWContent(ev.target.value)}
+                        className={inputCls + " mt-1.5 min-h-40 resize-y font-mono text-xs leading-relaxed"}
+                        placeholder="AI 会把杂乱原文重写成结构清晰的 Markdown 正文，你可继续微调…"
+                      />
+                    )}
                   </div>
 
                   {/* 按输入类型自适应的结构化拆解 */}
@@ -2412,6 +2793,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                       keyPoints: wKeyPoints,
                       insights: wInsights,
                     }}
+                    onActionItemsChange={setWActionItems}
                   />
 
                   {/* 关联 */}
@@ -2485,14 +2867,49 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 </div>
               )}
 
-              <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">原文</label>
-              <textarea
-                className={inputCls + " mt-1.5 min-h-48 resize-y font-mono text-xs"}
-                value={editContent}
-                onChange={(ev) => setEditContent(ev.target.value)}
-              />
+              <div className="mt-4 flex items-center justify-between">
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">原文</label>
+                <div className="flex items-center gap-1 rounded-md border border-border p-0.5 text-[10px]">
+                  <button
+                    onClick={() => setEditPreview(false)}
+                    className={
+                      "rounded px-1.5 py-0.5 transition " +
+                      (!editPreview ? "bg-primary text-white" : "text-muted-foreground")
+                    }
+                  >
+                    编辑
+                  </button>
+                  <button
+                    onClick={() => setEditPreview(true)}
+                    className={
+                      "rounded px-1.5 py-0.5 transition " +
+                      (editPreview ? "bg-primary text-white" : "text-muted-foreground")
+                    }
+                  >
+                    预览
+                  </button>
+                </div>
+              </div>
+              {editPreview ? (
+                editContent.trim() ? (
+                  <div className="mt-1.5 max-h-96 overflow-auto rounded-lg border border-border bg-muted/20 p-3">
+                    <MarkdownView md={editContent} />
+                  </div>
+                ) : (
+                  <p className="mt-1.5 text-xs text-muted-foreground">暂无正文。</p>
+                )
+              ) : (
+                <textarea
+                  className={inputCls + " mt-1.5 min-h-48 resize-y font-mono text-xs"}
+                  value={editContent}
+                  onChange={(ev) => setEditContent(ev.target.value)}
+                />
+              )}
             </div>
             <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
+              <Button variant="ghost" size="sm" onClick={() => editing && exportNote(editing)} disabled={!editing}>
+                导出
+              </Button>
               <Button variant="outline" size="sm" onClick={reorganizeExisting} disabled={reorging || loading}>
                 {reorging ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />}
                 重新整理
@@ -2846,15 +3263,20 @@ function TaskCard({
   note,
   strategyName,
   onCycle,
+  onOpen,
 }: {
   task: BrainTask;
   note?: BrainNote;
   strategyName?: string;
   onCycle: () => void;
+  onOpen?: () => void;
 }) {
   const overdue = task.status !== "done" && !!task.dueDate && task.dueDate < nowDateStr();
   return (
-    <div className="group relative rounded-[var(--radius)] border border-border bg-card p-3 pl-4 shadow-sm transition hover:border-primary/30">
+    <div
+      onClick={onOpen}
+      className={"group relative rounded-[var(--radius)] border border-border bg-card p-3 pl-4 shadow-sm transition hover:border-primary/30 " + (onOpen ? "cursor-pointer" : "")}
+    >
       {/* 优先级左侧色条（红/黄/灰） */}
       <span
         className="absolute inset-y-2 left-0 w-1 rounded-r"
@@ -2889,7 +3311,7 @@ function TaskCard({
       </div>
       {/* 「→」切换下一状态 */}
       <button
-        onClick={onCycle}
+        onClick={(ev) => { ev.stopPropagation(); onCycle(); }}
         title={`切换为 ${STATUS_LABEL[STATUS_NEXT[task.status]]}`}
         className="absolute right-1.5 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-[var(--radius)] text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
         aria-label="切换状态"

@@ -297,6 +297,51 @@ export const brainTaskComments = sqliteTable("brain_task_comments", {
   createdAt: integer("created_at").notNull(),
 });
 
+// —— 第十二阶段：提醒系统 ——
+// 每用户每个提醒类型一行（8 种枚举），enabled 独立开关。
+export const brainReminderRules = sqliteTable("brain_reminder_rules", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // task_overdue / task_due_soon / review_due / inbox_backlog /
+  // strategy_review / knowledge_decay / project_milestone / task_complete_followup
+  type: text("type").notNull(),
+  // 0=关闭 1=开启（默认全开）
+  enabled: integer("enabled").notNull().default(1),
+  // 提前多少分钟提醒（任务到期类）
+  advanceMinutes: integer("advance_minutes"),
+  // 免打扰时段（如 "22:00" ~ "08:00"），用户级设置，冗余存于各规则行，读取以任意行为准
+  quietHoursStart: text("quiet_hours_start"),
+  quietHoursEnd: text("quiet_hours_end"),
+  createdAt: integer("created_at").notNull(),
+});
+
+// 提醒触达日志：每次触发写一条，同类型同一天去重；前端据此计数角标 + 标记已读。
+export const brainReminderLog = sqliteTable("brain_reminder_log", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  // 0=未读 1=已读
+  read: integer("read").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+  readAt: integer("read_at"),
+});
+
+// 知识衰减：笔记被「查看/编辑/RAG 引用/复习」的访问流水，用于判定"最近 60 天是否被使用"。
+export const brainNoteAccessLog = sqliteTable("brain_note_access_log", {
+  id: text("id").primaryKey(),
+  noteId: text("note_id")
+    .notNull()
+    .references(() => brainNotes.id, { onDelete: "cascade" }),
+  // view / edit / rag_reference / review
+  accessType: text("access_type").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -311,3 +356,6 @@ export type BrainInboxItemRow = typeof brainInboxItems.$inferSelect;
 export type BrainProjectRow = typeof brainProjects.$inferSelect;
 export type BrainTaskTimelineRow = typeof brainTaskTimeline.$inferSelect;
 export type BrainTaskCommentRow = typeof brainTaskComments.$inferSelect;
+export type BrainReminderRuleRow = typeof brainReminderRules.$inferSelect;
+export type BrainReminderLogRow = typeof brainReminderLog.$inferSelect;
+export type BrainNoteAccessLogRow = typeof brainNoteAccessLog.$inferSelect;

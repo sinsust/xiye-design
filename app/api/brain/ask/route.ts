@@ -4,6 +4,7 @@ import { listBrainNotes } from "@/lib/brain-db";
 import { brainRetrieve, buildBrainContext, type BrainRagHit } from "@/lib/brain-rag";
 import { getImaConfig } from "@/lib/ima-config";
 import { listKnowledgeBases, searchKnowledge, getMediaInfo } from "@/lib/ima";
+import { logBrainNoteAccess } from "@/lib/brain-reminder";
 
 export const runtime = "nodejs";
 
@@ -124,6 +125,8 @@ export async function POST(req: NextRequest) {
 
     // 本地检索（brainRetrieve 默认语义检索，向量缺失自动降级关键词）
     const localHits: BrainRagHit[] = useLocal ? await brainRetrieve(notes, question, 4) : [];
+    // 被提问引用 → 记访问流水，重置知识衰减计时
+    for (const h of localHits) await logBrainNoteAccess(h.id, "rag_reference");
 
     // ima 实时检索（失败静默跳过）
     let imaContext = "";

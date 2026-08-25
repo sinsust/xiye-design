@@ -37,6 +37,7 @@ export interface ProjectProgress {
   totalTasks: number;
   completedTasks: number;
   progress: number;
+  daysRemaining: number | null;
 }
 
 export interface DashboardData {
@@ -67,6 +68,7 @@ export interface DashboardPanelProps {
   onOpenInbox: () => void;
   onGoto: (view: string) => void;
   onNewTask: () => void;
+  onOpenProject: (id: string) => void;
 }
 
 export function formatDue(dueDate: string | null): string {

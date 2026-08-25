@@ -7,6 +7,7 @@ import {
   skipBrainReview,
   type BrainReview,
 } from "@/lib/brain-db";
+import { logBrainNoteAccess } from "@/lib/brain-reminder";
 
 export const runtime = "nodejs";
 
@@ -76,6 +77,11 @@ export async function POST(req: NextRequest) {
         ? await skipBrainReview(user.sub, id)
         : await completeBrainReview(user.sub, id);
     if (!updated) return NextResponse.json({ error: "not_found_or_finished" }, { status: 404 });
+
+    // 复习完成 → 记访问流水，重置知识衰减计时
+    if (action !== "skip" && updated.noteId) {
+      await logBrainNoteAccess(updated.noteId, "review");
+    }
 
     return NextResponse.json({ review: updated });
   } catch (err) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CalendarClock, Inbox, Loader2, Pencil } from "lucide-react";
+import { BarChart3, CalendarClock, Inbox, Loader2, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDue, type DashboardData, type DashboardPanelProps, type DashboardTask } from "./types";
 import { TodayReviews } from "./TodayReviews";
@@ -75,10 +75,12 @@ function TodayTasks({ tasks }: { tasks: DashboardData["tasks"] }) {
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
 
 /** 主容器：加载 /api/brain/dashboard 并拼装全部区块 */
-export function DashboardPanel({ onOpenInbox, onGoto, onNewTask }: DashboardPanelProps) {
+export function DashboardPanel({ onOpenInbox, onGoto, onNewTask, onOpenProject }: DashboardPanelProps) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // 今日洞察：浮层面板开关（不占布局宽度）
+  const [insightsOpen, setInsightsOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,7 +120,21 @@ export function DashboardPanel({ onOpenInbox, onGoto, onNewTask }: DashboardPane
             今天该做什么、该复习什么，一屏看清
           </p>
         </div>
-        <QuickActions onNewTask={onNewTask} onGoto={onGoto} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setInsightsOpen((v) => !v)}
+            className={
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition " +
+              (insightsOpen
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground")
+            }
+          >
+            <BarChart3 className="size-3.5" />
+            今日洞察
+          </button>
+          <QuickActions onNewTask={onNewTask} onGoto={onGoto} />
+        </div>
       </div>
 
       {loading && !data && (
@@ -133,17 +149,32 @@ export function DashboardPanel({ onOpenInbox, onGoto, onNewTask }: DashboardPane
           {/* 收件箱横幅 */}
           {data.inbox.pending > 0 && <InboxBanner pending={data.inbox.pending} onOpenInbox={onOpenInbox} />}
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="space-y-4 lg:col-span-2">
-              <TodayTasks tasks={data.tasks} />
-              <TodayReviews reviews={data.reviews.dueToday} />
-              {/* 项目进度（第十阶段项目表落地后填充数据；本阶段有数据则展示占位逻辑） */}
-              <ProjectProgress projects={data.projects} />
-            </div>
-            <div className="space-y-4">
-              <WeekInsights insights={data.insights} />
-            </div>
+          {/* 主内容：全宽，不再被右栏挤压 */}
+          <div className="space-y-4">
+            <TodayTasks tasks={data.tasks} />
+            <TodayReviews reviews={data.reviews.dueToday} />
+            {/* 项目进度（active 项目：进度条 + 剩余天数） */}
+            <ProjectProgress projects={data.projects} onOpenProject={onOpenProject} />
           </div>
+
+          {/* 今日洞察：浮层面板（不占布局宽度，可开关） */}
+          {insightsOpen && (
+            <div className="fixed right-4 top-20 z-40 flex max-h-[80vh] w-80 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                <span className="text-sm font-semibold text-foreground">今日洞察</span>
+                <button
+                  onClick={() => setInsightsOpen(false)}
+                  className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  aria-label="关闭洞察面板"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                <WeekInsights insights={data.insights} />
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
