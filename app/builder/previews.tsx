@@ -2183,30 +2183,46 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     ? testi.items.map((t) => ({ q: t.quote, n: t.name, r: t.role }))
     : [{ q: "让团队协作真正快起来了。", n: "林女士", r: "产品经理" }];
   const featured = items[0];
+  const av = (nm: string) => nm.slice(0, 1);
+  const Quote = ({ t, small = false, big = false, className = "" }: { t: { q: string; n: string; r: string }; small?: boolean; big?: boolean; className?: string }) => (
+    <div className={"group relative overflow-hidden rounded-2xl border pv-glass pv-spotlight pv-lift " + (small ? "p-3 " : "p-4 ") + className} style={{ borderColor: "color-mix(in oklch, var(--primary) 16%, var(--border))" }}>
+      <span aria-hidden className="pointer-events-none absolute -top-3 left-3 text-5xl leading-none opacity-20" style={{ color: "var(--primary)" }}>"</span>
+      <p className={(big ? "text-sm " : "text-[11px] ") + "relative mt-1 font-semibold leading-snug"}>{t.q}</p>
+      <figcaption className="relative mt-3 flex items-center gap-2">
+        <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{av(t.n)}</span>
+        <span className="min-w-0 text-[10px]"><span className="font-semibold">{t.n}</span> <span className="truncate" style={{ color: "var(--muted-foreground)" }}>{t.r}</span></span>
+      </figcaption>
+    </div>
+  );
   if (variantId === "testi_featured")
     return (
-      <div className="px-6 py-7 text-center">
-        <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
-        <span className="mt-2 inline-block text-2xl" style={{ color: "var(--primary)" }}>"</span>
-        <blockquote className="mx-auto mt-1 max-w-xs text-base font-semibold leading-snug">"{featured.q}"</blockquote>
-        <div className="mt-3 flex items-center justify-center gap-2">
+      <div className="pv-stagger px-6 py-7 text-center">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
+          <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
+          <span className="mt-2 inline-block text-2xl" style={{ color: "var(--primary)" }}>"</span>
+        </div>
+        <blockquote className="pv-in mx-auto mt-1 max-w-xs text-base font-semibold leading-snug" style={{ ["--i" as string]: 1 }}>"{featured.q}"</blockquote>
+        <div className="pv-in mt-3 flex items-center justify-center gap-2" style={{ ["--i" as string]: 2 }}>
           <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
           <span className="text-xs"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {items.slice(1, 4).map((t) => (
-            <Card key={t.n} className="text-[10px]">"{t.q}"</Card>
+        <div className="pv-stagger mt-4 grid grid-cols-3 gap-2">
+          {items.slice(1, 4).map((t, i) => (
+            <div key={t.n} className="pv-in pv-lift" style={{ ["--i" as string]: i }}>
+              <Card className="text-[10px]">"{t.q}"</Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "testi_dark")
     return (
-      <div className="bg-slate-900 px-6 py-7 text-slate-50">
-        <SectionHead badge="客户证言" title={PREVIEW_CONTENT.testimonials?.title || "用户怎么说"} center />
-        <div className="mx-auto mt-5 grid max-w-sm gap-2 sm:grid-cols-2">
-          {items.slice(0, 4).map((t) => (
-            <div key={t.n} className="rounded-lg border border-white/10 p-3">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7 text-slate-50" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-40" />
+        <div className="pv-in relative z-10" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={PREVIEW_CONTENT.testimonials?.title || "用户怎么说"} center /></div>
+        <div className="pv-stagger relative z-10 mx-auto mt-5 grid max-w-sm gap-2 sm:grid-cols-2">
+          {items.slice(0, 4).map((t, i) => (
+            <div key={t.n} className="pv-in pv-lift pv-spotlight rounded-lg border border-white/10 p-3" style={{ ["--i" as string]: i }}>
               <p className="text-[11px] leading-relaxed text-slate-200">"{t.q}"</p>
               <p className="mt-2 text-[10px] font-semibold">— {t.n}</p>
             </div>
@@ -2216,9 +2232,9 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_carousel")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
-        <div className="mx-auto mt-3 max-w-md">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
+        <div className="pv-in mx-auto mt-3 max-w-md" style={{ ["--i" as string]: 1 }}>
           <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {items.map((t, i) => (
               <Card key={i} className="flex w-full min-w-[min(100%,17rem)] shrink-0 snap-center flex-col justify-center">
@@ -2241,29 +2257,31 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_logo")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-3 gap-2.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-3 gap-2.5">
           {getBrands().slice(0, 6).map((b, i) => (
-            <div key={i} className="flex items-center justify-center rounded-lg border px-3 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div key={i} className="pv-in flex items-center justify-center rounded-lg border px-3 py-3 transition-colors hover:border-[var(--primary)]" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <span className="text-xs font-black tracking-tight" style={{ color: "var(--muted-foreground)" }}>{b}</span>
             </div>
           ))}
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2.5">
-          {items.slice(0, 3).map((t) => (
-            <Card key={t.n}>
-              <p className="text-[10px] leading-relaxed">"{t.q}"</p>
-              <p className="mt-1.5 text-[10px] font-semibold">— {t.n}</p>
-            </Card>
+        <div className="pv-stagger mt-3 grid grid-cols-3 gap-2.5">
+          {items.slice(0, 3).map((t, i) => (
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i }}>
+              <Card>
+                <p className="text-[10px] leading-relaxed">"{t.q}"</p>
+                <p className="mt-1.5 text-[10px] font-semibold">— {t.n}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "testi_marquee")
     return (
-      <div className="relative overflow-hidden py-7">
-        <div className="mb-5"><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
-        <div className="flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+      <div className="pv-stagger relative overflow-hidden py-7">
+        <div className="pv-in mb-5" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
+        <div className="pv-in flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
           <div className="flex shrink-0 gap-2.5 pr-2.5 [animation:marqueeX_24s_linear_infinite] hover:[animation-play-state:paused]">
             {items.map((t, i) => (
               <Card key={i} className="w-44 shrink-0">
@@ -2292,8 +2310,8 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_3dstack")
     return (
-      <div className="flex min-h-52 items-center justify-center px-6 py-7 [perspective:1200px]">
-        <div className="relative w-full max-w-xs">
+      <div className="pv-stagger flex min-h-52 items-center justify-center px-6 py-7 [perspective:1200px]">
+        <div className="pv-in relative w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <div aria-hidden className="absolute inset-x-3 top-3 rounded-2xl border" style={{ borderColor: "var(--border)", background: "var(--surface)", transform: "translateY(16px) scale(0.96)", opacity: 0.5 }} />
           <TiltCard>
             <figure className="relative rounded-2xl border p-5 shadow-[var(--shadow)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2309,31 +2327,35 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "testi_split")
     return (
-      <div className="grid gap-3 px-6 py-7 md:grid-cols-2">
-        <Card className="flex flex-col justify-center">
-          <p className="text-sm font-semibold leading-snug">"{featured.q}"</p>
-          <figcaption className="mt-3 flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
-            <span className="text-[10px]"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
-          </figcaption>
-        </Card>
-        <div className="grid grid-rows-2 gap-3">
-          {items.slice(1, 3).map((t) => (
-            <Card key={t.n} className="flex flex-col justify-center">
-              <p className="text-[11px] leading-relaxed">"{t.q}"</p>
-              <figcaption className="mt-2 text-[10px] font-semibold">— {t.n}</figcaption>
-            </Card>
+      <div className="pv-stagger grid gap-3 px-6 py-7 md:grid-cols-2">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
+          <Card className="flex flex-col justify-center">
+            <p className="text-sm font-semibold leading-snug">"{featured.q}"</p>
+            <figcaption className="mt-3 flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
+              <span className="text-[10px]"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
+            </figcaption>
+          </Card>
+        </div>
+        <div className="pv-stagger grid grid-rows-2 gap-3">
+          {items.slice(1, 3).map((t, i) => (
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i + 1 }}>
+              <Card className="flex flex-col justify-center">
+                <p className="text-[11px] leading-relaxed">"{t.q}"</p>
+                <figcaption className="mt-2 text-[10px] font-semibold">— {t.n}</figcaption>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "testi_grid")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          {items.slice(0, 6).map((t) => (
-            <div key={t.n} className="flex flex-col rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
+        <div className="pv-stagger mt-4 grid gap-2 sm:grid-cols-3">
+          {items.slice(0, 6).map((t, i) => (
+            <div key={t.n} className="pv-in pv-lift pv-spotlight flex flex-col rounded-xl border p-3" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <div className="flex gap-0.5 text-[9px]" style={{ color: "var(--primary)" }}>
                 {[0, 1, 2, 3, 4].map((s) => <span key={s}>★</span>)}
               </div>
@@ -2349,21 +2371,23 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：三列证言卡
   return (
-    <div className="px-6 py-7">
-      <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        {items.map((t) => (
-          <Card key={t.n} className="flex flex-col">
-            <span className="text-sm" style={{ color: "var(--primary)" }}>"</span>
-            <p className="mt-1 flex-1 text-[10px] leading-relaxed">{t.q}</p>
-            <div className="mt-2 flex items-center gap-1.5">
-              <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
-              <div>
-                <p className="text-[10px] font-semibold">{t.n}</p>
-                <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{t.r}</p>
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
+      <div className="pv-stagger mt-3 grid grid-cols-3 gap-3">
+        {items.map((t, i) => (
+          <div key={t.n} className="pv-in" style={{ ["--i" as string]: i }}>
+            <Card className="flex flex-col">
+              <span className="text-sm" style={{ color: "var(--primary)" }}>"</span>
+              <p className="mt-1 flex-1 text-[10px] leading-relaxed">{t.q}</p>
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
+                <div>
+                  <p className="text-[10px] font-semibold">{t.n}</p>
+                  <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{t.r}</p>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         ))}
       </div>
     </div>
