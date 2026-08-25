@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AGENT_PROFILES, type AgentId } from "@/app/workflow/agents";
 import { useAgentsStore } from "@/app/workflow/agents-store";
 import { AgentAvatar } from "@/app/workflow/components/agent-common";
+import { fetchSession } from "@/lib/auth-session";
 
 interface DraftItem {
   role: AgentId;
@@ -42,14 +43,13 @@ export default function AgentPersonasPage() {
     [],
   );
 
-  // 登录校验 + 触发服务端人设拉取
+  // 登录校验 + 触发服务端人设拉取（会话读取全局缓存）
   useEffect(() => {
     let alive = true;
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .then((d) => {
+    fetchSession()
+      .then((u) => {
         if (!alive) return;
-        if (d.user) {
+        if (u) {
           useAgentsStore.getState().boot();
           setAuthLoading(false);
         } else {

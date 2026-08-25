@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { fetchSession } from "@/lib/auth-session";
+
 interface MeUser {
   id: string;
   email: string;
