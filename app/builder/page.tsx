@@ -1102,6 +1102,7 @@ export default function BuilderPage() {
             {activeComponent?.variants.length ? (
               activeComponent.variants.map((v) => {
                 const selected = activeVariant?.id === v.id;
+                const previewStyle = styleVars(style, designSystem);
                 return (
                   <div
                     key={v.id}
@@ -1122,11 +1123,16 @@ export default function BuilderPage() {
                     ].join(" ")}
                   >
                     {/* mini 预览：缩放 55% 截断显示（pointer-events-none 防干扰） */}
-                    <div className="pointer-events-none h-24 overflow-hidden bg-background">
+                    <div
+                      className="pointer-events-none h-24 overflow-hidden"
+                      style={{ backgroundColor: (previewStyle as Record<string, string>)["--background"] }}
+                    >
                       <div
                         className="dtox-root"
                         style={{
-                          ...styleVars(style, designSystem),
+                          ...previewStyle,
+                          backgroundColor: "var(--background)",
+                          minHeight: "100%",
                           transform: "scale(0.55)",
                           transformOrigin: "top left",
                           width: "181.8%",
@@ -1313,6 +1319,7 @@ export default function BuilderPage() {
                     className="dtox-root min-h-[20rem] overflow-hidden rounded-[var(--radius)] border border-border"
                     style={{
                       ...styleVars(style, designSystem),
+                      backgroundColor: "var(--background)",
                       color: "var(--foreground)",
                       boxShadow: "var(--shadow)",
                     }}
