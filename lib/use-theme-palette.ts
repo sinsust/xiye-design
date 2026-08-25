@@ -119,6 +119,32 @@ type PaletteState = {
   resetOverride: (id: string) => void;
 };
 
+// 兼容旧版 store：旧键名是 "theme-preset"（zustand JSON），新版是 CUSTOM_KEY（"theme-preset-custom"）。
+// 老用户浏览器里只有旧键时，若不在 store 初始化前迁移，useApplyPalette 水合后会回退到默认 brutalist，
+// 造成「首帧正确 → 水合回退」的二次闪烁，且旧选择丢失。故在 store 创建前把旧键迁到新键。
+function migrateLegacyTheme() {
+  if (typeof window === "undefined") return;
+  try {
+    const legacy = localStorage.getItem("theme-preset");
+    if (!localStorage.getItem(CUSTOM_KEY) && legacy) {
+      const p = JSON.parse(legacy);
+      const st = p?.state ?? (p?.activeStyleId ? p : null);
+      if (st?.activeStyleId) {
+        localStorage.setItem(
+          CUSTOM_KEY,
+          JSON.stringify({
+            state: { activeStyleId: st.activeStyleId, custom: st.custom ?? {} },
+            version: 0,
+          }),
+        );
+      }
+    }
+  } catch {
+    /* 旧键损坏忽略，走默认主题 */
+  }
+}
+migrateLegacyTheme();
+
 export const useThemePaletteStore = create<PaletteState>()(
   persist(
     (set) => ({
