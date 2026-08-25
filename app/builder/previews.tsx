@@ -1899,12 +1899,12 @@ function LogosPreview({ variantId }: { variantId: string }) {
   const neonPalette = ["#22D3EE", "#F472B6", "#F59E0B", "#34D399", "#FB7185"];
   if (variantId === "logos_marquee")
     return (
-      <div className="relative overflow-hidden border-y px-6 py-7" style={{ borderColor: "var(--border)" }}>
-        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
-        <div className="mt-4 flex overflow-hidden whitespace-nowrap [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+      <div className="pv-stagger relative overflow-hidden border-y px-6 py-7" style={{ borderColor: "var(--border)" }}>
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="合作伙伴" title="信任我们的团队" center /></div>
+        <div className="pv-in mt-4 flex overflow-hidden whitespace-nowrap [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]" style={{ ["--i" as string]: 1 }}>
           <div className="flex shrink-0 gap-12 pr-12 [animation:marqueeX_18s_linear_infinite] hover:[animation-play-state:paused]">
             {[...brands, ...brands].map((b, i) => (
-              <BrandMark key={i} name={b} className="h-6 w-auto shrink-0 opacity-50 transition hover:opacity-100" />
+              <BrandMark key={i} name={b} className="h-6 w-auto shrink-0 opacity-50 transition hover:opacity-100 hover:text-[var(--primary)]" />
             ))}
           </div>
           <div aria-hidden className="flex shrink-0 gap-12 pr-12 [animation:marqueeX_18s_linear_infinite] hover:[animation-play-state:paused]">
@@ -1918,21 +1918,21 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "logos_marquee_double") {
     const tiles = brands.map((n, i) => ({ n, c: palette[i % palette.length] }));
-    const col = (dir: "up" | "down") => (
-      <div key={dir} className="flex-1 overflow-hidden">
+    const col = (dir: "up" | "down", ci: number) => (
+      <div key={dir} className="pv-in flex-1 overflow-hidden" style={{ ["--i" as string]: ci }}>
         <div className={dir === "up" ? "flex flex-col gap-2 [animation:marqueeUp_12s_linear_infinite]" : "flex flex-col gap-2 [animation:marqueeDown_12s_linear_infinite]"}>
           {[...tiles, ...tiles].map((t, i) => (
-            <div key={i} className="flex h-14 items-center justify-center rounded-lg" style={{ background: t.c }}><BrandMark name={t.n} className="h-6 w-auto text-white" /></div>
+            <div key={i} className="pv-lift flex h-14 items-center justify-center rounded-lg" style={{ background: t.c }}><BrandMark name={t.n} className="h-6 w-auto text-white" /></div>
           ))}
         </div>
       </div>
     );
     return (
-      <div className="relative overflow-hidden py-4" style={{ background: "var(--background)" }}>
-        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
-        <div className="mt-3 flex gap-2 px-4">
-          {col("up")}
-          {col("down")}
+      <div className="pv-stagger relative overflow-hidden py-4" style={{ background: "var(--background)" }}>
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="合作伙伴" title="信任我们的团队" center /></div>
+        <div className="pv-stagger mt-3 flex gap-2 px-4">
+          {col("up", 1)}
+          {col("down", 2)}
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-0 h-10" style={{ background: "linear-gradient(to bottom, var(--background), transparent)" }} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10" style={{ background: "linear-gradient(to top, var(--background), transparent)" }} />
@@ -1942,17 +1942,17 @@ function LogosPreview({ variantId }: { variantId: string }) {
   }
   if (variantId === "logos_grid")
     return (
-      <div className="px-6 py-7">
-        <div className="flex items-center justify-between">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in flex items-center justify-between" style={{ ["--i" as string]: 0 }}>
           <div>
             <SectionBadge>合作伙伴</SectionBadge>
             <h3 className="mt-1.5 text-sm font-bold">值得信赖的合作伙伴</h3>
           </div>
-          <a className="text-xs font-medium" style={{ color: "var(--primary)" }}>查看全部 →</a>
+          <a className="cursor-pointer text-xs font-medium transition-colors hover:text-[var(--primary)]" style={{ color: "var(--primary)" }}>查看全部 →</a>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="pv-stagger mt-3 grid grid-cols-3 gap-2">
           {brands.slice(0, 6).map((b, i) => (
-            <div key={b} className="flex h-12 items-center justify-center rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)", color: ["#2563EB", "#7C3AED", "#059669", "#EA580C", "#0EA5E9", "#DC2626"][i], opacity: 0.75 }}>
+            <div key={b} className="pv-in pv-lift pv-spotlight flex h-12 items-center justify-center rounded-lg border transition-colors" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)", color: ["#2563EB", "#7C3AED", "#059669", "#EA580C", "#0EA5E9", "#DC2626"][i], opacity: 0.8 }}>
               <BrandMark name={b} className="h-5 w-auto" />
             </div>
           ))}
@@ -1961,12 +1961,14 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "logos_bento")
     return (
-        <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>合作伙伴</SectionBadge>
           <h3 className="mb-3 mt-1.5 text-sm font-bold">信任我们的团队</h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        </div>
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
           {brands.slice(0, 6).map((b, i) => (
-            <div key={b} className={"flex h-14 items-center justify-center rounded-xl border transition-transform hover:-translate-y-0.5 " + (i === 0 ? "col-span-2" : "")} style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}>
+            <div key={b} className={"pv-in pv-lift pv-spotlight flex h-14 items-center justify-center rounded-xl border transition-transform " + (i === 0 ? "col-span-2" : "")} style={{ ["--i" as string]: i + 1, borderColor: "var(--border)", background: "var(--surface)", color: "var(--foreground)" }}>
               <BrandMark name={b} className="h-6 w-auto" />
             </div>
           ))}
@@ -1975,12 +1977,12 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "logos_editorial")
     return (
-      <div className="px-6 py-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in flex flex-col gap-4 sm:flex-row sm:items-center" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>合作伙伴</SectionBadge>
-          <div className="flex flex-1 flex-wrap items-center gap-x-8 gap-y-3">
-            {brands.map((b) => (
-              <span key={b} className="inline-flex h-5 items-center" style={{ color: "var(--foreground)" }}><BrandMark name={b} className="h-5 w-auto" /></span>
+          <div className="pv-stagger flex flex-1 flex-wrap items-center gap-x-8 gap-y-3">
+            {brands.map((b, i) => (
+              <span key={b} className="pv-in inline-flex h-5 items-center transition-colors hover:text-[var(--primary)]" style={{ ["--i" as string]: i, color: "var(--foreground)" }}><BrandMark name={b} className="h-5 w-auto" /></span>
             ))}
           </div>
         </div>
@@ -1988,11 +1990,14 @@ function LogosPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "logos_neon")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-40" />
+        <div className="pv-in relative z-10" style={{ ["--i" as string]: 0 }}><SectionHead badge="合作伙伴" title="信任我们的团队" center /></div>
+        <div className="pv-stagger relative z-10 mt-4 flex flex-wrap justify-center gap-2">
           {brands.map((n, i) => (
-            <span key={n} className="inline-flex h-6 items-center rounded-lg px-3" style={{ border: "1px solid color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 40%, transparent)", background: "color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 10%, #141416)", color: neonPalette[i % neonPalette.length] }}><BrandMark name={n} className="h-4 w-auto" /></span>
+            <span key={n} className="pv-in inline-flex h-6 items-center rounded-lg px-3 transition-shadow hover:shadow-[0_0_22px_var(--nc)]" style={{ ["--i" as string]: i, ["--nc" as string]: neonPalette[i % neonPalette.length], border: "1px solid color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 40%, transparent)", background: "color-mix(in srgb, " + neonPalette[i % neonPalette.length] + " 10%, #141416)", color: neonPalette[i % neonPalette.length] }}>
+              <BrandMark name={n} className="h-4 w-auto" />
+            </span>
           ))}
         </div>
       </div>
@@ -2000,39 +2005,39 @@ function LogosPreview({ variantId }: { variantId: string }) {
   if (variantId === "logos_compact")
     return (
       <div
-        className="flex flex-col items-center gap-2 border-y px-6 py-4 sm:flex-row sm:justify-center sm:gap-5"
+        className="pv-stagger flex flex-col items-center gap-2 border-y px-6 py-4 sm:flex-row sm:justify-center sm:gap-5"
         style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
-        <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--muted-foreground)" }}>200+ 团队在用</span>
-        <span className="hidden h-4 w-px sm:block" style={{ background: "var(--border)" }} />
-        <div className="flex flex-wrap items-center justify-center gap-5">
-          {brands.slice(0, 6).map((b) => (
-            <BrandMark key={b} name={b} className="h-4 w-auto opacity-70 transition-opacity duration-200 hover:opacity-100" />
+        <span className="pv-in whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ ["--i" as string]: 0, color: "var(--muted-foreground)" }}>200+ 团队在用</span>
+        <span className="pv-in hidden h-4 w-px sm:block" style={{ ["--i" as string]: 1, background: "var(--border)" }} />
+        <div className="pv-stagger flex flex-wrap items-center justify-center gap-5">
+          {brands.slice(0, 6).map((b, i) => (
+            <span key={b} className="pv-in transition-transform hover:scale-110" style={{ ["--i" as string]: i + 2 }}><BrandMark name={b} className="h-4 w-auto opacity-70 transition-opacity duration-200 hover:opacity-100" /></span>
           ))}
         </div>
       </div>
     );
   if (variantId === "logos_grayrow")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
-        <div className="mt-4 flex flex-wrap items-center justify-center divide-x" style={{ borderColor: "var(--border)" }}>
-          {brands.slice(0, 6).map((b) => (
-            <span key={b} className="px-5" style={{ filter: "grayscale(1)", color: "var(--muted-foreground)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="合作伙伴" title="信任我们的团队" center /></div>
+        <div className="pv-stagger mt-4 flex flex-wrap items-center justify-center divide-x" style={{ borderColor: "var(--border)" }}>
+          {brands.slice(0, 6).map((b, i) => (
+            <span key={b} className="pv-in px-5 transition-colors hover:text-[var(--primary)]" style={{ ["--i" as string]: i, filter: "grayscale(1)", color: "var(--muted-foreground)" }}>
               <BrandMark name={b} className="h-6 w-auto opacity-55 transition-opacity duration-200 hover:opacity-100" />
             </span>
           ))}
         </div>
-        <p className="mt-3 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>统一灰度处理，弱化品牌色干扰</p>
+        <p className="pv-in mt-3 text-center text-[9px]" style={{ ["--i" as string]: 6, color: "var(--muted-foreground)" }}>统一灰度处理，弱化品牌色干扰</p>
       </div>
     );
   // 未匹配变体兜底：单行淡色 logo
   return (
-    <div className="px-6 py-7">
-      <SectionHead badge="合作伙伴" title="信任我们的团队" center />
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-8">
-        {brands.map((b) => (
-          <BrandMark key={b} name={b} className="h-6 w-auto opacity-40" />
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="合作伙伴" title="信任我们的团队" center /></div>
+      <div className="pv-stagger mt-3 flex flex-wrap items-center justify-center gap-8">
+        {brands.map((b, i) => (
+          <span key={b} className="pv-in transition-transform hover:scale-110" style={{ ["--i" as string]: i }}><BrandMark name={b} className="h-6 w-auto opacity-40" /></span>
         ))}
       </div>
     </div>
