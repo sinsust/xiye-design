@@ -2620,7 +2620,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     return (
       <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
         <div className="pointer-events-none absolute inset-0 pv-aurora opacity-35" />
-        <div className="pv-in relative z-10 mx-auto max-w-sm overflow-hidden rounded-lg border border-white/10" style={{ ["--i" as string]: 0 }}>
+        <div className="pv-in relative z-10 mx-auto max-w-sm overflow-hidden rounded-lg border border-white/10 pv-spotlight" style={{ ["--i" as string]: 0 }}>
           <table className="w-full text-[10px] text-slate-100">
             <thead><tr className="border-b border-white/10"><th className="p-2 text-left font-semibold">功能</th>{tierNames.map((p, i) => <th key={p} className="p-2 text-center font-semibold">{p}</th>)}</tr></thead>
             <tbody>
@@ -2638,7 +2638,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
   if (variantId === "pcomp_highlight")
     return (
       <div className="pv-stagger px-6 py-7">
-        <div className="pv-in mx-auto max-w-sm overflow-hidden rounded-lg border transition-shadow hover:shadow-[0_0_30px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)]" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
+        <div className="pv-in mx-auto max-w-sm overflow-hidden rounded-lg border pv-lift pv-spotlight" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
           <table className="w-full text-[10px]">
             <thead>
               <tr className="border-b" style={{ borderColor: "var(--border)" }}>
@@ -2652,7 +2652,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.f} className="border-b last:border-0 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)" }}>
+                <tr key={r.f} className="border-b transition-colors last:border-0 hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)" }}>
                   <td className="p-2">{r.f}</td>
                   {r.v.map((v, i) => <td key={i} className={"p-2 text-center " + (i === 1 ? "bg-primary/10" : "")}>{v}</td>)}
                 </tr>
@@ -2670,8 +2670,8 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
             <span className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>功能</span>
             <div className="flex gap-6">{tierNames.map((p, i) => <span key={p} className="w-10 text-center text-[11px] font-semibold" style={{ fontFamily: "var(--font-heading)", color: i === 1 ? "var(--primary)" : "var(--foreground)" }}>{p}</span>)}</div>
           </div>
-          {rows.map((r, ri) => (
-            <div key={r.f} className="pv-in flex items-center justify-between border-b py-2.5 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ ["--i" as string]: ri + 1, borderColor: "var(--border)" }}>
+          {rows.map((r) => (
+            <div key={r.f} className="group flex items-center justify-between border-b py-2.5 transition-colors hover:bg-[color-mix(in_oklch,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}>
               <span className="text-[10px] font-medium">{r.f}</span>
               <div className="flex gap-6">{r.v.map((v, i) => <span key={i} className="w-10 text-center text-[10px]" style={{ fontFamily: "var(--font-heading)", color: i === 1 ? "var(--primary)" : v === "✓" ? "var(--foreground)" : "var(--muted-foreground)" }}>{v === "✓" ? <b>✓</b> : v}</span>)}</div>
             </div>
@@ -2682,9 +2682,9 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
   if (variantId === "pcomp_bento")
     return (
       <div className="pv-stagger px-6 py-7">
-        <div className="pv-stagger mx-auto grid max-w-sm grid-cols-3 gap-2">
+        <div className="pv-in mx-auto grid max-w-sm grid-cols-3 gap-2" style={{ ["--i" as string]: 0 }}>
           {plans.map((x, xi) => (
-            <div key={x.name} className={"pv-in pv-lift pv-spotlight rounded-lg p-2.5 " + (xi === 1 ? "ring-2" : "border")} style={xi === 1 ? { ["--i" as string]: xi, background: "color-mix(in srgb, var(--primary) 8%, var(--surface))", boxShadow: "0 0 0 2px var(--primary)" } : { ["--i" as string]: xi, borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div key={x.name} className={"rounded-lg p-2.5 transition-transform duration-300 hover:-translate-y-1 " + (xi === 1 ? "ring-2" : "border")} style={xi === 1 ? { background: "color-mix(in srgb, var(--primary) 8%, var(--surface))", boxShadow: "0 0 0 2px var(--primary)" } : { borderColor: "var(--border)", background: "var(--surface)" }}>
               {xi === 1 && <span className="block rounded-full bg-primary px-1 py-0.5 text-center text-[7px] font-medium text-white">热门</span>}
               <p className="mt-1 text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{x.name}</p>
               <ul className="mt-1 space-y-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{(x.features || []).slice(0, 3).map((n) => <li key={n} className="flex items-center gap-1"><span style={{ color: "var(--primary)" }}>✓</span>{n}</li>)}</ul>
@@ -2695,16 +2695,15 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_neon")
     return (
-      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-35" />
-        <div className="pv-in relative z-10 mx-auto max-w-sm overflow-hidden rounded-lg border" style={{ ["--i" as string]: 0, borderColor: "#262629" }}>
+      <div className="pv-stagger px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pv-in mx-auto max-w-sm overflow-hidden rounded-lg border pv-spotlight" style={{ ["--i" as string]: 0, borderColor: "#262629" }}>
           <table className="w-full text-[9px] text-slate-100">
             <thead><tr className="border-b" style={{ borderColor: "#262629" }}><th className="p-2 text-left text-slate-400">功能</th>{tierNames.map((p, i) => <th key={p} className="p-2 text-center" style={{ color: i === 1 ? "#22D3EE" : "inherit" }}>{p}</th>)}</tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.f} className="border-b last:border-0 transition-colors hover:bg-white/5" style={{ borderColor: "#262629" }}>
                   <td className="p-2 text-slate-300">{r.f}</td>
-                  {r.v.map((v, i) => <td key={i} className="p-2 text-center transition-colors" style={{ color: i === 1 ? "#22D3EE" : "inherit" }}>{v === "✓" ? "◆" : v === "—" ? "·" : v}</td>)}
+                  {r.v.map((v, i) => <td key={i} className="p-2 text-center" style={{ color: i === 1 ? "#22D3EE" : "inherit" }}>{v === "✓" ? "◆" : v === "—" ? "·" : v}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -2719,7 +2718,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
           <h3 className="text-center text-sm font-bold">功能对比</h3>
           <p className="mt-1 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>逐项对齐，帮你选对档位</p>
         </div>
-        <div className="pv-in mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
+        <div className="pv-in mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border pv-lift" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
           <table className="w-full text-[10px]">
             <thead>
               <tr style={{ background: "var(--surface)" }}>
@@ -2734,10 +2733,10 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
             </thead>
             <tbody>
               {rows.map((r, ri) => (
-                <tr key={r.f} style={{ background: ri % 2 === 1 ? "color-mix(in srgb, var(--foreground) 4%, transparent)" : "transparent" }}>
+                <tr key={r.f} className="transition-colors hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)]" style={{ background: ri % 2 === 1 ? "color-mix(in srgb, var(--foreground) 4%, transparent)" : "transparent" }}>
                   <td className="border-b p-2" style={{ borderColor: "var(--border)" }}>{r.f}</td>
                   {r.v.map((v, i) => (
-                    <td key={i} className="border-b p-2 text-center transition-colors" style={{ borderColor: "var(--border)" }}>
+                    <td key={i} className="border-b p-2 text-center" style={{ borderColor: "var(--border)" }}>
                       {v === "✓" ? <span style={{ color: "var(--primary)" }}>✓</span> : <span style={{ color: "var(--muted-foreground)" }}>{v}</span>}
                     </td>
                   ))}
@@ -2747,7 +2746,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
                 <td className="p-2" />
                 {plans.map((p) => (
                   <td key={p.name} className="p-2 text-center">
-                    <span className="inline-block cursor-pointer rounded-md border px-2 py-0.5 text-[8px] font-medium transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]" style={{ borderColor: "var(--border)" }}>选择</span>
+                    <span className="pv-border-flow inline-block rounded-md border px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]">{p.cta ?? "选择"}</span>
                   </td>
                 ))}
               </tr>
@@ -2762,7 +2761,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
       <div className="pv-in" style={{ ["--i" as string]: 0 }}>
         <h3 className="text-center text-sm font-bold">功能对比</h3>
       </div>
-      <div className="pv-in mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
+      <div className="pv-in mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border pv-lift" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
         <table className="w-full text-[10px]">
           <thead>
             <tr className="border-b" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2771,16 +2770,16 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="p-1.5 text-[9px] font-semibold uppercase tracking-wider" style={{ background: "color-mix(in srgb, var(--muted-foreground) 12%, transparent)", color: "var(--muted-foreground)" }}>基础</td></tr>
+            <tr className="border-b transition-colors hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="bg-muted/40 p-1.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">基础</td></tr>
             {rows.slice(0, 2).map((r) => (
-              <tr key={r.f} className="border-b transition-colors last:border-0 hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}>
+              <tr key={r.f} className="border-b transition-colors hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)" }}>
                 <td className="p-2">{r.f}</td>
                 {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v}</td>)}
               </tr>
             ))}
-            <tr className="border-b transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="p-1.5 text-[9px] font-semibold uppercase tracking-wider" style={{ background: "color-mix(in srgb, var(--muted-foreground) 12%, transparent)", color: "var(--muted-foreground)" }}>企业</td></tr>
+            <tr className="border-b transition-colors hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="bg-muted/40 p-1.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">企业</td></tr>
             {rows.slice(2).map((r) => (
-              <tr key={r.f} className="border-b transition-colors last:border-0 hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}>
+              <tr key={r.f} className="border-b last:border-0 transition-colors hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)" }}>
                 <td className="p-2">{r.f}</td>
                 {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v}</td>)}
               </tr>

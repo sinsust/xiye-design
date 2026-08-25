@@ -406,12 +406,30 @@ main > div {
   animation: pv-breathe 4.5s ease-in-out infinite;
 }
 
+/* 进度条生长：进入时从 0 展开到目标宽度（stats_grid 等） */
+@keyframes pv-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.pv-bar-fill {
+  transform-origin: left center;
+  animation: pv-bar-grow 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pv-marquee,
   .pv-shimmer,
   .pv-border-flow,
   .pv-breathe {
     animation: none;
+  }
+  .pv-bar-fill {
+    animation: none;
+    transform: none;
   }
   .pv-stagger > .pv-in {
     opacity: 1;
