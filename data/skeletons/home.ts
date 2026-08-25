@@ -36,7 +36,7 @@ export const HOME_PAGE: SkeletonPage = {
         </div>
         <a
           href="#cta"
-          className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white"
+          className="rounded-md bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
         >
           {{cta.primary}}
         </a>
@@ -65,7 +65,7 @@ export const HOME_PAGE: SkeletonPage = {
             <a key={l} href={"#" + l} className="transition hover:text-[var(--foreground)]">{l}</a>
           ))}
         </nav>
-        <a href="#cta" className="rounded-full px-4 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>{{cta.primary}}</a>
+        <a href="#cta" className="rounded-full px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{{cta.primary}}</a>
         <button
           aria-label="菜单"
           onClick={() => setOpen(!open)}
@@ -114,7 +114,7 @@ export const HOME_PAGE: SkeletonPage = {
         </div>
         <a
           href="#cta"
-          className="rounded-md px-4 py-2 text-sm font-medium text-white"
+          className="rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
           style={{ background: "var(--primary)" }}
         >
           {{cta.primary}}
@@ -149,7 +149,7 @@ export const HOME_PAGE: SkeletonPage = {
           <a href="#pricing" className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">{{nav.pricing}}</a>
           <a href="#faq" className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">{{nav.faq}}</a>
         </div>
-        <a href="#cta" className="rounded-md px-4 py-2 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+        <a href="#cta" className="rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           {{cta.primary}}
         </a>
       </nav>
@@ -177,7 +177,7 @@ export const HOME_PAGE: SkeletonPage = {
         </div>
         <a
           href="#cta"
-          className="rounded-md px-4 py-2 text-sm font-medium text-white"
+          className="rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)]"
           style={{ background: "var(--primary)" }}
         >
           {{cta.primary}}
@@ -216,7 +216,7 @@ export const HOME_PAGE: SkeletonPage = {
           <a href="#pricing" className="opacity-80 hover:opacity-100">{{nav.pricing}}</a>
           <a href="#faq" className="opacity-80 hover:opacity-100">{{nav.faq}}</a>
         </div>
-        <a href="#cta" className="rounded-md px-4 py-2 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>{{cta.primary}}</a>
+        <a href="#cta" className="rounded-md px-4 py-2 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{{cta.primary}}</a>
       </nav>
     </header>
   );
@@ -274,7 +274,7 @@ export const HOME_PAGE: SkeletonPage = {
         无需代码，从骨架到上线，几分钟完成一个可用的产品原型。
       </p>
       <div className="mt-8 flex justify-center gap-3">
-        <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+        <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           {{cta.primary}}
         </a>
         <a
@@ -318,7 +318,7 @@ export const HOME_PAGE: SkeletonPage = {
           一体化工作台：项目、任务、{{nav.docs}}、数据看板，全在一个地方。
         </p>
         <div className="mt-8 flex gap-3">
-          <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+          <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
             {{cta.secondary}}
           </a>
           <a href="#demo" className="rounded-md border px-5 py-2.5 text-sm font-medium" style={{ borderColor: "var(--border)" }}>
@@ -356,7 +356,7 @@ export const HOME_PAGE: SkeletonPage = {
             我们用设计与技术，帮你讲好品牌故事。
           </p>
           <div className="mt-8 flex gap-3">
-            <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+            <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
               联系我们
             </a>
             <a href="#work" className="rounded-md border px-5 py-2.5 text-sm font-medium" style={{ borderColor: "var(--border)" }}>
@@ -401,7 +401,7 @@ export const HOME_PAGE: SkeletonPage = {
           玻璃拟态风格，为你的品牌带来通透的现代感。
         </p>
         <div className="mt-8 flex justify-center gap-3">
-          <a href="#cta" className="rounded-full px-6 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+          <a href="#cta" className="rounded-full px-6 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
             开始体验
           </a>
           <a href="#learn" className="rounded-full border px-6 py-2.5 text-sm font-medium" style={{ borderColor: "var(--border)" }}>
@@ -464,7 +464,7 @@ export const HOME_PAGE: SkeletonPage = {
         加入 50,000+ 团队，用数据驱动每一个决策。
       </p>
       <div className="mt-8 flex justify-center gap-3">
-        <a href="#cta" className="rounded-md px-6 py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+        <a href="#cta" className="rounded-md px-6 py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           免费注册 →
         </a>
         <a href="#demo" className="rounded-md border px-6 py-3 text-sm font-medium" style={{ borderColor: "var(--border)" }}>
@@ -545,7 +545,7 @@ export const HOME_PAGE: SkeletonPage = {
           邮件、消息、任务、文档——结构化呈现，专注真正重要的事。
         </p>
         <div className="mt-8 flex gap-3">
-          <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+          <a href="#cta" className="rounded-md px-5 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
             免费开始
           </a>
           <a href="#demo" className="rounded-md border px-5 py-2.5 text-sm font-medium" style={{ borderColor: "var(--border)" }}>
@@ -600,7 +600,7 @@ export const HOME_PAGE: SkeletonPage = {
             <dt style={{ color: "var(--muted-foreground)" }}>客户</dt><dd className="font-medium">120+ 团队</dd>
           </div>
         </dl>
-        <a href="#cta" className="mt-8 inline-block rounded-full px-6 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+        <a href="#cta" className="mt-8 inline-block rounded-full px-6 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           开启合作
         </a>
       </div>
@@ -633,7 +633,7 @@ export const HOME_PAGE: SkeletonPage = {
         <p className="mx-auto mt-5 max-w-md text-lg" style={{ color: "var(--muted-foreground)" }}>
           少即是多。我们把克制，做成一种产品力。
         </p>
-        <a href="#cta" className="mt-8 inline-block rounded-full px-7 py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+        <a href="#cta" className="mt-8 inline-block rounded-full px-7 py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           了解更多
         </a>
       </div>
@@ -877,7 +877,7 @@ export const HOME_PAGE: SkeletonPage = {
         <ul className="mt-6 space-y-3">
           {points.map((pt) => (
             <li key={pt} className="flex items-center gap-3">
-              <span className="flex size-5 items-center justify-center rounded-full text-xs text-white" style={{ background: "var(--primary)" }}>✓</span>
+              <span className="flex size-5 items-center justify-center rounded-full text-xs text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✓</span>
               <span>{pt}</span>
             </li>
           ))}
@@ -1300,7 +1300,7 @@ export const HOME_PAGE: SkeletonPage = {
   return (
     <section className="px-6 py-20" style={{ background: "var(--background)" }}>
       <div className="mx-auto max-w-2xl">
-        <h2 className="text-center text-2xl font-bold text-white">常见问题</h2>
+        <h2 className="text-center text-2xl font-bold text-[var(--foreground)]">常见问题</h2>
         <div className="mt-8 divide-y" style={{ borderColor: "var(--border)" }}>
           {rows.map((f) => (
             <div key={f.q} className="grid gap-1 py-5">
@@ -1333,7 +1333,7 @@ export const HOME_PAGE: SkeletonPage = {
           code: `export function Cta() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
-      <div className="rounded-2xl px-8 py-14 text-center text-white" style={{ background: "var(--primary)" }}>
+      <div className="rounded-2xl px-8 py-14 text-center text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
         <h2 className="text-3xl font-bold">准备好开始了吗？</h2>
         <p className="mx-auto mt-2 max-w-md text-white/80">
           免费注册，14 天全功能试用，无需信用卡。
@@ -1416,7 +1416,7 @@ export const HOME_PAGE: SkeletonPage = {
       <p className="mt-2 text-sm" style={{ color: "var(--muted-foreground)" }}>
         现在就{{cta.primary}}，随时可以取消。
       </p>
-      <a href="#signup" className="mt-6 inline-block rounded-md px-6 py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+      <a href="#signup" className="mt-6 inline-block rounded-md px-6 py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
         免费注册
       </a>
     </section>
@@ -1450,7 +1450,7 @@ export const HOME_PAGE: SkeletonPage = {
         />
         <button
           type="submit"
-          className="rounded-lg px-5 py-2.5 text-sm font-medium text-white"
+          className="rounded-lg px-5 py-2.5 text-sm font-medium text-[var(--on-primary)]"
           style={{ background: "var(--primary)" }}
         >
           订阅
@@ -1479,7 +1479,7 @@ export const HOME_PAGE: SkeletonPage = {
         无需信用卡，14 天内随时取消。
       </p>
       <div className="mt-8 flex justify-center gap-3">
-        <a href="#signup" className="rounded-md px-6 py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+        <a href="#signup" className="rounded-md px-6 py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
           {{cta.primary}}
         </a>
         <a href="#sales" className="rounded-md border px-6 py-3 text-sm font-medium" style={{ borderColor: "var(--border)" }}>
@@ -1510,7 +1510,7 @@ export const HOME_PAGE: SkeletonPage = {
           <p className="mt-2" style={{ color: "var(--muted-foreground)" }}>14 天全功能试用，无需信用卡。</p>
         </div>
         <div className="flex items-center justify-end">
-          <a href="#signup" className="rounded-md px-6 py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>免费开始</a>
+          <a href="#signup" className="rounded-md px-6 py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费开始</a>
         </div>
       </div>
     </section>
@@ -1532,7 +1532,7 @@ export const HOME_PAGE: SkeletonPage = {
       <div className="relative overflow-hidden rounded-3xl border p-12 text-center" style={{ borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent), 0 30px 80px -40px color-mix(in srgb, var(--primary) 45%, transparent)" }}>
         <h2 className="text-3xl font-bold">把下一个增长，交给数据</h2>
         <p className="mx-auto mt-3 max-w-md" style={{ color: "var(--muted-foreground)" }}>加入 5 万+ 团队，今天就开始。</p>
-        <a href="#signup" className="mt-8 inline-block rounded-md px-6 py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>免费注册</a>
+        <a href="#signup" className="mt-8 inline-block rounded-md px-6 py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</a>
       </div>
     </section>
   );
@@ -1565,7 +1565,7 @@ export const HOME_PAGE: SkeletonPage = {
         <div className="relative">
           <h2 className="text-3xl font-bold">让每一次点击，都有回应</h2>
           <p className="mx-auto mt-3 max-w-md" style={{ color: "var(--muted-foreground)" }}>把想法变成产品，几分钟的事。</p>
-          <a href="#signup" className="mt-8 inline-block rounded-md px-6 py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>免费开始</a>
+          <a href="#signup" className="mt-8 inline-block rounded-md px-6 py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费开始</a>
         </div>
       </div>
     </section>
@@ -1712,7 +1712,7 @@ export const HOME_PAGE: SkeletonPage = {
           </div>
           <form onSubmit={(e) => e.preventDefault()} className="flex w-full max-w-sm gap-2">
             <input placeholder="you@example.com" className="flex-1 rounded-lg border px-4 py-2.5 text-sm outline-none" style={{ borderColor: "var(--border)", background: "var(--background)" }} />
-            <button type="submit" className="rounded-lg px-5 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>订阅</button>
+            <button type="submit" className="rounded-lg px-5 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>订阅</button>
           </form>
         </div>
         <div className="mt-10 flex flex-col justify-between gap-2 text-xs sm:flex-row" style={{ color: "var(--muted-foreground)" }}>
@@ -1758,7 +1758,7 @@ export const HOME_PAGE: SkeletonPage = {
             <p className="text-sm font-semibold">订阅</p>
             <div className="mt-2 flex gap-1.5">
               <input placeholder="you@example.com" className="flex-1 rounded-md border px-3 py-1.5 text-xs outline-none" style={{ borderColor: "var(--border)", background: "var(--background)" }} />
-              <button className="rounded-md px-3 py-1.5 text-xs font-medium text-white" style={{ background: "var(--primary)" }}>→</button>
+              <button className="rounded-md px-3 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>→</button>
             </div>
           </div>
         </div>
@@ -2269,7 +2269,7 @@ export const HOME_PAGE: SkeletonPage = {
             <span className="text-3xl" style={{ color: "var(--primary)" }}>"</span>
             <p className="mt-2 flex-1 text-sm leading-relaxed">{t.q}</p>
             <div className="mt-4 flex items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "var(--primary)" }}>
+              <span className="flex size-9 items-center justify-center rounded-full text-sm font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
                 {t.n.slice(0, 1)}
               </span>
               <div>
@@ -2307,7 +2307,7 @@ export const HOME_PAGE: SkeletonPage = {
         {featured.q}
       </blockquote>
       <div className="mt-5 flex items-center justify-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "var(--primary)" }}>陈</span>
+        <span className="flex size-10 items-center justify-center rounded-full text-sm font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>陈</span>
         <div className="text-left">
           <p className="text-sm font-semibold">{featured.n}</p>
           <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{featured.r}</p>
@@ -2471,7 +2471,7 @@ export const HOME_PAGE: SkeletonPage = {
         <figure className="relative rounded-3xl border p-8 shadow-[var(--shadow)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="text-lg font-semibold leading-snug">"{cards[0].q}"</p>
           <figcaption className="mt-5 flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "var(--primary)" }}>{cards[0].n.slice(0, 1)}</span>
+            <span className="flex size-10 items-center justify-center rounded-full text-sm font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{cards[0].n.slice(0, 1)}</span>
             <span className="text-sm"><span className="font-semibold">{cards[0].n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{cards[0].r}</span></span>
           </figcaption>
         </figure>
@@ -2500,7 +2500,7 @@ export const HOME_PAGE: SkeletonPage = {
       <figure className="flex flex-col justify-center rounded-3xl border p-8" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <p className="text-2xl font-semibold leading-snug">"{main.q}"</p>
         <figcaption className="mt-6 flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "var(--primary)" }}>{main.n.slice(0, 1)}</span>
+          <span className="flex size-10 items-center justify-center rounded-full text-sm font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{main.n.slice(0, 1)}</span>
           <span className="text-sm"><span className="font-semibold">{main.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{main.r}</span></span>
         </figcaption>
       </figure>
@@ -2575,7 +2575,7 @@ export const HOME_PAGE: SkeletonPage = {
         {steps.map((s) => (
           <div key={s.n} className="flex flex-col items-start rounded-xl p-5" style={{ border: "1px solid color-mix(in srgb, " + s.c + " 45%, transparent)", background: "color-mix(in srgb, " + s.c + " 8%, var(--surface))" }}>
             <span className="text-3xl font-black" style={{ color: s.c, textShadow: "0 0 18px " + s.c }}>{s.n}</span>
-            <p className="mt-3 text-lg font-bold text-white">{s.t}</p>
+            <p className="mt-3 text-lg font-bold text-[var(--foreground)]">{s.t}</p>
             <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>某一步的简短说明</p>
           </div>
         ))}
@@ -2638,7 +2638,7 @@ export const HOME_PAGE: SkeletonPage = {
   return (
     <section className="px-6 py-20" style={{ background: "var(--background)" }}>
       <div className="mx-auto max-w-4xl px-6">
-        <h2 className="text-center text-xl font-bold text-white">集成生态</h2>
+        <h2 className="text-center text-xl font-bold text-[var(--foreground)]">集成生态</h2>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {tools.map((t) => (
             <div key={t.n} className="rounded-xl px-5 py-4 text-center font-semibold" style={{ border: "1px solid color-mix(in srgb, " + t.c + " 40%, transparent)", background: "color-mix(in srgb, " + t.c + " 8%, var(--surface))", color: t.c }}>{t.n}</div>
@@ -2683,7 +2683,7 @@ export const HOME_PAGE: SkeletonPage = {
           <label className="text-xs uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>留言</label>
           <div className="mt-1.5 h-20 border-b" style={{ borderColor: "var(--border)" }} />
         </div>
-        <button className="w-full rounded-md py-3 text-sm font-semibold text-white" style={{ background: "var(--primary)" }}>发送</button>
+        <button className="w-full rounded-md py-3 text-sm font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>发送</button>
       </div>
     </section>
   );
@@ -2702,7 +2702,7 @@ export const HOME_PAGE: SkeletonPage = {
   return (
     <section className="px-6 py-20" style={{ background: "linear-gradient(135deg,var(--background),var(--background))" }}>
       <div className="mx-auto max-w-md rounded-2xl p-6" style={{ border: "1px solid color-mix(in srgb, " + c + " 35%, transparent)", background: "color-mix(in srgb, var(--surface) 78%, transparent)", backdropFilter: "blur(14px)" }}>
-        <h2 className="text-center text-xl font-bold text-white">与我们聊聊</h2>
+        <h2 className="text-center text-xl font-bold text-[var(--foreground)]">与我们聊聊</h2>
         <div className="mt-5 space-y-3">
           <div className="rounded-lg px-3 py-2.5 text-sm text-slate-500" style={{ background: "var(--surface)" }}>姓名</div>
           <div className="rounded-lg px-3 py-2.5 text-sm text-slate-500" style={{ background: "var(--surface)" }}>you@example.com</div>

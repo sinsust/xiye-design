@@ -32,7 +32,7 @@ export const PRODUCT_PAGE: SkeletonPage = {
   ];
   return (
     <div className="relative">
-      <span className="absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>新品</span>
+      <span className="absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>新品</span>
       <div className="group overflow-hidden rounded-2xl">
         <img
           key={active}
@@ -121,12 +121,12 @@ export const PRODUCT_PAGE: SkeletonPage = {
         <p className="text-sm font-medium">尺码</p>
         <div className="mt-2 flex gap-2">
           {sizes.map((s, i) => (
-            <button key={s} className={["rounded-md border px-3 py-1.5 text-sm transition", i === 1 ? "text-white" : "hover:bg-muted"].join(" ")} style={i === 1 ? { background: "var(--primary)", borderColor: "var(--primary)" } : { borderColor: "var(--border)" }}>{s}</button>
+            <button key={s} className={["rounded-md border px-3 py-1.5 text-sm transition", i === 1 ? "text-[var(--on-primary)]" : "hover:bg-muted"].join(" ")} style={i === 1 ? { background: "var(--primary)", borderColor: "var(--primary)" } : { borderColor: "var(--border)" }}>{s}</button>
           ))}
         </div>
       </div>
       <div className="mt-6 flex gap-3">
-        <a href="#cart" className="flex-1 rounded-lg py-3 text-center text-sm font-medium text-white transition hover:opacity-90" style={{ background: "var(--primary)" }}>加入购物车</a>
+        <a href="#cart" className="flex-1 rounded-lg py-3 text-center text-sm font-medium text-[var(--on-primary)] transition hover:opacity-90" style={{ background: "var(--primary)" }}>加入购物车</a>
         <a href="#buy" className="flex-1 rounded-lg border py-3 text-center text-sm font-medium transition hover:bg-muted" style={{ borderColor: "var(--border)" }}>立即购买</a>
       </div>
     </div>
@@ -160,7 +160,7 @@ export const PRODUCT_PAGE: SkeletonPage = {
           </div>
         ))}
       </div>
-      <a href="#cart" className="mt-6 block rounded-full py-3 text-center text-sm font-medium text-white" style={{ background: "var(--primary)" }}>加入购物车</a>
+      <a href="#cart" className="mt-6 block rounded-full py-3 text-center text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>加入购物车</a>
     </div>
   );
 }`,
@@ -328,7 +328,7 @@ export const PRODUCT_PAGE: SkeletonPage = {
         <input placeholder="优惠码" className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm outline-none" style={{ borderColor: "var(--border)" }} />
         <button className="rounded-lg border px-3 text-sm font-medium" style={{ borderColor: "var(--border)" }}>应用</button>
       </div>
-      <a href="#checkout" className="mt-4 block rounded-lg py-3 text-center text-sm font-medium text-white" style={{ background: "var(--primary)" }}>去结算</a>
+      <a href="#checkout" className="mt-4 block rounded-lg py-3 text-center text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>去结算</a>
       <p className="mt-3 text-center text-xs" style={{ color: "var(--muted-foreground)" }}>🔒 安全加密支付 · 7 天无理由退换</p>
     </div>
   );

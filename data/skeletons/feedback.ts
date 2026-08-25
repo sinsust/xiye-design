@@ -121,7 +121,7 @@ export const FEEDBACK_PAGE: SkeletonPage = {
           code: `export function LoaderButton() {
   return (
     <div className="flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
-      <button className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white opacity-80" style={{ background: "var(--primary)" }} disabled>
+      <button className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-[var(--on-primary)] opacity-80" style={{ background: "var(--primary)" }} disabled>
         <span className="size-4 animate-spin rounded-full border-2" style={{ borderColor: "var(--on-primary)", borderTopColor: "transparent" }} />
         提交中…
       </button>

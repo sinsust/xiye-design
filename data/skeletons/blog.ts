@@ -217,7 +217,7 @@ export const BLOG_PAGE: SkeletonPage = {
             </ul>
           </div>
           <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)" }}>
-            <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>张</span>
+            <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>张</span>
             <p className="mt-2 text-sm font-semibold">张三</p>
             <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>独立设计师 · 写关于设计系统与 AI</p>
           </div>
@@ -281,7 +281,7 @@ export const BLOG_PAGE: SkeletonPage = {
         <h2 className="text-2xl font-bold tracking-tight">按主题浏览</h2>
         <div className="mt-6 flex flex-wrap gap-2.5">
           {tags.map((t) => (
-            <a key={t.t} href="#tag" className={["rounded-full px-4 py-2 text-sm transition", t.active ? "text-white" : "border hover:bg-muted"].join(" ")} style={t.active ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+            <a key={t.t} href="#tag" className={["rounded-full px-4 py-2 text-sm transition", t.active ? "text-[var(--on-primary)]" : "border hover:bg-muted"].join(" ")} style={t.active ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
               {t.t} <span className="opacity-70">{t.n}</span>
             </a>
           ))}

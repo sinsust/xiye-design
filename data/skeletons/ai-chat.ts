@@ -32,9 +32,9 @@ export const AI_CHAT_PAGE: SkeletonPage = {
       {msgs.map((m, i) => (
         <div key={i} className={"flex items-start gap-2.5 " + (m.from === "user" ? "flex-row-reverse" : "")}>
           {m.from === "ai" && (
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full text-xs text-white" style={{ background: "var(--primary)" }}>✦</span>
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full text-xs text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
           )}
-          <div className={"max-w-[75%] rounded-2xl px-4 py-2.5 text-sm " + (m.from === "user" ? "text-white" : "")} style={m.from === "user" ? { background: "var(--primary)" } : { background: "var(--background)" }}>
+          <div className={"max-w-[75%] rounded-2xl px-4 py-2.5 text-sm " + (m.from === "user" ? "text-[var(--on-primary)]" : "")} style={m.from === "user" ? { background: "var(--primary)" } : { background: "var(--background)" }}>
             {m.text}
           </div>
         </div>
@@ -65,7 +65,7 @@ export const AI_CHAT_PAGE: SkeletonPage = {
     <div className="flex items-center gap-2 rounded-full border p-1.5 pl-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <span className="text-base" style={{ color: "var(--muted-foreground)" }}>＋</span>
       <input placeholder="输入消息…" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
-      <button aria-label="发送" className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-white" style={{ background: "var(--primary)" }}>
+      <button aria-label="发送" className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
         ↑
       </button>
     </div>
@@ -87,9 +87,9 @@ export const AI_CHAT_PAGE: SkeletonPage = {
       <div className="flex items-center justify-between border-t pt-2.5" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-2">
           <span className="rounded-full border px-2.5 py-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>智能模型 v2</span>
-          <span className="rounded-full px-2.5 py-1 text-[10px] font-medium text-white" style={{ background: "var(--primary)" }}>对话</span>
+          <span className="rounded-full px-2.5 py-1 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>对话</span>
         </div>
-        <button aria-label="发送" className="flex size-8 items-center justify-center rounded-full text-sm text-white" style={{ background: "var(--primary)" }}>↑</button>
+        <button aria-label="发送" className="flex size-8 items-center justify-center rounded-full text-sm text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>↑</button>
       </div>
     </div>
   );

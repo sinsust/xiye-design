@@ -38,7 +38,7 @@ export const UIVERSE_KIT: UiverseKitItem[] = [
     name: "主行动胶囊按钮",
     source: "Uiverse · @necatihz",
     note: "Hero/CTA 主行动：primary 底 + hover 光晕扩散 + 上浮",
-    code: `<button type="button" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-semibold text-primary-foreground transition-transform duration-300 hover:-translate-y-0.5" style={{ background: "var(--primary)" }}>
+    code: `<button type="button" className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-sm font-semibold text-[var(--on-primary)] transition-transform duration-300 hover:-translate-y-0.5" style={{ background: "var(--primary)" }}>
   <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "radial-gradient(120px circle at center, color-mix(in srgb, white 25%, transparent), transparent 70%)" }} />
   <span className="relative">立即开始</span>
   <span className="relative transition-transform duration-300 group-hover:translate-x-0.5">→</span>

@@ -26,7 +26,7 @@ export const AUTH_PAGE: SkeletonPage = {
     <div className="flex min-h-screen items-center justify-center px-6" style={{ background: "var(--background)" }}>
       <div className="w-full max-w-sm rounded-2xl border p-8" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <div className="text-center">
-          <div className="mx-auto flex size-11 items-center justify-center rounded-xl text-lg font-black text-white" style={{ background: "var(--primary)" }}>A</div>
+          <div className="mx-auto flex size-11 items-center justify-center rounded-xl text-lg font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</div>
           <h1 className="mt-4 text-xl font-bold">欢迎回来</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
         </div>
@@ -43,7 +43,7 @@ export const AUTH_PAGE: SkeletonPage = {
             <label className="flex items-center gap-1.5"><input type="checkbox" className="accent-[var(--primary)]" /> 记住我</label>
             <a href="#forgot" style={{ color: "var(--primary)" }}>忘记{{auth.password}}？</a>
           </div>
-          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
         </form>
         <div className="my-5 flex items-center gap-3 text-xs" style={{ color: "var(--muted-foreground)" }}>
           <span className="h-px flex-1" style={{ background: "var(--border)" }} />或<span className="h-px flex-1" style={{ background: "var(--border)" }} />
@@ -87,7 +87,7 @@ export const AUTH_PAGE: SkeletonPage = {
             </div>
             <input type="password" className="rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--background)" }} />
           </div>
-          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
         </form>
         <button className="mt-4 w-full rounded-lg border py-2.5 text-sm font-medium" style={{ borderColor: "var(--border)" }}>使用 Google 登录</button>
         <p className="mt-6 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
@@ -123,7 +123,7 @@ export const AUTH_PAGE: SkeletonPage = {
             <label className="text-sm font-medium text-slate-200">{{auth.password}}</label>
             <input type="password" className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-[var(--primary)]" />
           </div>
-          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
         </form>
         <p className="mt-6 text-center text-sm text-slate-400">
           还没有账号？<a href="#signup" style={{ color: "var(--primary)" }}>注册</a>
@@ -153,7 +153,7 @@ export const AUTH_PAGE: SkeletonPage = {
           <div className="border-b pb-1" style={{ borderColor: "var(--border)" }}>
             <input type="password" placeholder="{{auth.password}}" className="w-full bg-transparent py-1.5 text-sm outline-none" />
           </div>
-          <button type="submit" className="w-full rounded-full py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+          <button type="submit" className="w-full rounded-full py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
         </form>
         <p className="mt-6 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
           <a href="#signup" style={{ color: "var(--primary)" }}>注册新账号</a>
@@ -176,7 +176,7 @@ export const AUTH_PAGE: SkeletonPage = {
     <div className="flex min-h-screen items-center justify-center px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--background)), var(--background) 55%, color-mix(in srgb, var(--secondary) 10%, var(--background)))" }}>
       <div className="w-full max-w-sm rounded-3xl border p-8" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px color-mix(in srgb, var(--foreground) 12%, transparent)" }}>
         <div className="text-center">
-          <span className="mx-auto flex size-11 items-center justify-center rounded-xl text-lg font-black text-white" style={{ background: "var(--primary)", boxShadow: "0 10px 24px color-mix(in srgb, var(--primary) 35%, transparent)" }}>A</span>
+          <span className="mx-auto flex size-11 items-center justify-center rounded-xl text-lg font-black text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 10px 24px color-mix(in srgb, var(--primary) 35%, transparent)" }}>A</span>
           <h1 className="mt-4 text-xl font-bold">欢迎回来</h1>
           <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
         </div>
@@ -189,7 +189,7 @@ export const AUTH_PAGE: SkeletonPage = {
             <label className="text-sm font-medium">{{auth.password}}</label>
             <input type="password" placeholder="••••••••" className="rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 55%, transparent)" }} />
           </div>
-          <button type="submit" className="w-full rounded-xl py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</button>
+          <button type="submit" className="w-full rounded-xl py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</button>
         </form>
       </div>
     </div>
@@ -220,7 +220,7 @@ export const AUTH_PAGE: SkeletonPage = {
             <label className="block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>{{auth.password}}</label>
             <input type="password" className="w-full bg-transparent py-1 text-base outline-none" />
           </div>
-          <button type="submit" className="w-full rounded-full py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+          <button type="submit" className="w-full rounded-full py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
         </form>
         <p className="mt-6 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
           还没有账号？<a href="#signup" style={{ color: "var(--primary)" }}>注册</a>
@@ -433,7 +433,7 @@ export const AUTH_PAGE: SkeletonPage = {
               <label className="text-sm font-medium">{{auth.password}}</label>
               <input type="password" className="rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }} />
             </div>
-            <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+            <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
           </form>
         </div>
       </div>
@@ -468,7 +468,7 @@ export const AUTH_PAGE: SkeletonPage = {
           <form onSubmit={(e) => e.preventDefault()} className="mt-6 space-y-4">
             <input type="email" placeholder="{{auth.email}}" className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }} />
             <input type="password" placeholder="{{auth.password}}" className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }} />
-            <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+            <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
           </form>
         </div>
       </div>
@@ -500,7 +500,7 @@ export const AUTH_PAGE: SkeletonPage = {
           <form onSubmit={(e) => e.preventDefault()} className="mt-6 space-y-4">
             <input type="email" placeholder="{{auth.email}}" className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-[var(--primary)]" />
             <input type="password" placeholder="{{auth.password}}" className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-[var(--primary)]" />
-            <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+            <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
           </form>
         </div>
       </div>
@@ -533,7 +533,7 @@ export const AUTH_PAGE: SkeletonPage = {
           <form onSubmit={(e) => e.preventDefault()} className="mt-6 space-y-4">
             <input type="email" placeholder="{{auth.email}}" className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 50%, transparent)" }} />
             <input type="password" placeholder="{{auth.password}}" className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--background) 50%, transparent)" }} />
-            <button type="submit" className="w-full rounded-xl py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</button>
+            <button type="submit" className="w-full rounded-xl py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</button>
           </form>
         </div>
       </div>
@@ -570,7 +570,7 @@ export const AUTH_PAGE: SkeletonPage = {
             <div className="border-b pb-1.5" style={{ borderColor: "var(--border)" }}>
               <input type="password" placeholder="{{auth.password}}" className="w-full bg-transparent py-1 text-sm outline-none" />
             </div>
-            <button type="submit" className="w-full rounded-full py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>登录</button>
+            <button type="submit" className="w-full rounded-full py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</button>
           </form>
         </div>
       </div>
@@ -615,7 +615,7 @@ export const AUTH_PAGE: SkeletonPage = {
         <label className="flex items-start gap-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
           <input type="checkbox" className="mt-0.5 accent-[var(--primary)]" /> 我已阅读并同意<a href="#tos" style={{ color: "var(--primary)" }}>服务条款</a>与<a href="#privacy" style={{ color: "var(--primary)" }}>隐私政策</a>
         </label>
-        <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>免费注册</button>
+        <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</button>
       </form>
       <p className="mt-6 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
         已有账号？<a href="#login" style={{ color: "var(--primary)" }}>登录</a>
@@ -658,7 +658,7 @@ export const AUTH_PAGE: SkeletonPage = {
           <label className="text-sm font-medium">{{auth.password}}</label>
           <input type="password" className="rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }} />
         </div>
-        <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>创建账号</button>
+        <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>创建账号</button>
       </form>
     </div>
   );
@@ -693,7 +693,7 @@ export const AUTH_PAGE: SkeletonPage = {
             <label className="text-sm font-medium">{{auth.email}}</label>
             <input type="email" placeholder="you@example.com" className="rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }} />
           </div>
-          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>下一步</button>
+          <button type="submit" className="w-full rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>下一步</button>
         </form>
       ) : (
         <form onSubmit={(e) => e.preventDefault()} className="mt-6 space-y-4">
@@ -711,7 +711,7 @@ export const AUTH_PAGE: SkeletonPage = {
           </div>
           <div className="flex gap-3">
             <button onClick={() => setStep(1)} className="flex-1 rounded-lg border py-2.5 text-sm font-medium" style={{ borderColor: "var(--border)" }}>上一步</button>
-            <button type="submit" className="flex-1 rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>完成注册</button>
+            <button type="submit" className="flex-1 rounded-lg py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>完成注册</button>
           </div>
         </form>
       )}
@@ -748,7 +748,7 @@ export const AUTH_PAGE: SkeletonPage = {
         <label className="flex items-start gap-2 text-xs" style={{ color: "var(--muted-foreground)" }}>
           <input type="checkbox" className="mt-0.5 accent-[var(--primary)]" /> 我已阅读并同意<a href="#tos" style={{ color: "var(--primary)" }}>服务条款</a>
         </label>
-        <button type="submit" className="w-full rounded-xl py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>免费注册</button>
+        <button type="submit" className="w-full rounded-xl py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>免费注册</button>
       </form>
     </div>
   );
@@ -780,7 +780,7 @@ export const AUTH_PAGE: SkeletonPage = {
           <label className="block text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>{{auth.password}}</label>
           <input type="password" className="w-full bg-transparent py-1 text-base outline-none" />
         </div>
-        <button type="submit" className="w-full rounded-full py-3 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>免费注册</button>
+        <button type="submit" className="w-full rounded-full py-3 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</button>
       </form>
       <p className="mt-6 text-center text-xs" style={{ color: "var(--muted-foreground)" }}>
         已有账号？<a href="#login" style={{ color: "var(--primary)" }}>登录</a>

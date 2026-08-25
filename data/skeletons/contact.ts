@@ -44,7 +44,7 @@ export const CONTACT_PAGE: SkeletonPage = {
         <label className="text-sm font-medium">留言</label>
         <textarea rows={4} placeholder="简单描述你的需求…" className="rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--background)" }} />
       </div>
-      <button type="submit" className="rounded-lg px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90" style={{ background: "var(--primary)" }}>发送留言</button>
+      <button type="submit" className="rounded-lg px-6 py-2.5 text-sm font-medium text-[var(--on-primary)] transition hover:opacity-90" style={{ background: "var(--primary)" }}>发送留言</button>
       <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>我们会在 1 个工作日内回复。</p>
     </form>
   );
@@ -94,7 +94,7 @@ export const CONTACT_PAGE: SkeletonPage = {
           <label className="text-sm font-medium">留言</label>
           <textarea rows={5} placeholder="简单描述你的需求…" className="rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }} />
         </div>
-        <button type="submit" className="rounded-lg px-6 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>发送</button>
+        <button type="submit" className="rounded-lg px-6 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>发送</button>
       </form>
     </section>
   );

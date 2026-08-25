@@ -31,7 +31,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
   return (
     <aside className="flex h-screen w-60 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <div className="flex items-center gap-2 px-5 py-4">
-        <span className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: "var(--primary)" }}>A</span>
+        <span className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
         <span className="font-bold">{{brand}}</span>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-2">
@@ -43,7 +43,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
       </nav>
       <div className="border-t p-3" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>张</span>
+          <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>张</span>
           <div className="flex-1">
             <p className="text-sm font-medium">张三</p>
             <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>zhang@acme.com</p>
@@ -67,15 +67,15 @@ export const DASHBOARD_PAGE: SkeletonPage = {
   const items = ["▦", "▤", "📊", "⚙", "🔔"];
   return (
     <aside className="flex h-screen w-16 flex-col items-center border-r py-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-      <span className="flex size-9 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: "var(--primary)" }}>A</span>
+      <span className="flex size-9 items-center justify-center rounded-xl text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
       <nav className="mt-6 flex flex-1 flex-col items-center gap-2">
         {items.map((ic, i) => (
-          <a key={i} href="#" title={"导航 " + (i + 1)} className={["flex size-10 items-center justify-center rounded-xl text-base transition", i === 0 ? "text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground"].join(" ")} style={i === 0 ? { background: "var(--primary)" } : {}}>
+          <a key={i} href="#" title={"导航 " + (i + 1)} className={["flex size-10 items-center justify-center rounded-xl text-base transition", i === 0 ? "text-[var(--on-primary)]" : "text-muted-foreground hover:bg-muted hover:text-foreground"].join(" ")} style={i === 0 ? { background: "var(--primary)" } : {}}>
             {ic}
           </a>
         ))}
       </nav>
-      <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>张</span>
+      <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>张</span>
     </aside>
   );
 }`,
@@ -97,12 +97,12 @@ export const DASHBOARD_PAGE: SkeletonPage = {
   return (
     <aside className="flex h-screen w-60 flex-col bg-slate-900 text-slate-100">
       <div className="flex items-center gap-2 px-5 py-4">
-        <span className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: "var(--primary)" }}>A</span>
+        <span className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
         <span className="font-bold">{{brand}}</span>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-2">
         {items.map((i) => (
-          <a key={i.label} href="#" className={["flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium", i.active ? "text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"].join(" ")} style={i.active ? { background: "var(--primary)" } : {}}>
+          <a key={i.label} href="#" className={["flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium", i.active ? "text-[var(--on-primary)]" : "text-slate-400 hover:bg-slate-800 hover:text-white"].join(" ")} style={i.active ? { background: "var(--primary)" } : {}}>
             <span aria-hidden>{i.icon}</span>{i.label}
           </a>
         ))}
@@ -135,7 +135,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
   return (
     <aside className="flex h-screen w-60 flex-col border-r p-3" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 70%, transparent)", backdropFilter: "blur(16px)" }}>
       <div className="flex items-center gap-2 px-2 py-3">
-        <span className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-white" style={{ background: "var(--primary)" }}>A</span>
+        <span className="flex size-8 items-center justify-center rounded-lg text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
         <span className="font-bold">{{brand}}</span>
       </div>
       <nav className="flex-1 space-y-1">
@@ -147,7 +147,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
       </nav>
       <div className="border-t pt-3" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-          <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>张</span>
+          <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>张</span>
           <div className="flex-1">
             <p className="text-sm font-medium">张三</p>
             <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>zhang@acme.com</p>
@@ -216,12 +216,12 @@ export const DASHBOARD_PAGE: SkeletonPage = {
         {items.map((i) => (
           <a key={i.label} href="#" className={["flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition", i.active ? "text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"].join(" ")} style={i.active ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)" } : {}}>
             <span>{i.label}</span>
-            {i.badge && <span className="rounded-full px-1.5 text-[10px] font-semibold text-white" style={{ background: "var(--primary)" }}>{i.badge}</span>}
+            {i.badge && <span className="rounded-full px-1.5 text-[10px] font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{i.badge}</span>}
           </a>
         ))}
       </nav>
       <div className="flex items-center gap-3 border-t p-4" style={{ borderColor: "var(--border)" }}>
-        <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>运</span>
+        <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>运</span>
         <div className="flex-1">
           <p className="text-sm font-medium">{{user.name}}</p>
           <p className="text-[11px]" style={{ color: "var(--muted-foreground)" }}>运营负责人</p>
@@ -582,7 +582,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
       <p className="mt-1 max-w-xs text-sm" style={{ color: "var(--muted-foreground)" }}>
         接入数据源后，这里会展示你的分析图表。
       </p>
-      <button className="mt-4 rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>
+      <button className="mt-4 rounded-lg px-4 py-2 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
         接入数据源
       </button>
     </div>
@@ -714,7 +714,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
             <tr key={r.n} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
               <td className="p-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex size-8 items-center justify-center rounded-lg text-xs font-bold text-white" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>
+                  <span className="flex size-8 items-center justify-center rounded-lg text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>
                   <span className="font-medium">{r.n}</span>
                 </div>
               </td>
@@ -784,7 +784,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
     <div className="divide-y rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       {msgs.map((m) => (
         <div key={m.t} className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-muted/50">
-          <span className="relative flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>
+          <span className="relative flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
             {m.n.slice(0, 1)}
             {m.unread && <span className="absolute right-0 top-0 size-2.5 rounded-full border-2 border-card" style={{ background: "var(--primary)" }} />}
           </span>
@@ -916,7 +916,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
         </span>
         <span className="h-5 w-px" style={{ background: "var(--border)" }} />
         <div className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>张</span>
+          <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>张</span>
           <span className="hidden text-sm font-medium sm:inline">张三</span>
         </div>
       </div>
@@ -966,7 +966,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
         <span aria-hidden>🔔</span>
         <span className="absolute -right-1 -top-1 size-2 rounded-full" style={{ background: "var(--secondary)" }} />
       </span>
-      <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>张</span>
+      <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>张</span>
     </header>
   );
 }`,
@@ -992,8 +992,8 @@ export const DASHBOARD_PAGE: SkeletonPage = {
       </nav>
       <div className="flex shrink-0 items-center gap-2">
         <span className="rounded-md border px-2 py-1 text-[11px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌘K 命令中心</span>
-        <span className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ background: "var(--primary)" }}>+ 新建</span>
-        <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>运</span>
+        <span className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>+ 新建</span>
+        <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>运</span>
       </div>
     </header>
   );
@@ -1184,7 +1184,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
                   <span className="text-[10px]" style={{ color: i.tag }}>● ____</span>
                   <span style={{ color: "var(--muted-foreground)" }}>⋯</span>
                 </div>
-                <p className="mt-2 font-semibold text-white">{i.n}</p>
+                <p className="mt-2 font-semibold text-[var(--foreground)]">{i.n}</p>
               </div>
             ))}
           </div>
@@ -1342,7 +1342,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
     <div className="rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <div className="flex gap-1 border-b p-3" style={{ borderColor: "var(--border)" }}>
         {tabs.map((t) => (
-          <span key={t} className={"cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium " + (t === active ? "text-white" : "")} style={t === active ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
+          <span key={t} className={"cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium " + (t === active ? "text-[var(--on-primary)]" : "")} style={t === active ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
         ))}
       </div>
       <div className="p-8 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>
@@ -1386,7 +1386,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
   return (
     <div className="inline-flex gap-1 rounded-full p-1" style={{ border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)", backdropFilter: "blur(12px)" }}>
       {tabs.map((t, i) => (
-        <span key={t} className={"cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium " + (i === 0 ? "text-white" : "")} style={i === 0 ? { background: "var(--primary)", boxShadow: "0 4px 20px -6px var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
+        <span key={t} className={"cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)", boxShadow: "0 4px 20px -6px var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
       ))}
     </div>
   );
@@ -1414,7 +1414,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
   return (
     <div className="flex flex-wrap items-center gap-2">
       {chips.map((c) => (
-        <span key={c} className={"cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition " + (c === active ? "text-white" : "")} style={c === active ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
+        <span key={c} className={"cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium transition " + (c === active ? "text-[var(--on-primary)]" : "")} style={c === active ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
       ))}
       <button className="text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button>
     </div>
@@ -1438,7 +1438,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
       </div>
       <div className="flex flex-wrap gap-1.5">
         {chips.map((c, i) => (
-          <span key={c} className={"cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium " + (i === 0 ? "text-white" : "")} style={i === 0 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
+          <span key={c} className={"cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
         ))}
         <button className="px-1 text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button>
       </div>
@@ -1593,7 +1593,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
       <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
         {rows.map((r) => (
           <li key={r.n} className="flex items-center gap-3 px-4 py-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>
             <span className="min-w-0 flex-1 truncate text-sm font-medium">{r.n}</span>
             <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{r.r}</span>
             <span className="flex items-center gap-3 text-xs" style={{ color: "var(--muted-foreground)" }}>
@@ -1765,7 +1765,7 @@ export const DASHBOARD_PAGE: SkeletonPage = {
         <div key={x.l} className="flex flex-col items-center rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="relative size-16">
             <span className="absolute inset-0 rounded-full" style={{ background: "conic-gradient(" + x.c + " " + x.p * 1.8 + "deg, var(--surface) 0deg)" }} />
-            <span className="absolute inset-[6px] flex items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "var(--surface)" }}>{x.p}</span>
+            <span className="absolute inset-[6px] flex items-center justify-center rounded-full text-sm font-bold text-[var(--foreground)]" style={{ background: "var(--surface)" }}>{x.p}</span>
           </div>
           <p className="mt-2 text-xs font-medium" style={{ color: x.c }}>{x.l}</p>
         </div>

@@ -38,7 +38,7 @@ export const PORTFOLIO_PAGE: SkeletonPage = {
           <h2 className="text-3xl font-bold tracking-tight">精选作品</h2>
           <div className="flex gap-2 text-xs">
             {["全部", "Branding", "Web", "Motion"].map((f, i) => (
-              <span key={f} className={"rounded-full px-3 py-1.5 " + (i === 0 ? "text-white" : "border")} style={i === 0 ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{f}</span>
+              <span key={f} className={"rounded-full px-3 py-1.5 " + (i === 0 ? "text-[var(--on-primary)]" : "border")} style={i === 0 ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{f}</span>
             ))}
           </div>
         </div>

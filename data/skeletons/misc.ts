@@ -27,7 +27,7 @@ export const MISC_PAGE: SkeletonPage = {
       <p className="text-8xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>404</p>
       <p className="mt-4 text-lg font-medium">页面走丢了</p>
       <p className="mt-1 text-sm" style={{ color: "var(--muted-foreground)" }}>你访问的页面不存在或已被移动。</p>
-      <a href="/" className="mt-7 rounded-lg px-6 py-2.5 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>返回首页</a>
+      <a href="/" className="mt-7 rounded-lg px-6 py-2.5 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>返回首页</a>
     </section>
   );
 }`,
@@ -81,7 +81,7 @@ export const MISC_PAGE: SkeletonPage = {
           code: `export function ComingSoon() {
   return (
     <section className="flex min-h-[85vh] flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-      <span className="flex size-11 items-center justify-center rounded-xl text-lg font-black text-white" style={{ background: "var(--primary)" }}>✦</span>
+      <span className="flex size-11 items-center justify-center rounded-xl text-lg font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
       <p className="mt-6 text-xs uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>Coming Soon</p>
       <h1 className="mt-4 text-4xl font-black leading-tight tracking-tight sm:text-6xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>
         即将上线<span style={{ fontStyle: "italic", color: "var(--primary)" }}>。</span>
@@ -89,7 +89,7 @@ export const MISC_PAGE: SkeletonPage = {
       <p className="mt-4 max-w-sm text-base" style={{ color: "var(--muted-foreground)" }}>留下邮箱，第一时间获取上线通知与早期体验资格。</p>
       <form onSubmit={(e) => e.preventDefault()} className="mt-8 flex w-full max-w-sm items-center gap-2 rounded-full border p-1.5 pl-4" style={{ borderColor: "var(--border)" }}>
         <input type="email" placeholder="you@example.com" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
-        <button type="submit" className="shrink-0 rounded-full px-5 py-2 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>通知我</button>
+        <button type="submit" className="shrink-0 rounded-full px-5 py-2 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>通知我</button>
       </form>
     </section>
   );
@@ -124,7 +124,7 @@ export const MISC_PAGE: SkeletonPage = {
       </div>
       <form onSubmit={(e) => e.preventDefault()} className="mt-8 flex w-full max-w-sm items-center gap-2 rounded-full border p-1.5 pl-4" style={{ borderColor: "var(--border)" }}>
         <input type="email" placeholder="you@example.com" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
-        <button type="submit" className="shrink-0 rounded-full px-5 py-2 text-sm font-medium text-white" style={{ background: "var(--primary)" }}>获取名额</button>
+        <button type="submit" className="shrink-0 rounded-full px-5 py-2 text-sm font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>获取名额</button>
       </form>
       <p className="mt-4 text-xs" style={{ color: "var(--muted-foreground)" }}>首批仅开放 1,200 个体验名额</p>
     </section>

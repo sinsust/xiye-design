@@ -28,7 +28,7 @@ export const BUTTON_STYLES: ButtonStyleDef[] = [
     id: "solid",
     name: "实心（默认）",
     description: "accent 实底 + 白色文字，最强烈的主导操作",
-    preview: { background: "var(--primary)", color: "#fff" },
+    preview: { background: "var(--primary)", color: "var(--on-primary)" },
   },
   {
     id: "outline",
@@ -59,7 +59,7 @@ export const BUTTON_STYLES: ButtonStyleDef[] = [
     id: "pill",
     name: "胶囊",
     description: "全圆角胶囊 + hover 轻微浮起",
-    preview: { background: "var(--primary)", color: "#fff" },
+    preview: { background: "var(--primary)", color: "var(--on-primary)" },
     round: { from: "rounded-[var(--radius)]", to: "rounded-full" },
     className: "hover:-translate-y-0.5",
   },
