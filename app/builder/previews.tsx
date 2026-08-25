@@ -742,53 +742,57 @@ function HeroPreview({ variantId }: { variantId: string }) {
   const hero = PREVIEW_CONTENT.hero;
   if (variantId === "hero_center")
     return (
-      <div className="px-6 py-8 text-center">
-        <SectionBadge>{hero.badge || "✨ 全新 AI 功能上线"}</SectionBadge>
-        <h3 className="mx-auto mt-3 max-w-md text-[length:var(--text-h3)] font-bold leading-snug tracking-tight">把想法变成产品，快 10 倍</h3>
-        <p className="mx-auto mt-1.5 max-w-sm text-xs" style={{ color: "var(--muted-foreground)" }}>无需代码，从骨架到上线，几分钟完成可用原型。</p>
-        <div className="mt-5 flex justify-center gap-2">
+      <div className="pv-stagger px-6 py-8 text-center">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
+          <SectionBadge>{hero.badge || "✨ 全新 AI 功能上线"}</SectionBadge>
+        </div>
+        <h3 className="pv-in mx-auto mt-3 max-w-md text-[length:var(--text-h3)] font-bold leading-snug tracking-tight" style={{ ["--i" as string]: 1 }}>把想法变成产品，快 10 倍</h3>
+        <p className="pv-in mx-auto mt-1.5 max-w-sm text-xs" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>无需代码，从骨架到上线，几分钟完成可用原型。</p>
+        <div className="pv-in mt-5 flex justify-center gap-2" style={{ ["--i" as string]: 3 }}>
           <Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn>
           <Btn>查看演示</Btn>
         </div>
-        <div className="group mx-auto mt-5 max-w-xl overflow-hidden rounded-xl border shadow-sm" style={{ borderColor: "var(--border)" }}>
+        <div className="pv-in group mx-auto mt-5 max-w-xl overflow-hidden rounded-xl border shadow-sm pv-lift pv-spotlight" style={{ ["--i" as string]: 4, borderColor: "var(--border)" }}>
           <Img label="产品截图" src={ph("hero", 0, 1200)} />
         </div>
       </div>
     );
   if (variantId === "hero_left")
     return (
-      <div className="grid items-center gap-6 px-6 py-8 md:grid-cols-2">
+      <div className="pv-stagger grid items-center gap-6 px-6 py-8 md:grid-cols-2">
         <div>
-          <SectionBadge>企业级平台</SectionBadge>
-          <h3 className="mt-3 text-[length:var(--text-h3)] font-bold">让团队协作更高效</h3>
-          <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>一体化工作台：项目、任务、{PREVIEW_CONTENT.nav.docs}、看板。</p>
-          <div className="mt-3 flex gap-2"><Btn primary glow>{PREVIEW_CONTENT.cta.secondary}</Btn><Btn>预约演示</Btn></div>
+          <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>企业级平台</SectionBadge></div>
+          <h3 className="pv-in mt-3 text-[length:var(--text-h3)] font-bold" style={{ ["--i" as string]: 1 }}>让团队协作更高效</h3>
+          <p className="pv-in mt-1.5 text-xs" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>一体化工作台：项目、任务、{PREVIEW_CONTENT.nav.docs}、看板。</p>
+          <div className="pv-in mt-3 flex gap-2" style={{ ["--i" as string]: 3 }}><Btn primary glow>{PREVIEW_CONTENT.cta.secondary}</Btn><Btn>预约演示</Btn></div>
         </div>
-        <div className="rounded-xl border p-1.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <div className="pv-in rounded-xl border p-1.5 pv-lift pv-spotlight" style={{ ["--i" as string]: 2, borderColor: "var(--border)", background: "var(--surface)" }}>
           <Img label="产品界面" src={ph("hero", 1, 1000)} />
         </div>
       </div>
     );
   if (variantId === "hero_split")
     return (
-      <div className="grid min-h-56 grid-cols-2">
+      <div className="pv-stagger grid min-h-56 grid-cols-2">
         <div className="flex items-center px-5">
           <div>
-            <SectionBadge>设计与技术</SectionBadge>
-            <h3 className="mt-3 text-lg font-bold leading-snug">设计驱动的前沿品牌</h3>
-            <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>用设计与技术讲好品牌故事。</p>
-            <div className="mt-3 flex gap-2"><Btn primary glow>联系我们</Btn><Btn>查看作品</Btn></div>
+            <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>设计与技术</SectionBadge></div>
+            <h3 className="pv-in mt-3 text-lg font-bold leading-snug" style={{ ["--i" as string]: 1 }}>设计驱动的前沿品牌</h3>
+            <p className="pv-in mt-1.5 text-xs" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>用设计与技术讲好品牌故事。</p>
+            <div className="pv-in mt-3 flex gap-2" style={{ ["--i" as string]: 3 }}><Btn primary glow>联系我们</Btn><Btn>查看作品</Btn></div>
           </div>
         </div>
-        <div className="flex items-center justify-center bg-gradient-to-br from-[color-mix(in_srgb,var(--primary)_35%,transparent)] to-[color-mix(in_srgb,var(--secondary)_40%,transparent)]">
-          <Img label="品牌视觉" src={ph("brand", 2, 900)} />
+        <div className="pv-tilt-wrap flex items-center justify-center overflow-hidden pv-aurora">
+          <div className="pv-in pv-tilt rounded-xl border p-1.5" style={{ ["--i" as string]: 2, borderColor: "var(--border)", background: "color-mix(in oklch, var(--surface) 70%, transparent)", backdropFilter: "blur(8px)" }}>
+            <Img label="品牌视觉" src={ph("brand", 2, 900)} />
+          </div>
         </div>
       </div>
     );
   if (variantId === "hero_glass")
     return (
-      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, var(--background)), color-mix(in srgb, var(--secondary) 15%, var(--background)))" }}>
-        <div className="max-w-sm rounded-2xl border p-6 text-center" style={{ background: "color-mix(in srgb, var(--surface) 60%, transparent)", borderColor: "var(--border)", backdropFilter: "blur(20px)" }}>
+      <div className="pv-stagger flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, var(--background)), color-mix(in srgb, var(--secondary) 15%, var(--background)))" }}>
+        <div className="pv-in pv-glass max-w-sm rounded-2xl border p-6 text-center pv-spotlight" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>玻璃质感</SectionBadge>
           <h3 className="mt-3 text-lg font-bold">轻盈而强大的产品体验</h3>
           <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>玻璃拟态风格，通透现代。</p>
@@ -798,36 +802,36 @@ function HeroPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "hero_gradient")
     return (
-      <div className="px-6 py-10 text-center text-white" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
-        <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-white" style={{ borderColor: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.14)" }}>智能驱动</span>
-        <h3 className="mt-3 text-[length:var(--text-h3)] font-bold">开启你的数字之旅</h3>
-        <p className="mx-auto mt-1.5 max-w-sm text-xs text-white/80">从零到一，用科技和创意点亮你的品牌。</p>
-        <div className="mt-4 flex justify-center gap-2">
-          <span className="inline-block cursor-pointer rounded-md bg-white px-3.5 py-1.5 text-xs font-medium text-slate-900 transition-transform duration-200 hover:-translate-y-0.5">{PREVIEW_CONTENT.cta.primary}</span>
+      <div className="pv-stagger px-6 py-10 text-center text-white" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
+        <span className="pv-in inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-white" style={{ ["--i" as string]: 0, borderColor: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.14)" }}>智能驱动</span>
+        <h3 className="pv-in mt-3 text-[length:var(--text-h3)] font-bold" style={{ ["--i" as string]: 1 }}>开启你的数字之旅</h3>
+        <p className="pv-in mx-auto mt-1.5 max-w-sm text-xs text-white/80" style={{ ["--i" as string]: 2 }}>从零到一，用科技和创意点亮你的品牌。</p>
+        <div className="pv-in mt-4 flex justify-center gap-2" style={{ ["--i" as string]: 3 }}>
+          <span className="inline-block cursor-pointer rounded-md bg-white px-3.5 py-1.5 text-xs font-medium text-slate-900 transition-transform duration-200 hover:-translate-y-0.5">免费注册 →</span>
           <span className="inline-block cursor-pointer rounded-md border border-white/60 px-3.5 py-1.5 text-xs font-medium text-white transition-transform duration-200 hover:-translate-y-0.5">{PREVIEW_CONTENT.cta.secondary}</span>
         </div>
       </div>
     );
   if (variantId === "hero_dual_cta")
     return (
-      <div className="px-6 py-10 text-center">
-        <SectionBadge>增长引擎</SectionBadge>
-        <h3 className="mt-3 text-[length:var(--text-h3)] font-bold tracking-tight">你的增长引擎，从这里开始</h3>
-        <p className="mx-auto mt-1.5 max-w-sm text-xs" style={{ color: "var(--muted-foreground)" }}>加入 50,000+ 团队，用数据驱动每个决策。</p>
-        <div className="mt-4 flex justify-center gap-2"><Btn primary glow>免费注册 →</Btn><Btn>观看演示</Btn></div>
-        <div className="mt-4 flex justify-center gap-3 text-[10px]" style={{ color: "var(--muted-foreground)" }}>
-          <span className="text-amber-400">★★★★★</span><span className="font-semibold" style={{ color: "var(--foreground)" }}>4.9/5</span><span>·</span><span>50k+ 用户</span><span>·</span><span>SOC2 认证</span>
+      <div className="pv-stagger px-6 py-10 text-center">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>增长引擎</SectionBadge></div>
+        <h3 className="pv-in mt-3 text-[length:var(--text-h3)] font-bold tracking-tight" style={{ ["--i" as string]: 1 }}>你的增长引擎，从这里开始</h3>
+        <p className="pv-in mx-auto mt-1.5 max-w-sm text-xs" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>加入 50,000+ 团队，用数据驱动每个决策。</p>
+        <div className="pv-in mt-4 flex justify-center gap-2" style={{ ["--i" as string]: 3 }}><Btn primary glow>免费注册 →</Btn><Btn>观看演示</Btn></div>
+        <div className="pv-in mt-4 flex justify-center gap-3 text-[10px]" style={{ ["--i" as string]: 4, color: "var(--muted-foreground)" }}>
+          <span className="text-amber-400 transition-transform duration-200 hover:scale-110">★★★★★</span><span className="font-semibold" style={{ color: "var(--foreground)" }}>4.9/5</span><span>·</span><span>50k+ 用户</span><span>·</span><span>SOC2 认证</span>
         </div>
       </div>
     );
   if (variantId === "hero_video")
     return (
-      <div className="relative flex min-h-56 items-center justify-center overflow-hidden rounded-xl px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 28%, var(--background)), color-mix(in srgb, var(--secondary) 34%, var(--background)))" }}>
+      <div className="pv-stagger relative flex min-h-56 items-center justify-center overflow-hidden rounded-xl px-6 pv-aurora">
         <div aria-hidden className="absolute inset-0 opacity-20 [background-image:radial-gradient(var(--foreground)_1px,transparent_1px)] [background-size:18px_18px]" />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/55 to-black/10" />
-        <div className="relative z-10 max-w-md text-center text-white">
+        <div className="pv-in relative z-10 max-w-md text-center text-white" style={{ ["--i" as string]: 0 }}>
           <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/90" style={{ borderColor: "rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.14)" }}>第一视角</span>
-          <div className="mx-auto mt-4 flex size-12 items-center justify-center rounded-full border border-white/40 bg-white/10 backdrop-blur">
+          <div className="mx-auto mt-4 flex size-12 items-center justify-center rounded-full border border-white/40 bg-white/10 backdrop-blur transition-transform duration-300 hover:scale-110">
             <span className="ml-0.5 text-sm">▶</span>
           </div>
           <h3 className="mt-3 text-[length:var(--text-h4)] font-bold">感受真正的身临其境</h3>
@@ -838,65 +842,64 @@ function HeroPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "hero_bento")
     return (
-      <div className="grid items-center gap-6 px-6 py-8 md:grid-cols-2">
+      <div className="pv-stagger grid items-center gap-6 px-6 py-8 md:grid-cols-2">
         <div>
-          <SectionBadge>一体化工作台</SectionBadge>
-          <h3 className="mt-3 text-[length:var(--text-h3)] font-bold leading-snug">把分散的工具，收进一个清爽的空间</h3>
-          <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>邮件、消息、任务、文档——结构化呈现。</p>
-          <div className="mt-3 flex gap-2"><Btn primary glow>免费开始</Btn><Btn>看演示</Btn></div>
+          <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>一体化工作台</SectionBadge></div>
+          <h3 className="pv-in mt-3 text-[length:var(--text-h3)] font-bold leading-snug" style={{ ["--i" as string]: 1 }}>把分散的工具，收进一个清爽的空间</h3>
+          <p className="pv-in mt-1.5 text-xs" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>邮件、消息、任务、文档——结构化呈现。</p>
+          <div className="pv-in mt-3 flex gap-2" style={{ ["--i" as string]: 3 }}><Btn primary glow>免费开始</Btn><Btn>看演示</Btn></div>
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="pv-in grid grid-cols-2 gap-2.5" style={{ ["--i" as string]: 2 }}>
           {[
-            { t: "统一收件箱", d: "一处聚合" },
-            { t: "AI 摘要", d: "长文提炼" },
-            { t: "快捷命令", d: "Cmd+K" },
-            { t: "实时同步", d: "多端秒级" },
-          ].map((b) => (
-            <SpotlightCard key={b.t} className="p-3">
-              <p className="text-xs font-semibold">{b.t}</p>
-              <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{b.d}</p>
-            </SpotlightCard>
-          ))}
+              { t: "统一收件箱", d: "一处聚合" },
+              { t: "AI 摘要", d: "长文提炼" },
+              { t: "快捷命令", d: "Cmd+K" },
+              { t: "实时同步", d: "多端秒级" },
+            ].map((b, i) => (
+              <div key={b.t} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+                <SpotlightCard className="p-3">
+                  <p className="text-xs font-semibold">{b.t}</p>
+                  <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{b.d}</p>
+                </SpotlightCard>
+              </div>
+            ))}
         </div>
       </div>
     );
   if (variantId === "hero_editorial")
     return (
-      <div className="grid gap-6 px-6 py-8 md:grid-cols-12">
+      <div className="pv-stagger grid gap-6 px-6 py-8 md:grid-cols-12">
         <div className="md:col-span-7">
-          <SectionBadge>设计驱动的工作室</SectionBadge>
-          <h3 className="mt-3 text-2xl font-bold leading-[1.08] sm:text-3xl">我们替你把复杂，<br />讲成简单。</h3>
+          <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>设计驱动的工作室</SectionBadge></div>
+          <h3 className="pv-in mt-3 text-2xl font-bold leading-[1.08] sm:text-3xl" style={{ ["--i" as string]: 1 }}>我们替你把复杂，<br />讲成简单。</h3>
         </div>
-        <div className="md:col-span-5 md:border-l md:pl-6" style={{ borderColor: "var(--border)" }}>
+        <div className="pv-in md:col-span-5 md:border-l md:pl-6" style={{ ["--i" as string]: 2, borderColor: "var(--border)" }}>
           <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>从策略到交付，一支团队、一条主线。</p>
           <div className="mt-3 space-y-2 text-xs">
             {[["服务", "品牌 / 网站 / 产品"], ["周期", "2–6 周"], ["客户", "120+ 团队"]].map(([k, v]) => (
-              <div key={k} className="flex justify-between border-b pb-1.5" style={{ borderColor: "var(--border)" }}>
+              <div key={k} className="flex justify-between border-b pb-1.5 transition-colors duration-200 hover:border-[color-mix(in_oklch,var(--primary)_50%,var(--border))]" style={{ borderColor: "var(--border)" }}>
                 <span style={{ color: "var(--muted-foreground)" }}>{k}</span><span className="font-medium">{v}</span>
               </div>
             ))}
           </div>
-          <span className="mt-3 inline-block rounded-full px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>开启合作</span>
+          <span className="pv-lift mt-3 inline-block cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>开启合作</span>
         </div>
       </div>
     );
   if (variantId === "hero_morphgradient")
     return (
       <div
-        className="relative flex h-44 w-full flex-col items-center justify-start overflow-hidden px-8 pt-10"
-        style={{
-          background:
-            "radial-gradient(55% 60% at 20% 0%, color-mix(in srgb, var(--primary) 30%, transparent), transparent), radial-gradient(50% 55% at 100% 10%, color-mix(in srgb, var(--secondary) 26%, transparent), transparent), radial-gradient(80% 70% at 50% 100%, color-mix(in srgb, var(--accent2, var(--primary)) 20%, transparent), transparent), var(--background)",
-        }}
+        className="pv-stagger relative flex h-44 w-full flex-col items-center justify-start overflow-hidden px-8 pt-10 pv-aurora"
+        style={{ ["--i" as string]: 0 } as React.CSSProperties}
       >
-        <div className="max-w-sm text-center">
+        <div className="pv-in max-w-sm text-center" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>克制美学</SectionBadge>
           <h3 className="mt-3 text-xl font-bold leading-tight">安静，却足够有力</h3>
           <p className="mx-auto mt-2 max-w-xs text-sm" style={{ color: "var(--muted-foreground)" }}>
             少即是多。把克制，做成一种产品力。
           </p>
           <span
-            className="mt-5 inline-block rounded-full px-6 py-2 text-sm font-medium text-white"
+            className="pv-lift mt-5 inline-block cursor-pointer rounded-full px-6 py-2 text-sm font-medium text-white"
             style={{ background: "var(--primary)" }}
           >
             了解更多
@@ -906,11 +909,11 @@ function HeroPreview({ variantId }: { variantId: string }) {
     );
   // 兜底：未知变体时渲染首屏默认，避免预览区空白
   return (
-    <div className="px-6 py-8 text-center">
-      <SectionBadge>{hero.badge}</SectionBadge>
-      <h3 className="mx-auto mt-3 max-w-md text-[length:var(--text-h3)] font-bold leading-snug tracking-tight">{hero.heading}</h3>
-      <p className="mx-auto mt-1.5 max-w-sm text-xs" style={{ color: "var(--muted-foreground)" }}>{hero.subheading}</p>
-      <div className="mt-4 flex justify-center gap-2">
+    <div className="pv-stagger px-6 py-8 text-center">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>{hero.badge}</SectionBadge></div>
+      <h3 className="pv-in mx-auto mt-3 max-w-md text-[length:var(--text-h3)] font-bold leading-snug tracking-tight" style={{ ["--i" as string]: 1 }}>{hero.heading}</h3>
+      <p className="pv-in mx-auto mt-1.5 max-w-sm text-xs" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>{hero.subheading}</p>
+      <div className="pv-in mt-4 flex justify-center gap-2" style={{ ["--i" as string]: 3 }}>
         <Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn>
         <Btn>{PREVIEW_CONTENT.cta.secondary}</Btn>
       </div>

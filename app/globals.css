@@ -249,3 +249,161 @@ main > div {
     animation: none;
   }
 }
+
+/* ============================================================
+   预览高级交互原子层（pv-*）
+   供 builder 各组件变体复用，统一「高级交互 / 流行 / 独特」质感。
+   全部基于组件主题变量（var(--primary) 等），跟随主题切换。
+   ============================================================ */
+
+/* 悬停抬升 + 主色辉光（卡片 / 按钮通用） */
+.pv-lift {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease, border-color 0.35s ease;
+  will-change: transform;
+}
+.pv-lift:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in oklch, var(--primary) 45%, var(--border));
+  box-shadow: 0 20px 44px -20px color-mix(in oklch, var(--primary) 55%, transparent);
+}
+
+/* 玻璃拟态 */
+.pv-glass {
+  background: color-mix(in oklch, var(--surface) 60%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
+}
+
+/* 3D 倾斜：父 .pv-tilt-wrap 提供透视，子 .pv-tilt 在悬停时倾斜 */
+.pv-tilt-wrap {
+  perspective: 1000px;
+}
+.pv-tilt {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.pv-tilt-wrap:hover .pv-tilt {
+  transform: rotateX(6deg) rotateY(-9deg) translateZ(12px);
+}
+
+/* 聚光：悬停时顶部主色径向高光 */
+.pv-spotlight {
+  position: relative;
+  overflow: hidden;
+}
+.pv-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    460px circle at 50% 0%,
+    color-mix(in oklch, var(--primary) 24%, transparent),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+.pv-spotlight:hover::after {
+  opacity: 1;
+}
+
+/* 跑马灯（logos / 评价等横向滚动） */
+@keyframes pv-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.pv-marquee {
+  display: flex;
+  width: max-content;
+  animation: pv-marquee 26s linear infinite;
+}
+.pv-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* 微光扫过（强调条 / 按钮） */
+@keyframes pv-shimmer {
+  to {
+    background-position: 220% center;
+  }
+}
+.pv-shimmer {
+  background-image: linear-gradient(
+    110deg,
+    transparent 35%,
+    color-mix(in oklch, var(--primary) 32%, transparent) 50%,
+    transparent 65%
+  );
+  background-size: 220% 100%;
+  animation: pv-shimmer 2.6s linear infinite;
+}
+
+/* 极光渐变背景 / 网格底纹 */
+.pv-aurora {
+  background:
+    radial-gradient(60% 80% at 12% 8%, color-mix(in oklch, var(--primary) 30%, transparent), transparent 60%),
+    radial-gradient(52% 72% at 88% 18%, color-mix(in oklch, var(--secondary) 26%, transparent), transparent 60%),
+    radial-gradient(60% 80% at 50% 100%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 60%);
+}
+.pv-grid-bg {
+  background-image:
+    linear-gradient(color-mix(in oklch, var(--foreground) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklch, var(--foreground) 7%, transparent) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+/* 入场 stagger：父 .pv-stagger，子 .pv-in（可带 style="--i:n" 控制顺序） */
+@keyframes pv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pv-stagger > .pv-in {
+  opacity: 0;
+  animation: pv-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 75ms);
+}
+
+/* 流光描边（推荐徽章 / 主按钮边框） */
+@keyframes pv-border-flow {
+  to {
+    background-position: 300% center;
+  }
+}
+.pv-border-flow {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(90deg, var(--primary), var(--secondary), var(--primary)) border-box;
+  background-size: 300% 100%;
+  animation: pv-border-flow 4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-marquee,
+  .pv-shimmer,
+  .pv-border-flow {
+    animation: none;
+  }
+  .pv-stagger > .pv-in {
+    opacity: 1;
+    animation: none;
+  }
+  .pv-lift:hover,
+  .pv-tilt-wrap:hover .pv-tilt {
+    transform: none;
+  }
+}
