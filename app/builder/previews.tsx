@@ -2662,14 +2662,14 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "asignup_gradient")
     return (
-      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg,#7C5CFC,#22D3EE 55%,#F472B6)" }}>
+      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 50%, var(--secondary)))" }}>
         <div className="w-full max-w-xs rounded-xl border p-4" style={{ border: "1px solid #ffffff33", background: "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)" }}>
           <h3 className="text-base font-bold text-slate-900">创建账号</h3>
           <div className="mt-3 space-y-2">
             <span className="block rounded-md px-2.5 py-2 text-[10px] text-slate-500" style={{ background: "#fff" }}>you@example.com</span>
             <span className="block rounded-md px-2.5 py-2 text-[10px] text-slate-500" style={{ background: "#fff" }}>••••••••</span>
           </div>
-          <span className="mt-3 block rounded-md py-2 text-center text-[10px] font-bold text-white" style={{ background: "linear-gradient(135deg,#7C5CFC,#F472B6)" }}>注册</span>
+          <span className="mt-3 block rounded-md py-2 text-center text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>注册</span>
         </div>
       </div>
     );
@@ -3749,10 +3749,10 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
             <div key={j.name} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
               <div className="flex items-center justify-between gap-2">
                 <p className="min-w-0 flex-1 truncate font-mono text-[9px]">{j.name}</p>
-                <span className="text-[8px]" style={{ color: i === 1 ? "#059669" : "var(--primary)" }}>{i === 1 ? "完成" : [72, 100, 34][i % 3] + "%"}</span>
+                <span className="text-[8px]" style={{ color: "var(--primary)" }}>{i === 1 ? "完成" : [72, 100, 34][i % 3] + "%"}</span>
               </div>
               <div className="mt-1.5 h-1 rounded-full bg-muted">
-                <div className="h-full rounded-full" style={{ width: [72, 100, 34][i % 3] + "%", background: i === 1 ? "#059669" : "var(--primary)" }} />
+                <div className="h-full rounded-full" style={{ width: [72, 100, 34][i % 3] + "%", background: "var(--primary)" }} />
               </div>
             </div>
           ))}
@@ -4332,7 +4332,7 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
           <div className="mt-1 flex items-baseline gap-2"><p className="text-lg font-black">{pprice}</p><p className="text-xs line-through" style={{ color: "var(--muted-foreground)" }}>¥899</p></div>
           <p className="mt-3 text-[10px] font-medium">颜色</p>
           <div className="mt-1.5 flex gap-1.5">
-            {["var(--primary)", "#D97706", "#111111"].map((c, i) => (
+            {["var(--primary)", "var(--secondary)", "var(--foreground)"].map((c, i) => (
               <span key={i} className={"size-5 rounded-full border-2 " + (i === 0 ? "" : "opacity-70")} style={{ background: c, borderColor: i === 0 ? "var(--primary)" : "transparent" }} />
             ))}
           </div>
