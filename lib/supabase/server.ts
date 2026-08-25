@@ -2,6 +2,7 @@
 // 可读写会话 cookie（登录/登出/换 session 时回写 cookies()）。
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 import { supabaseEnv } from "./env";
 
 export async function createServerSupabase() {
@@ -37,4 +38,38 @@ export async function createServerSupabaseReadonly() {
       },
     },
   });
+}
+
+/**
+ * Route Handler 专用：登录/登出/注册等需要「往响应里写会话 cookie」的接口用它。
+ *
+ * Next.js Route Handler 里的 cookies() 是只读的，直接 cookieStore.set() 会抛错并被静默吞掉，
+ * 导致登录/登出后的会话 cookie 从未写入响应、middleware 永远认为未登录。
+ * 这里先把 setAll 回调产生的 cookie 收集起来，由调用方在 return 时 attachCookies(res) 写进响应。
+ */
+export async function createServerSupabaseWithCookies() {
+  const cookieStore = await cookies();
+  const collected: { name: string; value: string; options?: unknown }[] = [];
+  const supabase = createServerClient(supabaseEnv.url, supabaseEnv.anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          collected.push({ name, value, options }),
+        );
+      },
+    },
+  });
+  return {
+    supabase,
+    /** 把本次产生的会话 cookie 设到响应上并返回该响应（用于 final response）。 */
+    attachCookies(res: NextResponse): NextResponse {
+      for (const { name, value, options } of collected) {
+        res.cookies.set(name, value, options as never);
+      }
+      return res;
+    },
+  };
 }

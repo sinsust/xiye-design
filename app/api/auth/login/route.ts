@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
-  const supabase = await createServerSupabase();
+  const { supabase, attachCookies } = await createServerSupabaseWithCookies();
   const { data, error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email.toLowerCase(),
     password: parsed.data.password,
@@ -31,5 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
   const u = data.user;
-  return NextResponse.json({ user: { id: u.id, email: u.email } });
+  return attachCookies(
+    NextResponse.json({ user: { id: u.id, email: u.email } }),
+  );
 }

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 /**
  * Supabase 魔改/确认链接回跳路由：
  * 链接形如 /auth/confirm?token_hash=xxx&type=recovery（或 code=xxx）。
- * 校验 OTP 建立会话后，跳转到设置新密码页。
+ * 校验 OTP 建立会话后，跳转到设置新密码页（须把会话 cookie 一并写入响应，否则会话丢失）。
  */
 export async function GET(req: NextRequest) {
   const search = req.nextUrl.searchParams;
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const code = search.get("code");
   const tokenParam = search.get("token");
 
-  const supabase = await createServerSupabase();
+  const { supabase, attachCookies } = await createServerSupabaseWithCookies();
 
   if ((tokenHash || tokenParam) && type) {
     const { error } = await supabase.auth.verifyOtp({
@@ -23,12 +23,12 @@ export async function GET(req: NextRequest) {
       token_hash: (tokenHash || tokenParam) as string,
     });
     if (!error) {
-      return NextResponse.redirect(new URL("/auth/update-password", req.url));
+      return attachCookies(NextResponse.redirect(new URL("/auth/update-password", req.url)));
     }
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(new URL("/auth/update-password", req.url));
+      return attachCookies(NextResponse.redirect(new URL("/auth/update-password", req.url)));
     }
   }
 

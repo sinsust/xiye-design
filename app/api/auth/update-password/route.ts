@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
-  const supabase = await createServerSupabase();
+  const { supabase, attachCookies } = await createServerSupabaseWithCookies();
   const { data: sessionData } = await supabase.auth.getUser();
   if (!sessionData.user) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
@@ -22,5 +22,5 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "update_failed" }, { status: 400 });
   }
-  return NextResponse.json({ ok: true });
+  return attachCookies(NextResponse.json({ ok: true }));
 }

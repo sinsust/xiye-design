@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 import { db, users } from "@/lib/db";
 import { z } from "zod";
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
   const email = parsed.data.email.toLowerCase();
 
-  const supabase = await createServerSupabase();
+  const { supabase, attachCookies } = await createServerSupabaseWithCookies();
   const { data, error } = await supabase.auth.signUp({
     email,
     password: parsed.data.password,
@@ -54,11 +54,12 @@ export async function POST(req: NextRequest) {
   }
 
   // data.session 存在 = 免确认直接登录；否则站了邮箱确认流程，需等确认后再登录
-  if (data.session) {
-    return NextResponse.json({ user: { id: u.id, email: u.email } });
-  }
-  return NextResponse.json(
-    { user: { id: u.id, email: u.email }, requiresEmailConfirmation: true },
-    { status: 200 },
+  return attachCookies(
+    data.session
+      ? NextResponse.json({ user: { id: u.id, email: u.email } })
+      : NextResponse.json(
+          { user: { id: u.id, email: u.email }, requiresEmailConfirmation: true },
+          { status: 200 },
+        ),
   );
 }

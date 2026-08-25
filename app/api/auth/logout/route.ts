@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 export async function POST() {
-  const supabase = await createServerSupabase();
-  await supabase.auth.signOut(); // 清空会话 cookie
-  return NextResponse.json({ ok: true });
+  const { supabase, attachCookies } = await createServerSupabaseWithCookies();
+  await supabase.auth.signOut(); // 清空会话 cookie，并由下方 attachCookies 回写清除指令
+  return attachCookies(NextResponse.json({ ok: true }));
 }

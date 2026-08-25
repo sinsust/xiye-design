@@ -79,7 +79,7 @@ function LoginInner() {
       setLoading(false);
       setDone(true);
       redirectTimer.current = setTimeout(() => {
-        router.push(next?.startsWith("/") ? next : "/builder");
+        router.push(next?.startsWith("/") ? next : "/");
       }, 1200);
       return;
     }
@@ -96,7 +96,7 @@ function LoginInner() {
           <CheckCircle2 className="mx-auto size-10 text-primary" />
           <h1 className="mt-3 text-lg font-semibold text-foreground">登录成功</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            正在进入搭页面…欢迎回来，{email}
+            正在进入首页…欢迎回来，{email}
           </p>
         </div>
       </main>
