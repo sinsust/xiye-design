@@ -698,7 +698,31 @@ function NavbarPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // solid / blur 共用结构，blur 带毛玻璃
+  if (variantId === "nav_solid")
+    return (
+      <div
+        className="relative flex items-center justify-between px-5 py-3.5"
+        style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", boxShadow: "0 8px 22px -20px rgba(0,0,0,0.5)" }}
+      >
+        <span className="flex items-center gap-1.5 text-sm font-bold">
+          <span className="flex size-5 items-center justify-center rounded-md text-[9px] font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>
+          {PREVIEW_CONTENT.brand}
+        </span>
+        <div className="hidden items-center gap-1 sm:flex">
+          {links.map((l, i) => (
+            <span
+              key={l}
+              className="rounded-full px-2.5 py-1 text-[11px] font-medium"
+              style={i === 0 ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}
+            >
+              {l}
+            </span>
+          ))}
+        </div>
+        <Btn primary glow>{PREVIEW_CONTENT.cta.primary}</Btn>
+      </div>
+    );
+  // blur 毛玻璃（solid 已单独实现，此处兜底）
   return (
     <div
       className="relative flex items-center justify-between border-b px-5 py-3.5"
@@ -1143,6 +1167,10 @@ function FaqPreview({ variantId }: { variantId: string }) {
   const items = faq.items.length ? faq.items : [{ q: "有免费试用吗？", a: "有，新用户可免费体验核心功能。" }];
   const [open, setOpen] = useState<number | null>(0);
   const toggle = (i: number) => setOpen(open === i ? null : i);
+  // 多开手风琴（faq_multi）：独立开合集合，与单开的 open 互不影响
+  const [openMulti, setOpenMulti] = useState<number[]>([0, 1]);
+  const toggleMulti = (i: number) =>
+    setOpenMulti(openMulti.includes(i) ? openMulti.filter((x) => x !== i) : [...openMulti, i]);
 
   const Accordion = ({ dark = false }: { dark?: boolean }) => (
     <div
@@ -1285,7 +1313,123 @@ function FaqPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // single / multi 共用
+  if (variantId === "faq_single")
+    return (
+      <div className="px-6 py-7">
+        <SectionHead badge="常见问题" title={faq.title} center />
+        <div className="mx-auto mt-4 max-w-sm divide-y overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {items.map((f, i) => {
+            const isOpen = open === i;
+            return (
+              <div key={f.q} style={isOpen ? { background: "color-mix(in srgb, var(--primary) 5%, transparent)" } : undefined}>
+                <button
+                  type="button"
+                  onClick={() => toggle(i)}
+                  className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-xs font-medium transition-opacity duration-200 hover:opacity-70"
+                >
+                  <span className="font-mono text-[9px]" style={{ color: "var(--primary)" }}>{String(i + 1).padStart(2, "0")}</span>
+                  <span className="flex-1">{f.q}</span>
+                  <span className={"shrink-0 text-sm transition-transform duration-300 " + (isOpen ? "rotate-180" : "")} style={{ color: "var(--primary)" }}>▾</span>
+                </button>
+                {isOpen && <p className="pb-3 pl-9 pr-4 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>}
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>单选展开 · 打开一条自动收起其他</p>
+      </div>
+    );
+  if (variantId === "faq_multi")
+    return (
+      <div className="px-6 py-7">
+        <SectionHead badge="常见问题" title={faq.title} center />
+        <div className="mx-auto mt-4 max-w-sm space-y-2">
+          {items.map((f, i) => {
+            const isOpen = openMulti.includes(i);
+            return (
+              <div
+                key={f.q}
+                className="overflow-hidden rounded-lg border"
+                style={{ borderColor: isOpen ? "color-mix(in srgb, var(--primary) 35%, var(--border))" : "var(--border)", background: "var(--surface)" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleMulti(i)}
+                  className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-2.5 text-left text-xs font-medium transition-opacity duration-200 hover:opacity-70"
+                >
+                  <span>{f.q}</span>
+                  <span className={"shrink-0 text-sm transition-transform duration-300 " + (isOpen ? "rotate-45" : "")} style={{ color: "var(--primary)" }}>＋</span>
+                </button>
+                {isOpen && <p className="px-4 pb-2.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>}
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>可同时展开多条，互不干扰</p>
+      </div>
+    );
+  if (variantId === "pfaq_single")
+    return (
+      <div className="px-6 py-7">
+        <div className="text-center">
+          <SectionBadge>计费相关</SectionBadge>
+          <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
+          <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>升级 · 退款 · 发票，一次只展开一条</p>
+        </div>
+        <div className="mt-4"><Accordion /></div>
+        <p className="mt-3 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
+          还有问题？<span style={{ color: "var(--primary)" }}>联系我们 →</span>
+        </p>
+      </div>
+    );
+  if (variantId === "pfaq_twocol")
+    return (
+      <div className="grid gap-6 px-6 py-7 sm:grid-cols-[1fr_2fr]">
+        <div>
+          <SectionBadge>计费 FAQ</SectionBadge>
+          <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
+          <p className="mt-1.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>常见计费问题快速解答，无需展开</p>
+        </div>
+        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          {items.map((f) => (
+            <div key={f.q} className="border-l-2 pl-2.5" style={{ borderColor: "color-mix(in srgb, var(--primary) 45%, transparent)" }}>
+              <p className="text-[11px] font-semibold">{f.q}</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  if (variantId === "pfaq_dark")
+    return (
+      <div className="px-6 py-7" style={{ background: "#0F1115" }}>
+        <h3 className="text-center text-base font-bold text-white">{faq.title}</h3>
+        <p className="mt-1 text-center text-[10px]" style={{ color: "#8A8A93" }}>计费 · 退款 · 升级</p>
+        <div className="mx-auto mt-4 max-w-sm space-y-2">
+          {items.map((f, i) => {
+            const isOpen = open === i;
+            return (
+              <div
+                key={f.q}
+                className="rounded-xl border"
+                style={{ borderColor: "rgba(255,255,255,0.12)", background: isOpen ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggle(i)}
+                  className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-2.5 text-left text-xs font-medium text-white"
+                >
+                  <span>{f.q}</span>
+                  <span className={"shrink-0 text-sm transition-transform duration-300 " + (isOpen ? "rotate-180" : "")} style={{ color: "var(--primary)" }}>▾</span>
+                </button>
+                {isOpen && <p className="px-4 pb-2.5 text-[11px]" style={{ color: "rgba(255,255,255,0.62)" }}>{f.a}</p>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：居中标题 + 单开手风琴
   return (
     <div className="px-6 py-7">
       <div className="text-center">
@@ -1406,7 +1550,34 @@ function CtaPreview({ variantId }: { variantId: string }) {
         <CursorCta />
       </div>
     );
-  // dualbtn
+  if (variantId === "cta_dualbtn")
+    return (
+      <div className="px-6 py-7">
+        <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
+        <div
+          className="mx-auto mt-5 max-w-sm rounded-2xl border p-5 text-center"
+          style={{ borderColor: "var(--border)", background: "linear-gradient(180deg, color-mix(in srgb, var(--primary) 7%, var(--surface)), var(--surface))" }}
+        >
+          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.cta.subheading}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <span
+              className="rounded-md px-4 py-1.5 text-xs font-semibold text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.04] active:scale-95"
+              style={{ background: "var(--primary)", boxShadow: "0 12px 26px -14px color-mix(in srgb, var(--primary) 70%, transparent)" }}
+            >
+              {PREVIEW_CONTENT.cta.button}
+            </span>
+            <span
+              className="rounded-md border px-4 py-1.5 text-xs font-medium transition-transform duration-150 hover:scale-[1.03] active:scale-95"
+              style={{ borderColor: "color-mix(in srgb, var(--primary) 35%, var(--border))", background: "var(--surface)", color: "var(--primary)" }}
+            >
+              {PREVIEW_CONTENT.cta.secondary}
+            </span>
+          </div>
+          <p className="mt-3 text-[10px]" style={{ color: "var(--muted-foreground)" }}>✓ 30 天退款保证 · ✓ 无需信用卡</p>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：双按钮居中
   return (
     <div className="px-6 py-8 text-center">
       <SectionHead badge="行动号召" title={PREVIEW_CONTENT.cta.title || "准备好开始了吗"} center />
@@ -1529,7 +1700,39 @@ function FooterPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // footer_multi 默认
+  if (variantId === "footer_multi") {
+    const multiCols = [...cols, { t: "法律", links: ["隐私政策", "服务条款", "安全"] }];
+    return (
+      <div className="border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--background)" }}>
+        <div className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+          <div>
+            <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
+            <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.footer.tagline}</p>
+          </div>
+          <div className="flex gap-1.5" style={{ color: "var(--muted-foreground)" }}>
+            {(["X", "GitHub", "LinkedIn"] as const).map((i) => (
+              <span key={i} className="flex size-5 items-center justify-center rounded-md border" style={{ borderColor: "var(--border)" }}><BrandMark name={i} className="size-3" /></span>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {multiCols.map((c) => (
+            <div key={c.t}>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--muted-foreground)" }}>{c.t}</p>
+              <ul className="mt-2 space-y-1.5 text-[11px]">
+                {c.links.map((l) => <li key={l}>{l}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-col justify-between gap-1 border-t pt-3 text-[10px] sm:flex-row sm:items-center" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+          <span>© 2025 {PREVIEW_CONTENT.brand} Inc. 保留所有权利。</span>
+          <span className="w-max rounded-md border px-1.5 py-0.5" style={{ borderColor: "var(--border)" }}>简体中文 ▾</span>
+        </div>
+      </div>
+    );
+  }
+  // 未匹配变体兜底：品牌列 + 三列链接
   return (
     <div className="border-t px-6 py-7" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <div className="grid gap-5 sm:grid-cols-4">
@@ -1723,7 +1926,36 @@ function LogosPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // grayrow / compact 共用
+  if (variantId === "logos_compact")
+    return (
+      <div
+        className="flex flex-col items-center gap-2 border-y px-6 py-4 sm:flex-row sm:justify-center sm:gap-5"
+        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+      >
+        <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ color: "var(--muted-foreground)" }}>200+ 团队在用</span>
+        <span className="hidden h-4 w-px sm:block" style={{ background: "var(--border)" }} />
+        <div className="flex flex-wrap items-center justify-center gap-5">
+          {brands.slice(0, 6).map((b) => (
+            <BrandMark key={b} name={b} className="h-4 w-auto opacity-70 transition-opacity duration-200 hover:opacity-100" />
+          ))}
+        </div>
+      </div>
+    );
+  if (variantId === "logos_grayrow")
+    return (
+      <div className="px-6 py-7">
+        <SectionHead badge="合作伙伴" title="信任我们的团队" center />
+        <div className="mt-4 flex flex-wrap items-center justify-center divide-x" style={{ borderColor: "var(--border)" }}>
+          {brands.slice(0, 6).map((b) => (
+            <span key={b} className="px-5" style={{ filter: "grayscale(1)", color: "var(--muted-foreground)" }}>
+              <BrandMark name={b} className="h-6 w-auto opacity-55 transition-opacity duration-200 hover:opacity-100" />
+            </span>
+          ))}
+        </div>
+        <p className="mt-3 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>统一灰度处理，弱化品牌色干扰</p>
+      </div>
+    );
+  // 未匹配变体兜底：单行淡色 logo
   return (
     <div className="px-6 py-7">
       <SectionHead badge="合作伙伴" title="信任我们的团队" center />
@@ -1823,7 +2055,28 @@ function StatsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // stats_grid
+  if (variantId === "stats_grid")
+    return (
+      <div className="px-6 py-7">
+        <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {stats.map((s, i) => (
+            <div
+              key={s.l}
+              className="rounded-xl border p-3"
+              style={{ borderColor: "var(--border)", background: i % 2 === 0 ? "color-mix(in srgb, var(--primary) 6%, var(--surface))" : "var(--surface)" }}
+            >
+              <CountUp value={s.n} className="text-lg font-black" style={{ color: "var(--primary)" }} />
+              <p className="mt-1 text-[10px] font-medium">{s.l}</p>
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 14%, transparent)" }}>
+                <span className="block h-full rounded-full" style={{ width: [72, 58, 84, 46][i % 4] + "%", background: "var(--primary)" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：四格数字
   return (
     <div className="px-6 py-7">
       <SectionHead badge="数据概览" title={PREVIEW_CONTENT.stats.title || "有据可查"} center />
@@ -1990,7 +2243,27 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // testi_grid
+  if (variantId === "testi_grid")
+    return (
+      <div className="px-6 py-7">
+        <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          {items.slice(0, 6).map((t) => (
+            <div key={t.n} className="flex flex-col rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <div className="flex gap-0.5 text-[9px]" style={{ color: "var(--primary)" }}>
+                {[0, 1, 2, 3, 4].map((s) => <span key={s}>★</span>)}
+              </div>
+              <p className="mt-1.5 flex-1 text-[10px] leading-relaxed">"{t.q}"</p>
+              <div className="mt-2.5 flex items-center gap-1.5 border-t pt-2" style={{ borderColor: "var(--border)" }}>
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
+                <span className="min-w-0 truncate text-[9px]"><span className="font-semibold">{t.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{t.r}</span></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：三列证言卡
   return (
     <div className="px-6 py-7">
       <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
@@ -2191,7 +2464,53 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // ptiers_highlight
+  if (variantId === "ptiers_highlight")
+    return (
+      <div className="px-6 py-7">
+        <div className="text-center">
+          <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title} center />
+        </div>
+        <div className="mx-auto mt-6 grid max-w-md grid-cols-3 items-stretch gap-2">
+          {[
+            { n: "免费", p: "$0", f: ["3 个项目", "社区支持"], pop: false },
+            { n: "专业", p: "$29", f: ["无限项目", "优先支持", "高级分析"], pop: true },
+            { n: "企业", p: "定制", f: ["SSO / SAML", "专属客服"], pop: false },
+          ].map((t) => (
+            <div
+              key={t.n}
+              className="relative flex flex-col rounded-xl p-3"
+              style={
+                t.pop
+                  ? {
+                      background: "color-mix(in srgb, var(--primary) 8%, var(--surface))",
+                      border: "1px solid var(--primary)",
+                      boxShadow: "0 20px 44px -24px color-mix(in srgb, var(--primary) 70%, transparent)",
+                    }
+                  : { background: "var(--surface)", border: "1px solid var(--border)" }
+              }
+            >
+              {t.pop && (
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>推荐</span>
+              )}
+              <p className="text-[10px] font-semibold" style={{ color: t.pop ? "var(--primary)" : "var(--foreground)" }}>{t.n}</p>
+              <p className="mt-1 text-base font-black">{t.p}</p>
+              <ul className="mt-2 flex-1 space-y-1 text-[8px]" style={{ color: "var(--muted-foreground)" }}>
+                {t.f.map((x) => (
+                  <li key={x} className="flex items-center gap-1"><span style={{ color: "var(--primary)" }}>✓</span>{x}</li>
+                ))}
+              </ul>
+              <span
+                className="mt-2 block rounded-md py-1 text-center text-[9px] font-medium"
+                style={t.pop ? { background: "var(--primary)", color: "var(--on-primary)" } : { border: "1px solid var(--border)", color: "var(--foreground)" }}
+              >
+                选择
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：三档 + 推荐档强调
   return (
     <div className="px-6 py-7">
       <div className="text-center">
@@ -2318,7 +2637,49 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // pcomp_standard
+  if (variantId === "pcomp_standard")
+    return (
+      <div className="px-6 py-7">
+        <h3 className="text-center text-sm font-bold">功能对比</h3>
+        <p className="mt-1 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>逐项对齐，帮你选对档位</p>
+        <div className="mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
+          <table className="w-full text-[10px]">
+            <thead>
+              <tr style={{ background: "var(--surface)" }}>
+                <th className="border-b p-2 text-left font-semibold" style={{ borderColor: "var(--border)" }}>功能</th>
+                {plans.map((p) => (
+                  <th key={p.name} className="border-b p-2 text-center font-semibold" style={{ borderColor: "var(--border)" }}>
+                    {p.name}
+                    <span className="mt-0.5 block text-[8px] font-normal" style={{ color: "var(--muted-foreground)" }}>{p.price}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, ri) => (
+                <tr key={r.f} style={{ background: ri % 2 === 1 ? "color-mix(in srgb, var(--foreground) 4%, transparent)" : "transparent" }}>
+                  <td className="border-b p-2" style={{ borderColor: "var(--border)" }}>{r.f}</td>
+                  {r.v.map((v, i) => (
+                    <td key={i} className="border-b p-2 text-center" style={{ borderColor: "var(--border)" }}>
+                      {v === "✓" ? <span style={{ color: "var(--primary)" }}>✓</span> : <span style={{ color: "var(--muted-foreground)" }}>{v}</span>}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr>
+                <td className="p-2" />
+                {plans.map((p) => (
+                  <td key={p.name} className="p-2 text-center">
+                    <span className="inline-block rounded-md border px-2 py-0.5 text-[8px] font-medium" style={{ borderColor: "var(--border)" }}>选择</span>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：分组对比表
   return (
     <div className="px-6 py-7">
       <h3 className="text-center text-sm font-bold">功能对比</h3>
@@ -2440,7 +2801,26 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // alogin_center
+  if (variantId === "alogin_center")
+    return (
+      <div
+        className="flex min-h-56 items-center justify-center px-6"
+        style={{ background: "radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 65%), var(--background)" }}
+      >
+        <div
+          className="w-full max-w-[15rem] rounded-2xl border p-5 text-center"
+          style={{ borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 26px 54px -32px rgba(0,0,0,0.4)" }}
+        >
+          <span className="mx-auto flex size-9 items-center justify-center rounded-xl text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>
+          <h3 className="mt-2.5 text-sm font-bold">{PREVIEW_CONTENT.auth.loginTitle}</h3>
+          <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
+          <div className="mt-3.5 space-y-2 text-left">{field(PREVIEW_CONTENT.auth.email, "you@example.com")}{field(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
+          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+          <p className="mt-2.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>还没有账号？<span style={{ color: "var(--primary)" }}>免费注册</span></p>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：居中卡片 + 社交登录
   return (
     <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
       <div className="w-full max-w-xs rounded-xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2507,7 +2887,31 @@ function AuthSocialPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // asocial_divider
+  if (variantId === "asocial_divider")
+    return (
+      <div className="px-6 py-7">
+        <div className="mx-auto max-w-xs">
+          <span className="block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
+            使用{PREVIEW_CONTENT.auth.email}登录
+          </span>
+          <div className="my-3 flex items-center gap-2 text-[9px]" style={{ color: "var(--muted-foreground)" }}>
+            <span className="h-px flex-1" style={{ background: "var(--border)" }} />或使用以下方式<span className="h-px flex-1" style={{ background: "var(--border)" }} />
+          </div>
+          <div className="space-y-2">
+            {["Google", "GitHub", "Apple"].map((s) => (
+              <span
+                key={s}
+                className="flex items-center justify-center gap-2 rounded-md border py-1.5 text-[10px] font-medium"
+                style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+              >
+                <BrandMark name={s} className="size-3" />继续使用 {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：分隔线 + 三宫格
   return (
     <div className="px-6 py-7">
       <div className="flex items-center gap-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>
@@ -2586,7 +2990,49 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // asplit_brand
+  if (variantId === "asplit_brand")
+    return (
+      <div className="grid min-h-56 sm:grid-cols-[1.05fr_1fr]">
+        <div
+          className="hidden flex-col justify-between p-5 text-[var(--on-primary)] sm:flex"
+          style={{ background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 80%, var(--primary)))" }}
+        >
+          <p className="flex items-center gap-1.5 text-xs font-bold">
+            <span className="flex size-5 items-center justify-center rounded-md text-[9px] font-black" style={{ background: "rgba(255,255,255,0.22)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>
+            {PREVIEW_CONTENT.brand}
+          </p>
+          <div>
+            <p className="text-sm font-semibold leading-snug">让每个团队都高效工作</p>
+            <ul className="mt-2 space-y-1 text-[10px]" style={{ opacity: 0.85 }}>
+              {["从骨架到上线一站式", "内置数据看板", "SOC2 级安全"].map((x) => (
+                <li key={x} className="flex items-center gap-1.5"><span>✓</span>{x}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex items-center gap-1.5 text-[9px]" style={{ opacity: 0.85 }}>
+            <span className="flex">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="-ml-1 size-4 rounded-full border first:ml-0" style={{ borderColor: "rgba(255,255,255,0.55)", background: "rgba(255,255,255,0.24)" }} />
+              ))}
+            </span>
+            2,000+ 团队正在使用
+          </div>
+        </div>
+        <div className="flex items-center justify-center px-6 py-7" style={{ background: "var(--surface)" }}>
+          <div className="w-full max-w-xs">
+            <h3 className="text-sm font-bold">{PREVIEW_CONTENT.auth.loginTitle}</h3>
+            <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>使用工作邮箱登录</p>
+            <div className="mt-3 space-y-2">
+              <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>you@example.com</span>
+              <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>••••••••</span>
+            </div>
+            <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+            <p className="mt-2 text-[9px]" style={{ color: "var(--muted-foreground)" }}>还没有账号？<span style={{ color: "var(--primary)" }}>免费注册</span></p>
+          </div>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：品牌渐变 + 表单
   return (
     <div className="grid min-h-56 sm:grid-cols-2">
       <div className="hidden flex-col justify-between p-5 text-white sm:flex" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
@@ -2673,7 +3119,29 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // asignup_standard
+  if (variantId === "asignup_standard")
+    return (
+      <div className="px-6 py-7">
+        <div className="mx-auto w-full max-w-xs rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <h3 className="text-sm font-bold">{PREVIEW_CONTENT.auth.signupTitle}</h3>
+          <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
+          <div className="mt-3 space-y-2">{f(PREVIEW_CONTENT.auth.username, "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}{f(PREVIEW_CONTENT.auth.password, "至少 8 位")}</div>
+          <div className="mt-1.5 flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="h-1 flex-1 rounded-full" style={{ background: i < 2 ? "var(--primary)" : "color-mix(in srgb, var(--primary) 18%, transparent)" }} />
+            ))}
+          </div>
+          <p className="mt-1 text-[8px]" style={{ color: "var(--muted-foreground)" }}>密码强度：中等</p>
+          <label className="mt-2.5 flex items-start gap-1.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>
+            <input type="checkbox" className="mt-0.5 accent-[var(--primary)]" />
+            <span>我已阅读并同意<span style={{ color: "var(--primary)" }}>服务条款</span>与<span style={{ color: "var(--primary)" }}>隐私政策</span></span>
+          </label>
+          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
+          <p className="mt-2 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>已有账号？<span style={{ color: "var(--primary)" }}>登录</span></p>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：三字段注册
   return (
     <div className="px-6 py-7">
       <div className="mx-auto w-full max-w-xs">
@@ -2737,7 +3205,80 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // dsb_standard
+  if (variantId === "dsb_standard")
+    return (
+      <div className="flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <p className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold">
+          <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>{PREVIEW_CONTENT.brand}
+        </p>
+        <p className="px-3 pb-1 text-[8px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--muted-foreground)" }}>主导航</p>
+        <div className="flex-1 space-y-0.5 px-2">
+          {items.map((label, idx) => (
+            <p
+              key={label}
+              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[10px] font-medium"
+              style={idx === 0 ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}
+            >
+              <span aria-hidden>{["▦", "▤", "📊", "⚙"][idx] ?? "•"}</span>{label}
+            </p>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 border-t px-2.5 py-2" style={{ borderColor: "var(--border)" }}>
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>张</span>
+          <div className="min-w-0">
+            <p className="truncate text-[10px] font-medium">张三</p>
+            <p className="truncate text-[8px]" style={{ color: "var(--muted-foreground)" }}>zhang@acme.com</p>
+          </div>
+        </div>
+      </div>
+    );
+  if (variantId === "dsb_ops_console")
+    return (
+      <div className="flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <div className="flex items-center justify-between px-3 py-2.5">
+          <span className="text-xs font-black">{PREVIEW_CONTENT.brand}</span>
+          <span className="rounded-md border px-1 py-0.5 text-[8px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌘K</span>
+        </div>
+        <div
+          className="mx-2 mb-2 flex items-center gap-1.5 rounded-lg border border-dashed px-2 py-1.5 text-[9px]"
+          style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--muted-foreground)" }}
+        >
+          <span style={{ color: "var(--primary)" }}>⌘</span>命令中心…
+        </div>
+        <div className="flex-1 space-y-0.5 px-2">
+          {[
+            { l: "工作台", b: "", active: true },
+            { l: "订单", b: "12", active: false },
+            { l: "任务", b: "4", active: false },
+            { l: "数据", b: "", active: false },
+            { l: "配置", b: "", active: false },
+          ].map((n) => (
+            <p
+              key={n.l}
+              className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-[10px] font-medium"
+              style={n.active ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}
+            >
+              <span>{n.l}</span>
+              {n.b ? (
+                <span className="rounded-full px-1.5 text-[8px] font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{n.b}</span>
+              ) : (
+                <span className="size-1.5 rounded-full" style={{ background: n.active ? "var(--success)" : "transparent" }} />
+              )}
+            </p>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 border-t px-2.5 py-2" style={{ borderColor: "var(--border)" }}>
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>运</span>
+          <div className="min-w-0">
+            <p className="truncate text-[10px] font-medium">张三</p>
+            <p className="flex items-center gap-1 truncate text-[8px]" style={{ color: "var(--muted-foreground)" }}>
+              <span className="size-1 rounded-full" style={{ background: "var(--success)" }} />运营负责人 · 在线
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：标准文字侧栏
   return (
     <div className="flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <p className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold">
@@ -2837,7 +3378,55 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // dkpi_grid
+  if (variantId === "dkpi_grid")
+    return (
+      <div className="px-6 py-7">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {kpis.map((k) => (
+            <div key={k.l} className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
+              <p className="mt-1.5 text-base font-black tracking-tight">{k.v}</p>
+              <span
+                className="mt-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-semibold"
+                style={{
+                  background: k.up ? "color-mix(in srgb, #059669 12%, transparent)" : "color-mix(in srgb, #dc2626 12%, transparent)",
+                  color: k.up ? "#059669" : "#dc2626",
+                }}
+              >
+                {k.up ? "▲" : "▼"} {k.d}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  if (variantId === "dkpi_ops_metrics") {
+    const ops = [
+      { l: "今日订单", v: "286", d: "+12", up: true, dot: "var(--success)" },
+      { l: "待处理任务", v: "17", d: "-5", up: true, dot: "var(--warning)" },
+      { l: "催发货", v: "9", d: "+3", up: false, dot: "var(--danger)" },
+      { l: "待审核", v: "23", d: "+8", up: false, dot: "var(--primary)" },
+    ];
+    return (
+      <div className="px-6 py-7">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {ops.map((k) => (
+            <div key={k.l} className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <div className="flex items-center justify-between gap-1">
+                <p className="truncate text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
+                <span className="size-1.5 shrink-0 rounded-full" style={{ background: k.dot }} />
+              </div>
+              <p className="mt-1.5 text-base font-black">{k.v}</p>
+              <p className="mt-1 text-[8px] font-medium" style={{ color: k.up ? "var(--success)" : "var(--danger)" }}>
+                {k.up ? "▲" : "▼"} {k.d} <span className="font-normal" style={{ color: "var(--muted-foreground)" }}>较昨日</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  // 未匹配变体兜底：四格 KPI
   return (
     <div className="px-6 py-7">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -2951,7 +3540,45 @@ function DashChartPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // dchart_bars
+  if (variantId === "dchart_bars")
+    return (
+      <div className="px-6 py-7">
+        <div className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold">{dash.chartTitle}</p>
+              <p className="mt-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>近 12 个月 · 单位 万元</p>
+            </div>
+            <span className="flex shrink-0 items-center gap-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>
+              <span className="size-2 rounded-sm" style={{ background: "var(--primary)" }} />营收
+              <span className="ml-1 size-2 rounded-sm" style={{ background: "var(--secondary)" }} />本月
+            </span>
+          </div>
+          <div className="relative mt-3 h-24">
+            {[0, 1, 2, 3].map((g) => (
+              <span
+                key={g}
+                className="pointer-events-none absolute inset-x-0 border-t border-dashed"
+                style={{ top: g * 33 + "%", borderColor: "color-mix(in srgb, var(--border) 70%, transparent)" }}
+              />
+            ))}
+            <div className="relative flex h-full items-end gap-1.5">
+              {[42, 68, 55, 80, 62, 90, 74, 58, 84, 66, 92, 70].map((b, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-t-md transition-opacity duration-200 hover:opacity-100"
+                  style={{ height: b + "%", background: i === 11 ? "var(--secondary)" : "var(--primary)", opacity: i === 11 ? 1 : 0.8 }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="mt-1.5 flex justify-between text-[8px]" style={{ color: "var(--muted-foreground)" }}>
+            <span>1月</span><span>4月</span><span>8月</span><span>12月</span>
+          </div>
+        </div>
+      </div>
+    );
+  // 未匹配变体兜底：柱状卡片
   return (
     <div className="px-6 py-7">
       <div className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -3063,7 +3690,32 @@ function DashListPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  // dlist_table
+  if (variantId === "dlist_table")
+    return (
+      <div className="px-6 py-7">
+        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <table className="w-full text-[10px]">
+          <thead>
+            <tr className="border-b text-left text-[9px] uppercase tracking-wider" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+              <th className="p-2.5 font-medium">项目</th><th className="p-2.5 font-medium">状态</th><th className="p-2.5 text-right font-medium">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {T.map((r) => (
+              <tr key={r.n} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
+                <td className="p-2.5">
+                  <span className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-md text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>{r.n}</span>
+                </td>
+                <td className="p-2.5"><span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[9px] font-medium" style={{ color: r.c }}><span className="size-1 rounded-full" style={{ background: r.c }} />{r.s}</span></td>
+                <td className="p-2.5 text-right">⋯</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+  // 未匹配变体兜底：表格视图
   return (
     <div className="px-6 py-7">
       <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
