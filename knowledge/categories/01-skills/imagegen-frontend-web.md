@@ -5,6 +5,8 @@ summary: 为每个 section 生成独立横向参考图，统一调性，适用�
 useCase: 做落地页/营销站前先用横向参考图定版面与视觉调性（仅出图）
 stack: [nextjs_supabase, nuxt_firebase, react_express, astro_supabase]
 related: [imagegen-frontend-mobile, image-to-code]
+extends: [移动端图像生成（imagegen-frontend-mobile）]
+extends_note: "同一套调性生成思路，从网页横向图延伸到移动端竖版"
 tags: [网页, 图像, 设计]
 status: active
 updated: 2026-08-22

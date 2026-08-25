@@ -5,6 +5,8 @@ summary: 定义字体/间距/阴影/卡片/动画，屏蔽廉价通用 AI 风，
 useCase: 需要"贵感"非模板的视觉基座、或审计并提升现有页面质感时
 stack: [nextjs_supabase, nuxt_firebase, react_express, astro_supabase]
 related: [gpt-taste, design-taste-frontend, redesign-existing-projects]
+example: [Anti-slop 前端设计（design-taste-frontend）]
+example_note: "design-taste-frontend 是这套高端视觉标准在落地页反模板上的具体应用"
 tags: [视觉, 高端, 设计]
 status: active
 updated: 2026-08-22

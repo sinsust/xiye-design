@@ -5,6 +5,8 @@ summary: 瑞士排版 + 军事终端美学：刚性网格、极端字号对比�
 useCase: 走野兽派/硬核仪表盘/终端风时；追求冷峻刚硬而非柔和
 stack: [nextjs_supabase, nuxt_firebase, react_express, astro_supabase]
 related: [minimalist-ui, ui-ux-pro-max]
+contrasts: [极简编辑风 UI（minimalist-ui）]
+contrasts_note: "野兽派追求粗粝高对比，极简追求克制留白，风格取向相反"
 tags: [UI, 野兽派, dashboard]
 status: active
 updated: 2026-08-22

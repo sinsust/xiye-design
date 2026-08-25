@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { requireUser } from "@/lib/auth-guard";
 import {
   collectFilePaths,
   makeTempCopy,
@@ -22,6 +23,8 @@ export const maxDuration = 300;
 // 流程：把整站复制到 os 临时目录 → 抽取英文文案 → Qwen 译成中文(长度对齐) → 重新打包 zip。
 // 关键保证：改写只发生在临时副本，绝不写回原 outstand/ 目录 → 组件库预览与其他用户零影响。
 export async function POST(req: NextRequest) {
+  const { res } = await requireUser();
+  if (res) return res;
   if (!rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }

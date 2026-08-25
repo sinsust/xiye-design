@@ -4,6 +4,8 @@ summary: 把混乱想法（随手笔记 / Slack 片段 / 半成品思路）转�
 useCase: 用户只有零散想法、一句话或一段需求，需要产出规范、可交付的 PRD 时套用。
 stack: []
 related: ["amp-jobs-to-be-done", "amp-amazon-working-backwards", "amp-pre-mortem"]
+extends: ["jobs-to-be-done · JTBD 用户洞察"]
+extends_note: "JTBD 提供用户洞察输入，craft-spec 将其沉淀为可交付 PRD"
 tags: ["PRD", "产品需求", "spec", "amplitude"]
 status: active
 updated: 2026-08-23

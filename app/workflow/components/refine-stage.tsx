@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowStore, type AgentOutput } from "@/lib/store/flow-store";
+import { useShallow } from "zustand/react/shallow";
 import { buildPrdMdForState } from "@/lib/project-generator";
 import { AGENT_PROFILES, type AgentId } from "../agents";
 import { AgentAvatar, AgentStatusBadge, type AgentStatus } from "./agent-common";
@@ -272,7 +273,7 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-2" onClick={onBack}>
-              返回协同
+              返回
             </Button>
             <Button
               size="sm"
@@ -285,7 +286,7 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
                   : undefined
               }
             >
-              页面搭建
+              下一步
               <ArrowRight className="size-4" />
             </Button>
           </div>
@@ -565,13 +566,33 @@ function inline(s: string) {
 function PrdView() {
   const state = useFlowStore();
   const [copiedPrd, setCopiedPrd] = useState(false);
+  // 把「是否重算 PRD」锚定到 PRD 相关字段：整 store 对象每次 set 都是新引用，
+  // 直接当依赖会导致无关状态变化（如对话消息）也重算整份 PRD。
+  const prdKey = useFlowStore(
+    useShallow((s) => ({
+      aiCapabilities: s.aiCapabilities,
+      designSystem: s.designSystem,
+      intentNarrative: s.intentNarrative,
+      motionSelections: s.motionSelections,
+      pageBlueprint: s.pageBlueprint,
+      productBrief: s.productBrief,
+      projectInfo: s.projectInfo,
+      projectType: s.projectType,
+      techStack: s.techStack,
+      uiLibrary: s.uiLibrary,
+      visualStyle: s.visualStyle,
+    })),
+  );
   const hasContent = Boolean(
     state.intentNarrative ||
       state.productBrief?.vision ||
       state.projectType ||
       state.pageBlueprint.length,
   );
-  const prd = useMemo(() => (hasContent ? buildPrdMdForState(state) : ""), [state, hasContent]);
+  const prd = useMemo(
+    () => (hasContent ? buildPrdMdForState(state) : ""),
+    [prdKey, hasContent],
+  );
 
   if (!hasContent)
     return (

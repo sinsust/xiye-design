@@ -70,6 +70,17 @@ function scanRoot(root: string): KnowledgeEntry[] {
         userAdded: fm.userAdded === true || fm.userAdded === "true" ? true : undefined,
         repoUrl: fm.repoUrl ? String(fm.repoUrl) : undefined,
         source: fm.source ? String(fm.source) : undefined,
+        // 分类型强关系（Obsidian 兼容 frontmatter）
+        depends: Array.isArray(fm.depends) ? fm.depends.map(String) : undefined,
+        extends: Array.isArray(fm.extends) ? fm.extends.map(String) : undefined,
+        example: Array.isArray(fm.example) ? fm.example.map(String) : undefined,
+        alternative: Array.isArray(fm.alternative) ? fm.alternative.map(String) : undefined,
+        contrasts: Array.isArray(fm.contrasts) ? fm.contrasts.map(String) : undefined,
+        dependsNote: fm.depends_note ? String(fm.depends_note) : undefined,
+        extendsNote: fm.extends_note ? String(fm.extends_note) : undefined,
+        exampleNote: fm.example_note ? String(fm.example_note) : undefined,
+        alternativeNote: fm.alternative_note ? String(fm.alternative_note) : undefined,
+        contrastsNote: fm.contrasts_note ? String(fm.contrasts_note) : undefined,
         // 本地绝对路径：方便用户一键复制，给到 AI 工具或本地编辑
         localPath: path.join(root, meta.folder, file),
         body: extractBody(raw),

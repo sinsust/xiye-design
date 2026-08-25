@@ -46,9 +46,22 @@ export default function FlowV2Page() {
     if (didInitRef.current) return;
     didInitRef.current = true;
     const id = new URLSearchParams(window.location.search).get("step");
-    const idx = STEP_DEFS.findIndex((s) => s.id === id);
-    if (idx >= 0) setActive(idx);
+    if (id) {
+      const idx = STEP_DEFS.findIndex((s) => s.id === id);
+      if (idx >= 0) setActive(idx);
+    } else {
+      // 无显式 step 参数：从持久化的 store.currentStep（1..4）反推阶段，刷新/重开可续
+      const cs = useFlowStore.getState().currentStep ?? 1;
+      const map: Record<number, number> = { 1: 0, 2: 2, 3: 1, 4: 3 };
+      setActive(map[Math.min(4, Math.max(1, cs))] ?? 0);
+    }
   }, []);
+
+  // 阶段 ↔ store.currentStep 双向同步，持久化以便刷新/重开后回到同一阶段
+  useEffect(() => {
+    const map = [1, 3, 2, 4]; // active 0..3 → store currentStep 1..4
+    useFlowStore.setState({ currentStep: map[active] });
+  }, [active]);
 
   // 加载用户自定义「后宫智囊团」人设（登录则以服务端为权威合并）
   useEffect(() => {
@@ -101,6 +114,8 @@ export default function FlowV2Page() {
   const [saving, setSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const authedRef = useRef<boolean | null>(null);
   const router = useRouter();
 
   // 是否存在有效流程草稿（决定是否需要守卫/能否保存）
@@ -110,6 +125,15 @@ export default function FlowV2Page() {
   const hasDraft = Boolean(
     projectName || pageBlueprint?.length || productBrief?.description || productBrief?.vision,
   );
+
+  // 离开弹窗摘要数据
+  const stageLabel = STEP_DEFS[active]?.label ?? "产品创意";
+  const dialogRounds = useFlowStore((s) =>
+    s.intentSession?.messages.filter((m) => m.role === "user").length ?? 0,
+  );
+  const dialogHistory = useFlowStore((s) => s.intentSession?.messages.length ?? 0);
+  const dialogPages = useFlowStore((s) => s.pageBlueprint.length);
+  const hasBrief = Boolean(productBrief?.description || productBrief?.vision);
 
   const markDone = useCallback((i: number) => {
     setDone((prev) => {
@@ -136,8 +160,7 @@ export default function FlowV2Page() {
 
   /** 保存当前流程快照到「我的项目」（未登录先引导登录） */
   const saveProject = useCallback(async (): Promise<"ok" | "unauthed" | "fail"> => {
-    const me = await fetch("/api/auth/me");
-    if (!me.ok) return "unauthed";
+    // 不做前端预检登录，交由保存接口 401 兜底，减少一次网络往返（鉴权是纯 JWT 校验）
     setSaving(true);
     try {
       const store = useFlowStore.getState();
@@ -149,7 +172,7 @@ export default function FlowV2Page() {
         brief?.vision?.slice(0, 40) ||
         "未命名项目";
       const existing = store.savedProjectId;
-      const res = existing
+      let res = existing
         ? await fetch(`/api/projects/${existing}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -160,9 +183,30 @@ export default function FlowV2Page() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, data: snap }),
           });
+      // savedProjectId 残留/越权（PUT 404）→ 降级新建项目，避免一直保存失败
+      if (existing && res.status === 404) {
+        useFlowStore.setState({ savedProjectId: null });
+        res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, data: snap }),
+        });
+      }
+      if (res.status === 401) return "unauthed";
       if (!res.ok) return "fail";
       const j = await res.json();
-      if (!existing && j.project?.id) store.setSavedProjectId(j.project.id);
+      if (j.project?.id) store.setSavedProjectId(j.project.id);
+      setLastSavedAt(Date.now());
+      // 把项目 id 写进 URL（保留 step），刷新/深链都能续到同一项目
+      const pid2 = j?.project?.id ?? existing;
+      if (pid2) {
+        const sp = new URLSearchParams(window.location.search);
+        sp.set("pid", String(pid2));
+        const cs2 = store.currentStep ?? 1;
+        const stepIdMap: Record<number, string> = { 1: "collab", 2: "build", 3: "refine", 4: "deliver" };
+        sp.set("step", stepIdMap[Math.min(4, Math.max(1, cs2))] ?? "collab");
+        history.replaceState(null, "", `${window.location.pathname}?${sp.toString()}`);
+      }
       return "ok";
     } catch {
       return "fail";
@@ -177,6 +221,21 @@ export default function FlowV2Page() {
     if (res === "unauthed") router.push("/login");
     else if (res) setTimeout(() => setSaveMsg(null), 2000);
   };
+
+  // 自动保存：登录后，草稿内容有变化时防抖写回项目（不打扰未登录用户）
+  useEffect(() => {
+    if (!hasDraft) return;
+    if (authedRef.current === false) return;
+    const t = setTimeout(() => {
+      void (async () => {
+        const res = await saveProject();
+        if (res === "unauthed") authedRef.current = false;
+        else if (res === "ok") setSaveMsg("已保存");
+        else setSaveMsg(null);
+      })();
+    }, 900);
+    return () => clearTimeout(t);
+  }, [saveProject, hasDraft]);
 
   const onLeaveSave = async () => {
     const t = leaveTarget ?? "/";
@@ -197,6 +256,17 @@ export default function FlowV2Page() {
     setLeaveTarget(null);
     useFlowStore.getState().resetAll(1);
     useFlowStore.getState().setSavedProjectId(null);
+    // 彻底清空持久层：仅 resetAll 只清内存，跳转瞬间可能被在途 AI/自动保存重新写回
+    try {
+      useFlowStore.persist?.clearStorage?.();
+    } catch {
+      /* noop */
+    }
+    try {
+      window.localStorage.removeItem("xiye-flow-design");
+    } catch {
+      /* noop */
+    }
     router.push(t);
   };
 
@@ -245,6 +315,27 @@ export default function FlowV2Page() {
   return (
     <div className="flex h-[calc(100dvh-7.5rem)] min-h-0 flex-col gap-2">
       <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
+          <p
+            className="max-w-[150px] truncate text-xs font-semibold text-foreground"
+            title={projectName || "未命名产品"}
+          >
+            {projectName || "未命名产品"}
+          </p>
+          <span className="shrink-0 text-xs text-muted-foreground">{stageLabel}</span>
+          <span className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+          {saving ? (
+            <span className="shrink-0 text-xs text-muted-foreground">保存中…</span>
+          ) : lastSavedAt ? (
+            <span className="shrink-0 text-xs text-muted-foreground">
+              已保存{" "}
+              {new Date(lastSavedAt).toLocaleTimeString("zh-CN", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          ) : null}
+        </div>
         <div className="min-w-0 flex-1">
           <StepBar active={active} done={done} onJump={goTo} />
         </div>
@@ -254,7 +345,7 @@ export default function FlowV2Page() {
           className="shrink-0"
           disabled={saving || !hasDraft}
           onClick={() => void onTopbarSave()}
-          title="保存项目"
+          title="保存"
         >
           <Save className="size-4" />
         </Button>
@@ -273,6 +364,12 @@ export default function FlowV2Page() {
         onSave={onLeaveSave}
         onDiscard={onLeaveDiscard}
         onCancel={() => setLeaveTarget(null)}
+        projectName={projectName || "未命名产品"}
+        stageLabel={stageLabel}
+        historyCount={dialogHistory}
+        roundCount={dialogRounds}
+        hasBrief={hasBrief}
+        pageCount={dialogPages}
       />
 
       {saveMsg && <div className="pointer-events-none fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-foreground px-3 py-1.5 text-xs text-background shadow-lg">{saveMsg}</div>}

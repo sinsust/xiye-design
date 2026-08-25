@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { requireUser } from "@/lib/auth-guard";
 import { consultAgents } from "@/lib/ai-panel-server";
 import { type ProductBrief } from "@/lib/ai-discover";
 
@@ -24,6 +25,8 @@ function parseAgents(v: unknown): { role: string; name: string }[] {
 // 无 key / 异常：返回启发式兜底结果（不中断前端）
 
 export async function POST(req: NextRequest) {
+  const { res } = await requireUser();
+  if (res) return res;
   if (!rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }

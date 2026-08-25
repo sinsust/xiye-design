@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { requireUser } from "@/lib/auth-guard";
 import {
   discover,
   runDiscoveryHeuristic,
@@ -37,6 +38,8 @@ function isMessage(v: unknown): v is DiscoverMessage {
 }
 
 export async function POST(req: NextRequest) {
+  const { res } = await requireUser();
+  if (res) return res;
   if (!rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }

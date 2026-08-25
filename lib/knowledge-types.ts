@@ -7,6 +7,26 @@ export type KnowledgeType =
   | "design"
   | "reference";
 
+/** 分类型强关系（Obsidian 兼容 frontmatter：depends: [x, y] + 可选 *_note 整组理由） */
+export type KnowledgeRelationType =
+  | "depends"
+  | "extends"
+  | "example"
+  | "alternative"
+  | "contrasts";
+
+export const KNOWLEDGE_RELATION_META: {
+  id: KnowledgeRelationType;
+  label: string;
+  directed: boolean;
+}[] = [
+  { id: "depends", label: "依赖", directed: true },
+  { id: "extends", label: "延伸", directed: true },
+  { id: "example", label: "案例", directed: true },
+  { id: "alternative", label: "替代", directed: false },
+  { id: "contrasts", label: "对比", directed: false },
+];
+
 export interface KnowledgeEntry {
   slug: string;
   type: KnowledgeType;
@@ -30,6 +50,18 @@ export interface KnowledgeEntry {
   userAdded?: boolean;
   /** 云端共享条目的贡献人邮箱（内置条目无此字段）。用于展示「贡献人：邮箱」链接。 */
   contributorEmail?: string;
+  /** 分类型强关系：目标条目名数组 */
+  depends?: string[];
+  extends?: string[];
+  example?: string[];
+  alternative?: string[];
+  contrasts?: string[];
+  /** 分类型强关系的整组理由（可选伴随字段） */
+  dependsNote?: string;
+  extendsNote?: string;
+  exampleNote?: string;
+  alternativeNote?: string;
+  contrastsNote?: string;
   body: string;
 }
 

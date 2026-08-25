@@ -5,6 +5,8 @@ summary: 分析 Web 应用需求，从 130+ 设计风格智能匹配最佳方案
 useCase: 项目刚起步还不知道该选什么设计风格/设计系统时；提供需求它会给出含资的设计方向
 stack: [nextjs_supabase, nuxt_firebase, react_express, astro_supabase]
 related: [shadcn-ui, design-taste-frontend, ui-ux-pro-max]
+alternative: [UI/UX Pro Max 设计系统生成, Anti-slop 前端设计（design-taste-frontend）]
+alternative_note: "同为设计风格推荐/落地工具，可按项目阶段选用"
 tags: [设计, 推荐, shadcn]
 status: active
 updated: 2026-08-22

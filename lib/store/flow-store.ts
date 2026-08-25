@@ -4,6 +4,58 @@ import { type VariantDimension } from "@/data/component-variants";
 import type { IntentNarrative } from "@/lib/ai-intent";
 import type { DiscoverMessage, ProductBrief } from "@/lib/ai-discover";
 
+// 节流 localStorage 写入：高频状态变更（如对话 intentSession、PRD）合并后批量落盘，
+// 避免每次输入都同步全量 JSON.stringify 大对象阻塞主线程；离开页面时 flush 兜底。
+const flowWriteQueue = new Map<string, string>();
+let flowWriteTimer: ReturnType<typeof setTimeout> | null = null;
+const flushFlowStorage = () => {
+  if (flowWriteTimer) {
+    clearTimeout(flowWriteTimer);
+    flowWriteTimer = null;
+  }
+  try {
+    for (const [key, value] of flowWriteQueue) {
+      window.localStorage.setItem(key, value);
+    }
+    flowWriteQueue.clear();
+  } catch {
+    /* noop */
+  }
+};
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", flushFlowStorage);
+}
+const flowPersistStorage: Storage = {
+  get length() {
+    return typeof window !== "undefined" ? window.localStorage.length : 0;
+  },
+  clear() {
+    try {
+      window.localStorage.clear();
+    } catch {
+      /* noop */
+    }
+  },
+  getItem: (key: string) =>
+    typeof window !== "undefined" ? window.localStorage.getItem(key) : null,
+  key: (index: number) =>
+    typeof window !== "undefined" ? window.localStorage.key(index) : null,
+  removeItem: (key: string) => {
+    flowWriteQueue.delete(key);
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      /* noop */
+    }
+  },
+  setItem: (key: string, value: string) => {
+    flowWriteQueue.set(key, value);
+    if (!flowWriteTimer) {
+      flowWriteTimer = setTimeout(flushFlowStorage, 250);
+    }
+  },
+};
+
 // 流程工作台的全局状态。
 // 各 Step 需要的字段按步骤逐步扩展，未实现步骤的字段先用注释占位。
 
@@ -383,13 +435,10 @@ export const useFlowStore = create<FlowState>()(
     }),
     {
       name: "xiye-flow-design",
-      storage: createJSONStorage(() =>
-        typeof window !== "undefined"
-          ? window.localStorage
-          : (undefined as unknown as Storage),
-      ),
+      storage: createJSONStorage(() => flowPersistStorage),
       // 持久化：设计 token + Step 1 探索式访谈会话（避免每次进入都重新生成）。
       partialize: (state) => ({
+        currentStep: state.currentStep,
         projectType: state.projectType,
         aiCapabilities: state.aiCapabilities,
         techStack: state.techStack,

@@ -26,6 +26,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useFlowStore, type FlowState } from "@/lib/store/flow-store";
+import { useShallow } from "zustand/react/shallow";
 import { useSkeletonStore } from "@/lib/skeleton-store";
 import { generateProject, buildProjectZipFiles, type GeneratedProject } from "@/lib/project-generator";
 import { buildZip, downloadBlob } from "@/lib/zip";
@@ -249,11 +250,6 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
   }, [savedProjectId]);
 
   const saveProject = async () => {
-    const me = await fetch("/api/auth/me");
-    if (!me.ok) {
-      router.push("/login");
-      return;
-    }
     setSaving(true);
     setSaveMsg(null);
     try {
@@ -261,7 +257,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
       const snap = store.captureFlowSnapshot();
       const name = store.projectInfo?.projectName || "未命名项目";
       const existing = store.savedProjectId;
-      const res = existing
+      let res = existing
         ? await fetch(`/api/projects/${existing}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -272,13 +268,29 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, data: snap }),
           });
-      if (res.ok) {
-        const j = await res.json();
-        if (!existing && j.project?.id) useFlowStore.getState().setSavedProjectId(j.project.id);
-        setSaveMsg("已保存");
-      } else {
-        setSaveMsg("保存失败");
+      // savedProjectId 残留/越权（PUT 404）→ 降级新建项目，避免一直保存失败
+      if (existing && res.status === 404) {
+        useFlowStore.setState({ savedProjectId: null });
+        res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, data: snap }),
+        });
       }
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      if (!res.ok) {
+        const err = (await res.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        setSaveMsg(`保存失败 ${err?.error ?? `(${res.status})`}`);
+        return;
+      }
+      const j = await res.json();
+      if (j.project?.id) store.setSavedProjectId(j.project.id);
+      setSaveMsg("已保存");
     } catch {
       setSaveMsg("保存失败");
     }
@@ -547,7 +559,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-2" onClick={onBack}>
-              返回页面搭建
+              返回
             </Button>
             <Button
               variant="outline"
@@ -557,11 +569,11 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
               disabled={!project}
             >
               <FolderDown className="size-4" />
-              下载全部 .zip
+              全部下载
             </Button>
             <Button size="sm" className="gap-2" onClick={saveProject} disabled={saving}>
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-              {saveMsg ?? "保存项目"}
+              {saveMsg ?? "保存"}
             </Button>
             <Button size="sm" className="gap-2" onClick={generateAll} disabled={!hasData || genState === "generating"}>
               {genState === "generating" ? (
@@ -574,7 +586,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
                 </>
               ) : (
                 <>
-                  <Rocket className="size-4" /> 生成全部产物
+                  <Rocket className="size-4" /> 生成全部
                 </>
               )}
             </Button>
@@ -638,7 +650,7 @@ function ZipOverview({
         </div>
         <Button size="sm" className="mt-3 gap-2" onClick={onDownload}>
           <FolderDown className="size-4" />
-          下载全部 .zip
+          全部下载
         </Button>
       </div>
       <div className="rounded-xl border border-border/60 p-3 text-xs text-muted-foreground">
@@ -767,8 +779,19 @@ function SpecOverview({
   const archLayers = manifest?.architecture?.layers ?? [];
   const pages = manifest?.pages ?? [];
   const motion = manifest?.motion ?? {};
-  const features = useMemo(() => inferFeatureDetails(state), [state]);
-  const positioning = useMemo(() => resolvePositioning(state), [state]);
+  // 锚定重算字段：整 store 对象每次 set 都是新引用，直接当依赖会令无关变化也重算
+  const soKey = useFlowStore(
+    useShallow((s) => ({
+      aiCapabilities: s.aiCapabilities,
+      pageBlueprint: s.pageBlueprint,
+      projectInfo: s.projectInfo,
+      projectType: s.projectType,
+      techStack: s.techStack,
+      visualStyle: s.visualStyle,
+    })),
+  );
+  const features = useMemo(() => inferFeatureDetails(state), [soKey]);
+  const positioning = useMemo(() => resolvePositioning(state), [soKey]);
 
   return (
     <div className="space-y-3">

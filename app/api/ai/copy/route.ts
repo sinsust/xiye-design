@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { requireUser } from "@/lib/auth-guard";
 import {
   generateCopyOverride,
   generateCopyWithLLM,
@@ -13,6 +14,8 @@ export const runtime = "nodejs";
 // 200  → ContentOverride（根据项目 PRD/特征生成的全站文案覆盖）
 // 文案生成默认使用 LLM_MODEL_*（Qwen），不走 DeepSeek；未配置或调用失败时回退本地启发式
 export async function POST(req: NextRequest) {
+  const { res } = await requireUser();
+  if (res) return res;
   if (!rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }

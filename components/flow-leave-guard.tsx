@@ -98,6 +98,17 @@ export function FlowLeaveGuard() {
   const onDiscardAndLeave = () => {
     if (!pending) return;
     useFlowStore.getState().resetAll(1);
+    useFlowStore.getState().setSavedProjectId(null);
+    try {
+      useFlowStore.persist?.clearStorage?.();
+    } catch {
+      /* noop */
+    }
+    try {
+      window.localStorage.removeItem("xiye-flow-design");
+    } catch {
+      /* noop */
+    }
     navigateTo(pending.target);
   };
 

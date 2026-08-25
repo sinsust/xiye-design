@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, projects } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/auth";
 
@@ -44,8 +44,6 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { id } = await params;
-  const row = await ownedProject(id, user.sub);
-  if (typeof row === "string") return forbidden(row);
 
   const updateSchema = z.object({
     name: z.string().min(1).max(120).optional(),
@@ -62,11 +60,15 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   if (parsed.data.data !== undefined)
     patch.data = JSON.stringify(parsed.data.data);
 
+  // 归属校验 + 更新合并为单条 UPDATE…RETURNING，省一次数据库往返
   const [updated] = await db
     .update(projects)
     .set(patch)
-    .where(eq(projects.id, id))
+    .where(and(eq(projects.id, id), eq(projects.userId, user.sub)))
     .returning();
+  if (!updated) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   return NextResponse.json({ project: updated });
 }
 

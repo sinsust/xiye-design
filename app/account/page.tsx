@@ -1,14 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, FolderOpen, LogOut, Trash2, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Brain,
+  ChevronDown,
+  FolderOpen,
+  KeyRound,
+  Loader2,
+  LogOut,
+  RefreshCw,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MeUser {
   id: string;
   email: string;
+}
+interface ImaSyncResult {
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  status: "success" | "partial" | "failed";
+  failures: { title: string; reason: string }[];
+}
+interface ImaSyncLog {
+  id: string;
+  syncedAt: string;
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  status: string;
+  failures: string;
 }
 interface ProjectItem {
   id: string;
@@ -34,6 +65,25 @@ export default function AccountPage() {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 腾讯 ima 凭证绑定态与配置表单
+  const [imaBound, setImaBound] = useState(false);
+  const [imaShowForm, setImaShowForm] = useState(false);
+  const [imaClientId, setImaClientId] = useState("");
+  const [imaApiKey, setImaApiKey] = useState("");
+  const [imaLoading, setImaLoading] = useState(false);
+  const [imaError, setImaError] = useState("");
+  // ima 增量同步
+  const [imaSyncing, setImaSyncing] = useState(false);
+  const [imaSyncProgress, setImaSyncProgress] = useState<{ running: boolean; done: number; total: number }>({
+    running: false,
+    done: 0,
+    total: 0,
+  });
+  const [imaSyncResult, setImaSyncResult] = useState<ImaSyncResult | null>(null);
+  const [imaSyncErr, setImaSyncErr] = useState("");
+  const [imaSyncLogs, setImaSyncLogs] = useState<ImaSyncLog[]>([]);
+  const [imaShowFailures, setImaShowFailures] = useState(false);
+
   const loadProjects = useCallback(async () => {
     const r = await fetch("/api/projects");
     if (r.ok) {
@@ -44,16 +94,15 @@ export default function AccountPage() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .then(async (d) => {
+    // 并行拉取会话 + 项目列表，避免串行等待；会话读取全局缓存
+    Promise.all([fetchSession(), loadProjects()])
+      .then(([u]) => {
         if (!alive) return;
-        if (d.user) {
-          setUser(d.user);
-          await loadProjects();
-        } else {
+        if (!u) {
           router.replace("/login");
+          return;
         }
+        setUser(u as MeUser);
       })
       .catch(() => {
         if (alive) router.replace("/login");
@@ -65,6 +114,93 @@ export default function AccountPage() {
       alive = false;
     };
   }, [loadProjects, router]);
+
+  const loadImaSyncLogs = useCallback(async () => {
+    try {
+      const r = await fetch("/api/brain/ima/sync?action=logs");
+      const d = await r.json();
+      if (r.ok && Array.isArray(d.logs)) setImaSyncLogs(d.logs);
+    } catch {
+      /* 忽略 */
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/account/ima")
+      .then((r) => (r.ok ? r.json() : { bound: false }))
+      .then((d) => {
+        setImaBound(Boolean(d.bound));
+        if (d.bound) loadImaSyncLogs();
+      })
+      .catch(() => setImaBound(false));
+  }, [loadImaSyncLogs]);
+
+  async function doImaSave(e: FormEvent) {
+    e.preventDefault();
+    setImaError("");
+    setImaLoading(true);
+    try {
+      const res = await fetch("/api/account/ima", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId: imaClientId, apiKey: imaApiKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setImaError(data.detail || data.error || "绑定失败");
+        return;
+      }
+      setImaBound(true);
+      setImaShowForm(false);
+      setImaClientId("");
+      setImaApiKey("");
+    } catch {
+      setImaError("网络错误");
+    } finally {
+      setImaLoading(false);
+    }
+  }
+
+  async function doImaUnbind() {
+    if (!confirm("解绑 ima 凭证？已导入第二大脑的条目仍会保留。")) return;
+    await fetch("/api/account/ima", { method: "DELETE" });
+    setImaBound(false);
+    setImaShowForm(false);
+  }
+
+  // 一键同步全部：POST 后台执行 + 轮询进度接口展示「正在同步... 12/87」
+  async function doImaSync() {
+    if (imaSyncing) return;
+    setImaSyncing(true);
+    setImaSyncResult(null);
+    setImaSyncErr("");
+    setImaShowFailures(false);
+    const poll = window.setInterval(async () => {
+      try {
+        const r = await fetch("/api/brain/ima/sync?action=progress");
+        const d = await r.json();
+        if (r.ok) setImaSyncProgress(d);
+      } catch {
+        /* 忽略 */
+      }
+    }, 800);
+    try {
+      const r = await fetch("/api/brain/ima/sync", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) {
+        setImaSyncErr(d.detail || d.error || "同步失败");
+      } else {
+        setImaSyncResult(d.result);
+      }
+    } catch {
+      setImaSyncErr("网络错误，同步中断");
+    } finally {
+      window.clearInterval(poll);
+      setImaSyncing(false);
+      setImaSyncProgress({ running: false, done: 0, total: 0 });
+      loadImaSyncLogs();
+    }
+  }
 
   async function doDelete(id: string) {
     if (!confirm("删除该项目？此操作不可撤销。")) return;
@@ -144,6 +280,185 @@ export default function AccountPage() {
         </div>
         <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
       </Link>
+
+      {/* 腾讯 ima 知识库 · 个人凭证配置 */}
+      <section className="mt-6 rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Brain className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">腾讯 ima 知识库</p>
+              <p className="truncate text-xs text-muted-foreground">
+                绑定后可在「第二大脑」导入你自己的 ima 资料
+              </p>
+            </div>
+          </div>
+          {imaBound ? (
+            <span className="shrink-0 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+              已绑定
+            </span>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setImaShowForm((v) => !v)}>
+              <KeyRound className="size-3.5" /> 配置
+            </Button>
+          )}
+        </div>
+
+        {imaShowForm && (
+          <form onSubmit={doImaSave} className="mt-4 space-y-3 border-t border-border pt-4">
+            <p className="text-xs text-muted-foreground">
+              凭证从{" "}
+              <a
+                href="https://ima.qq.com/agent-interface"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
+                ima.qq.com/agent-interface
+              </a>{" "}
+              获取。仅你本人持有，加密存储、明文不出服务端。
+            </p>
+            <div>
+              <label className="text-xs text-muted-foreground">Client ID</label>
+              <input
+                value={imaClientId}
+                onChange={(e) => setImaClientId(e.target.value)}
+                className="mt-1 w-full rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                placeholder="ima-openapi-clientid"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">API Key</label>
+              <input
+                value={imaApiKey}
+                onChange={(e) => setImaApiKey(e.target.value)}
+                type="password"
+                className="mt-1 w-full rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                placeholder="ima-openapi-apikey"
+              />
+            </div>
+            {imaError && <p className="break-words text-xs text-destructive">{imaError}</p>}
+            <div className="flex items-center gap-2">
+              <Button type="submit" size="sm" disabled={imaLoading}>
+                {imaLoading ? "验证中…" : "保存并验证"}
+              </Button>
+              {imaBound && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={doImaUnbind}
+                >
+                  <Trash2 className="size-3.5" /> 解绑
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
+
+        {/* 已绑定：增量同步区域 */}
+        {imaBound && (
+          <div className="mt-4 space-y-3 border-t border-border pt-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                一键同步你的 ima 知识库 → 第二大脑，自动做 AI 分类 / 标签 / 摘要 / 任务提取
+              </p>
+              <Button size="sm" onClick={doImaSync} disabled={imaSyncing} className="shrink-0">
+                <RefreshCw className="size-3.5" /> 一键同步全部
+              </Button>
+            </div>
+
+            {imaSyncing && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="size-3.5 animate-spin" />
+                  正在同步... {imaSyncProgress.done}/{imaSyncProgress.total || "…"}
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{
+                      width:
+                        imaSyncProgress.total > 0
+                          ? `${Math.round((imaSyncProgress.done / imaSyncProgress.total) * 100)}%`
+                          : "8%",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {imaSyncErr && <p className="text-xs text-destructive">{imaSyncErr}</p>}
+
+            {imaSyncResult && (
+              <div className="rounded-xl border border-border bg-background p-3 text-xs">
+                <p className="text-sm font-medium text-foreground">
+                  本次同步：新建 {imaSyncResult.created} 条，更新 {imaSyncResult.updated} 条，跳过{" "}
+                  {imaSyncResult.skipped} 条
+                  {imaSyncResult.failed > 0 && (
+                    <span className="text-destructive">
+                      ，失败 {imaSyncResult.failed} 条
+                    </span>
+                  )}
+                </p>
+                {imaSyncResult.failures.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setImaShowFailures((v) => !v)}
+                      className="mt-2 flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                    >
+                      <ChevronDown
+                        className={`size-3 transition ${imaShowFailures ? "rotate-180" : ""}`}
+                      />
+                      查看失败条目（{imaSyncResult.failures.length}）
+                    </button>
+                    {imaShowFailures && (
+                      <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-lg bg-muted/50 p-2">
+                        {imaSyncResult.failures.map((f, i) => (
+                          <li key={i} className="flex gap-1.5">
+                            <span className="shrink-0 text-destructive">·</span>
+                            <span className="min-w-0">
+                              <span className="font-medium text-foreground">{f.title}</span>
+                              <span className="text-muted-foreground"> — {f.reason}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {imaSyncLogs.length > 0 && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  最近同步：{new Date(imaSyncLogs[0].syncedAt).toLocaleString("zh-CN")}
+                </span>
+                <span
+                  className={
+                    imaSyncLogs[0].status === "success"
+                      ? "font-medium text-emerald-600"
+                      : imaSyncLogs[0].status === "partial"
+                        ? "font-medium text-amber-600"
+                        : "font-medium text-destructive"
+                  }
+                >
+                  {imaSyncLogs[0].status === "success"
+                    ? "成功"
+                    : imaSyncLogs[0].status === "partial"
+                      ? "部分失败"
+                      : "失败"}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
       <div className="mt-10">
         <div className="flex items-center justify-between">

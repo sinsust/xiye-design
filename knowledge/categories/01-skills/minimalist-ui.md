@@ -5,6 +5,8 @@ summary: 暖色单色调、排版对比、扁平 bento 网格、柔和粉彩，�
 useCase: 要安静、克制、编辑感强的极简界面时（bento / 内容站 / 后台）
 stack: [nextjs_supabase, nuxt_firebase, react_express, astro_supabase]
 related: [industrial-brutalist-ui, ui-ux-pro-max]
+contrasts: [工业野兽派 UI（industrial-brutalist-ui）]
+contrasts_note: "极简强调克制留白，野兽派强调粗粝高对比，风格取向相反"
 tags: [UI, 极简, bento]
 status: active
 updated: 2026-08-22

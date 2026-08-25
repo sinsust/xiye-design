@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KNOWLEDGE_TYPE_META, type KnowledgeEntry } from "@/lib/knowledge-types";
+import { KnowledgeGraph } from "@/components/knowledge-graph";
 
 type FilterId = KnowledgeEntry["type"] | "all" | "recent";
 
@@ -503,6 +504,8 @@ export function KnowledgeBrowser({
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 当前登录用户邮箱：云端共享条目仅「贡献人本人」可见编辑/删除
   const [myEmail, setMyEmail] = useState<string | null>(null);
+  // 全局图谱展开态
+  const [graphOpen, setGraphOpen] = useState(false);
 
   // 云端条目仅贡献人本人可管理；内置条目 userAdded 为空，一律不可管理
   const canManage = (e: KnowledgeEntry) =>
@@ -593,6 +596,13 @@ export function KnowledgeBrowser({
     return all.filter((e) => e.type === active);
   }, [active, entries, extra, patched, deleted]);
 
+  // 全量条目（含新增/编辑/删除后的最新态），供图谱匹配关联
+  const allEntries = useMemo(() => {
+    const patch = (e: KnowledgeEntry) => patched[keyOf(e)] ?? e;
+    const keep = (e: KnowledgeEntry) => !deleted.has(keyOf(e));
+    return [...extra.map(patch).filter(keep), ...entries.map(patch).filter(keep)];
+  }, [entries, extra, patched, deleted]);
+
   const typeLabel = (t: KnowledgeEntry["type"]) =>
     KNOWLEDGE_TYPE_META.find((m) => m.id === t)?.label ?? t;
 
@@ -601,6 +611,35 @@ export function KnowledgeBrowser({
 
   return (
     <div>
+      {/* 全局图谱入口 */}
+      <div className="mt-6">
+        <button
+          type="button"
+          onClick={() => setGraphOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-[var(--radius)] border border-border bg-card px-4 py-2.5 text-left transition-colors hover:border-primary/40"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <LinkIcon className="size-4 text-primary" />
+            知识图谱
+            <span className="text-xs font-normal text-muted-foreground">
+              {allEntries.length} 条 · 按关系类型连线
+            </span>
+          </span>
+          <span className="text-muted-foreground transition-transform" style={{ transform: graphOpen ? "rotate(180deg)" : undefined }}>
+            ▾
+          </span>
+        </button>
+        {graphOpen && (
+          <div className="mt-2">
+            <KnowledgeGraph
+              entries={allEntries}
+              onSelect={(e) => setOpen(e)}
+              height={360}
+            />
+          </div>
+        )}
+      </div>
+
       {/* 分类筛选 + 新增入口 */}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -623,10 +662,12 @@ export function KnowledgeBrowser({
             );
           })}
         </div>
-        <Button size="sm" onClick={() => setAdding(true)}>
-          <Plus className="size-4" />
-          新增条目
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => setAdding(true)}>
+            <Plus className="size-4" />
+            新增条目
+          </Button>
+        </div>
       </div>
 
       {/* 卡片网格 */}
@@ -865,6 +906,20 @@ export function KnowledgeBrowser({
                   {open.source && <CopyableLink label="官网 / 文档" href={open.source} />}
                   {open.localPath && <CopyablePath label="本地路径" value={open.localPath} />}
                 </dl>
+                {/* 局部图谱：当前条目 + 关联 */}
+                <div className="mt-5">
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                    关联图谱
+                  </dt>
+                  <div className="mt-2">
+                    <KnowledgeGraph
+                      entries={allEntries}
+                      center={open}
+                      onSelect={(e) => setOpen(e)}
+                      height={300}
+                    />
+                  </div>
+                </div>
                 {open.tags && open.tags.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-1.5">
                     {open.tags.map((t) => (
@@ -904,6 +959,7 @@ export function KnowledgeBrowser({
           />,
           document.body,
         )}
+
     </div>
   );
 }

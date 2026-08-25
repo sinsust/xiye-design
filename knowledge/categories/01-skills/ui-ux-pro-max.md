@@ -4,6 +4,8 @@ name: UI/UX Pro Max 设计系统生成
 summary: 需求分析→多域检索→推理引擎→设计系统输出→预交付检查的五步闭环，让 AI 产出专业级 UI 代码；含 192 类产品规则、50 种激活风格、192 套配色、74 组字体配对。
 useCase: 当需要从自然语言需求生成完整设计系统、或审查既有界面的专业性时
 stack: [react, vue, svelte, tailwind]
+depends: [Anti-slop 前端设计（design-taste-frontend）]
+depends_note: "其反模板与预交付检查规则依赖 design-taste-frontend 的审美基准"
 tags: [ui, ux, 设计系统, 反模式, 预交付检查, 配色, 字体]
 status: active
 updated: 2026-08-24

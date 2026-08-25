@@ -5,14 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogIn, UserRound, LogOut, FolderOpen, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AUTH_CHANGED_EVENT, AUTH_CACHE_KEY } from "@/lib/auth-events";
+import { fetchSession } from "@/lib/auth-session";
 
 interface MeUser {
   id: string;
   email: string;
 }
-
-// 注册/登录成功后写入，AuthMenu 挂载时先读它立即渲染（免网络往返）
-const AUTH_CACHE_KEY = "xiye-auth-cache";
 
 export function AuthMenu() {
   const router = useRouter();
@@ -21,39 +20,34 @@ export function AuthMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // 先读缓存秒显（注册/登录刚跳转过来时）
+  async function refreshUser() {
     try {
       const cached = localStorage.getItem(AUTH_CACHE_KEY);
       if (cached) {
         const u = JSON.parse(cached);
-        if (u?.id && u?.email) setUser(u);
+        if (u?.id && u?.email) setUser(u); // 秒显缓存
       }
     } catch {
       /* ignore */
     }
-    // 再后台 fetch 校验真实会话；失效则清除缓存回退未登录
-    fetch("/api/auth/me")
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .then((d) => {
-        const u = (d.user ?? null) as MeUser | null;
-        setUser(u);
-        try {
-          if (u) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(u));
-          else localStorage.removeItem(AUTH_CACHE_KEY);
-        } catch {
-          /* ignore */
-        }
-      })
-      .catch(() => {
-        try {
-          localStorage.removeItem(AUTH_CACHE_KEY);
-        } catch {
-          /* ignore */
-        }
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
+    // 后台 fetch 校验真实会话；失效则清除缓存回退未登录（全局共享缓存，避免与其它页面重复请求）
+    const u = await fetchSession({ force: true });
+    setUser(u as MeUser | null);
+    try {
+      if (u) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(u));
+      else localStorage.removeItem(AUTH_CACHE_KEY);
+    } catch {
+      /* ignore */
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    refreshUser();
+    // 订阅登录/注册成功广播：SPA 导航下 AuthMenu 常驻不重挂载，
+    // 监听事件即时刷新，避免需手动刷新页面才更新
+    window.addEventListener(AUTH_CHANGED_EVENT, refreshUser);
+    return () => window.removeEventListener(AUTH_CHANGED_EVENT, refreshUser);
   }, []);
 
   useEffect(() => {
@@ -73,6 +67,7 @@ export function AuthMenu() {
     } catch {
       /* ignore */
     }
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
     setUser(null);
     setOpen(false);
     router.push("/");

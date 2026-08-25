@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { requireUser } from "@/lib/auth-guard";
 import { interpretIntentOnline } from "@/lib/ai-intent-server";
 
 export const runtime = "nodejs";
@@ -10,6 +11,8 @@ export const runtime = "nodejs";
 // 503 → 未配置 DEEPSEEK_API_KEY（客户端回退启发式）
 // 400/502 → 参数或 DeepSeek 调用错误
 export async function POST(req: NextRequest) {
+  const { res } = await requireUser();
+  if (res) return res;
   if (!rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }

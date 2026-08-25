@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, GitBranch, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowStore } from "@/lib/store/flow-store";
@@ -112,12 +112,15 @@ export function ChatStream({
     }
   }, [hydrated, intentSession, setProductBrief, setIntentNarrative]);
 
+  const lastCountRef = useRef(0);
   useEffect(() => {
+    if (messages.length === lastCountRef.current) return;
+    lastCountRef.current = messages.length;
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages, thinking]);
+  }, [messages]);
 
   // 同步对话进展给父栏（会诊按钮可用性 / 自动会诊判断）
   useEffect(() => {
@@ -260,7 +263,7 @@ export function ChatStream({
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <span className="text-xs text-muted-foreground">⌘/Ctrl + ↵ 开始</span>
               <Button size="sm" onClick={() => startFromInput(input)} disabled={!input.trim()}>
-                和老鸨子开始探索 <ArrowRight className="size-3.5" />
+                和老鸨子探索 <ArrowRight className="size-3.5" />
               </Button>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -289,7 +292,7 @@ export function ChatStream({
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
         {messages.map((m, i) => (
           <div
-            key={i}
+            key={`${m.role}-${i}`}
             className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
           >
             <div className={m.role === "user" ? "max-w-[85%]" : "max-w-[92%]"}>
@@ -437,7 +440,7 @@ function renderInline(text: string): ReactNode {
   });
 }
 
-function RichText({ content }: { content: string }) {
+const RichText = memo(function RichText({ content }: { content: string }) {
   const lines = content.split("\n");
   const blocks: ReactNode[] = [];
   let i = 0;
@@ -513,4 +516,4 @@ function RichText({ content }: { content: string }) {
     i++;
   }
   return <div className="space-y-0.5">{blocks}</div>;
-}
+});

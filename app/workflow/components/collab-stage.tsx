@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { FileText, LoaderCircle } from "lucide-react";
+import { FileText, LoaderCircle, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChatStream } from "./chat-stream";
@@ -625,14 +625,21 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
           <div className="flex flex-wrap items-center gap-2">
             {!canAdvance && (
               <span className="text-xs text-muted-foreground">
-                先和专家把产品方向聊清楚，生成产品愿景后即可进入搭建
+                先和专家聊清产品方向
               </span>
             )}
-            <Button size="sm" variant="outline" onClick={() => void handleSummon()} disabled={consulting || messages.length === 0}>
-              召集智囊团
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => void handleSummon()}
+              disabled={consulting || messages.length === 0}
+            >
+              <Sparkles className="size-3.5" />
+              召集
             </Button>
             <Button size="sm" onClick={onAdvance} disabled={!canAdvance}>
-              进入方案落地
+              下一步
             </Button>
           </div>
         </CardContent>

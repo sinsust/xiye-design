@@ -5,9 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// AuthMenu 挂载时会先读这个缓存立即渲染用户信息，避免跳转后头像/邮箱迟迟不出现
-const AUTH_CACHE_KEY = "xiye-auth-cache";
+import { AUTH_CHANGED_EVENT, AUTH_CACHE_KEY } from "@/lib/auth-events";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,9 +27,14 @@ export default function LoginPage() {
     });
     const j = await res.json().catch(() => null);
     if (res.ok) {
-      // 缓存用户信息，让跳转后右上角立即显示头像+邮箱
+      // 缓存用户信息，并广播事件让常驻的 AuthMenu 立即刷新右上角
       try {
         if (j?.user) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(j.user));
+      } catch {
+        /* ignore */
+      }
+      try {
+        window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
       } catch {
         /* ignore */
       }
