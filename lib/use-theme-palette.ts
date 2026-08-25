@@ -154,7 +154,10 @@ export function useApplyPalette() {
   useEffect(() => {
     if (!activeStyleId) return;
     const el = document.documentElement;
-    el.setAttribute("data-theme-preset", activeStyleId);
+    // CSS 预设文件使用去 aw- 前缀的命名（brutalist/soft-pop/nature-green...），
+    // 因此 data-theme-preset 需同步映射，否则系统主题 CSS 规则不匹配，会 fallback 到默认绿色。
+    const themeAttr = activeStyleId.replace(/^aw-/, "");
+    el.setAttribute("data-theme-preset", themeAttr);
     const style = presetStyle(activeStyleId);
     if (!style) return;
     const ov = custom[activeStyleId];

@@ -19,6 +19,10 @@ export interface DesignSystem {
   darkMode: string | null; // 选中的暗色模式 ID
   colorPrimary: string | null; // 自定义主色 hex，覆盖风格 accent
   colorSecondary: string | null; // 自定义辅色 hex，覆盖风格 accent2
+  colorBg: string | null; // 自定义背景色 hex，覆盖风格 bg
+  colorSurface: string | null; // 自定义表面色 hex，覆盖风格 surface
+  colorText: string | null; // 自定义文字色 hex，覆盖风格 text
+  colorAccents: string[] | null; // 自定义扩展强调色，覆盖风格 accents
 }
 
 // —— Step 4 类B：组件与交互（卡片/按钮/导航栏/表单/交互动效 5 维度）——
@@ -223,6 +227,10 @@ export const useFlowStore = create<FlowState>()(
           darkMode: null,
           colorPrimary: null,
           colorSecondary: null,
+          colorBg: null,
+          colorSurface: null,
+          colorText: null,
+          colorAccents: null,
         }),
         ...partial,
       },

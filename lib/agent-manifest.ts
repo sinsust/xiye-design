@@ -129,6 +129,10 @@ export function resolvedTokens(state: FlowState): ResolvedDesignTokens {
     darkMode: null,
     colorPrimary: null,
     colorSecondary: null,
+    colorBg: null,
+    colorSurface: null,
+    colorText: null,
+    colorAccents: null,
   };
   const p = style.palette;
 

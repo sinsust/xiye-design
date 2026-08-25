@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Palette, RotateCcw } from "lucide-react";
-import { useFlowStore } from "@/lib/store/flow-store";
 import {
   mergePalette,
   presetStyle,
@@ -70,15 +69,12 @@ export function ThemePresetToggle() {
   const custom = useThemePaletteStore((s) => s.custom);
   const setOverride = useThemePaletteStore((s) => s.setOverride);
   const resetOverride = useThemePaletteStore((s) => s.resetOverride);
-  // 顶部切预设也同步 builder 工作台的 visualStyle，保证「搭页面」预览同步变化
-  const setFlowVisualStyle = useFlowStore((s) => s.setVisualStyle);
-
-  // 统一由 store 里的 activeStyleId 应用到 <html> CSS 变量
+  // 顶部主题色盘只控制 XIYE 系统主题（root CSS 变量），
+  // 不再联动 builder 的组件主题，两者独立。
   useApplyPalette();
 
   const applyPreset = (id: string) => {
     setActiveStyle(id);
-    setFlowVisualStyle(id);
   };
 
   useEffect(() => {

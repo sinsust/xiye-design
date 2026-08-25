@@ -106,8 +106,15 @@ export function resolveStyleVars(
       )?.[1] ?? DEFAULT_SHADOW
     : DEFAULT_SHADOW;
 
-  // 主色上的文字色（对比度兜底）：浅主色用深字、深主色用白字
+  // 设计系统颜色覆盖：builder 组件主题独立调色，不影响 XIYE 系统主题
+  const bgColor = ds?.colorBg ?? style.palette.bg;
+  const surfaceColor = ds?.colorSurface ?? style.palette.surface;
+  const textColor = ds?.colorText ?? style.palette.text;
   const primaryColor = ds?.colorPrimary ?? style.palette.accent;
+  const secondaryColor = ds?.colorSecondary ?? style.palette.accent2;
+  const accentsColor = ds?.colorAccents ?? style.palette.accents;
+
+  // 主色上的文字色（对比度兜底）：浅主色用深字、深主色用白字
   const onPrimary = (() => {
     const c = hexToRgb(primaryColor);
     if (!c) return "#FFFFFF";
@@ -125,13 +132,13 @@ export function resolveStyleVars(
     style.blur && style.previewBg ? style.previewBg : style.palette.bg;
 
   return {
-    "--background": background,
-    "--surface": style.palette.surface,
+    "--background": style.blur && style.previewBg ? style.previewBg : bgColor,
+    "--surface": surfaceColor,
     "--border": style.palette.border,
-    "--foreground": ensureReadable(style.palette.bg, style.palette.text, 4.5),
-    "--muted-foreground": ensureReadable(style.palette.bg, style.palette.muted, 3.0),
+    "--foreground": ensureReadable(bgColor, textColor, 4.5),
+    "--muted-foreground": ensureReadable(bgColor, style.palette.muted, 3.0),
     "--primary": primaryColor,
-    "--secondary": ds?.colorSecondary ?? style.palette.accent2,
+    "--secondary": secondaryColor,
     "--on-primary": onPrimary,
     "--success": "#16a34a",
     "--danger": "#dc2626",
@@ -139,10 +146,10 @@ export function resolveStyleVars(
     "--radius": radiusValue,
     "--font-sans": fontValue,
     "--font-heading": fontValue,
-    "--muted": `color-mix(in srgb, ${style.palette.text} 8%, ${style.palette.surface})`,
-    "--accent2": style.palette.accent2,
+    "--muted": `color-mix(in srgb, ${textColor} 8%, ${surfaceColor})`,
+    "--accent2": secondaryColor,
     "--shadow": shadowValue,
-    ...buildAccentVars(style.palette),
+    ...buildAccentVars({ ...style.palette, accent: primaryColor, accent2: secondaryColor, accents: accentsColor }),
     ...typeVars,
     ...densityVars,
     fontFamily: "var(--font-sans)",

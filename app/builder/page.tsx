@@ -88,12 +88,7 @@ import { applySnapshot } from "@/lib/project-snapshot";
 import { findComponentMotion } from "@/data/component-motions";
 import { ensureWebFonts } from "@/lib/web-fonts";
 import { FONT_OPTIONS } from "@/data/design-presets";
-import {
-  mergePalette,
-  useApplyPalette,
-  useThemePaletteStore,
-  type PaletteOverride,
-} from "@/lib/use-theme-palette";
+import { mergePalette, type PaletteOverride } from "@/lib/use-theme-palette";
 import { ColorRow } from "@/components/theme-preset-toggle";
 
 // —— 页面分组：一级「用途」→ 二级「页面」，左侧栏层级树展示 ——
@@ -177,7 +172,6 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 export default function BuilderPage() {
   const visualStyle = useFlowStore((s) => s.visualStyle);
   const setVisualStyle = useFlowStore((s) => s.setVisualStyle);
-  const designSystem = useFlowStore((s) => s.designSystem);
   const pageBlueprint = useFlowStore((s) => s.pageBlueprint);
   const addBlueprintComponent = useFlowStore((s) => s.addBlueprintComponent);
   const updateBlueprintVariant = useFlowStore((s) => s.updateBlueprintVariant);
@@ -391,29 +385,32 @@ export default function BuilderPage() {
 
   const style = VISUAL_STYLE_MAP[visualStyle ?? PREVIEW_DEFAULT_STYLE_ID] ?? VISUAL_STYLE_MAP[PREVIEW_DEFAULT_STYLE_ID] ?? VISUAL_STYLES[0];
 
-  // 调色：与顶部 ThemePresetToggle 共享同一份 useThemePaletteStore；
-  // custom key 用当前 visualStyle，使每个视觉风格都能独立调色。
-  const themeCustom = useThemePaletteStore((s) => s.custom);
-  const themeSetOverride = useThemePaletteStore((s) => s.setOverride);
-  const themeResetOverride = useThemePaletteStore((s) => s.resetOverride);
-  const themeSetActiveStyle = useThemePaletteStore((s) => s.setActiveStyle);
-  useApplyPalette();
+  // 组件主题：builder 画布使用独立的设计系统色盘覆盖，
+  // 不再与顶部 ThemePresetToggle（系统主题）共用 store，避免联动污染 XIYE 产品 UI。
+  const designSystem = useFlowStore((s) => s.designSystem);
+  const setDesignSystem = useFlowStore((s) => s.setDesignSystem);
 
-  // 挂载时把 flow-store 的 visualStyle 同步为全局主题，保证顶部色盘与搭页面预览一致
-  useEffect(() => {
-    themeSetActiveStyle(visualStyle ?? PREVIEW_DEFAULT_STYLE_ID);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // 将 builder 的组件主题覆盖同步到 designSystem（供 styleVars 与导出代码使用）
+  const applyBuilderColor = (patch: Partial<{ colorBg: string; colorSurface: string; colorText: string; colorPrimary: string; colorSecondary: string }>) => {
+    setDesignSystem(patch);
+  };
 
-  const styleOv = themeCustom[style.id] ?? {};
+  const styleOv = {
+    bg: designSystem?.colorBg ?? undefined,
+    surface: designSystem?.colorSurface ?? undefined,
+    text: designSystem?.colorText ?? undefined,
+    accent: designSystem?.colorPrimary ?? undefined,
+    accent2: designSystem?.colorSecondary ?? undefined,
+    accents: designSystem?.colorAccents ?? undefined,
+  };
   const styleMerged = mergePalette(style, styleOv);
-  const isStyleCustomized = Object.keys(styleOv).length > 0;
+  const isStyleCustomized = Object.entries(styleOv).some(([k, v]) => v !== undefined && !(Array.isArray(v) && v.length === 0));
   const updateStyleAccent = (idx: number, v: string) => {
     const seed = style.palette.accents ?? [];
-    const cur = styleOv.accents ?? seed;
+    const cur = designSystem?.colorAccents ?? seed;
     const next = [...cur];
     next[idx] = v;
-    themeSetOverride(style.id, { accents: next } as Partial<PaletteOverride>);
+    setDesignSystem({ colorAccents: next });
   };
 
   // —— 页面蓝图：加入 / 移除 / 换变体 / 按页面分组 ——
@@ -658,10 +655,10 @@ export default function BuilderPage() {
                     : "rounded-xl border border-border bg-card shadow-xl",
                 ].join(" ")}
               >
-                {/* 当前风格色盘编辑（与顶部 ThemePresetToggle 共享 storage） */}
+                {/* 当前风格色盘编辑（仅作用于 builder 组件主题，与系统主题隔离） */}
                 <div className="mb-2 rounded-lg border border-border/70 bg-background p-2">
                   <div className="mb-1 flex items-center justify-between px-0.5">
-                    <span className="text-[11px] font-medium text-foreground">
+                      <span className="text-[11px] font-medium text-foreground">
                       色盘 · {style.name}
                       {isStyleCustomized && (
                         <span className="ml-1 rounded bg-primary/15 px-1 text-[10px] font-medium text-primary">
@@ -671,7 +668,16 @@ export default function BuilderPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => themeResetOverride(style.id)}
+                      onClick={() =>
+                        setDesignSystem({
+                          colorBg: null,
+                          colorSurface: null,
+                          colorText: null,
+                          colorPrimary: null,
+                          colorSecondary: null,
+                          colorAccents: null,
+                        })
+                      }
                       disabled={!isStyleCustomized}
                       className="rounded px-1.5 py-0.5 text-[10px] text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                     >
@@ -682,27 +688,27 @@ export default function BuilderPage() {
                     <ColorRow
                       label="背景"
                       value={styleMerged.bg}
-                      onChange={(v) => themeSetOverride(style.id, { bg: v })}
+                      onChange={(v) => applyBuilderColor({ colorBg: v })}
                     />
                     <ColorRow
                       label="表面"
                       value={styleMerged.surface}
-                      onChange={(v) => themeSetOverride(style.id, { surface: v })}
+                      onChange={(v) => applyBuilderColor({ colorSurface: v })}
                     />
                     <ColorRow
                       label="文字"
                       value={styleMerged.text}
-                      onChange={(v) => themeSetOverride(style.id, { text: v })}
+                      onChange={(v) => applyBuilderColor({ colorText: v })}
                     />
                     <ColorRow
                       label="主色"
                       value={styleMerged.accent}
-                      onChange={(v) => themeSetOverride(style.id, { accent: v })}
+                      onChange={(v) => applyBuilderColor({ colorPrimary: v })}
                     />
                     <ColorRow
                       label="辅色"
                       value={styleMerged.accent2}
-                      onChange={(v) => themeSetOverride(style.id, { accent2: v })}
+                      onChange={(v) => applyBuilderColor({ colorSecondary: v })}
                     />
                     {(style.palette.accents ?? []).slice(0, 2).map((_, i) => {
                       const seed = style.palette.accents ?? [];
@@ -740,7 +746,6 @@ export default function BuilderPage() {
                       type="button"
                       onClick={() => {
                         setVisualStyle(PREVIEW_DEFAULT_STYLE_ID);
-                        themeSetActiveStyle(PREVIEW_DEFAULT_STYLE_ID);
                         setStyleOpen(false);
                       }}
                       className="col-span-3 flex items-center gap-1.5 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-2 text-left text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
@@ -754,7 +759,6 @@ export default function BuilderPage() {
                       type="button"
                       onClick={() => {
                         setVisualStyle(s.id);
-                        themeSetActiveStyle(s.id);
                         setStyleOpen(false);
                       }}
                       className={[
