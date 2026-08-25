@@ -26,6 +26,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useFlowStore, type FlowState } from "@/lib/store/flow-store";
+import { useSkeletonStore } from "@/lib/skeleton-store";
 import { generateProject, buildProjectZipFiles, type GeneratedProject } from "@/lib/project-generator";
 import { buildZip, downloadBlob } from "@/lib/zip";
 import { verifySeed, type SeedVerifyReport } from "@/lib/seed-verify";
@@ -185,7 +186,9 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
           gitRepoUrl: raw.projectInfo?.gitRepoUrl ?? null,
         },
       } as FlowState;
-      const p = generateProject(adapted);
+      // 把 builder 里 AI 改写的文案（skeleton-store）带入整站 ZIP 导出
+      const content = useSkeletonStore.getState().content;
+      const p = generateProject(adapted, content);
       setProject(p);
       setGenState("done");
       if (activeRef.current === "zip" || !project) setActive("zip");

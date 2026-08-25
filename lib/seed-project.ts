@@ -13,7 +13,8 @@ import { TECH_STACKS } from "@/data/tech-stacks";
 import { buildCssVariables, buildTailwindConfig } from "@/lib/design-tokens-css";
 import { VISUAL_STYLE_MAP, VISUAL_STYLES } from "@/data/visual-styles";
 import { SKELETON_PAGE_MAP } from "@/data/skeletons";
-import { DEMO_CONTENT } from "@/data/skeleton-content";
+import { DEMO_CONTENT, type DemoContent } from "@/data/skeleton-content";
+import { deepMerge, type ContentOverride } from "@/lib/content-resolver";
 import { resolveArchitecture } from "@/lib/architecture";
 import { SECRET_PATTERN } from "@/lib/security";
 
@@ -62,8 +63,8 @@ function pascal(id: string): string {
 
 // —— 风格锚点：把选中组件变体的 code 占位符替换为 DEMO_CONTENT，生成完整可编译的参照示例 ——
 
-/** 展开 DEMO_CONTENT 为扁平 {占位符: 文案} 映射 */
-function revealTargets(): Record<string, string> {
+/** 展开内容为扁平 {占位符: 文案} 映射；默认用 DEMO_CONTENT，可传入 AI 改写后的 content 覆盖 */
+function revealTargets(content: DemoContent = DEMO_CONTENT): Record<string, string> {
   const flat: Record<string, string> = {};
   const walk = (obj: unknown, prefix: string) => {
     if (!obj || typeof obj !== "object") return;
@@ -73,13 +74,13 @@ function revealTargets(): Record<string, string> {
       else if (v && typeof v === "object") walk(v, key);
     }
   };
-  walk(DEMO_CONTENT, "");
+  walk(content, "");
   return flat;
 }
 
-/** 将 template-holder（{{brand}} 等）替换为 DEMO_CONTENT 文案；无映射的空占位保留占位标记 */
-function revealPlaceholders(code: string): string {
-  const targets = revealTargets();
+/** 将 template-holder（{{brand}} 等）替换为文案；有 AI 改写 content 时优先用改写结果 */
+function revealPlaceholders(code: string, content?: ContentOverride): string {
+  const targets = revealTargets(content ? deepMerge(DEMO_CONTENT, content) : DEMO_CONTENT);
   let out = code;
   for (const [ph, val] of Object.entries(targets)) {
     out = out.split(ph).join(val);
@@ -1529,7 +1530,7 @@ ${meta.runnable ? "启动后访问本地开发地址，即可看到已套用视�
 `;
 }
 
-export function buildSeedProject(state: FlowState, tokens: SeedTokens): SeedProject {
+export function buildSeedProject(state: FlowState, tokens: SeedTokens, content?: ContentOverride): SeedProject {
   const meta = SEED_RUN[state.techStack ?? ""] ?? SEED_RUN.react_express;
   const readme = seedReadme(tokens, state, meta);
 

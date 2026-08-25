@@ -5,6 +5,7 @@
 // 在这里被翻译成真实的 CSS 变量与 Tailwind 配置，下游代码生成器直接消费。
 
 import type { FlowState, BlueprintEntry } from "@/lib/store/flow-store";
+import type { ContentOverride } from "@/lib/content-resolver";
 import {
   VISUAL_STYLES,
   VISUAL_STYLE_MAP,
@@ -831,7 +832,7 @@ export function buildPrdMdForState(state: FlowState): string {
   return buildPrdMd(state, style, narrative);
 }
 
-export function generateProject(state: FlowState): GeneratedProject {
+export function generateProject(state: FlowState, content?: ContentOverride): GeneratedProject {
   const { style, usedFallback } = resolveStyle(state.visualStyle);
   const projectName =
     state.projectInfo?.projectName ||
@@ -858,7 +859,7 @@ export function generateProject(state: FlowState): GeneratedProject {
   const consistency = validateExport(state);
   const agentManifest = JSON.stringify(buildAgentManifest(state), null, 2);
   const handoffMd = buildAgentHandoffMd(state, consistency);
-  const seed = buildSeedProject(state, resolveSeedTokens(state));
+  const seed = buildSeedProject(state, resolveSeedTokens(state), content);
   const prdNarrative = state.intentNarrative ?? deriveNarrativeFallback(state, style);
   const prdMd = buildPrdMd(state, style, prdNarrative);
 
