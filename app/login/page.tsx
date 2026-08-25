@@ -42,7 +42,6 @@ export default function LoginPage() {
       setDone(true);
       redirectTimer.current = setTimeout(() => {
         router.push("/builder");
-        router.refresh();
       }, 1200);
       return;
     }

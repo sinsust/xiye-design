@@ -46,7 +46,6 @@ export default function RegisterPage() {
       setDone(true);
       redirectTimer.current = setTimeout(() => {
         router.push("/builder");
-        router.refresh();
       }, 1200);
       return;
     }
