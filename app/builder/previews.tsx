@@ -2793,130 +2793,138 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
 
 /* ───────── Auth Login ───────── */
 function AuthLoginPreview({ variantId }: { variantId: string }) {
-  const field = (label: string, ph: string) => (
-    <div className="flex flex-col gap-1">
+  const field = (label: string, ph: string, i: number) => (
+    <div className="pv-in pv-lift pv-spotlight flex flex-col gap-1" style={{ ["--i" as string]: i }}>
       <label className="text-[10px] font-medium">{label}</label>
       <span className="rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>{ph}</span>
     </div>
   );
   if (variantId === "alogin_dark")
     return (
-      <div className="flex min-h-56 items-center justify-center bg-slate-900 px-6">
-        <div className="w-full max-w-xs rounded-xl border border-white/10 bg-slate-800/60 p-5">
-          <h3 className="text-center text-sm font-bold text-white">欢迎回来</h3>
-          <div className="mt-3 space-y-2.5">
-            {field(PREVIEW_CONTENT.auth.email, "you@example.com")}
-            {field(PREVIEW_CONTENT.auth.password, "••••••••")}
+      <div className="pv-stagger relative overflow-hidden flex min-h-56 items-center justify-center bg-slate-900 px-6">
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="pv-stagger relative z-10 flex w-full items-center justify-center">
+          <div className="pv-in pv-lift pv-spotlight w-full max-w-xs rounded-xl border border-white/10 bg-slate-800/60 p-5" style={{ ["--i" as string]: 0 }}>
+            <h3 className="text-center text-sm font-bold text-white">欢迎回来</h3>
+            <div className="mt-3 space-y-2.5">
+              {field(PREVIEW_CONTENT.auth.email, "you@example.com", 0)}
+              {field(PREVIEW_CONTENT.auth.password, "••••••••", 1)}
+            </div>
+            <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 2, background: "var(--primary)" }}>登录</span>
           </div>
-          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
         </div>
       </div>
     );
   if (variantId === "alogin_minimal")
     return (
-      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
-        <div className="w-full max-w-xs">
+      <div className="pv-stagger flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
+        <div className="pv-in pv-lift pv-spotlight w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <h3 className="text-center text-base font-bold tracking-tight">登录</h3>
           <div className="mt-5 space-y-4">
-            <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
-            <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
+            <span className="pv-in block border-b pb-1 text-[10px]" style={{ ["--i" as string]: 1, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
+            <span className="pv-in block border-b pb-1 text-[10px]" style={{ ["--i" as string]: 2, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
           </div>
-          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>登录</span>
         </div>
       </div>
     );
   if (variantId === "alogin_left")
     return (
-      <div className="flex min-h-56 items-center px-6" style={{ background: "var(--surface)" }}>
-        <div className="mx-auto w-full max-w-xs">
+      <div className="pv-stagger flex min-h-56 items-center px-6" style={{ background: "var(--surface)" }}>
+        <div className="pv-in pv-lift pv-spotlight mx-auto w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <p className="text-sm font-bold">{PREVIEW_CONTENT.brand}</p>
           <h3 className="mt-5 text-base font-bold">登录</h3>
-          <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com")}{field(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
-          <span className="mt-2 block rounded-md border py-1.5 text-center text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>使用 Google 登录</span>
+          <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com", 0)}{field(PREVIEW_CONTENT.auth.password, "••••••••", 1)}</div>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 2, background: "var(--primary)" }}>登录</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-2 block rounded-md border py-1.5 text-center text-[10px] font-medium" style={{ ["--i" as string]: 3, borderColor: "var(--border)" }}>使用 Google 登录</span>
         </div>
       </div>
     );
   if (variantId === "alogin_glass")
     return (
-      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--background)), var(--background) 55%, color-mix(in srgb, var(--secondary) 10%, var(--background)))" }}>
-        <div className="w-full max-w-xs rounded-2xl border p-5" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>
+      <div className="pv-stagger flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--background)), var(--background) 55%, color-mix(in srgb, var(--secondary) 10%, var(--background)))" }}>
+        <div className="pv-in pv-lift pv-spotlight w-full max-w-xs rounded-2xl border p-5" style={{ ["--i" as string]: 0, borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>
           <div className="text-center">
             <span className="mx-auto flex size-9 items-center justify-center rounded-lg text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 10px 24px color-mix(in srgb, var(--primary) 35%, transparent)" }}>A</span>
             <h3 className="mt-2 text-sm font-bold">欢迎回来</h3>
             <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
           </div>
-          <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com")}{field(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-          <span className="mt-3 block rounded-lg py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</span>
+          <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com", 0)}{field(PREVIEW_CONTENT.auth.password, "••••••••", 1)}</div>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-3 block rounded-lg py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 2, background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>登录</span>
         </div>
       </div>
     );
   if (variantId === "alogin_editorial")
     return (
-      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
-        <div className="w-full max-w-xs">
+      <div className="pv-stagger flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
+        <div className="pv-in pv-lift pv-spotlight w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <p className="text-[9px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.brand}</p>
           <h3 className="mt-3 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>欢迎回来</h3>
           <p className="mt-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
           <div className="mt-4 space-y-4">
-            <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
-            <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
+            <span className="pv-in block border-b pb-1 text-[10px]" style={{ ["--i" as string]: 1, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
+            <span className="pv-in block border-b pb-1 text-[10px]" style={{ ["--i" as string]: 2, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
           </div>
-          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>登录</span>
         </div>
       </div>
     );
   if (variantId === "alogin_terminal")
     return (
-      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "#0A0A0B" }}>
-        <div className="w-full max-w-xs rounded-lg border p-4 font-mono text-[10px]" style={{ borderColor: "#262629", background: "#141416" }}>
-          <p style={{ color: "#22D3EE" }}>~/sign-in</p>
-          <p className="mt-3 text-slate-400">email:</p>
-          <span className="mt-1 block border px-2 py-1.5 text-slate-200" style={{ borderColor: "#262629" }}>you@example.com</span>
-          <p className="mt-2.5 text-slate-400">password:</p>
-          <span className="mt-1 block border px-2 py-1.5 text-slate-200" style={{ borderColor: "#262629" }}>••••••••</span>
-          <span className="mt-3 block rounded border py-1.5 text-center font-semibold" style={{ borderColor: "#22D3EE", color: "#22D3EE" }}>$ ./sign-in --flag</span>
+      <div className="pv-stagger relative overflow-hidden flex min-h-56 items-center justify-center px-6" style={{ background: "#0A0A0B" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="pv-stagger relative z-10 flex w-full items-center justify-center">
+          <div className="pv-in pv-lift pv-spotlight w-full max-w-xs rounded-lg border p-4 font-mono text-[10px]" style={{ ["--i" as string]: 0, borderColor: "#262629", background: "#141416" }}>
+            <p style={{ color: "#22D3EE" }}>~/sign-in</p>
+            <p className="mt-3 text-slate-400">email:</p>
+            <span className="pv-in mt-1 block border px-2 py-1.5 text-slate-200" style={{ ["--i" as string]: 1, borderColor: "#262629" }}>you@example.com</span>
+            <p className="mt-2.5 text-slate-400">password:</p>
+            <span className="pv-in mt-1 block border px-2 py-1.5 text-slate-200" style={{ ["--i" as string]: 2, borderColor: "#262629" }}>••••••••</span>
+            <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-3 block rounded border py-1.5 text-center font-semibold" style={{ ["--i" as string]: 3, borderColor: "#22D3EE", color: "#22D3EE" }}>$ ./sign-in --flag</span>
+          </div>
         </div>
       </div>
     );
   if (variantId === "alogin_center")
     return (
       <div
-        className="flex min-h-56 items-center justify-center px-6"
+        className="pv-stagger flex min-h-56 items-center justify-center px-6"
         style={{ background: "radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 65%), var(--background)" }}
       >
         <div
-          className="w-full max-w-[15rem] rounded-2xl border p-5 text-center"
-          style={{ borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 26px 54px -32px rgba(0,0,0,0.4)" }}
+          className="pv-in pv-lift pv-spotlight w-full max-w-[15rem] rounded-2xl border p-5 text-center"
+          style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)", boxShadow: "0 26px 54px -32px rgba(0,0,0,0.4)" }}
         >
           <span className="mx-auto flex size-9 items-center justify-center rounded-xl text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>
           <h3 className="mt-2.5 text-sm font-bold">{PREVIEW_CONTENT.auth.loginTitle}</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
-          <div className="mt-3.5 space-y-2 text-left">{field(PREVIEW_CONTENT.auth.email, "you@example.com")}{field(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-          <span className="mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
-          <p className="mt-2.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>还没有账号？<span style={{ color: "var(--primary)" }}>免费注册</span></p>
+          <div className="mt-3.5 space-y-2 text-left">{field(PREVIEW_CONTENT.auth.email, "you@example.com", 0)}{field(PREVIEW_CONTENT.auth.password, "••••••••", 1)}</div>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-3 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 2, background: "var(--primary)" }}>登录</span>
+          <p className="pv-in mt-2.5 text-[9px]" style={{ ["--i" as string]: 3, color: "var(--muted-foreground)" }}>还没有账号？<span style={{ color: "var(--primary)" }}>免费注册</span></p>
         </div>
       </div>
     );
   // 未匹配变体兜底：居中卡片 + 社交登录
   return (
-    <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
-      <div className="w-full max-w-xs rounded-xl border p-5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+    <div className="pv-stagger flex min-h-56 items-center justify-center px-6" style={{ background: "var(--background)" }}>
+      <div className="pv-in pv-lift pv-spotlight w-full max-w-xs rounded-xl border p-5" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
         <div className="text-center">
           <span className="mx-auto flex size-9 items-center justify-center rounded-lg text-sm font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
           <h3 className="mt-2 text-sm font-bold">欢迎回来</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>登录你的账号继续</p>
         </div>
-        <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com")}{field(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
+        <div className="mt-3 space-y-2.5">{field(PREVIEW_CONTENT.auth.email, "you@example.com", 0)}{field(PREVIEW_CONTENT.auth.password, "••••••••", 1)}</div>
         <div className="mt-2 flex items-center justify-between text-[9px]">
           <label className="flex items-center gap-1"><input type="checkbox" className="accent-[var(--primary)]" /> 记住我</label>
           <a style={{ color: "var(--primary)" }}>忘记{PREVIEW_CONTENT.auth.password}？</a>
         </div>
-        <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+        <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 2, background: "var(--primary)" }}>登录</span>
         <div className="my-3 flex items-center gap-2 text-[9px]" style={{ color: "var(--muted-foreground)" }}><span className="h-px flex-1" style={{ background: "var(--border)" }} />或<span className="h-px flex-1" style={{ background: "var(--border)" }} /></div>
-        <div className="grid grid-cols-2 gap-2">
-          <span className="rounded-md border py-1 text-center text-[9px] font-medium" style={{ borderColor: "var(--border)" }}>Google</span>
-          <span className="rounded-md border py-1 text-center text-[9px] font-medium" style={{ borderColor: "var(--border)" }}>GitHub</span>
+        <div className="pv-stagger mt-2 grid grid-cols-2 gap-2">
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow rounded-md border py-1 text-center text-[9px] font-medium" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>Google</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow rounded-md border py-1 text-center text-[9px] font-medium" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>GitHub</span>
         </div>
       </div>
     </div>
@@ -2927,60 +2935,60 @@ function AuthLoginPreview({ variantId }: { variantId: string }) {
 function AuthSocialPreview({ variantId }: { variantId: string }) {
   if (variantId === "asocial_stacked")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-xs space-y-2">
-          {["使用 Google 登录", "使用 GitHub 登录", "使用 Microsoft 登录"].map((l) => (
-            <span key={l} className="block rounded-md border py-2 text-center text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>{l}</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-xs space-y-2">
+          {["使用 Google 登录", "使用 GitHub 登录", "使用 Microsoft 登录"].map((l, i) => (
+            <span key={l} className="pv-in pv-lift pv-spotlight block rounded-md border py-2 text-center text-[10px] font-medium" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>{l}</span>
           ))}
         </div>
       </div>
     );
   if (variantId === "asocial_iconrow")
     return (
-      <div className="px-6 py-7">
-        <div className="flex justify-center gap-2.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger flex justify-center gap-2.5">
           {["G", "GH", ""].map((s, i) => (
-            <span key={i} className="flex size-10 items-center justify-center rounded-full border text-xs font-semibold" style={{ borderColor: "var(--border)" }}>{s}</span>
+            <span key={i} className="pv-in pv-lift pv-spotlight flex size-10 items-center justify-center rounded-full border text-xs font-semibold" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>{s}</span>
           ))}
         </div>
       </div>
     );
   if (variantId === "asocial_glass")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto grid max-w-xs grid-cols-3 gap-2">
-          {["Google", "GitHub", "Apple"].map((s) => (
-            <span key={s} className="rounded-xl border py-2 text-center text-[10px] font-medium" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 55%, transparent)", backdropFilter: "blur(12px)" }}>{s}</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto grid max-w-xs grid-cols-3 gap-2">
+          {["Google", "GitHub", "Apple"].map((s, i) => (
+            <span key={s} className="pv-in pv-lift pv-spotlight rounded-xl border py-2 text-center text-[10px] font-medium" style={{ ["--i" as string]: i, borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 55%, transparent)", backdropFilter: "blur(12px)" }}>{s}</span>
           ))}
         </div>
       </div>
     );
   if (variantId === "asocial_pill")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-xs space-y-2">
-          {["使用 Google 登录", "使用 GitHub 登录", "使用 Microsoft 登录"].map((l) => (
-            <span key={l} className="block rounded-full border py-2 text-center text-[10px] font-medium" style={{ borderColor: "color-mix(in srgb, var(--primary) 35%, var(--border))", background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--surface)), color-mix(in srgb, var(--secondary) 6%, var(--surface)))" }}>{l}</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-xs space-y-2">
+          {["使用 Google 登录", "使用 GitHub 登录", "使用 Microsoft 登录"].map((l, i) => (
+            <span key={l} className="pv-in pv-lift pv-spotlight block rounded-full border py-2 text-center text-[10px] font-medium" style={{ ["--i" as string]: i, borderColor: "color-mix(in srgb, var(--primary) 35%, var(--border))", background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--surface)), color-mix(in srgb, var(--secondary) 6%, var(--surface)))" }}>{l}</span>
           ))}
         </div>
       </div>
     );
   if (variantId === "asocial_divider")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-xs">
-          <span className="block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 0, background: "var(--primary)" }}>
             使用{PREVIEW_CONTENT.auth.email}登录
           </span>
           <div className="my-3 flex items-center gap-2 text-[9px]" style={{ color: "var(--muted-foreground)" }}>
             <span className="h-px flex-1" style={{ background: "var(--border)" }} />或使用以下方式<span className="h-px flex-1" style={{ background: "var(--border)" }} />
           </div>
-          <div className="space-y-2">
-            {["Google", "GitHub", "Apple"].map((s) => (
+          <div className="pv-stagger space-y-2">
+            {["Google", "GitHub", "Apple"].map((s, i) => (
               <span
                 key={s}
-                className="flex items-center justify-center gap-2 rounded-md border py-1.5 text-[10px] font-medium"
-                style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+                className="pv-in pv-lift pv-spotlight flex items-center justify-center gap-2 rounded-md border py-1.5 text-[10px] font-medium"
+                style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}
               >
                 <BrandMark name={s} className="size-3" />继续使用 {s}
               </span>
@@ -2991,13 +2999,13 @@ function AuthSocialPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：分隔线 + 三宫格
   return (
-    <div className="px-6 py-7">
+    <div className="pv-stagger px-6 py-7">
       <div className="flex items-center gap-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>
         <span className="h-px flex-1" style={{ background: "var(--border)" }} />或继续使用<span className="h-px flex-1" style={{ background: "var(--border)" }} />
       </div>
-      <div className="mx-auto mt-3 grid max-w-xs grid-cols-3 gap-2">
-        {["Google", "GitHub", "Apple"].map((s) => (
-          <span key={s} className="rounded-md border py-2 text-center text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>{s}</span>
+      <div className="pv-stagger mx-auto mt-3 grid max-w-xs grid-cols-3 gap-2">
+        {["Google", "GitHub", "Apple"].map((s, i) => (
+          <span key={s} className="pv-in pv-lift pv-spotlight rounded-md border py-2 text-center text-[10px] font-medium" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>{s}</span>
         ))}
       </div>
     </div>
@@ -3007,73 +3015,77 @@ function AuthSocialPreview({ variantId }: { variantId: string }) {
 /* ───────── Auth Split ───────── */
 function AuthSplitPreview({ variantId }: { variantId: string }) {
   const formCol = (
-    <div className="w-full max-w-xs">
+    <div className="pv-lift pv-spotlight w-full max-w-xs">
       <h3 className="text-sm font-bold">欢迎回来</h3>
       <div className="mt-3 space-y-2">
-        <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>you@example.com</span>
-        <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>••••••••</span>
+        <span className="pv-lift pv-spotlight block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>you@example.com</span>
+        <span className="pv-lift pv-spotlight block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>••••••••</span>
       </div>
-      <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+      <span className="pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
     </div>
   );
   if (variantId === "asplit_dark")
     return (
-      <div className="grid min-h-56 bg-slate-950 sm:grid-cols-2">
-        <div className="hidden flex-col justify-between bg-slate-900 p-5 sm:flex">
-          <p className="text-xs font-bold text-white">{PREVIEW_CONTENT.brand}</p>
-          <p className="text-sm font-semibold leading-snug text-white">为高绩效团队而生</p>
+      <div className="pv-stagger relative overflow-hidden min-h-56 bg-slate-950">
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="pv-stagger relative z-10 grid min-h-56 w-full sm:grid-cols-2">
+          <div className="pv-in hidden flex-col justify-between bg-slate-900 p-5 sm:flex" style={{ ["--i" as string]: 0 }}>
+            <p className="text-xs font-bold text-white">{PREVIEW_CONTENT.brand}</p>
+            <p className="text-sm font-semibold leading-snug text-white">为高绩效团队而生</p>
+          </div>
+          <div className="pv-in flex items-center justify-center px-6 py-7" style={{ ["--i" as string]: 1 }}>{formCol}</div>
         </div>
-        <div className="flex items-center justify-center px-6 py-7">{formCol}</div>
       </div>
     );
   if (variantId === "asplit_image")
     return (
-      <div className="grid min-h-56 sm:grid-cols-2">
-        <div className="relative hidden items-end bg-slate-700 p-4 sm:flex">
+      <div className="pv-stagger grid min-h-56 sm:grid-cols-2">
+        <div className="pv-in relative hidden items-end bg-slate-700 p-4 sm:flex" style={{ ["--i" as string]: 0 }}>
           <div className="absolute inset-0 bg-black/50" />
           <p className="relative z-10 text-xs font-semibold text-white">"最好的决策工具，没有之一。"</p>
         </div>
-        <div className="flex items-center justify-center px-6 py-7">{formCol}</div>
+        <div className="pv-in flex items-center justify-center px-6 py-7" style={{ ["--i" as string]: 1 }}>{formCol}</div>
       </div>
     );
   if (variantId === "asplit_glass")
     return (
-      <div className="grid min-h-56 sm:grid-cols-2">
-        <div className="hidden flex-col justify-between p-5 text-white sm:flex" style={{ background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 70%, var(--primary)))" }}>
+      <div className="pv-stagger grid min-h-56 sm:grid-cols-2">
+        <div className="pv-in hidden flex-col justify-between p-5 text-white sm:flex" style={{ ["--i" as string]: 0, background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 70%, var(--primary)))" }}>
           <p className="text-xs font-bold">{PREVIEW_CONTENT.brand}</p>
           <p className="text-lg font-black leading-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>让每个团队<br />都高效工作</p>
         </div>
-        <div className="flex items-center justify-center px-6 py-7" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--background)), var(--background) 60%)" }}>
-          <div className="w-full max-w-xs rounded-2xl border p-4" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>{formCol}</div>
+        <div className="pv-in flex items-center justify-center px-6 py-7" style={{ ["--i" as string]: 1, background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, var(--background)), var(--background) 60%)" }}>
+          <div className="pv-lift pv-spotlight w-full max-w-xs rounded-2xl border p-4" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>{formCol}</div>
         </div>
       </div>
     );
   if (variantId === "asplit_editorial")
     return (
-      <div className="grid min-h-56 sm:grid-cols-2">
-        <div className="hidden flex-col justify-between p-6 sm:flex" style={{ background: "var(--background)", borderRight: "1px solid var(--border)" }}>
+      <div className="pv-stagger grid min-h-56 sm:grid-cols-2">
+        <div className="pv-in hidden flex-col justify-between p-6 sm:flex" style={{ ["--i" as string]: 0, background: "var(--background)", borderRight: "1px solid var(--border)" }}>
           <p className="text-sm font-bold" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{PREVIEW_CONTENT.brand}</p>
           <p className="text-2xl font-black leading-[1.05]" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>少即是多，<br />多即是繁。</p>
           <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>© 2025 {PREVIEW_CONTENT.brand}</p>
         </div>
-        <div className="flex items-center justify-center px-6 py-7" style={{ background: "var(--surface)" }}>
-          <div className="w-full max-w-xs">
+        <div className="pv-in flex items-center justify-center px-6 py-7" style={{ ["--i" as string]: 1, background: "var(--surface)" }}>
+          <div className="pv-lift pv-spotlight w-full max-w-xs">
             <h3 className="text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>欢迎回来</h3>
             <div className="mt-4 space-y-3">
-              <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
-              <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
+              <span className="pv-lift pv-spotlight block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
+              <span className="pv-lift pv-spotlight block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
             </div>
-            <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+            <span className="pv-lift pv-spotlight pv-border-flow mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
           </div>
         </div>
       </div>
     );
   if (variantId === "asplit_brand")
     return (
-      <div className="grid min-h-56 sm:grid-cols-[1.05fr_1fr]">
+      <div className="pv-stagger grid min-h-56 sm:grid-cols-[1.05fr_1fr]">
         <div
-          className="hidden flex-col justify-between p-5 text-[var(--on-primary)] sm:flex"
-          style={{ background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 80%, var(--primary)))" }}
+          className="pv-in hidden flex-col justify-between p-5 text-[var(--on-primary)] sm:flex"
+          style={{ ["--i" as string]: 0, background: "linear-gradient(150deg, var(--primary), color-mix(in srgb, var(--secondary) 80%, var(--primary)))" }}
         >
           <p className="flex items-center gap-1.5 text-xs font-bold">
             <span className="flex size-5 items-center justify-center rounded-md text-[9px] font-black" style={{ background: "rgba(255,255,255,0.22)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>
@@ -3096,15 +3108,15 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
             2,000+ 团队正在使用
           </div>
         </div>
-        <div className="flex items-center justify-center px-6 py-7" style={{ background: "var(--surface)" }}>
-          <div className="w-full max-w-xs">
+        <div className="pv-in flex items-center justify-center px-6 py-7" style={{ ["--i" as string]: 1, background: "var(--surface)" }}>
+          <div className="pv-lift pv-spotlight w-full max-w-xs">
             <h3 className="text-sm font-bold">{PREVIEW_CONTENT.auth.loginTitle}</h3>
             <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>使用工作邮箱登录</p>
             <div className="mt-3 space-y-2">
-              <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>you@example.com</span>
-              <span className="block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>••••••••</span>
+              <span className="pv-lift pv-spotlight block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>you@example.com</span>
+              <span className="pv-lift pv-spotlight block rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>••••••••</span>
             </div>
-            <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
+            <span className="pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>登录</span>
             <p className="mt-2 text-[9px]" style={{ color: "var(--muted-foreground)" }}>还没有账号？<span style={{ color: "var(--primary)" }}>免费注册</span></p>
           </div>
         </div>
@@ -3112,101 +3124,101 @@ function AuthSplitPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：品牌渐变 + 表单
   return (
-    <div className="grid min-h-56 sm:grid-cols-2">
-      <div className="hidden flex-col justify-between p-5 text-white sm:flex" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
+    <div className="pv-stagger grid min-h-56 sm:grid-cols-2">
+      <div className="pv-in hidden flex-col justify-between p-5 text-white sm:flex" style={{ ["--i" as string]: 0, background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>
         <p className="text-xs font-bold">{PREVIEW_CONTENT.brand}</p>
         <div>
           <p className="text-sm font-semibold leading-snug">让每个团队都高效工作</p>
           <p className="mt-1 text-[10px] text-white/80">一站式工作台，从项目到数据全链路。</p>
         </div>
       </div>
-      <div className="flex items-center justify-center px-6 py-7">{formCol}</div>
+      <div className="pv-in flex items-center justify-center px-6 py-7" style={{ ["--i" as string]: 1 }}>{formCol}</div>
     </div>
   );
 }
 
 /* ───────── Auth Signup ───────── */
 function AuthSignupPreview({ variantId }: { variantId: string }) {
-  const f = (l: string, ph: string) => (
-    <div className="flex flex-col gap-1">
+  const f = (l: string, ph: string, i: number) => (
+    <div className="pv-in pv-lift pv-spotlight flex flex-col gap-1" style={{ ["--i" as string]: i }}>
       <label className="text-[10px] font-medium">{l}</label>
       <span className="rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>{ph}</span>
     </div>
   );
   if (variantId === "asignup_company")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto w-full max-w-xs">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight mx-auto w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <h3 className="text-sm font-bold">创建企业账号</h3>
-          <div className="mt-3 grid grid-cols-2 gap-2">{f("公司名", "{PREVIEW_CONTENT.brand} Inc.")}{f("团队规模", "1-10 人")}{f("工作{PREVIEW_CONTENT.auth.email}", "you@company.com")}</div>
-          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>创建账号</span>
+          <div className="mt-3 grid grid-cols-2 gap-2">{f("公司名", "{PREVIEW_CONTENT.brand} Inc.", 0)}{f("团队规模", "1-10 人", 1)}{f("工作{PREVIEW_CONTENT.auth.email}", "you@company.com", 2)}</div>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>创建账号</span>
         </div>
       </div>
     );
   if (variantId === "asignup_steps")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto w-full max-w-xs">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight mx-auto w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <h3 className="text-sm font-bold">创建账号</h3>
           <div className="mt-2 flex gap-1">
-            <span className="h-1 flex-1 rounded-full" style={{ background: "var(--primary)" }} />
+            <span className="pv-bar-fill h-1 flex-1 rounded-full" style={{ background: "var(--primary)" }} />
             <span className="h-1 flex-1 rounded-full opacity-20" style={{ background: "var(--primary)" }} />
           </div>
           <p className="mt-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>第 1 步，共 2 步</p>
-          <div className="mt-2 space-y-2">{f("姓名", "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}</div>
-          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>下一步</span>
+          <div className="mt-2 space-y-2">{f("姓名", "张三", 0)}{f(PREVIEW_CONTENT.auth.email, "you@example.com", 1)}</div>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 2, background: "var(--primary)" }}>下一步</span>
         </div>
       </div>
     );
   if (variantId === "asignup_glass")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto w-full max-w-xs rounded-2xl border p-5" style={{ borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight mx-auto w-full max-w-xs rounded-2xl border p-5" style={{ ["--i" as string]: 0, borderColor: "color-mix(in srgb, var(--border) 55%, transparent)", background: "color-mix(in srgb, var(--surface) 60%, transparent)", backdropFilter: "blur(20px)", boxShadow: "0 24px 60px -24px rgba(0,0,0,0.22)" }}>
           <h3 className="text-sm font-bold">创建账号</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
-          <div className="mt-3 space-y-2">{f("姓名", "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}{f(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-          <span className="mt-2.5 block rounded-lg py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>免费注册</span>
+          <div className="mt-3 space-y-2">{f("姓名", "张三", 0)}{f(PREVIEW_CONTENT.auth.email, "you@example.com", 1)}{f(PREVIEW_CONTENT.auth.password, "••••••••", 2)}</div>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-lg py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)", boxShadow: "0 12px 28px color-mix(in srgb, var(--primary) 30%, transparent)" }}>免费注册</span>
         </div>
       </div>
     );
   if (variantId === "asignup_editorial")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto w-full max-w-xs">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight mx-auto w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <h3 className="text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>创建账号</h3>
           <p className="mt-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
           <div className="mt-4 space-y-3">
-            <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>姓名</span>
-            <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
-            <span className="block border-b pb-1 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
+            <span className="pv-in block border-b pb-1 text-[10px]" style={{ ["--i" as string]: 1, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>姓名</span>
+            <span className="pv-in block border-b pb-1 text-[10px]" style={{ ["--i" as string]: 2, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.email}</span>
+            <span className="pv-in block border-b pb-1 text-[10px]" style={{ ["--i" as string]: 3, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.auth.password}</span>
           </div>
-          <span className="mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-4 block rounded-full py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 4, background: "var(--primary)" }}>免费注册</span>
         </div>
       </div>
     );
   if (variantId === "asignup_gradient")
     return (
-      <div className="flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 50%, var(--secondary)))" }}>
-        <div className="w-full max-w-xs rounded-xl border p-4" style={{ border: "1px solid #ffffff33", background: "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)" }}>
+      <div className="pv-stagger flex min-h-56 items-center justify-center px-6" style={{ background: "linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 50%, var(--secondary)))" }}>
+        <div className="pv-in pv-lift pv-spotlight w-full max-w-xs rounded-xl border p-4" style={{ ["--i" as string]: 0, border: "1px solid #ffffff33", background: "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)" }}>
           <h3 className="text-base font-bold text-slate-900">创建账号</h3>
           <div className="mt-3 space-y-2">
-            <span className="block rounded-md px-2.5 py-2 text-[10px] text-slate-500" style={{ background: "#fff" }}>you@example.com</span>
-            <span className="block rounded-md px-2.5 py-2 text-[10px] text-slate-500" style={{ background: "#fff" }}>••••••••</span>
+            <span className="pv-lift pv-spotlight block rounded-md px-2.5 py-2 text-[10px] text-slate-500" style={{ background: "#fff" }}>you@example.com</span>
+            <span className="pv-lift pv-spotlight block rounded-md px-2.5 py-2 text-[10px] text-slate-500" style={{ background: "#fff" }}>••••••••</span>
           </div>
-          <span className="mt-3 block rounded-md py-2 text-center text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>注册</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-3 block rounded-md py-2 text-center text-[10px] font-bold text-[var(--on-primary)]" style={{ ["--i" as string]: 1, background: "linear-gradient(135deg, var(--primary), var(--secondary))" }}>注册</span>
         </div>
       </div>
     );
   if (variantId === "asignup_standard")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto w-full max-w-xs rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight mx-auto w-full max-w-xs rounded-xl border p-4" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
           <h3 className="text-sm font-bold">{PREVIEW_CONTENT.auth.signupTitle}</h3>
           <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
-          <div className="mt-3 space-y-2">{f(PREVIEW_CONTENT.auth.username, "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}{f(PREVIEW_CONTENT.auth.password, "至少 8 位")}</div>
+          <div className="mt-3 space-y-2">{f(PREVIEW_CONTENT.auth.username, "张三", 0)}{f(PREVIEW_CONTENT.auth.email, "you@example.com", 1)}{f(PREVIEW_CONTENT.auth.password, "至少 8 位", 2)}</div>
           <div className="mt-1.5 flex gap-1">
             {[0, 1, 2].map((i) => (
-              <span key={i} className="h-1 flex-1 rounded-full" style={{ background: i < 2 ? "var(--primary)" : "color-mix(in srgb, var(--primary) 18%, transparent)" }} />
+              <span key={i} className="pv-bar-fill h-1 flex-1 rounded-full" style={{ background: i < 2 ? "var(--primary)" : "color-mix(in srgb, var(--primary) 18%, transparent)" }} />
             ))}
           </div>
           <p className="mt-1 text-[8px]" style={{ color: "var(--muted-foreground)" }}>密码强度：中等</p>
@@ -3214,19 +3226,19 @@ function AuthSignupPreview({ variantId }: { variantId: string }) {
             <input type="checkbox" className="mt-0.5 accent-[var(--primary)]" />
             <span>我已阅读并同意<span style={{ color: "var(--primary)" }}>服务条款</span>与<span style={{ color: "var(--primary)" }}>隐私政策</span></span>
           </label>
-          <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>免费注册</span>
           <p className="mt-2 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>已有账号？<span style={{ color: "var(--primary)" }}>登录</span></p>
         </div>
       </div>
     );
   // 未匹配变体兜底：三字段注册
   return (
-    <div className="px-6 py-7">
-      <div className="mx-auto w-full max-w-xs">
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in pv-lift pv-spotlight mx-auto w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
         <h3 className="text-sm font-bold">创建账号</h3>
         <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>14 天{PREVIEW_CONTENT.cta.secondary}，无需信用卡。</p>
-        <div className="mt-3 space-y-2">{f("姓名", "张三")}{f(PREVIEW_CONTENT.auth.email, "you@example.com")}{f(PREVIEW_CONTENT.auth.password, "••••••••")}</div>
-        <span className="mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>免费注册</span>
+        <div className="mt-3 space-y-2">{f("姓名", "张三", 0)}{f(PREVIEW_CONTENT.auth.email, "you@example.com", 1)}{f(PREVIEW_CONTENT.auth.password, "••••••••", 2)}</div>
+        <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-2.5 block rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>免费注册</span>
       </div>
     </div>
   );
@@ -3237,36 +3249,40 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
   const items = ["仪表盘", "项目", "分析", "设置"];
   if (variantId === "dsb_icon")
     return (
-      <div className="flex h-56 w-14 flex-col items-center border-r py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger flex h-56 w-14 flex-col items-center border-r py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>
-        <div className="mt-4 flex flex-1 flex-col items-center gap-1.5">
+        <div className="pv-stagger mt-4 flex flex-1 flex-col items-center gap-1.5">
           {["▦", "▤", "📊", "⚙"].map((ic, i) => (
-            <span key={i} className="flex size-8 items-center justify-center rounded-lg text-xs" style={i === 0 ? { background: "var(--primary)", color: "#fff" } : { color: "var(--muted-foreground)" }}>{ic}</span>
+            <span key={i} className="pv-in pv-lift pv-spotlight flex size-8 items-center justify-center rounded-lg text-xs transition-transform hover:scale-105" style={{ ["--i" as string]: i, ...(i === 0 ? { background: "var(--primary)", color: "#fff" } : { color: "var(--muted-foreground)" }) }}>{ic}</span>
           ))}
         </div>
       </div>
     );
   if (variantId === "dsb_dark")
     return (
-      <div className="flex h-56 w-44 flex-col bg-slate-900 p-2.5 text-slate-100">
-        <p className="flex items-center gap-1.5 px-2 py-2 text-xs font-bold"><span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}</p>
-        <div className="mt-1 flex-1 space-y-1">
-          {items.map((i, idx) => (
-            <p key={i} className={"rounded-md px-2.5 py-1.5 text-[10px] " + (idx === 0 ? "text-[var(--on-primary)]" : "text-slate-400")} style={idx === 0 ? { background: "var(--primary)" } : {}}>{i}</p>
-          ))}
+      <div className="pv-stagger relative overflow-hidden flex h-56 w-44 flex-col bg-slate-900 p-2.5 text-slate-100">
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="relative z-10 flex h-full w-full flex-col">
+          <p className="flex items-center gap-1.5 px-2 py-2 text-xs font-bold"><span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}</p>
+          <div className="pv-stagger mt-1 flex-1 space-y-1">
+            {items.map((i, idx) => (
+              <p key={i} className={"pv-in pv-lift pv-spotlight rounded-md px-2.5 py-1.5 text-[10px] transition-transform hover:scale-105 " + (idx === 0 ? "text-[var(--on-primary)]" : "text-slate-400")} style={{ ["--i" as string]: idx, ...(idx === 0 ? { background: "var(--primary)" } : {}) }}>{i}</p>
+            ))}
+          </div>
+          <p className="border-t border-white/10 px-2.5 py-2 text-[10px] text-slate-300">张三</p>
         </div>
-        <p className="border-t border-white/10 px-2.5 py-2 text-[10px] text-slate-300">张三</p>
       </div>
     );
   if (variantId === "dsb_glass")
     return (
-      <div className="flex h-56 w-44 flex-col border-r p-2" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 70%, transparent)", backdropFilter: "blur(16px)" }}>
+      <div className="pv-stagger flex h-56 w-44 flex-col border-r p-2" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 70%, transparent)", backdropFilter: "blur(16px)" }}>
         <p className="flex items-center gap-1.5 px-2 py-2 text-xs font-bold">
           <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}
         </p>
-        <div className="flex-1 space-y-1">
+        <div className="pv-stagger flex-1 space-y-1">
           {items.map((i, idx) => (
-            <p key={i} className="rounded-lg px-2.5 py-1.5 text-[10px] font-medium" style={idx === 0 ? { background: "color-mix(in srgb, var(--primary) 14%, transparent)", color: "var(--primary)", boxShadow: "0 8px 24px color-mix(in srgb, var(--primary) 18%, transparent)" } : { color: "var(--muted-foreground)" }}>{i}</p>
+            <p key={i} className="pv-in pv-lift pv-spotlight rounded-lg px-2.5 py-1.5 text-[10px] font-medium transition-transform hover:scale-105" style={{ ["--i" as string]: idx, ...(idx === 0 ? { background: "color-mix(in srgb, var(--primary) 14%, transparent)", color: "var(--primary)", boxShadow: "0 8px 24px color-mix(in srgb, var(--primary) 18%, transparent)" } : { color: "var(--muted-foreground)" }) }}>{i}</p>
           ))}
         </div>
         <p className="border-t px-2.5 py-2 text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>张三</p>
@@ -3274,28 +3290,28 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dsb_editorial")
     return (
-      <div className="flex h-56 w-44 flex-col px-4 py-5" style={{ background: "var(--background)" }}>
+      <div className="pv-stagger flex h-56 w-44 flex-col px-4 py-5" style={{ background: "var(--background)" }}>
         <span className="font-bold tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif", fontSize: "1rem" }}>{PREVIEW_CONTENT.brand}</span>
-        <div className="mt-3">
+        <div className="pv-stagger mt-3">
           {items.map((i, idx) => (
-            <p key={i} className="border-b py-2.5 text-[10px]" style={idx === 0 ? { color: "var(--primary)", borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", fontWeight: 600 } : { color: "var(--muted-foreground)", borderColor: "var(--border)" }}>{i}</p>
+            <p key={i} className="pv-in pv-lift pv-spotlight border-b py-2.5 text-[10px] transition-transform hover:scale-105" style={{ ["--i" as string]: idx, ...(idx === 0 ? { color: "var(--primary)", borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", fontWeight: 600 } : { color: "var(--muted-foreground)", borderColor: "var(--border)" }) }}>{i}</p>
           ))}
         </div>
       </div>
     );
   if (variantId === "dsb_standard")
     return (
-      <div className="flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <p className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold">
           <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.brand.slice(0, 1)}</span>{PREVIEW_CONTENT.brand}
         </p>
         <p className="px-3 pb-1 text-[8px] font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--muted-foreground)" }}>主导航</p>
-        <div className="flex-1 space-y-0.5 px-2">
+        <div className="pv-stagger flex-1 space-y-0.5 px-2">
           {items.map((label, idx) => (
             <p
               key={label}
-              className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[10px] font-medium"
-              style={idx === 0 ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}
+              className="pv-in pv-lift pv-spotlight flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[10px] font-medium transition-transform hover:scale-105"
+              style={{ ["--i" as string]: idx, ...(idx === 0 ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }) }}
             >
               <span aria-hidden>{["▦", "▤", "📊", "⚙"][idx] ?? "•"}</span>{label}
             </p>
@@ -3312,29 +3328,29 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dsb_ops_console")
     return (
-      <div className="flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-        <div className="flex items-center justify-between px-3 py-2.5">
+      <div className="pv-stagger flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <div className="pv-in flex items-center justify-between px-3 py-2.5" style={{ ["--i" as string]: 0 }}>
           <span className="text-xs font-black">{PREVIEW_CONTENT.brand}</span>
           <span className="rounded-md border px-1 py-0.5 text-[8px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌘K</span>
         </div>
         <div
-          className="mx-2 mb-2 flex items-center gap-1.5 rounded-lg border border-dashed px-2 py-1.5 text-[9px]"
-          style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--muted-foreground)" }}
+          className="pv-in mx-2 mb-2 flex items-center gap-1.5 rounded-lg border border-dashed px-2 py-1.5 text-[9px] transition-transform hover:scale-[1.01]"
+          style={{ ["--i" as string]: 1, borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--muted-foreground)" }}
         >
           <span style={{ color: "var(--primary)" }}>⌘</span>命令中心…
         </div>
-        <div className="flex-1 space-y-0.5 px-2">
+        <div className="pv-stagger flex-1 space-y-0.5 px-2">
           {[
             { l: "工作台", b: "", active: true },
             { l: "订单", b: "12", active: false },
             { l: "任务", b: "4", active: false },
             { l: "数据", b: "", active: false },
             { l: "配置", b: "", active: false },
-          ].map((n) => (
+          ].map((n, idx) => (
             <p
               key={n.l}
-              className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-[10px] font-medium"
-              style={n.active ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}
+              className="pv-in pv-lift pv-spotlight flex items-center justify-between rounded-md px-2.5 py-1.5 text-[10px] font-medium transition-transform hover:scale-105"
+              style={{ ["--i" as string]: idx + 2, ...(n.active ? { background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }) }}
             >
               <span>{n.l}</span>
               {n.b ? (
@@ -3358,13 +3374,13 @@ function DashSidebarPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：标准文字侧栏
   return (
-    <div className="flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+    <div className="pv-stagger flex h-56 w-44 flex-col border-r" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
       <p className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold">
         <span className="flex size-6 items-center justify-center rounded-md text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>A</span>{PREVIEW_CONTENT.brand}
       </p>
-      <div className="flex-1 space-y-1 px-2">
+      <div className="pv-stagger flex-1 space-y-1 px-2">
         {items.map((i, idx) => (
-          <p key={i} className="rounded-md px-2.5 py-1.5 text-[10px] font-medium" style={idx === 0 ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{i}</p>
+          <p key={i} className="pv-in pv-lift pv-spotlight rounded-md px-2.5 py-1.5 text-[10px] font-medium transition-transform hover:scale-105" style={{ ["--i" as string]: idx, ...(idx === 0 ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }) }}>{i}</p>
         ))}
       </div>
       <div className="border-t px-2 py-2" style={{ borderColor: "var(--border)" }}>
@@ -3383,10 +3399,10 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     : [{ l: "活跃用户", v: "12,847", d: "+12%", up: true }];
   if (variantId === "dkpi_dark")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {kpis.map((k) => (
-            <div key={k.l} className="rounded-lg border border-white/10 bg-slate-900 p-3">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {kpis.map((k, i) => (
+            <div key={k.l} className="pv-in pv-lift pv-spotlight rounded-lg border border-white/10 bg-slate-900 p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i }}>
               <p className="text-[9px] text-slate-400">{k.l}</p>
               <p className="mt-1 text-sm font-black text-white">{k.v}</p>
               <p className="mt-0.5 text-[9px] font-medium" style={{ color: k.up ? "#34d399" : "#f87171" }}>{k.d}</p>
@@ -3397,20 +3413,20 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_horizontal")
     return (
-      <div className="px-6 py-7">
-        <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-lg border px-4 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          {kpis.map((k) => (
-            <div key={k.l}><p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p><p className="text-xs font-bold">{k.v}</p></div>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger flex flex-wrap gap-x-6 gap-y-2 rounded-lg border px-4 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {kpis.map((k, i) => (
+            <div key={k.l} className="pv-in pv-lift pv-spotlight" style={{ ["--i" as string]: i }}><p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p><p className="text-xs font-bold">{k.v}</p></div>
           ))}
         </div>
       </div>
     );
   if (variantId === "dkpi_spark")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
           {kpis.map((k, i) => (
-            <div key={k.l} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div key={k.l} className="pv-in pv-lift pv-spotlight rounded-lg border p-2.5 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
               <p className="mt-1 text-sm font-black">{k.v}</p>
               <svg viewBox="0 0 60 20" className="mt-1 h-6 w-full" preserveAspectRatio="none">
@@ -3423,15 +3439,15 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_bento")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="col-span-2 rounded-xl p-4" style={{ background: "var(--primary)", color: "#fff" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2">
+          <div className="pv-in pv-lift pv-spotlight col-span-2 rounded-xl p-4 transition-transform hover:scale-105" style={{ ["--i" as string]: 0, background: "var(--primary)", color: "#fff" }}>
             <p className="text-[9px] opacity-80">{kpis[0].l}</p>
             <p className="mt-1 text-lg font-black">{kpis[0].v}</p>
             <p className="mt-0.5 text-[9px] opacity-90">{kpis[0].d} 较上周</p>
           </div>
-          {kpis.slice(0, 2).map((k) => (
-            <div key={k.l} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {kpis.slice(0, 2).map((k, i) => (
+            <div key={k.l} className="pv-in pv-lift pv-spotlight rounded-lg border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i + 1, borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
               <p className="mt-1 text-sm font-bold">{k.v}</p>
               <p className="mt-0.5 text-[9px]" style={{ color: k.up ? "#059669" : "#dc2626" }}>{k.d}</p>
@@ -3442,10 +3458,10 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_editorial")
     return (
-      <div className="px-6 py-7">
-        <div className="space-y-5">
-          {kpis.map((k) => (
-            <div key={k.l} className="flex items-end justify-between border-b pb-3" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger space-y-5">
+          {kpis.map((k, i) => (
+            <div key={k.l} className="pv-in pv-lift pv-spotlight flex items-end justify-between border-b pb-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <div>
                 <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
                 <p className="mt-0.5 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{k.v}</p>
@@ -3458,10 +3474,10 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dkpi_grid")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {kpis.map((k) => (
-            <div key={k.l} className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {kpis.map((k, i) => (
+            <div key={k.l} className="pv-in pv-lift pv-spotlight rounded-xl border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
               <p className="mt-1.5 text-base font-black tracking-tight">{k.v}</p>
               <span
@@ -3486,10 +3502,10 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
       { l: "待审核", v: "23", d: "+8", up: false, dot: "var(--primary)" },
     ];
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {ops.map((k) => (
-            <div key={k.l} className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {ops.map((k, i) => (
+            <div key={k.l} className="pv-in pv-lift pv-spotlight rounded-xl border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <div className="flex items-center justify-between gap-1">
                 <p className="truncate text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
                 <span className="size-1.5 shrink-0 rounded-full" style={{ background: k.dot }} />
@@ -3506,10 +3522,10 @@ function DashKpiPreview({ variantId }: { variantId: string }) {
   }
   // 未匹配变体兜底：四格 KPI
   return (
-    <div className="px-6 py-7">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {kpis.map((k) => (
-          <div key={k.l} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {kpis.map((k, i) => (
+          <div key={k.l} className="pv-in pv-lift pv-spotlight rounded-lg border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{k.l}</p>
             <p className="mt-1 text-sm font-black">{k.v}</p>
             <p className="mt-0.5 text-[9px] font-medium" style={{ color: k.up ? "#059669" : "#dc2626" }}>{k.up ? "▲" : "▼"} {k.d}</p>
@@ -3525,15 +3541,17 @@ function DashChartPreview({ variantId }: { variantId: string }) {
   const dash = PREVIEW_CONTENT.dashboard;
   if (variantId === "dchart_loading")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-md rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in mx-auto max-w-md rounded-lg border p-4" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-center justify-between">
             <Shimmer className="h-3.5 w-24" />
             <Shimmer className="h-3 w-10 rounded-full" />
           </div>
-          <div className="mt-4 flex h-32 items-end gap-2">
+          <div className="pv-stagger mt-4 flex h-32 items-end gap-2">
             {[60, 80, 55, 90, 70, 95, 65, 85].map((b, i) => (
-              <Shimmer key={i} className="flex-1 rounded-t-md" />
+              <div key={i} className="pv-in flex-1" style={{ ["--i" as string]: i }}>
+                <Shimmer className="h-full rounded-t-md" />
+              </div>
             ))}
           </div>
         </div>
@@ -3541,17 +3559,19 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_empty")
     return (
-      <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center" style={{ borderColor: "var(--border)" }}>
-        <span className="text-xl">📊</span>
-        <p className="mt-2 text-xs font-semibold">还没有数据</p>
-        <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>接入数据源后展示分析图表。</p>
-        <span className="mt-2.5 rounded-md px-3 py-1 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>接入数据源</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
+          <span className="text-xl">📊</span>
+          <p className="mt-2 text-xs font-semibold">还没有数据</p>
+          <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>接入数据源后展示分析图表。</p>
+          <span className="pv-border-flow mt-2.5 rounded-md px-3 py-1 text-[10px] font-medium" style={{ color: "var(--primary)" }}>接入数据源</span>
+        </div>
       </div>
     );
   if (variantId === "dchart_line")
     return (
-      <div className="px-6 py-7">
-        <div className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight rounded-lg border p-4 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="text-xs font-semibold">{dash.chartTitle}</p>
           <svg viewBox="0 0 270 90" className="mt-2 w-full">
             <polyline points="0,80 30,66 60,74 90,52 120,60 150,38 180,46 210,26 240,36 270,18" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" />
@@ -3562,33 +3582,33 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_donut")
     return (
-      <div className="px-6 py-7">
-        <div className="flex items-center gap-4 rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight flex items-center gap-4 rounded-lg border p-4 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
           <svg viewBox="0 0 140 140" className="size-24">
             <circle cx="70" cy="70" r="55" fill="none" stroke="var(--border)" strokeWidth="16" />
             <circle cx="70" cy="70" r="55" fill="none" stroke="var(--primary)" strokeWidth="16" strokeDasharray="200 346" strokeDashoffset="0" transform="rotate(-90 70 70)" />
             <circle cx="70" cy="70" r="55" fill="none" stroke="var(--secondary)" strokeWidth="16" strokeDasharray="83 346" strokeDashoffset="-200" transform="rotate(-90 70 70)" />
             <text x="70" y="74" textAnchor="middle" fontSize="13" fontWeight="700">100%</text>
           </svg>
-          <ul className="space-y-1.5 text-[10px]">
-            <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm" style={{ background: "var(--primary)" }} />订阅 58%</li>
-            <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm" style={{ background: "var(--secondary)" }} />广告 24%</li>
-            <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm" style={{ background: "var(--border)" }} />其他 18%</li>
+          <ul className="pv-stagger space-y-1.5 text-[10px]">
+            <li className="pv-in flex items-center gap-1.5" style={{ ["--i" as string]: 0 }}><span className="size-2.5 rounded-sm" style={{ background: "var(--primary)" }} />订阅 58%</li>
+            <li className="pv-in flex items-center gap-1.5" style={{ ["--i" as string]: 1 }}><span className="size-2.5 rounded-sm" style={{ background: "var(--secondary)" }} />广告 24%</li>
+            <li className="pv-in flex items-center gap-1.5" style={{ ["--i" as string]: 2 }}><span className="size-2.5 rounded-sm" style={{ background: "var(--border)" }} />其他 18%</li>
           </ul>
         </div>
       </div>
     );
   if (variantId === "dchart_glass")
     return (
-      <div className="px-6 py-7">
-        <div className="rounded-2xl border p-4" style={{ borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 65%, transparent)", backdropFilter: "blur(14px)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in pv-lift pv-spotlight rounded-2xl border p-4 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "color-mix(in srgb, var(--border) 60%, transparent)", background: "color-mix(in srgb, var(--surface) 65%, transparent)", backdropFilter: "blur(14px)" }}>
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold">{dash.chartTitle}</p>
             <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>■ 营收</span>
           </div>
-          <div className="mt-3 flex h-20 items-end gap-1.5">
+          <div className="pv-stagger mt-3 flex h-20 items-end gap-1.5">
             {[42, 68, 55, 80, 62, 90, 74, 58].map((b, i) => (
-              <div key={i} className="flex-1 rounded-t-sm" style={{ height: b + "%", background: i === 7 ? "var(--secondary)" : "var(--primary)", opacity: 0.85 }} />
+              <div key={i} className="pv-in flex-1 rounded-t-sm" style={{ ["--i" as string]: i, height: b + "%", background: i === 7 ? "var(--secondary)" : "var(--primary)", opacity: 0.85 }} />
             ))}
           </div>
         </div>
@@ -3596,17 +3616,17 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_bento")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <div className="col-span-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="pv-in pv-lift pv-spotlight col-span-2 rounded-xl border p-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">{dash.chartTitle}</p>
-            <div className="mt-2 flex h-14 items-end gap-1">
+            <div className="pv-stagger mt-2 flex h-14 items-end gap-1">
               {[42, 68, 55, 80, 62, 90, 74, 58].map((b, i) => (
-                <div key={i} className="flex-1 rounded-t-sm" style={{ height: b + "%", background: "var(--primary)", opacity: i === 7 ? 1 : 0.6 }} />
+                <div key={i} className="pv-in flex-1 rounded-t-sm" style={{ ["--i" as string]: i, height: b + "%", background: "var(--primary)", opacity: i === 7 ? 1 : 0.6 }} />
               ))}
             </div>
           </div>
-          <div className="rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in pv-lift pv-spotlight rounded-xl border p-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 1, borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">收入结构</p>
             <div className="mt-2 flex items-center justify-center">
               <svg viewBox="0 0 100 100" className="size-16">
@@ -3620,8 +3640,8 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dchart_bars")
     return (
-      <div className="px-6 py-7">
-        <div className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in rounded-lg border p-4 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-start justify-between gap-2">
             <div>
               <p className="text-xs font-semibold">{dash.chartTitle}</p>
@@ -3640,12 +3660,12 @@ function DashChartPreview({ variantId }: { variantId: string }) {
                 style={{ top: g * 33 + "%", borderColor: "color-mix(in srgb, var(--border) 70%, transparent)" }}
               />
             ))}
-            <div className="relative flex h-full items-end gap-1.5">
+            <div className="pv-stagger relative flex h-full items-end gap-1.5">
               {[42, 68, 55, 80, 62, 90, 74, 58, 84, 66, 92, 70].map((b, i) => (
                 <div
                   key={i}
-                  className="flex-1 rounded-t-md transition-opacity duration-200 hover:opacity-100"
-                  style={{ height: b + "%", background: i === 11 ? "var(--secondary)" : "var(--primary)", opacity: i === 11 ? 1 : 0.8 }}
+                  className="pv-in flex-1 rounded-t-md transition-opacity duration-200 hover:opacity-100"
+                  style={{ ["--i" as string]: i, height: b + "%", background: i === 11 ? "var(--secondary)" : "var(--primary)", opacity: i === 11 ? 1 : 0.8 }}
                 />
               ))}
             </div>
@@ -3658,15 +3678,15 @@ function DashChartPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：柱状卡片
   return (
-    <div className="px-6 py-7">
-      <div className="rounded-lg border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in rounded-lg border p-4 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold">{dash.chartTitle}</p>
           <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>■ 营收</span>
         </div>
-        <div className="mt-3 flex h-24 items-end gap-1.5">
+        <div className="pv-stagger mt-3 flex h-24 items-end gap-1.5">
           {[42, 68, 55, 80, 62, 90, 74, 58, 84, 66, 92, 70].map((b, i) => (
-            <div key={i} className="flex-1 rounded-t-sm" style={{ height: b + "%", background: i === 11 ? "var(--secondary)" : "var(--primary)", opacity: 0.85 }} />
+            <div key={i} className="pv-in flex-1 rounded-t-sm" style={{ ["--i" as string]: i, height: b + "%", background: i === 11 ? "var(--secondary)" : "var(--primary)", opacity: 0.85 }} />
           ))}
         </div>
         <div className="mt-1 flex justify-between text-[8px]" style={{ color: "var(--muted-foreground)" }}><span>1月</span><span>6月</span><span>12月</span></div>
@@ -3681,31 +3701,33 @@ function DashListPreview({ variantId }: { variantId: string }) {
   const T = dash.table.map((r) => ({ n: r.name, s: r.status, c: r.status === "运行中" ? "#059669" : "#d97706" }));
   if (variantId === "dlist_loading")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-md overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in mx-auto max-w-md overflow-hidden rounded-lg border" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
           <div className="flex items-center justify-between border-b px-3.5 py-2.5" style={{ borderColor: "var(--border)" }}>
             <Shimmer className="h-3.5 w-28" />
             <Shimmer className="h-3 w-12 rounded-full" />
           </div>
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3 border-b px-3.5 py-3 last:border-0" style={{ borderColor: "var(--border)" }}>
-              <Shimmer className="size-8 shrink-0 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Shimmer className="h-3 w-1/3" />
-                <Shimmer className="h-2.5 w-1/2" />
+          <div className="pv-stagger">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="pv-in flex items-center gap-3 border-b px-3.5 py-3 last:border-0" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
+                <Shimmer className="size-8 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Shimmer className="h-3 w-1/3" />
+                  <Shimmer className="h-2.5 w-1/2" />
+                </div>
+                <Shimmer className="h-5 w-14 rounded-full" />
               </div>
-              <Shimmer className="h-5 w-14 rounded-full" />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
   if (variantId === "dlist_cards")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {T.slice(0, 3).map((i) => (
-            <div key={i.n} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {T.slice(0, 3).map((i, idx) => (
+            <div key={i.n} className="pv-in pv-lift pv-spotlight rounded-lg border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: idx, borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[9px] font-medium" style={{ color: i.c }}>{i.s}</p>
               <p className="mt-1 text-[10px] font-semibold">{i.n}</p>
               <p className="mt-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>更新于最近</p>
@@ -3716,10 +3738,10 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_inbox")
     return (
-      <div className="px-6 py-7">
-        <div className="divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          {(dash.notifications.length ? dash.notifications : [{ text: "新的评论待审阅", time: "2 分钟前" }]).map((m) => (
-            <div key={m.text} className="flex items-center gap-2.5 px-3 py-2.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {(dash.notifications.length ? dash.notifications : [{ text: "新的评论待审阅", time: "2 分钟前" }]).map((m, idx) => (
+            <div key={m.text} className="pv-in flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-muted/40" style={{ ["--i" as string]: idx }}>
               <span className="relative flex size-7 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
                 {m.text.slice(0, 1)}
               </span>
@@ -3732,12 +3754,12 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_editorial")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-md">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in mx-auto max-w-md" style={{ ["--i" as string]: 0 }}>
           <h3 className="mb-3 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>项目</h3>
-          <ul>
-            {dash.table.map((r) => (
-              <li key={r.name} className="flex items-center justify-between border-b py-3" style={{ borderColor: "var(--border)" }}>
+          <ul className="pv-stagger">
+            {dash.table.map((r, idx) => (
+              <li key={r.name} className="pv-in flex items-center justify-between border-b py-3 transition-colors hover:bg-muted/40" style={{ ["--i" as string]: idx, borderColor: "var(--border)" }}>
                 <div>
                   <p className="text-[10px] font-medium">{r.name}</p>
                   <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{r.company} · 更新于近期</p>
@@ -3751,17 +3773,17 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_bento")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <div className="rounded-xl p-3" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="pv-in pv-lift pv-spotlight rounded-xl p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: 0, background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>
             <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>今日新增</p>
             <p className="mt-1 text-base font-black">+1,204</p>
           </div>
-          <div className="col-span-2 rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in pv-lift pv-spotlight col-span-2 rounded-xl border p-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 1, borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">{dash.topbarTitle}</p>
-            <ul className="mt-2 space-y-2 text-[9px]">
-              {dash.table.map((r) => (
-                <li key={r.name} className="flex items-center justify-between border-b pb-1.5" style={{ borderColor: "var(--border)" }}><span>{r.name}</span><span style={{ color: r.status === "运行中" ? "#6B7A5E" : "#d97706" }}>{r.status}</span></li>
+            <ul className="pv-stagger mt-2 space-y-2 text-[9px]">
+              {dash.table.map((r, idx) => (
+                <li key={r.name} className="pv-in flex items-center justify-between border-b pb-1.5 transition-colors hover:bg-muted/40" style={{ ["--i" as string]: idx, borderColor: "var(--border)" }}><span>{r.name}</span><span style={{ color: r.status === "运行中" ? "#6B7A5E" : "#d97706" }}>{r.status}</span></li>
               ))}
             </ul>
           </div>
@@ -3770,7 +3792,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dlist_table")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <table className="w-full text-[10px]">
           <thead>
@@ -3778,9 +3800,9 @@ function DashListPreview({ variantId }: { variantId: string }) {
               <th className="p-2.5 font-medium">项目</th><th className="p-2.5 font-medium">状态</th><th className="p-2.5 text-right font-medium">操作</th>
             </tr>
           </thead>
-          <tbody>
-            {T.map((r) => (
-              <tr key={r.n} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
+          <tbody className="pv-stagger">
+            {T.map((r, idx) => (
+              <tr key={r.n} className="pv-in border-b last:border-0 transition-colors hover:bg-muted/40" style={{ ["--i" as string]: idx, borderColor: "var(--border)" }}>
                 <td className="p-2.5">
                   <span className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-md text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>{r.n}</span>
                 </td>
@@ -3795,7 +3817,7 @@ function DashListPreview({ variantId }: { variantId: string }) {
   );
   // 未匹配变体兜底：表格视图
   return (
-    <div className="px-6 py-7">
+    <div className="pv-stagger px-6 py-7">
       <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <table className="w-full text-[10px]">
           <thead>
@@ -3803,9 +3825,9 @@ function DashListPreview({ variantId }: { variantId: string }) {
               <th className="p-2.5 font-medium">项目</th><th className="p-2.5 font-medium">状态</th><th className="p-2.5 text-right font-medium">操作</th>
             </tr>
           </thead>
-          <tbody>
-            {T.map((r) => (
-              <tr key={r.n} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
+          <tbody className="pv-stagger">
+            {T.map((r, idx) => (
+              <tr key={r.n} className="pv-in border-b last:border-0 transition-colors hover:bg-muted/40" style={{ ["--i" as string]: idx, borderColor: "var(--border)" }}>
                 <td className="p-2.5">
                   <span className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-md text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.n.slice(0, 1)}</span>{r.n}</span>
                 </td>
@@ -3825,68 +3847,76 @@ function DashTopbarPreview({ variantId }: { variantId: string }) {
   const initial = dash.activity.length ? dash.activity[0].text.charAt(0) : "张";
   if (variantId === "dtop_workbench")
     return (
-      <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border px-3 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+      <div className="pv-stagger flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <div className="pv-in flex min-w-0 flex-1 items-center gap-2 rounded-md border px-3 py-1.5 text-[10px] transition-transform hover:scale-[1.01]" style={{ ["--i" as string]: 0, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
           <span aria-hidden>⌕</span> 搜索项目、成员或文档…
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="pv-in flex items-center gap-2.5" style={{ ["--i" as string]: 1 }}>
           <span className="relative">
             <span aria-hidden>🔔</span>
             <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full" style={{ background: "var(--primary)" }} />
           </span>
           <span className="h-4 w-px" style={{ background: "var(--border)" }} />
-          <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{initial}</span>
+          <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)] transition-transform hover:scale-105" style={{ background: "var(--primary)" }}>{initial}</span>
         </div>
       </div>
     );
   if (variantId === "dtop_terminal")
     return (
-      <div className="flex items-center gap-2 px-4 py-3" style={{ background: "#0A0A0B", borderBottom: "1px solid #262629" }}>
-        <span className="font-mono text-[10px]" style={{ color: "#22D3EE" }}>~/app</span>
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 rounded border px-2.5 py-1 font-mono text-[9px]" style={{ borderColor: "#262629", color: "#9A9AA2", background: "#141416" }}>❯ 搜索 <span style={{ color: "#22D3EE" }}>Ctrl K</span></span>
-        <span className="flex gap-1">
-          <span className="size-1.5 rounded-full" style={{ background: "#22D3EE" }} />
-          <span className="size-1.5 rounded-full" style={{ background: "#FB7185" }} />
-          <span className="size-1.5 rounded-full" style={{ background: "#F59E0B" }} />
-        </span>
+      <div className="pv-stagger relative overflow-hidden flex items-center gap-2 px-4 py-3" style={{ background: "#0A0A0B", borderBottom: "1px solid #262629" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="pv-stagger relative z-10 flex w-full items-center gap-2">
+          <span className="font-mono text-[10px]" style={{ color: "#22D3EE" }}>~/app</span>
+          <span className="pv-in flex min-w-0 flex-1 items-center gap-1.5 rounded border px-2.5 py-1 font-mono text-[9px] transition-transform hover:scale-[1.01]" style={{ ["--i" as string]: 0, borderColor: "#262629", color: "#9A9AA2", background: "#141416" }}>❯ 搜索 <span style={{ color: "#22D3EE" }}>Ctrl K</span></span>
+          <span className="pv-in flex gap-1" style={{ ["--i" as string]: 1 }}>
+            <span className="size-1.5 rounded-full" style={{ background: "#22D3EE" }} />
+            <span className="size-1.5 rounded-full" style={{ background: "#FB7185" }} />
+            <span className="size-1.5 rounded-full" style={{ background: "#F59E0B" }} />
+          </span>
+        </div>
       </div>
     );
   if (variantId === "dtop_glass")
     return (
-      <div className="flex items-center gap-2 px-4 py-3" style={{ border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 55%, transparent)", borderRadius: "16px", backdropFilter: "blur(12px)" }}>
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>⌕ 搜索</span>
-        <span className="text-[10px]">🔔</span>
-        <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{initial}</span>
+      <div className="pv-stagger flex items-center gap-2 px-4 py-3" style={{ border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 55%, transparent)", borderRadius: "16px", backdropFilter: "blur(12px)" }}>
+        <span className="pv-in flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-muted/60 px-3 py-1 text-[10px] transition-transform hover:scale-[1.01]" style={{ ["--i" as string]: 0, color: "var(--muted-foreground)" }}>⌕ 搜索</span>
+        <span className="pv-in text-[10px] transition-transform hover:scale-105" style={{ ["--i" as string]: 1 }}>🔔</span>
+        <span className="pv-in flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)] transition-transform hover:scale-105" style={{ ["--i" as string]: 2, background: "var(--primary)" }}>{initial}</span>
       </div>
     );
   if (variantId === "dtop_ops_modebar") {
     const modes = ["运营", "议价", "订单", "任务", "审核", "数据", "配置"];
     return (
-      <div className="flex items-center gap-2 border-b px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-        <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
+      <div className="pv-stagger flex items-center gap-2 border-b px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+        <nav className="pv-stagger flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
           {modes.map((m, i) => (
             <span
               key={m}
-              className={["whitespace-nowrap px-2 py-1 text-[10px] font-medium transition", i === 0 ? "" : ""].join(" ")}
+              className={"pv-in whitespace-nowrap px-2 py-1 text-[10px] font-medium transition " + (i === 0 ? "" : "")}
               style={
-                i === 0
+                { ["--i" as string]: i, ...(i === 0
                   ? { color: "var(--primary)", boxShadow: "inset 0 -2px 0 0 var(--primary)" }
-                  : { color: "var(--muted-foreground)" }
+                  : { color: "var(--muted-foreground)" }) } as React.CSSProperties
               }
             >
               {m}
             </span>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="pv-in flex shrink-0 items-center gap-1.5" style={{ ["--i" as string]: modes.length }}>
           <span className="rounded-md border px-1.5 py-0.5 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌘K 命令中心</span>
-          <span className="rounded-md px-2 py-1 text-[9px] font-semibold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>+ 新建</span>
-          <span className="flex size-5 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{initial}</span>
+          <span className="pv-border-flow rounded-md px-2 py-1 text-[9px] font-semibold" style={{ color: "var(--primary)" }}>+ 新建</span>
+          <span className="flex size-5 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)] transition-transform hover:scale-105" style={{ background: "var(--primary)" }}>{initial}</span>
         </div>
       </div>
     );
   }
-  return <PreviewFallback title="DashTopbarPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="DashTopbarPreview" />
+    </div>
+  );
 }
 
 function DashTablePreview({ variantId }: { variantId: string }) {
@@ -3894,8 +3924,8 @@ function DashTablePreview({ variantId }: { variantId: string }) {
   const rows = dash.table.map((r, i) => ({ n: r.name, s: r.status, o: r.company, p: [68, 32, 100][i % 3] }));
   if (variantId === "dtbl_standard")
     return (
-      <div className="px-6 py-7">
-        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in overflow-hidden rounded-lg border transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
           <table className="w-full text-[10px]">
             <thead>
               <tr className="border-b text-left text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
@@ -3905,9 +3935,9 @@ function DashTablePreview({ variantId }: { variantId: string }) {
                 <th className="p-2.5 font-medium">进度</th>
               </tr>
             </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.n} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
+            <tbody className="pv-stagger">
+              {rows.map((r, idx) => (
+                <tr key={r.n} className="pv-in border-b last:border-0 transition-colors hover:bg-muted/40" style={{ ["--i" as string]: idx, borderColor: "var(--border)" }}>
                   <td className="p-2.5 font-medium">{r.n}</td>
                   <td className="p-2.5">
                     <span className="rounded-full px-2 py-0.5 text-[9px] font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{r.s}</span>
@@ -3916,7 +3946,7 @@ function DashTablePreview({ variantId }: { variantId: string }) {
                   <td className="p-2.5">
                     <div className="flex items-center gap-1.5">
                       <div className="h-1 w-12 rounded-full" style={{ background: "var(--muted)" }}>
-                        <div className="h-full rounded-full" style={{ width: r.p + "%", background: "var(--primary)" }} />
+                        <div className="pv-bar-fill h-full rounded-full" style={{ width: r.p + "%", background: "var(--primary)" }} />
                       </div>
                       <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{r.p}%</span>
                     </div>
@@ -3930,11 +3960,11 @@ function DashTablePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtbl_editorial")
     return (
-      <div className="px-6 py-7">
-        <section className="border-y" style={{ borderColor: "var(--border)" }}>
-          {dash.table.map((r, i) => (
-            <div key={r.name} className="flex items-baseline justify-between gap-3 border-b py-4 last:border-0" style={{ borderColor: "var(--border)" }}>
-              <span className="font-mono text-[8px]" style={{ color: "var(--muted-foreground)" }}>{String(i + 1).padStart(2, "0")}</span>
+      <div className="pv-stagger px-6 py-7">
+        <section className="pv-stagger border-y" style={{ borderColor: "var(--border)" }}>
+          {dash.table.map((r, idx) => (
+            <div key={r.name} className="pv-in flex items-baseline justify-between gap-3 border-b py-4 last:border-0 transition-colors hover:bg-muted/40" style={{ ["--i" as string]: idx, borderColor: "var(--border)" }}>
+              <span className="font-mono text-[8px]" style={{ color: "var(--muted-foreground)" }}>{String(idx + 1).padStart(2, "0")}</span>
               <h3 className="flex-1 truncate text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{r.name}</h3>
               <span className="rounded-full px-2 py-0.5 text-[8px] font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{r.status}</span>
             </div>
@@ -3944,15 +3974,15 @@ function DashTablePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtbl_dense")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-4 gap-px overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-4 gap-px overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--border)" }}>
           {[
             { k: "req/min", v: "12,480", t: "#059669" },
             { k: "p50/ms", v: "84", t: "var(--muted)" },
             { k: "error%", v: "0.12", t: "#dc2626" },
             { k: "qps", v: "428", t: "#059669" },
-          ].map((r) => (
-            <div key={r.k} className="px-2.5 py-3" style={{ background: "var(--surface)" }}>
+          ].map((r, idx) => (
+            <div key={r.k} className="pv-in pv-lift pv-spotlight px-2.5 py-3 transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: idx, background: "var(--surface)" }}>
               <p className="font-mono text-[8px] uppercase" style={{ color: "var(--muted-foreground)" }}>{r.k}</p>
               <p className="mt-0.5 font-mono text-xs font-semibold">{r.v}</p>
               <span className="mt-0.5 inline-block size-1.5 rounded-full" style={{ background: r.t }} />
@@ -3961,7 +3991,11 @@ function DashTablePreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="DashTablePreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="DashTablePreview" />
+    </div>
+  );
 }
 
 function DashTasksPreview({ variantId }: { variantId: string }) {
@@ -3969,14 +4003,14 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
   const cols = ["待办", "进行中", "已完成"];
   if (variantId === "dtask_board")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
           {cols.map((c, ci) => (
-            <div key={c} className="rounded-lg p-2" style={{ border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 60%, transparent)" }}>
+            <div key={c} className="pv-in pv-lift pv-spotlight rounded-lg p-2 transition-transform hover:scale-105" style={{ ["--i" as string]: ci, border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 60%, transparent)" }}>
               <p className="px-1 pb-1.5 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>{c} · {ci === 0 ? dash.tasks.length : 0}</p>
-              <div className="space-y-1.5">
-                {dash.tasks.filter((_, i) => i % 3 === ci).map((t) => (
-                  <div key={t.title} className="rounded-md border p-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+              <div className="pv-stagger space-y-1.5">
+                {dash.tasks.filter((_, i) => i % 3 === ci).map((t, ti) => (
+                  <div key={t.title} className="pv-in rounded-md border p-2 transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: ti, borderColor: "var(--border)", background: "var(--surface)" }}>
                     <span className="inline-block size-1.5 rounded-full" style={{ background: "#1F6C9F" }} />
                     <p className="mt-1 text-[9px] font-medium">{t.title}</p>
                   </div>
@@ -3989,14 +4023,16 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtask_neon")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="pv-stagger relative z-10 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { t: "待办", c: "#4B69F0" },
             { t: "进行中", c: "#F5693C" },
             { t: "已完成", c: "#22D3EE" },
-          ].map((c) => (
-            <div key={c.t} className="rounded-lg p-2" style={{ background: "#141416", border: "1px solid #262629" }}>
+          ].map((c, ci) => (
+            <div key={c.t} className="pv-in pv-lift pv-spotlight rounded-lg p-2 transition-transform hover:scale-105" style={{ ["--i" as string]: ci, background: "#141416", border: "1px solid #262629" }}>
               <p className="px-1 pb-1.5 text-[9px] font-semibold" style={{ color: c.c }}><span className="mr-1 inline-block size-1.5 rounded-full" style={{ background: c.c }} />{c.t}</p>
               <div className="rounded-md p-2" style={{ border: "1px solid color-mix(in srgb, " + c.c + " 40%, transparent)", background: "color-mix(in srgb, " + c.c + " 10%, #141416)" }}>
                 <p className="text-[9px] font-semibold text-white">设计 Sprint</p>
@@ -4009,16 +4045,16 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtask_wave")
     return (
-      <div className="px-6 py-7">
-        <div className="space-y-2.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger space-y-2.5">
           {["一", "二", "三"].map((day, di) => (
-            <div key={day} className="flex gap-2.5">
+            <div key={day} className="pv-in flex gap-2.5" style={{ ["--i" as string]: di }}>
               <div className="w-7 shrink-0 pt-0.5 text-center">
                 <span className="mx-auto flex size-5 items-center justify-center rounded-full text-[8px] font-bold" style={di % 2 === 0 ? { background: "var(--primary)", color: "#fff" } : { background: "var(--muted)", color: "var(--muted-foreground)" }}>{day}</span>
               </div>
-              <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
-                {dash.tasks.filter((_, i) => i % 3 === di).map((t) => (
-                  <span key={t.title} className="rounded-md border px-2 py-1 text-[9px]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>{t.title}</span>
+              <div className="pv-stagger flex min-w-0 flex-1 flex-wrap gap-1.5">
+                {dash.tasks.filter((_, i) => i % 3 === di).map((t, ti) => (
+                  <span key={t.title} className="pv-in rounded-md border px-2 py-1 text-[9px] transition-transform hover:scale-105" style={{ ["--i" as string]: ti, borderColor: "var(--border)", background: "var(--surface)" }}>{t.title}</span>
                 ))}
               </div>
             </div>
@@ -4026,7 +4062,11 @@ function DashTasksPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="DashTasksPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="DashTasksPreview" />
+    </div>
+  );
 }
 
 function DashNotificationsPreview({ variantId }: { variantId: string }) {
@@ -4034,10 +4074,10 @@ function DashNotificationsPreview({ variantId }: { variantId: string }) {
   const nots = dash.notifications.length ? dash.notifications.map((m) => ({ i: "•", t: "通知", d: m.text, time: m.time, unread: true })) : [];
   if (variantId === "dnot_list")
     return (
-      <div className="px-6 py-7">
-        <div className="divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          {nots.map((m) => (
-            <div key={m.d} className="flex items-start gap-2.5 px-3 py-2.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {nots.map((m, index) => (
+            <div key={m.d} className="pv-in flex items-start gap-2.5 px-3 py-2.5 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_8%,transparent)]" style={{ ["--i" as string]: index }}>
               <span className="flex size-6 shrink-0 items-center justify-center rounded-md text-[9px]" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{m.i}</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px]"><span className="font-semibold">{m.t}</span> · {m.d}</p>
@@ -4051,15 +4091,15 @@ function DashNotificationsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dnot_bento")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <div className="rounded-lg border p-3 sm:col-span-2" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--primary) 8%, var(--surface))" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="pv-in rounded-lg border p-3 sm:col-span-2 pv-lift pv-spotlight transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "color-mix(in srgb, var(--primary) 8%, var(--surface))" }}>
             <p className="text-[7px] uppercase tracking-[0.2em]" style={{ color: "var(--primary)" }}>置顶</p>
             <h3 className="mt-1 text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>「官网改版」已进入开发</h3>
             <p className="mt-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>李娜 更新了 8 个任务</p>
           </div>
-          {["有人@你 · 定价页", "新版本 v2.4 上线", "成员邀请已接受"].map((t) => (
-            <div key={t} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {["有人@你 · 定价页", "新版本 v2.4 上线", "成员邀请已接受"].map((t, i) => (
+            <div key={t} className="pv-in rounded-lg border p-3 pv-lift pv-spotlight transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: i + 1, borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[10px] font-medium">{t}</p>
               <p className="mt-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>2 小时前</p>
             </div>
@@ -4069,18 +4109,22 @@ function DashNotificationsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dnot_terminal")
     return (
-      <div className="px-6 py-7">
-        <div className="rounded-lg p-3.5 font-mono text-[9px]" style={{ background: "#0A0A0B", border: "1px solid #262629" }}>
-          <span className="mb-2 flex gap-1.5"><span className="size-1.5 rounded-full bg-[#FB7185]" /><span className="size-1.5 rounded-full bg-[#F59E0B]" /><span className="size-1.5 rounded-full bg-[#34D399]" /></span>
-          <div className="space-y-1">
-            {[
-              { t: "[12:01:03]", l: "INFO", m: "build started", c: "#22D3EE" },
-              { t: "[12:01:05]", l: "OK", m: "compiled 214 modules", c: "#34D399" },
-              { t: "[12:01:08]", l: "WARN", m: "legacy shim in use", c: "#F59E0B" },
-              { t: "[12:01:12]", l: "DONE", m: "deploy → production", c: "#FB7185" },
-            ].map((r) => (
-              <p key={r.m} className="truncate"><span style={{ color: "#9A9AA2" }}>{r.t}</span> <span style={{ color: r.c }}>{r.l}</span> <span style={{ color: "#F5F5F5" }}>{r.m}</span></p>
-            ))}
+      <div className="pv-stagger px-6 py-7">
+        <div className="relative overflow-hidden rounded-lg p-3.5 font-mono text-[9px]" style={{ background: "#0A0A0B", border: "1px solid #262629" }}>
+          <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+          <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+          <div className="relative z-10 pv-stagger">
+            <span className="pv-in mb-2 flex gap-1.5" style={{ ["--i" as string]: 0 }}><span className="size-1.5 rounded-full bg-[#FB7185]" /><span className="size-1.5 rounded-full bg-[#F59E0B]" /><span className="size-1.5 rounded-full bg-[#34D399]" /></span>
+            <div className="space-y-1">
+              {[
+                { t: "[12:01:03]", l: "INFO", m: "build started", c: "#22D3EE" },
+                { t: "[12:01:05]", l: "OK", m: "compiled 214 modules", c: "#34D399" },
+                { t: "[12:01:08]", l: "WARN", m: "legacy shim in use", c: "#F59E0B" },
+                { t: "[12:01:12]", l: "DONE", m: "deploy → production", c: "#FB7185" },
+              ].map((r, i) => (
+                <p key={r.m} className="pv-in truncate" style={{ ["--i" as string]: i + 1 }}><span style={{ color: "#9A9AA2" }}>{r.t}</span> <span style={{ color: r.c }}>{r.l}</span> <span style={{ color: "#F5F5F5" }}>{r.m}</span></p>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -4092,11 +4136,11 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
   const tabs = PREVIEW_CONTENT.dashboard.tabs.length ? PREVIEW_CONTENT.dashboard.tabs : ["概览"];
   if (variantId === "dtabs_seg")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div className="flex gap-1 border-b p-2" style={{ borderColor: "var(--border)" }}>
+          <div className="pv-stagger flex gap-1 border-b p-2" style={{ borderColor: "var(--border)" }}>
             {tabs.map((t, i) => (
-              <span key={t} className={"rounded px-2.5 py-1 text-[10px] font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
+              <span key={t} className={"pv-in rounded px-2.5 py-1 text-[10px] font-medium transition-colors hover:text-[var(--primary)] " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={{ ["--i" as string]: i, ...(i === 0 ? { background: "var(--primary)" } : { color: "var(--muted-foreground)" }) }}>{t}</span>
             ))}
           </div>
           <div className="p-8 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
@@ -4107,11 +4151,11 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtabs_underline")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="border-b" style={{ borderColor: "var(--border)" }}>
-          <div className="flex gap-6 px-1">
+          <div className="pv-stagger flex gap-6 px-1">
             {tabs.map((t, i) => (
-              <span key={t} className="cursor-pointer pb-1.5 text-base font-semibold" style={i === 0 ? { color: "var(--foreground)", borderBottom: "2px solid var(--primary)", fontFamily: "var(--font-heading)" } : { color: "var(--muted-foreground)" }}>{t}</span>
+              <span key={t} className="pv-in cursor-pointer pb-1.5 text-base font-semibold transition-colors hover:text-[var(--primary)]" style={{ ["--i" as string]: i, ...(i === 0 ? { color: "var(--foreground)", borderBottom: "2px solid var(--primary)", fontFamily: "var(--font-heading)" } : { color: "var(--muted-foreground)" }) }}>{t}</span>
             ))}
           </div>
         </div>
@@ -4119,10 +4163,10 @@ function DashTabsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtabs_glass")
     return (
-      <div className="px-6 py-7">
-        <div className="inline-flex gap-1 rounded-full border p-1" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)", backdropFilter: "blur(10px)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger inline-flex gap-1 rounded-full border p-1" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)", backdropFilter: "blur(10px)" }}>
           {tabs.map((t, i) => (
-            <span key={t} className={"cursor-pointer rounded-full px-3 py-1 text-[10px] font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)", boxShadow: "0 4px 16px -6px var(--primary)" } : { color: "var(--muted-foreground)" }}>{t}</span>
+            <span key={t} className={"pv-in cursor-pointer rounded-full px-3 py-1 text-[10px] font-medium transition-transform hover:scale-105 " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={{ ["--i" as string]: i, ...(i === 0 ? { background: "var(--primary)", boxShadow: "0 4px 16px -6px var(--primary)" } : { color: "var(--muted-foreground)" }) }}>{t}</span>
           ))}
         </div>
       </div>
@@ -4134,39 +4178,39 @@ function DashFiltersPreview({ variantId }: { variantId: string }) {
   const filters = PREVIEW_CONTENT.dashboard.filters.length ? PREVIEW_CONTENT.dashboard.filters : ["全部"];
   if (variantId === "dfil_bar")
     return (
-      <div className="px-6 py-7">
-        <div className="flex flex-wrap items-center gap-1.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger flex flex-wrap items-center gap-1.5">
           {filters.map((c, i) => (
-            <span key={c} className={"cursor-pointer rounded-full px-2.5 py-1 text-[9px] font-medium " + (i === 1 ? "text-[var(--on-primary)]" : "")} style={i === 1 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
+            <span key={c} className={"pv-in cursor-pointer rounded-full px-2.5 py-1 text-[9px] font-medium transition-transform hover:scale-105 " + (i === 1 ? "text-[var(--on-primary)]" : "")} style={{ ["--i" as string]: i, ...(i === 1 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }) }}>{c}</span>
           ))}
-          <button className="text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button>
+          <span className="pv-in" style={{ ["--i" as string]: filters.length }}><button className="pv-border-flow rounded-md px-1.5 py-0.5 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button></span>
         </div>
       </div>
     );
   if (variantId === "dfil_combo")
     return (
-      <div className="px-6 py-7">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1.5 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌕ 搜索项目、成员…</div>
-          <div className="flex flex-wrap gap-1.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger flex flex-wrap items-center gap-2">
+          <div className="pv-in flex min-w-0 flex-1 items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1.5 text-[9px]" style={{ ["--i" as string]: 0, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌕ 搜索项目、成员…</div>
+          <div className="pv-stagger flex flex-wrap gap-1.5">
             {filters.slice(1).map((c, i) => (
-              <span key={c} className={"cursor-pointer rounded px-2 py-1 text-[9px] font-medium " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={i === 0 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
+              <span key={c} className={"pv-in cursor-pointer rounded px-2 py-1 text-[9px] font-medium transition-transform hover:scale-105 " + (i === 0 ? "text-[var(--on-primary)]" : "")} style={{ ["--i" as string]: i, ...(i === 0 ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--muted-foreground)" }) }}>{c}</span>
             ))}
-            <button className="px-1 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button>
+            <span className="pv-in" style={{ ["--i" as string]: filters.slice(1).length }}><button className="pv-border-flow rounded-md px-1.5 py-0.5 text-[9px] font-medium" style={{ color: "var(--muted-foreground)" }}>重置</button></span>
           </div>
         </div>
       </div>
     );
   if (variantId === "dfil_range")
     return (
-      <div className="px-6 py-7">
-        <div className="space-y-2.5">
-          <div className="relative h-1 rounded-full bg-muted">
-            <div className="absolute h-full rounded-full" style={{ left: "24%", width: "54%", background: "var(--primary)" }} />
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger space-y-2.5">
+          <div className="pv-in relative h-1 rounded-full bg-muted" style={{ ["--i" as string]: 0 }}>
+            <div className="pv-bar-fill absolute h-full origin-left rounded-full" style={{ left: "24%", width: "54%", background: "var(--primary)" }} />
             <span className="absolute -top-1 size-3 rounded-full border-2" style={{ left: "24%", background: "var(--surface)", borderColor: "var(--primary)" }} />
             <span className="absolute -top-1 size-3 rounded-full border-2" style={{ left: "78%", background: "var(--surface)", borderColor: "var(--primary)" }} />
           </div>
-          <div className="flex items-center justify-between text-[8px]" style={{ color: "var(--muted-foreground)" }}><span>¥24K</span><span>24% – 78%</span><span>¥78K</span></div>
+          <div className="pv-in flex items-center justify-between text-[8px]" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}><span>¥24K</span><span>24% – 78%</span><span>¥78K</span></div>
         </div>
       </div>
     );
@@ -4178,10 +4222,10 @@ function DashStatstripPreview({ variantId }: { variantId: string }) {
   const strips = dash.kpis.length ? dash.kpis.map((k, i) => ({ l: k.label, v: k.value, d: k.trend, g: ["#7C5CFC", "#22D3EE", "#F472B6", "#34D399"][i % 4] })) : [{ l: "今日活跃", v: "1,204", d: "+12.4%", g: "#7C5CFC" }];
   if (variantId === "dstrip_stack")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-4 divide-x overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          {strips.map((s) => (
-            <div key={s.l} className="px-3 py-3">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-4 divide-x overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {strips.map((s, i) => (
+            <div key={s.l} className="pv-in px-3 py-3 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]" style={{ ["--i" as string]: i }}>
               <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p>
               <p className="mt-0.5 text-sm font-bold tracking-tight">{s.v}</p>
               <p className="mt-0.5 text-[8px] font-medium" style={{ color: "#059669" }}>{s.d}</p>
@@ -4192,10 +4236,10 @@ function DashStatstripPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dstrip_editorial")
     return (
-      <div className="px-6 py-7">
-        <section className="grid grid-cols-4 divide-x border-y" style={{ borderColor: "var(--border)" }}>
-          {strips.map((x) => (
-            <div key={x.l} className="px-3 py-4">
+      <div className="pv-stagger px-6 py-7">
+        <section className="pv-stagger grid grid-cols-4 divide-x border-y" style={{ borderColor: "var(--border)" }}>
+          {strips.map((x, i) => (
+            <div key={x.l} className="pv-in px-3 py-4 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]" style={{ ["--i" as string]: i }}>
               <p className="text-[7px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{x.l}</p>
               <p className="mt-1 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>{x.v}</p>
             </div>
@@ -4205,10 +4249,12 @@ function DashStatstripPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dstrip_gradient")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-4 gap-2">
-          {strips.map((x) => (
-            <div key={x.l} className="rounded-lg p-2.5" style={{ border: "1px solid #ffffff22", background: "linear-gradient(135deg, color-mix(in srgb, " + x.g + " 22%, transparent), transparent)", boxShadow: "inset 0 1px 0 #ffffff22" }}>
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="relative z-10 pv-stagger grid grid-cols-4 gap-2">
+          {strips.map((x, i) => (
+            <div key={x.l} className="pv-in rounded-lg p-2.5 pv-lift pv-spotlight transition-transform hover:scale-105" style={{ ["--i" as string]: i, border: "1px solid #ffffff22", background: "linear-gradient(135deg, color-mix(in srgb, " + x.g + " 22%, transparent), transparent)", boxShadow: "inset 0 1px 0 #ffffff22" }}>
               <p className="text-[7px]" style={{ color: "var(--muted-foreground)" }}>{x.l}</p>
               <p className="mt-0.5 text-sm font-bold text-white">{x.v}</p>
               <p className="mt-0.5 text-[8px] font-semibold" style={{ color: x.g }}>+▲</p>
@@ -4225,15 +4271,15 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
   const perms = dash.permissions.length ? dash.permissions : ["管理员", "编辑", "只读"];
   if (variantId === "dperm_list")
     return (
-      <div className="px-6 py-7">
-        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in flex items-center justify-between border-b px-3 py-2" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
             <p className="text-[10px] font-semibold">成员与权限</p>
             <span className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>共 {perms.length} 人</span>
           </div>
-          <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+          <ul className="pv-stagger divide-y" style={{ borderColor: "var(--border)" }}>
             {perms.map((r, i) => (
-              <li key={r} className="flex items-center gap-2 px-3 py-2">
+              <li key={r} className="pv-in flex items-center gap-2 px-3 py-2 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]" style={{ ["--i" as string]: i + 1 }}>
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{r.slice(0, 1)}</span>
                 <span className="min-w-0 flex-1 truncate text-[10px] font-medium">{r}</span>
                 <span className="rounded-full px-1.5 py-0.5 text-[8px] font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{perms[(i + 1) % perms.length]}</span>
@@ -4246,14 +4292,14 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dperm_tree")
     return (
-      <div className="px-6 py-7">
-        <div className="divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger divide-y rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           {[
             { m: "项目 · 官网改版", v: true },
             { m: "数据面板", v: true },
             { m: "成员管理", v: false },
-          ].map((n) => (
-            <div key={n.m} className="flex items-center justify-between gap-3 px-3 py-2.5">
+          ].map((n, i) => (
+            <div key={n.m} className="pv-in flex items-center justify-between gap-3 px-3 py-2.5 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]" style={{ ["--i" as string]: i }}>
               <p className="min-w-0 flex-1 truncate text-[10px] font-medium">{n.m}</p>
               <div className="flex gap-2.5">
                 {[["读", true], ["写", n.v], ["删", false]].map(([l, on]) => (
@@ -4270,9 +4316,9 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dperm_matrix")
     return (
-      <div className="px-6 py-7">
-        <div className="overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div className="grid grid-cols-4 border-b text-center text-[8px] font-semibold" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in grid grid-cols-4 border-b text-center text-[8px] font-semibold" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
             <span className="px-3 py-2 text-left">能力</span>
             {["Admin", "Editor", "Viewer"].map((r) => <span key={r} className="px-3 py-2" style={{ color: "var(--primary)" }}>{r}</span>)}
           </div>
@@ -4281,8 +4327,8 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
             { c: "编辑内容", v: [1, 1, 0] },
             { c: "删除记录", v: [1, 0, 0] },
             { c: "导出数据", v: [1, 1, 1] },
-          ].map((row) => (
-            <div key={row.c} className="grid grid-cols-4 items-center border-b text-center last:border-0" style={{ borderColor: "var(--border)" }}>
+          ].map((row, ri) => (
+            <div key={row.c} className="pv-in grid grid-cols-4 items-center border-b text-center last:border-0 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]" style={{ ["--i" as string]: ri + 1, borderColor: "var(--border)" }}>
               <span className="px-3 py-2 text-left text-[8px]" style={{ color: "var(--muted-foreground)" }}>{row.c}</span>
               {row.v.map((on, i) => <span key={i} className="px-3 py-2"><span className="mx-auto block size-1.5 rounded-full" style={{ background: on ? "var(--primary)" : "var(--muted)" }} /></span>)}
             </div>
@@ -4296,14 +4342,14 @@ function DashPermissionsPreview({ variantId }: { variantId: string }) {
 function DashGaugesPreview({ variantId }: { variantId: string }) {
   if (variantId === "dgauge_dials")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { l: "CPU", p: "72%" },
             { l: "内存", p: "46%" },
             { l: "磁盘", p: "88%" },
-          ].map((x) => (
-            <div key={x.l} className="flex flex-col items-center rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          ].map((x, i) => (
+            <div key={x.l} className="pv-in flex flex-col items-center rounded-lg border p-3 pv-lift pv-spotlight transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <div className="flex size-14 items-center justify-center rounded-full" style={{ background: "conic-gradient(var(--primary) " + parseInt(x.p) + "%, var(--muted) 0)" }}>
                 <span className="flex size-11 items-center justify-center rounded-full text-[10px] font-bold" style={{ background: "var(--surface)" }}>{x.p}</span>
               </div>
@@ -4315,20 +4361,20 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dgauge_linear")
     return (
-      <div className="px-6 py-7">
-        <div className="space-y-3">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger space-y-3">
           {[
             { l: "队列负载", v: 62 },
             { l: "缓存命中", v: 91 },
             { l: "错误率", v: 12 },
-          ].map((x) => (
-            <div key={x.l} className="space-y-1">
+          ].map((x, i) => (
+            <div key={x.l} className="pv-in space-y-1" style={{ ["--i" as string]: i }}>
               <div className="flex items-baseline justify-between">
                 <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{x.l}</p>
                 <p className="font-mono text-[9px] font-semibold">{x.v}%</p>
               </div>
               <div className="h-1 w-full rounded-full bg-muted">
-                <div className="h-full rounded-full" style={{ width: x.v + "%", background: x.v > 80 ? "#dc2626" : "var(--primary)" }} />
+                <div className="pv-bar-fill h-full origin-left rounded-full" style={{ width: x.v + "%", background: x.v > 80 ? "#dc2626" : "var(--primary)" }} />
               </div>
             </div>
           ))}
@@ -4337,14 +4383,16 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dgauge_neon")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-50" />
+        <div className="pointer-events-none absolute inset-0 pv-grid-bg opacity-25" />
+        <div className="relative z-10 pv-stagger grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { l: "CPU", p: 72, c: "#22D3EE" },
             { l: "内存", p: 46, c: "#F472B6" },
             { l: "磁盘", p: 88, c: "#F59E0B" },
-          ].map((x) => (
-            <div key={x.l} className="flex flex-col items-center rounded-lg p-2.5" style={{ background: "#141416", border: "1px solid #262629" }}>
+          ].map((x, i) => (
+            <div key={x.l} className="pv-in flex flex-col items-center rounded-lg p-2.5 pv-lift pv-spotlight transition-transform hover:scale-105" style={{ ["--i" as string]: i, background: "#141416", border: "1px solid #262629" }}>
               <div className="relative size-11"><span className="absolute inset-0 rounded-full" style={{ background: "conic-gradient(" + x.c + " " + x.p * 1.8 + "deg, #222 0deg)" }} /><span className="absolute inset-[4px] flex items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: "#141416" }}>{x.p}</span></div>
               <p className="mt-1.5 text-[8px] font-medium" style={{ color: x.c }}>{x.l}</p>
             </div>
@@ -4354,14 +4402,14 @@ function DashGaugesPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dgauge_pointer")
     return (
-      <div className="px-6 py-7">
-        <div className="flex justify-center">
-          <svg viewBox="0 0 120 70" className="w-full max-w-48">
-            <path d="M10 64 A50 50 0 0 1 110 64" fill="none" stroke="var(--muted)" strokeWidth="8" strokeLinecap="round" opacity="0.35" />
-            <path d="M10 64 A50 50 0 0 1 78 17.8" fill="none" stroke="var(--primary)" strokeWidth="8" strokeLinecap="round" />
-            <line x1="60" y1="62" x2="72.6" y2="25" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
-            <circle cx="60" cy="62" r="3" fill="var(--primary)" />
-            <text x="60" y="42" textAnchor="middle" fontSize="16" fontWeight="700" fill="var(--foreground)">68%</text>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in flex justify-center" style={{ ["--i" as string]: 0 }}>
+          <svg viewBox="0 0 120 70" className="pv-stagger w-full max-w-48">
+            <path className="pv-in" style={{ ["--i" as string]: 0 }} d="M10 64 A50 50 0 0 1 110 64" fill="none" stroke="var(--muted)" strokeWidth="8" strokeLinecap="round" opacity="0.35" />
+            <path className="pv-in" style={{ ["--i" as string]: 1 }} d="M10 64 A50 50 0 0 1 78 17.8" fill="none" stroke="var(--primary)" strokeWidth="8" strokeLinecap="round" />
+            <line className="pv-in" style={{ ["--i" as string]: 2 }} x1="60" y1="62" x2="72.6" y2="25" stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
+            <circle className="pv-in" style={{ ["--i" as string]: 3 }} cx="60" cy="62" r="3" fill="var(--primary)" />
+            <text className="pv-in" style={{ ["--i" as string]: 4 }} x="60" y="42" textAnchor="middle" fontSize="16" fontWeight="700" fill="var(--foreground)">68%</text>
           </svg>
         </div>
       </div>
@@ -4373,10 +4421,10 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
   const act = PREVIEW_CONTENT.dashboard.activity.length ? PREVIEW_CONTENT.dashboard.activity : [{ text: "李雷 编辑了首页文案", time: "3 分钟前" }];
   if (variantId === "dact_timeline")
     return (
-      <div className="px-6 py-7">
-        <ol className="space-y-0">
+      <div className="pv-stagger px-6 py-7">
+        <ol className="pv-stagger space-y-0">
           {act.map((i, idx) => (
-            <li key={idx} className="relative flex gap-2.5 pb-4 last:pb-0">
+            <li key={idx} className="pv-in relative flex gap-2.5 pb-4 last:pb-0 rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]" style={{ ["--i" as string]: idx }}>
               {idx < act.length - 1 && <span className="absolute left-[4px] top-2.5 h-full w-px" style={{ background: "var(--border)" }} />}
               <span className="mt-1 size-2 shrink-0 rounded-full" style={{ background: "var(--primary)" }} />
               <div className="min-w-0">
@@ -4390,14 +4438,14 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dact_cards")
     return (
-      <div className="px-6 py-7">
-        <div className="space-y-1.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger space-y-1.5">
           {[
             { i: "＋", t: "创建了项目", d: "「官网改版」", time: "10 分钟前" },
             { i: "⇪", t: "上传了 3 张图", d: "设计稿 · 首页", time: "1 小时前" },
             { i: "💬", t: "发表了评论", d: "「定价页」", time: "昨天" },
-          ].map((e) => (
-            <div key={e.t} className="flex items-center gap-2.5 rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          ].map((e, i) => (
+            <div key={e.t} className="pv-in flex items-center gap-2.5 rounded-lg border p-2.5 pv-lift pv-spotlight transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <span className="flex size-7 shrink-0 items-center justify-center rounded-md text-[10px]" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}>{e.i}</span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[10px]"><span className="font-semibold">{e.t}</span> {e.d}</p>
@@ -4410,27 +4458,27 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dact_commits")
     return (
-      <div className="px-6 py-7">
-        <div className="space-y-1.5 rounded-lg border p-3 font-mono text-[9px]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <p className="truncate"><span style={{ color: "var(--primary)" }}>a1f2e3</span> feat: 视觉风格画廊 <span style={{ color: "var(--muted-foreground)" }}>· main · 李娜</span></p>
-          <p className="truncate"><span style={{ color: "var(--primary)" }}>9c0b8a</span> fix: 表格空态 <span style={{ color: "var(--muted-foreground)" }}>· main · 王强</span></p>
-          <p className="truncate"><span style={{ color: "var(--primary)" }}>b7d6c5</span> refactor: 抽取 MoreTools <span style={{ color: "var(--muted-foreground)" }}>· flow · 张三</span></p>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger space-y-1.5 rounded-lg border p-3 font-mono text-[9px]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <p className="pv-in truncate" style={{ ["--i" as string]: 0 }}><span style={{ color: "var(--primary)" }}>a1f2e3</span> feat: 视觉风格画廊 <span style={{ color: "var(--muted-foreground)" }}>· main · 李娜</span></p>
+          <p className="pv-in truncate" style={{ ["--i" as string]: 1 }}><span style={{ color: "var(--primary)" }}>9c0b8a</span> fix: 表格空态 <span style={{ color: "var(--muted-foreground)" }}>· main · 王强</span></p>
+          <p className="pv-in truncate" style={{ ["--i" as string]: 2 }}><span style={{ color: "var(--primary)" }}>b7d6c5</span> refactor: 抽取 MoreTools <span style={{ color: "var(--muted-foreground)" }}>· flow · 张三</span></p>
         </div>
       </div>
     );
   if (variantId === "dact_bento")
     return (
-      <div className="px-6 py-7">
-        <div className="grid grid-cols-2 gap-1.5">
-          <div className="col-span-2 rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--primary) 8%, var(--surface))" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger grid grid-cols-2 gap-1.5">
+          <div className="pv-in col-span-2 rounded-lg border p-2.5 pv-lift pv-spotlight transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "color-mix(in srgb, var(--primary) 8%, var(--surface))" }}>
             <p className="text-[7px] uppercase tracking-[0.15em]" style={{ color: "var(--primary)" }}>本周高光</p>
             <p className="mt-0.5 text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>24 次提交 · 3 个里程碑</p>
           </div>
-          <div className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in rounded-lg border p-2.5 pv-lift pv-spotlight transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: 1, borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>128</p>
             <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>活跃成员</p>
           </div>
-          <div className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in rounded-lg border p-2.5 pv-lift pv-spotlight transition-transform hover:scale-[1.02]" style={{ ["--i" as string]: 2, borderColor: "var(--border)", background: "var(--surface)" }}>
             <div className="flex h-9 items-end gap-0.5">{Array.from({ length: 8 }).map((_, i) => <span key={i} className="w-full rounded-t" style={{ height: (8 + (i % 4) * 6) + "px", background: i === 5 ? "var(--primary)" : "var(--muted)" }} />)}</div>
             <p className="mt-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>趋势</p>
           </div>
@@ -4443,19 +4491,23 @@ function DashActivityPreview({ variantId }: { variantId: string }) {
 function DashTransferPreview({ variantId }: { variantId: string }) {
   if (variantId === "dtrans_toolbar")
     return (
-      <div className="px-6 py-7">
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in" style={{ ["--i" as string]: 0 }}>
             <p className="text-[10px] font-semibold">数据导入 / 导出</p>
             <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>支持 CSV · Excel · JSON</p>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="pv-stagger flex flex-wrap gap-1.5">
             {[
               { n: "导入 CSV", primary: true },
               { n: "导出 Excel", primary: false },
               { n: "定时同步", primary: false },
-            ].map((a) => (
-              <button key={a.n} className={"rounded-md px-2.5 py-1 text-[9px] font-medium " + (a.primary ? "text-[var(--on-primary)]" : "")} style={a.primary ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--foreground)" }}>{a.n}</button>
+            ].map((a, i) => (
+              <span key={a.n} className="pv-in" style={{ ["--i" as string]: i }}>
+                <span className="pv-border-flow inline-block rounded-md">
+                  <button className={"rounded-md px-2.5 py-1 text-[9px] font-medium " + (a.primary ? "text-[var(--on-primary)]" : "")} style={a.primary ? { background: "var(--primary)" } : { border: "1px solid var(--border)", color: "var(--foreground)" }}>{a.n}</button>
+                </span>
+              </span>
             ))}
           </div>
         </div>
@@ -4463,8 +4515,8 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtrans_drop")
     return (
-      <div className="px-6 py-7">
-        <div className="flex flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-6 py-8 text-center" style={{ borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in flex flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-6 py-8 text-center pv-lift pv-spotlight transition-transform hover:-translate-y-0.5" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "color-mix(in srgb, var(--surface) 50%, transparent)" }}>
           <span className="flex size-8 items-center justify-center rounded-full text-xs" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}>⇪</span>
           <p className="text-[10px] font-medium">拖拽文件到这里</p>
           <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>支持 CSV / Excel / JSON</p>
@@ -4473,16 +4525,16 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtrans_jobs")
     return (
-      <div className="px-6 py-7">
-        <div className="space-y-1.5">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger space-y-1.5">
           {PREVIEW_CONTENT.dashboard.transfer.map((j, i) => (
-            <div key={j.name} className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div key={j.name} className="pv-in rounded-lg border p-2.5 pv-lift pv-spotlight transition-transform hover:-translate-y-0.5" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <div className="flex items-center justify-between gap-2">
                 <p className="min-w-0 flex-1 truncate font-mono text-[9px]">{j.name}</p>
                 <span className="text-[8px]" style={{ color: "var(--primary)" }}>{i === 1 ? "完成" : [72, 100, 34][i % 3] + "%"}</span>
               </div>
               <div className="mt-1.5 h-1 rounded-full bg-muted">
-                <div className="h-full rounded-full" style={{ width: [72, 100, 34][i % 3] + "%", background: "var(--primary)" }} />
+                <div className="pv-bar-fill h-full origin-left rounded-full" style={{ width: [72, 100, 34][i % 3] + "%", background: "var(--primary)" }} />
               </div>
             </div>
           ))}
@@ -4491,14 +4543,14 @@ function DashTransferPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dtrans_editorial")
     return (
-      <div className="px-6 py-7">
-        <div className="border-y" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger border-y" style={{ borderColor: "var(--border)" }}>
           {[
             { f: "CSV", d: "原始行数据 · 可再入读" },
             { f: "Excel", d: "带样式表格 · 适合报表" },
             { f: "JSON", d: "结构化对象 · 适合 API" },
-          ].map((r) => (
-            <div key={r.f} className="flex items-center justify-between gap-3 border-b py-3 last:border-0" style={{ borderColor: "var(--border)" }}>
+          ].map((r, i) => (
+            <div key={r.f} className="pv-in flex items-center justify-between gap-3 border-b py-3 last:border-0 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <div>
                 <p className="text-base font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{r.f}</p>
                 <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{r.d}</p>
@@ -4518,20 +4570,20 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
   const proj = port.projects.length ? port.projects.map((p) => p.title) : ["精选作品", "作品二", "作品三", "作品四"];
   if (variantId === "pgrid_masonry")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-xl">
           <SectionBadge>作品集</SectionBadge>
           <div className="flex items-center justify-between mt-1.5">
             <p className="text-sm font-bold">{port.title}</p>
             <div className="flex gap-1.5">
               {["全部", proj[1] || "Branding", "Web"].map((f, i) => (
-                <span key={f} className={"rounded-full px-2 py-0.5 text-[8px] " + (i === 0 ? "text-[var(--on-primary)]" : "border")} style={i === 0 ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{f}</span>
+                <span key={f} className={"pv-in pv-border-flow rounded-full px-2 py-0.5 text-[8px] " + (i === 0 ? "text-[var(--on-primary)]" : "border")} style={i === 0 ? { background: "var(--primary)", ["--i" as string]: i } : { borderColor: "var(--border)", color: "var(--muted-foreground)", ["--i" as string]: i }}>{f}</span>
               ))}
             </div>
           </div>
           <div className="mt-4 columns-2 gap-3">
             {proj.slice(0, 4).map((w, i) => (
-              <div key={w} className="group relative mb-3 overflow-hidden rounded-lg">
+              <div key={w} className="pv-in pv-lift pv-spotlight group relative mb-3 overflow-hidden rounded-lg transition-transform hover:scale-105" style={{ ["--i" as string]: i }}>
                 <img src={ph("work", 4 + i, 600)} alt={w} loading="lazy" className="w-full object-cover" />
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">{w}</span>
               </div>
@@ -4542,15 +4594,15 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pgrid_split")
     return (
-      <div className="grid gap-5 px-6 py-7 sm:grid-cols-2">
-        <a className="block">
+      <div className="pv-stagger grid gap-5 px-6 py-7 sm:grid-cols-2">
+        <a className="pv-in pv-lift pv-spotlight block transition-transform hover:scale-105" style={{ ["--i" as string]: 0 }}>
           <img src={ph("work", 5, 900)} alt={proj[0]} className="w-full rounded-xl object-cover" />
           <SectionBadge>作品集</SectionBadge>
           <p className="mt-1.5 text-base font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{proj[0]}</p>
         </a>
-        <div className="flex flex-col justify-center">
-          {proj.slice(1).map((w) => (
-            <div key={w} className="flex items-center justify-between border-b py-3" style={{ borderColor: "var(--border)" }}>
+        <div className="pv-stagger flex flex-col justify-center">
+          {proj.slice(1).map((w, i) => (
+            <div key={w} className="pv-in flex items-center justify-between border-b py-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <p className="text-xs font-medium">{w}</p>
               <span className="text-xs opacity-0 transition group-hover:opacity-100">→</span>
             </div>
@@ -4560,12 +4612,12 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pgrid_hscroll")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <SectionBadge>作品集</SectionBadge>
         <p className="mt-1.5 text-sm font-bold">{port.title}</p>
         <Carousel className="mt-3">
           {proj.slice(0, 6).map((w, i) => (
-            <div key={w} className="group w-44 shrink-0 snap-start">
+            <div key={w} className="pv-in group w-44 shrink-0 snap-start" style={{ ["--i" as string]: i }}>
               <div className="overflow-hidden rounded-lg">
                 <img src={ph("work", 6 + i, 700)} alt={w} loading="lazy" className="aspect-[7/5] w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
               </div>
@@ -4575,7 +4627,11 @@ function PortfolioGridPreview({ variantId }: { variantId: string }) {
         </Carousel>
       </div>
     );
-  return <PreviewFallback title="PortfolioGridPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="PortfolioGridPreview" />
+    </div>
+  );
 }
 
 function PortfolioCasePreview({ variantId }: { variantId: string }) {
@@ -4584,13 +4640,13 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
   const steps = PREVIEW_CONTENT.process.items.length ? PREVIEW_CONTENT.process.items.map((s) => s.name).slice(0, 3) : ["发现", "设计", "上线"];
   if (variantId === "pcase_hero")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-lg">
           <SectionBadge>案例</SectionBadge>
           <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{featured}</h3>
           <div className="mt-3 flex flex-wrap gap-5 border-y py-2.5" style={{ borderColor: "var(--border)" }}>
-            {[{ l: "时间", v: "8 周" }, { l: "角色", v: "品牌+开发" }, { l: "成果", v: "+212%" }].map((m) => (
-              <div key={m.l}><p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{m.l}</p><p className="text-xs font-bold">{m.v}</p></div>
+            {[{ l: "时间", v: "8 周" }, { l: "角色", v: "品牌+开发" }, { l: "成果", v: "+212%" }].map((m, i) => (
+              <div key={m.l} className="pv-in" style={{ ["--i" as string]: i }}><p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{m.l}</p><p className="text-xs font-bold">{m.v}</p></div>
             ))}
           </div>
           <img src={ph("case", 7, 1100)} alt={featured} className="mt-4 w-full rounded-xl object-cover" />
@@ -4599,12 +4655,12 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcase_process")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-lg space-y-4">
           <SectionBadge>案例</SectionBadge>
           <p className="mt-1.5 text-sm font-bold">过程</p>
           {steps.map((t, i) => (
-            <div key={t} className="flex items-center gap-3 border-b pb-3 last:border-0" style={{ borderColor: "var(--border)" }}>
+            <div key={t} className="pv-in pv-lift flex items-center gap-3 border-b pb-3 last:border-0 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <span className="text-base font-black" style={{ color: "var(--primary)" }}>{"0" + (i + 1)}</span>
               <p className="flex-1 text-xs font-semibold">{t}</p>
               <img src={ph("case", 8 + i, 600)} alt={t} loading="lazy" className="hidden h-10 w-16 rounded object-cover sm:block" />
@@ -4615,11 +4671,11 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcase_result")
     return (
-      <div className="px-6 py-7" style={{ background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7" style={{ background: "var(--surface)" }}>
         <div className="mx-auto max-w-lg">
           <div className="grid grid-cols-3 gap-4 border-y py-5" style={{ borderColor: "var(--border)" }}>
-            {[{ v: "212%", l: "转化" }, { v: "-38%", l: "跳出" }, { v: "4.6x", l: "询盘" }].map((m) => (
-              <div key={m.l}><CountUp value={m.v} className="text-2xl font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }} /><p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{m.l}</p></div>
+            {[{ v: "212%", l: "转化" }, { v: "-38%", l: "跳出" }, { v: "4.6x", l: "询盘" }].map((m, i) => (
+              <div key={m.l} className="pv-in pv-lift pv-spotlight" style={{ ["--i" as string]: i }}><CountUp value={m.v} className="text-2xl font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }} /><p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{m.l}</p></div>
             ))}
           </div>
           <p className="mt-5 text-center text-sm font-medium" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{port.subtitle}</p>
@@ -4627,7 +4683,11 @@ function PortfolioCasePreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="PortfolioCasePreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="PortfolioCasePreview" />
+    </div>
+  );
 }
 
 function PortfolioAboutPreview({ variantId }: { variantId: string }) {
@@ -4636,29 +4696,29 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
   const stats = PREVIEW_CONTENT.stats.items.length ? PREVIEW_CONTENT.stats.items.map((s) => ({ v: s.value, l: s.label })) : [{ v: "8", l: "年经验" }, { v: "120+", l: "项目" }, { v: "23", l: "奖项" }, { v: "40+", l: "客户" }];
   if (variantId === "pabout_manifesto")
     return (
-      <div className="px-6 py-8" style={{ background: "var(--background)" }}>
+      <div className="pv-stagger px-6 py-8" style={{ background: "var(--background)" }}>
         <div className="mx-auto max-w-lg">
           <SectionBadge>关于</SectionBadge>
           <h3 className="mt-3 text-xl font-black leading-[1.15] tracking-tight sm:text-2xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{about.story}</h3>
           <div className="mt-5 flex gap-6 border-t pt-3" style={{ borderColor: "var(--border)" }}>
-            {svcs.map((s) => <span key={s} className="text-[10px] font-medium">{s}</span>)}
+            {svcs.map((s, i) => <span key={s} className="pv-in text-[10px] font-medium" style={{ ["--i" as string]: i }}>{s}</span>)}
           </div>
         </div>
       </div>
     );
   if (variantId === "pabout_stats")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto grid max-w-lg grid-cols-4 gap-3 border-y py-5" style={{ borderColor: "var(--border)" }}>
-          {stats.slice(0, 4).map((s) => (
-            <div key={s.l} className="text-center"><CountUp value={s.v} className="text-xl font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }} /><p className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p></div>
+          {stats.slice(0, 4).map((s, i) => (
+            <div key={s.l} className="pv-in text-center" style={{ ["--i" as string]: i }}><CountUp value={s.v} className="text-xl font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }} /><p className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p></div>
           ))}
         </div>
       </div>
     );
   if (variantId === "pabout_timeline")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-md">
           <SectionBadge>关于</SectionBadge>
           <p className="mt-1.5 text-sm font-bold">{about.title}</p>
@@ -4667,8 +4727,8 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
               { y: "2018", t: "工作室成立" },
               { y: "2021", t: "首个国际客户" },
               { y: (new Date().getFullYear()), t: about.team.length ? (about.team.length + " 位伙伴同行") : "40+ 品牌同行" },
-            ].map((m) => (
-              <div key={m.y} className="flex gap-4 border-b py-3 last:border-0" style={{ borderColor: "var(--border)" }}>
+            ].map((m, i) => (
+              <div key={m.y} className="pv-in flex gap-4 border-b py-3 last:border-0 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
                 <span className="text-base font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{m.y}</span>
                 <p className="text-xs font-medium">{m.t}</p>
               </div>
@@ -4677,7 +4737,11 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="PortfolioAboutPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="PortfolioAboutPreview" />
+    </div>
+  );
 }
 
 /* ───────── Portfolio Ring ───────── */
@@ -4818,9 +4882,13 @@ function RingPreviewImpl({ preset }: { preset: "circle" | "alt" }) {
 }
 
 function PortfolioRingPreview({ variantId }: { variantId: string }) {
-  if (variantId === "pring_circle") return <RingPreviewImpl preset="circle" />;
-  if (variantId === "pring_alt") return <RingPreviewImpl preset="alt" />;
-  return <PreviewFallback title="PortfolioRingPreview" />;
+  if (variantId === "pring_circle") return <div className="pv-stagger"><RingPreviewImpl preset="circle" /></div>;
+  if (variantId === "pring_alt") return <div className="pv-stagger"><RingPreviewImpl preset="alt" /></div>;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="PortfolioRingPreview" />
+    </div>
+  );
 }
 
 /* ───────── Blog ───────── */
@@ -4831,10 +4899,10 @@ function BlogListPreview({ variantId }: { variantId: string }) {
     : [{ t: "设计系统加速交付", c: "设计", d: "2026-08-10", i: 1 }, { t: "动效的克制之美", c: "动效", d: "2026-07-28", i: 2 }, { t: "AI 时代界面叙事", c: "趋势", d: "2026-07-12", i: 3 }];
   if (variantId === "blist_card")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto grid max-w-lg gap-3 sm:grid-cols-3">
-          {posts.slice(0, 3).map((p) => (
-            <div key={p.t} className="rounded-lg border p-1.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {posts.slice(0, 3).map((p, i) => (
+            <div key={p.t} className="pv-in pv-lift pv-spotlight rounded-lg border p-1.5 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <img src={ph("blog", 10 + p.i, 600)} alt={p.t} loading="lazy" className="aspect-[16/10] w-full rounded-md object-cover" />
               <div className="p-1.5">
                 <span className="rounded-full px-1.5 py-0.5 text-[7px] font-medium" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>{p.c}</span>
@@ -4847,12 +4915,12 @@ function BlogListPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "blist_row")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-md">
           <SectionHead badge="博客" title={blog.title} center />
           <div className="mt-3">
             {posts.map((p, idx) => (
-              <div key={p.t} className="flex items-baseline gap-4 border-b py-3" style={{ borderColor: "var(--border)" }}>
+              <div key={p.t} className="pv-in flex items-baseline gap-4 border-b py-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: idx, borderColor: "var(--border)" }}>
                 <span className="text-[9px]" style={{ color: "var(--primary)" }}>{"0" + (idx + 1)}</span>
                 <p className="flex-1 text-xs font-medium" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{p.t}</p>
                 <span className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{p.c}</span>
@@ -4865,15 +4933,15 @@ function BlogListPreview({ variantId }: { variantId: string }) {
   if (variantId === "blist_feature")
     return (
       <div className="px-6 py-7">
-        <div className="mx-auto grid max-w-lg gap-4 sm:grid-cols-[1.5fr_1fr]">
-          <div>
+        <div className="pv-stagger mx-auto grid max-w-lg gap-4 sm:grid-cols-[1.5fr_1fr]">
+          <div className="pv-in" style={{ ["--i" as string]: 0 }}>
             <img src={ph("blog", 11, 1000)} alt={posts[0]?.t || "精选文章"} className="aspect-[5/3] w-full rounded-lg object-cover" />
             <p className="mt-1.5 text-xs font-bold leading-snug">{posts[0]?.t}</p>
             <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{posts[0]?.d} · 6 分钟</p>
           </div>
-          <div className="flex flex-col justify-center">
-            {posts.slice(1).map((t) => (
-              <div key={t.t} className="border-b py-2.5 last:border-0" style={{ borderColor: "var(--border)" }}>
+          <div className="pv-stagger flex flex-col justify-center">
+            {posts.slice(1).map((t, i) => (
+              <div key={t.t} className="pv-in border-b py-2.5 last:border-0 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
                 <p className="text-[10px] font-medium">{t.t}</p>
               </div>
             ))}
@@ -4881,7 +4949,11 @@ function BlogListPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="BlogListPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="BlogListPreview" />
+    </div>
+  );
 }
 
 function BlogPostPreview({ variantId }: { variantId: string }) {
@@ -4893,23 +4965,23 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
   const date = first?.date || "2026-08-10";
   if (variantId === "bpost_article")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-md">
           <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{tag} · {date}</p>
           <h3 className="mt-1.5 text-lg font-bold leading-tight">{title}</h3>
           <div className="mt-3 space-y-3 text-[10px] leading-relaxed">
             <p>{body}</p>
-            <blockquote className="border-l-2 pl-3 italic" style={{ borderColor: "var(--primary)", color: "var(--muted-foreground)" }}>"一致性的价值，在于它让用户不用每次重新学习。"</blockquote>
+            <blockquote className="pv-in border-l-2 pl-3 italic" style={{ ["--i" as string]: 0, borderColor: "var(--primary)", color: "var(--muted-foreground)" }}>"一致性的价值，在于它让用户不用每次重新学习。"</blockquote>
             <pre className="overflow-x-auto rounded-md p-2.5 text-[9px]" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>export const tokens = {"{ radius: \"12px\" }"};</pre>
-            <img src={ph("blog", 12, 900)} alt={title} className="w-full rounded-lg" />
+            <img src={ph("blog", 12, 900)} alt={title} className="pv-in w-full rounded-lg" style={{ ["--i" as string]: 1 }} />
           </div>
         </div>
       </div>
     );
   if (variantId === "bpost_sidebar")
     return (
-      <div className="mx-auto grid max-w-lg gap-5 px-6 py-7 sm:grid-cols-[1fr_120px]">
-        <div className="min-w-0">
+      <div className="pv-stagger mx-auto grid max-w-lg gap-5 px-6 py-7 sm:grid-cols-[1fr_120px]">
+        <div className="pv-in min-w-0" style={{ ["--i" as string]: 0 }}>
           <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{tag} · {date}</p>
           <h3 className="mt-1 text-lg font-bold leading-tight">{title}</h3>
           <div className="mt-2.5 space-y-2 text-[10px] leading-relaxed">
@@ -4920,11 +4992,11 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
             <p>会用 AI 的设计师会取代不会用 AI 的。</p>
           </div>
         </div>
-        <div className="hidden sm:block">
+        <div className="pv-stagger hidden sm:block">
           <div className="sticky top-0 rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
             <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>目录</p>
             <ul className="mt-2 space-y-1.5 text-[9px]">
-              {["引言", "为什么", "怎么做", "总结"].map((t) => <li key={t} style={{ color: "var(--muted-foreground)" }}>{t}</li>)}
+              {["引言", "为什么", "怎么做", "总结"].map((t, i) => <li key={t} className="pv-in" style={{ ["--i" as string]: i, color: "var(--muted-foreground)" }}>{t}</li>)}
             </ul>
             <p className="mt-3 border-t pt-2 text-[9px] font-semibold" style={{ borderColor: "var(--border)" }}>{PREVIEW_CONTENT.about.team[0]?.name || "作者"}</p>
             <p className="text-[7px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.brand} 团队</p>
@@ -4934,19 +5006,23 @@ function BlogPostPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "bpost_minimal")
     return (
-      <div className="px-6 py-8 text-center" style={{ background: "var(--background)" }}>
+      <div className="pv-stagger px-6 py-8 text-center" style={{ background: "var(--background)" }}>
         <div className="mx-auto max-w-xs">
           <p className="text-[8px] uppercase tracking-[0.3em]" style={{ color: "var(--muted-foreground)" }}>{tag}</p>
-          <h3 className="mt-2 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{title}</h3>
+          <h3 className="pv-in mt-2 text-xl font-black tracking-tight" style={{ ["--i" as string]: 0, fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{title}</h3>
           <p className="mt-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.brand} · {date}</p>
-          <div className="mt-4 space-y-3 text-left text-[11px] leading-[1.8]" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>
+          <div className="pv-in mt-4 space-y-3 text-left text-[11px] leading-[1.8]" style={{ ["--i" as string]: 1, fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>
             <p>{body}</p>
             <p>克制不是不做，而是知道什么时候不做。</p>
           </div>
         </div>
       </div>
     );
-  return <PreviewFallback title="BlogPostPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="BlogPostPreview" />
+    </div>
+  );
 }
 
 function BlogTagsPreview({ variantId }: { variantId: string }) {
@@ -4955,13 +5031,13 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
   const tagsData = tags.map((t, i) => ({ t, n: Math.max(4, 14 - i * 4), active: i === 0 }));
   if (variantId === "btags_pills")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-md">
           <SectionBadge>博客</SectionBadge>
           <p className="mt-1.5 text-sm font-bold">{blog.subtitle}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {tagsData.map((t) => (
-              <span key={t.t} className={"rounded-full px-3 py-1 text-[9px] " + (t.active ? "text-[var(--on-primary)]" : "border")} style={t.active ? { background: "var(--primary)" } : { borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{t.t} {t.n}</span>
+          <div className="pv-stagger mt-3 flex flex-wrap gap-2">
+            {tagsData.map((t, i) => (
+              <span key={t.t} className={"pv-in pv-border-flow rounded-full px-3 py-1 text-[9px] " + (t.active ? "text-[var(--on-primary)]" : "border")} style={t.active ? { background: "var(--primary)", ["--i" as string]: i } : { borderColor: "var(--border)", color: "var(--muted-foreground)", ["--i" as string]: i }}>{t.t} {t.n}</span>
             ))}
           </div>
         </div>
@@ -4969,10 +5045,10 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "btags_cat")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto grid max-w-md gap-2.5 sm:grid-cols-3">
-          {tagsData.slice(0, 3).map((c) => (
-            <div key={c.t} className="rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          {tagsData.slice(0, 3).map((c, i) => (
+            <div key={c.t} className="pv-in pv-lift pv-spotlight rounded-lg border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="text-[10px] font-semibold">{c.t}</p>
               <p className="mt-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{blog.subtitle}</p>
               <p className="mt-1.5 text-[8px] font-medium" style={{ color: "var(--primary)" }}>{c.n} 篇 →</p>
@@ -4983,12 +5059,12 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "btags_sidebar")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="w-44 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <p className="px-1 text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>分类</p>
-          <div className="mt-2 space-y-1">
-            {[{ t: blog.title, n: tags.length * 12, active: true }, ...tagsData].map((c) => (
-              <div key={c.t} className="flex items-center justify-between rounded px-2 py-1 text-[9px]" style={c.active ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}>
+          <div className="pv-stagger mt-2 space-y-1">
+            {[{ t: blog.title, n: tags.length * 12, active: true }, ...tagsData].map((c, i) => (
+              <div key={c.t} className="pv-in flex items-center justify-between rounded px-2 py-1 text-[9px] transition-transform hover:-translate-y-1" style={c.active ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)", ["--i" as string]: i } : { color: "var(--muted-foreground)", ["--i" as string]: i }}>
                 {c.t}<span>{c.n}</span>
               </div>
             ))}
@@ -4996,7 +5072,11 @@ function BlogTagsPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="BlogTagsPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="BlogTagsPreview" />
+    </div>
+  );
 }
 
 /* ───────── Product ───────── */
@@ -5005,9 +5085,9 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
     const thumbs = [1, 2, 3, 4];
     const [active, setActive] = useState(0);
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-xs">
-          <div className="group relative overflow-hidden rounded-xl">
+          <div className="pv-in group relative overflow-hidden rounded-xl" style={{ ["--i" as string]: 0 }}>
             <span className="absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>新品</span>
             <img
               key={active}
@@ -5018,13 +5098,14 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
             />
           </div>
           <div className="mt-2 grid grid-cols-4 gap-2">
-            {thumbs.map((i) => (
+            {thumbs.map((i, idx) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setActive(i)}
                 aria-label={"缩略图 " + i}
-                className={"overflow-hidden rounded-md transition " + (active === i ? "ring-2 ring-[var(--primary)]" : "opacity-60 hover:opacity-100")}
+                className={"pv-in overflow-hidden rounded-md transition " + (active === i ? "ring-2 ring-[var(--primary)]" : "opacity-60 hover:opacity-100")}
+                style={{ ["--i" as string]: idx }}
               >
                 <img src={ph("thumb", 18 + i, 400)} alt={"缩略图 " + i} className="aspect-square w-full object-cover transition-transform duration-300 hover:scale-110" />
               </button>
@@ -5037,15 +5118,19 @@ function ProductGalleryPreview({ variantId }: { variantId: string }) {
   }
   if (variantId === "pgallery_split")
     return (
-      <div className="grid gap-3 px-6 py-7 sm:grid-cols-[1.1fr_1fr]">
-        <img src={ph("product", 22, 700)} alt="商品图 A" className="aspect-[3/4] w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
-        <div className="grid gap-3">
-          <img src={ph("product", 23, 700)} alt="商品图 B" className="w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
-          <img src={ph("product", 24, 700)} alt="商品图 C" className="w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" />
+      <div className="pv-stagger grid gap-3 px-6 py-7 sm:grid-cols-[1.1fr_1fr]">
+        <img src={ph("product", 22, 700)} alt="商品图 A" className="pv-in aspect-[3/4] w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" style={{ ["--i" as string]: 0 }} />
+        <div className="pv-stagger grid gap-3">
+          <img src={ph("product", 23, 700)} alt="商品图 B" className="pv-in w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" style={{ ["--i" as string]: 0 }} />
+          <img src={ph("product", 24, 700)} alt="商品图 C" className="pv-in w-full rounded-xl object-cover transition-transform duration-500 hover:scale-[1.03]" style={{ ["--i" as string]: 1 }} />
         </div>
       </div>
     );
-  return <PreviewFallback title="ProductGalleryPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="ProductGalleryPreview" />
+    </div>
+  );
 }
 
 function ProductInfoPreview({ variantId }: { variantId: string }) {
@@ -5055,7 +5140,7 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
   const pdesc = prod?.desc || "";
   if (variantId === "pinfo_standard")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-sm">
           <SectionBadge>商品</SectionBadge>
           <h3 className="mt-1.5 text-base font-bold">{pname}</h3>
@@ -5063,41 +5148,45 @@ function ProductInfoPreview({ variantId }: { variantId: string }) {
           <p className="mt-3 text-[10px] font-medium">颜色</p>
           <div className="mt-1.5 flex gap-1.5">
             {["var(--primary)", "var(--secondary)", "var(--foreground)"].map((c, i) => (
-              <span key={i} className={"size-5 rounded-full border-2 " + (i === 0 ? "" : "opacity-70")} style={{ background: c, borderColor: i === 0 ? "var(--primary)" : "transparent" }} />
+              <span key={i} className={"pv-in size-5 rounded-full border-2 " + (i === 0 ? "" : "opacity-70")} style={{ background: c, borderColor: i === 0 ? "var(--primary)" : "transparent", ["--i" as string]: i }} />
             ))}
           </div>
           <p className="mt-3 text-[10px] font-medium">尺码</p>
           <div className="mt-1.5 flex gap-1.5">
             {["S", "M", "L"].map((s, i) => (
-              <span key={s} className={"rounded border px-2 py-0.5 text-[9px] " + (i === 1 ? "text-[var(--on-primary)]" : "")} style={i === 1 ? { background: "var(--primary)", borderColor: "var(--primary)" } : { borderColor: "var(--border)" }}>{s}</span>
+              <span key={s} className={"pv-in pv-border-flow rounded border px-2 py-0.5 text-[9px] " + (i === 1 ? "text-[var(--on-primary)]" : "")} style={i === 1 ? { background: "var(--primary)", borderColor: "var(--primary)", ["--i" as string]: i } : { borderColor: "var(--border)", ["--i" as string]: i }}>{s}</span>
             ))}
           </div>
-          <div className="mt-4 flex gap-2">
-            <span className="flex-1 rounded-md py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>加入购物车</span>
-            <span className="flex-1 rounded-md border py-2 text-center text-[10px] font-medium" style={{ borderColor: "var(--border)" }}>立即购买</span>
+          <div className="pv-stagger mt-4 flex gap-2">
+            <span className="pv-in pv-border-flow flex-1 rounded-md py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", ["--i" as string]: 0 }}>加入购物车</span>
+            <span className="pv-in flex-1 rounded-md border py-2 text-center text-[10px] font-medium transition-transform hover:scale-105" style={{ borderColor: "var(--border)", ["--i" as string]: 1 }}>立即购买</span>
           </div>
         </div>
       </div>
     );
   if (variantId === "pinfo_editorial")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-sm px-1">
           <SectionBadge>商品</SectionBadge>
           <h3 className="mt-2 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{pname}</h3>
           <p className="mt-1 text-sm font-medium">{pprice}</p>
           <div className="mt-3 border-t" style={{ borderColor: "var(--border)" }}>
-            {[{ k: "材质", v: pdesc || "再生尼龙 78%" }, { k: "产地", v: "葡萄牙" }, { k: "工艺", v: "3 年质保" }].map((s) => (
-              <div key={s.k} className="flex justify-between border-b py-2 text-[10px]" style={{ borderColor: "var(--border)" }}>
+            {[{ k: "材质", v: pdesc || "再生尼龙 78%" }, { k: "产地", v: "葡萄牙" }, { k: "工艺", v: "3 年质保" }].map((s, i) => (
+              <div key={s.k} className="pv-in flex justify-between border-b py-2 text-[10px] transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
                 <span style={{ color: "var(--muted-foreground)" }}>{s.k}</span><span className="font-medium">{s.v}</span>
               </div>
             ))}
           </div>
-          <span className="mt-4 block rounded-full py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>加入购物车</span>
+          <span className="pv-in pv-border-flow mt-4 block rounded-full py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", ["--i" as string]: 0 }}>加入购物车</span>
         </div>
       </div>
     );
-  return <PreviewFallback title="ProductInfoPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="ProductInfoPreview" />
+    </div>
+  );
 }
 
 function ProductGridPreview({ variantId }: { variantId: string }) {
@@ -5106,10 +5195,10 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
     : [{ t: "经典款", d: "", p: "¥299", img: ph("product", 26, 600) }];
   if (variantId === "pgrid_card")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto grid max-w-md grid-cols-3 gap-3">
-          {products.slice(0, 4).map((p) => (
-            <div key={p.t} className="group">
+          {products.slice(0, 4).map((p, i) => (
+            <div key={p.t} className="pv-in pv-lift pv-spotlight group transition-transform hover:scale-105" style={{ ["--i" as string]: i }}>
               <img src={p.img} alt={p.t} loading="lazy" className="aspect-[4/5] w-full rounded-lg object-cover" />
               <p className="mt-1.5 truncate text-[9px] font-medium">{p.t}</p>
               <p className="text-[9px] font-semibold" style={{ color: "var(--primary)" }}>{p.p}</p>
@@ -5120,10 +5209,10 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pgrid_hlist")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-md">
-          {products.slice(0, 3).map((p) => (
-            <div key={p.t} className="flex items-center gap-3 border-b py-2.5 last:border-0" style={{ borderColor: "var(--border)" }}>
+          {products.slice(0, 3).map((p, i) => (
+            <div key={p.t} className="pv-in flex items-center gap-3 border-b py-2.5 last:border-0 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <img src={p.img} alt={p.t} loading="lazy" className="h-12 w-16 rounded-md object-cover" />
               <div className="flex-1"><p className="text-[10px] font-medium">{p.t}</p><p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{p.d}</p></div>
               <p className="text-[10px] font-semibold">{p.p}</p>
@@ -5132,7 +5221,11 @@ function ProductGridPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="ProductGridPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="ProductGridPreview" />
+    </div>
+  );
 }
 
 function ProductCartPreview({ variantId }: { variantId: string }) {
@@ -5142,10 +5235,10 @@ function ProductCartPreview({ variantId }: { variantId: string }) {
   const subtotal = goods.reduce((s, g) => s + g.p * g.q, 0);
   if (variantId === "pcart_list")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-md overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          {goods.map((it) => (
-            <div key={it.t} className="flex items-center gap-3 border-b px-3 py-2.5 last:border-0" style={{ borderColor: "var(--border)" }}>
+          {goods.map((it, i) => (
+            <div key={it.t} className="pv-in flex items-center gap-3 border-b px-3 py-2.5 last:border-0 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <img src={it.img} alt={it.t} className="h-10 w-9 rounded object-cover" />
               <span className="min-w-0 flex-1 truncate text-[10px] font-medium">{it.t}</span>
               <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>¥{it.p} × {it.q}</span>
@@ -5158,21 +5251,25 @@ function ProductCartPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcart_summary")
     return (
-      <div className="px-6 py-7">
+      <div className="pv-stagger px-6 py-7">
         <div className="mx-auto max-w-xs rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
           <SectionBadge>购物车</SectionBadge>
           <p className="mt-1.5 text-xs font-bold">订单摘要</p>
           <div className="mt-2.5 space-y-1.5 text-[10px]">
-            {[{ k: "小计", v: "¥" + subtotal }, { k: "运费", v: "免运费" }, { k: "优惠码", v: "-¥" + Math.round(subtotal * 0.1) }].map((r) => (
-              <div key={r.k} className="flex justify-between"><span style={{ color: "var(--muted-foreground)" }}>{r.k}</span><span className={r.v.startsWith("-") ? "text-green-600" : "font-medium"}>{r.v}</span></div>
+            {[{ k: "小计", v: "¥" + subtotal }, { k: "运费", v: "免运费" }, { k: "优惠码", v: "-¥" + Math.round(subtotal * 0.1) }].map((r, i) => (
+              <div key={r.k} className="pv-in flex justify-between" style={{ ["--i" as string]: i }}><span style={{ color: "var(--muted-foreground)" }}>{r.k}</span><span className={r.v.startsWith("-") ? "text-green-600" : "font-medium"}>{r.v}</span></div>
             ))}
-            <div className="flex justify-between border-t pt-2 text-xs" style={{ borderColor: "var(--border)" }}><b>合计</b><b>¥{Math.round(subtotal * 0.9)}</b></div>
+            <div className="pv-in flex justify-between border-t pt-2 text-xs" style={{ ["--i" as string]: 3, borderColor: "var(--border)" }}><b>合计</b><b>¥{Math.round(subtotal * 0.9)}</b></div>
           </div>
-          <span className="mt-3 block rounded-md py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>去结算</span>
+          <span className="pv-in pv-border-flow mt-3 block rounded-md py-2 text-center text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)", ["--i" as string]: 4 }}>去结算</span>
         </div>
       </div>
     );
-  return <PreviewFallback title="ProductCartPreview" />;
+  return (
+    <div className="pv-stagger">
+      <PreviewFallback title="ProductCartPreview" />
+    </div>
+  );
 }
 
 /* ───────── About ───────── */
@@ -5182,14 +5279,14 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
   const storyT = about.story || "我们相信，好产品源于好问题。";
   if (variantId === "astory_manifesto")
     return (
-      <div className="px-6 py-10 text-center" style={{ background: "var(--background)" }}>
-        <div className="mx-auto max-w-md">
+      <div className="pv-stagger px-6 py-10 text-center" style={{ background: "var(--background)" }}>
+        <div className="pv-in mx-auto max-w-md" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>关于</SectionBadge>
           <h3 className="mt-2 text-2xl font-black leading-[1.15] tracking-tight sm:text-3xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{storyT}</h3>
           <p className="mx-auto mt-3 max-w-xs text-[10px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{about.subtitle} · {PREVIEW_CONTENT.brand} 陪伴 {about.team.length || 120} 位伙伴。</p>
-          <div className="mx-auto mt-6 flex max-w-xs justify-between border-t pt-4" style={{ borderColor: "var(--border)" }}>
-            {[{ v: "2016", l: "成立" }, { v: "120", l: "伙伴" }, { v: "30+", l: "国家" }].map((s) => (
-              <div key={s.l}><p className="text-lg font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{s.v}</p><p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p></div>
+          <div className="pv-stagger mx-auto mt-6 flex max-w-xs justify-between border-t pt-4" style={{ borderColor: "var(--border)" }}>
+            {[{ v: "2016", l: "成立" }, { v: "120", l: "伙伴" }, { v: "30+", l: "国家" }].map((s, i) => (
+              <div key={s.l} className="pv-in pv-lift pv-spotlight" style={{ ["--i" as string]: i }}><p className="text-lg font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{s.v}</p><p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{s.l}</p></div>
             ))}
           </div>
         </div>
@@ -5197,8 +5294,8 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "astory_split")
     return (
-      <div className="grid items-start gap-5 px-6 py-8 sm:grid-cols-2">
-        <div className="space-y-8">
+      <div className="pv-stagger grid items-start gap-5 px-6 py-8 sm:grid-cols-2">
+        <div className="pv-in space-y-8" style={{ ["--i" as string]: 0 }}>
           <div className="max-w-xs">
             <SectionBadge>关于</SectionBadge>
             <h3 className="mt-2 text-xl font-black leading-tight tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{about.story}</h3>
@@ -5210,7 +5307,7 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
             <p>今天，{PREVIEW_CONTENT.brand} 服务着全球 30 多个国家的用户。</p>
           </div>
         </div>
-        <div className="relative">
+        <div className="pv-in relative" style={{ ["--i" as string]: 1 }}>
           <img src={ph("about", 28, 800)} alt="工作室" className="w-full rounded-xl object-cover sm:sticky sm:top-0" />
           <p className="mt-1.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>图：2016 年的第一间办公室 · 滚动时图片吸顶</p>
         </div>
@@ -5218,8 +5315,8 @@ function AboutStoryPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "astory_quote")
     return (
-      <div className="px-6 py-12 text-center" style={{ background: "var(--surface)" }}>
-        <div className="mx-auto max-w-md">
+      <div className="pv-stagger px-6 py-12 text-center" style={{ background: "var(--surface)" }}>
+        <div className="pv-in mx-auto max-w-md" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>关于</SectionBadge>
           <p className="mt-2 text-lg font-medium leading-relaxed sm:text-xl" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>"{about.subtitle}"</p>
           <p className="mt-3 text-[10px] font-semibold">{founder?.name || "创始人"} · {PREVIEW_CONTENT.brand} 创始人</p>
@@ -5236,10 +5333,10 @@ function AboutTeamPreview({ variantId }: { variantId: string }) {
     : [{ n: "林一", r: "联合创始人", img: ph("avatar", 29, 400) }, { n: "王越", r: "设计负责人", img: ph("avatar", 30, 400) }];
   if (variantId === "ateam_grid")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto grid max-w-sm grid-cols-3 gap-3">
-          {team.slice(0, 4).map((m) => (
-            <div key={m.n} className="text-center">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto grid max-w-sm grid-cols-3 gap-3">
+          {team.slice(0, 4).map((m, i) => (
+            <div key={m.n} className="pv-in pv-lift pv-spotlight text-center" style={{ ["--i" as string]: i }}>
               <img src={m.img} alt={m.n} loading="lazy" className="aspect-[4/5] w-full rounded-lg object-cover" />
               <p className="mt-1.5 text-[9px] font-semibold">{m.n}</p>
               <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{m.r}</p>
@@ -5250,10 +5347,10 @@ function AboutTeamPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "ateam_list")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-sm">
-          {team.slice(0, 3).map((m) => (
-            <div key={m.n} className="flex items-center gap-3 border-b py-2.5 last:border-0" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-sm">
+          {team.slice(0, 3).map((m, i) => (
+            <div key={m.n} className="pv-in pv-lift pv-spotlight flex items-center gap-3 border-b py-2.5 last:border-0" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <img src={m.img} alt={m.n} loading="lazy" className="size-8 rounded-full object-cover" />
               <div className="flex-1"><p className="text-[10px] font-medium">{m.n}</p><p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{m.r}</p></div>
               <span style={{ color: "var(--muted-foreground)" }}>↗</span>
@@ -5271,25 +5368,27 @@ function AboutValuesPreview({ variantId }: { variantId: string }) {
     : [{ n: "01", t: "用户至上", d: "每个决定回到真实场景" }, { n: "02", t: "干净简单", d: "克制而不复杂" }, { n: "03", t: "持续进化", d: "小步快跑" }];
   if (variantId === "avalue_grid")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="我们的价值观" title={PREVIEW_CONTENT.about.title || "我们坚守什么"} center />
-        <div className="mx-auto mt-5 grid max-w-lg gap-3 sm:grid-cols-3">
-          {vals.slice(0, 3).map((v) => (
-            <Card key={v.n}>
-              <span className="text-[9px] font-black" style={{ color: "var(--muted-foreground)" }}>{v.n}</span>
-              <h3 className="mt-2 text-xs font-semibold">{v.t}</h3>
-              <p className="mt-1 text-[9px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{v.d}</p>
-            </Card>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="我们的价值观" title={PREVIEW_CONTENT.about.title || "我们坚守什么"} center /></div>
+        <div className="pv-stagger mx-auto mt-5 grid max-w-lg gap-3 sm:grid-cols-3">
+          {vals.slice(0, 3).map((v, i) => (
+            <div key={v.n} className="pv-in pv-lift pv-spotlight" style={{ ["--i" as string]: i }}>
+              <Card>
+                <span className="text-[9px] font-black" style={{ color: "var(--muted-foreground)" }}>{v.n}</span>
+                <h3 className="mt-2 text-xs font-semibold">{v.t}</h3>
+                <p className="mt-1 text-[9px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{v.d}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "avalue_timeline")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-sm border-l pl-5" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-sm border-l pl-5" style={{ borderColor: "var(--border)" }}>
           {vals.slice(0, 3).map((v, i) => (
-            <div key={v.n} className="relative pb-4 last:pb-0">
+            <div key={v.n} className="pv-in pv-lift pv-spotlight relative pb-4 last:pb-0" style={{ ["--i" as string]: i }}>
               <span className="absolute -left-[22px] top-1 size-2 rounded-full border-2" style={{ background: "var(--background)", borderColor: "var(--primary)" }} />
               <p className="text-sm font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{PREVIEW_CONTENT.brand} {v.t}</p>
               <p className="text-[9px] font-medium">{v.d}</p>
@@ -5305,30 +5404,30 @@ function AboutValuesPreview({ variantId }: { variantId: string }) {
 function ContactFormPreview({ variantId }: { variantId: string }) {
   const contact = PREVIEW_CONTENT.contact;
   const fNames = contact.formFields.length ? contact.formFields : ["姓名", "邮箱", "主题"];
-  const field = (l: string, ph: string, full = false) => (
-    <div className={"flex flex-col gap-1 " + (full ? "sm:col-span-2" : "")}>
+  const field = (l: string, ph: string, full = false, i: number) => (
+    <div className={"pv-in pv-lift pv-spotlight flex flex-col gap-1 " + (full ? "sm:col-span-2" : "")} style={{ ["--i" as string]: i }}>
       <label className="text-[10px] font-medium">{l}</label>
       <span className="rounded-md border px-2.5 py-1.5 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>{ph}</span>
     </div>
   );
   if (variantId === "cform_standard")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-sm space-y-2.5">
-          <div className="grid grid-cols-2 gap-2.5">{field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"))}{field(fNames[1] || "邮箱", "you@example.com")}</div>
-          {fNames.length > 2 ? field(fNames[2], "请输入" + fNames[2], true) : null}
-          <div className="flex flex-col gap-1 sm:col-span-2">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-sm space-y-2.5">
+          <div className="grid grid-cols-2 gap-2.5">{field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"), false, 0)}{field(fNames[1] || "邮箱", "you@example.com", false, 1)}</div>
+          {fNames.length > 2 ? field(fNames[2], "请输入" + fNames[2], true, 2) : null}
+          <div className="pv-in flex flex-col gap-1 sm:col-span-2" style={{ ["--i" as string]: 2 }}>
             <label className="text-[10px] font-medium">留言</label>
             <span className="rounded-md border px-2.5 py-4 text-[10px]" style={{ borderColor: "var(--border)", background: "var(--background)", color: "var(--muted-foreground)" }}>简单描述你的需求…</span>
           </div>
-          <span className="inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{contact.formTitle}</span>
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>{contact.formTitle}</span>
         </div>
       </div>
     );
   if (variantId === "cform_split")
     return (
-      <div className="grid gap-5 px-6 py-7 sm:grid-cols-[1fr_1.4fr]">
-        <div>
+      <div className="pv-stagger grid gap-5 px-6 py-7 sm:grid-cols-[1fr_1.4fr]">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>联系</SectionBadge>
           <h3 className="mt-1.5 text-lg font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{contact.subtitle}</h3>
           <div className="mt-3 space-y-2">
@@ -5337,7 +5436,12 @@ function ContactFormPreview({ variantId }: { variantId: string }) {
             ))}
           </div>
         </div>
-        <div className="space-y-2">{field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"))}{field(fNames[1] || "邮箱", "you@example.com")}{field("留言", "简单描述你的需求…")}<span className="inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{contact.formTitle}</span></div>
+        <div className="pv-in pv-stagger space-y-2">
+          {field(fNames[0] || "姓名", "请填写" + (fNames[0] || "姓名"), false, 0)}
+          {field(fNames[1] || "邮箱", "you@example.com", false, 1)}
+          {field("留言", "简单描述你的需求…", false, 2)}
+          <span className="pv-in pv-lift pv-spotlight pv-border-flow inline-block rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>{contact.formTitle}</span>
+        </div>
       </div>
     );
   return <PreviewFallback title="ContactFormPreview" />;
@@ -5351,24 +5455,26 @@ function ContactInfoPreview({ variantId }: { variantId: string }) {
   const icons = [<Mail key="m" className="size-4" />, <Phone key="p" className="size-4" />, <MapPin key="mp" className="size-4" />];
   if (variantId === "cinfo_cards")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto grid max-w-md gap-3 sm:grid-cols-3">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto grid max-w-md gap-3 sm:grid-cols-3">
           {infos.slice(0, 3).map((c, i) => (
-            <Card key={c.label} className="text-center">
-              <SFIcon icon={icons[i % 3]} size="size-8" className="mx-auto" />
-              <p className="mt-2 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{c.label}</p>
-              <p className="mt-0.5 text-[10px] font-semibold">{c.value}</p>
-            </Card>
+            <div key={c.label} className="pv-in pv-lift pv-spotlight" style={{ ["--i" as string]: i }}>
+              <Card className="text-center">
+                <SFIcon icon={icons[i % 3]} size="size-8" className="mx-auto" />
+                <p className="mt-2 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{c.label}</p>
+                <p className="mt-0.5 text-[10px] font-semibold">{c.value}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "cinfo_editorial")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-sm">
-          {infos.map((r) => (
-            <div key={r.label} className="flex items-baseline justify-between border-b py-3" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-sm">
+          {infos.map((r, i) => (
+            <div key={r.label} className="pv-in pv-lift pv-spotlight flex items-baseline justify-between border-b py-3" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
               <span className="w-14 text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>{r.label}</span>
               <span className="text-[10px] font-medium">{r.value}</span>
             </div>
@@ -5386,15 +5492,15 @@ function ContactFaqPreview({ variantId }: { variantId: string }) {
     : [{ q: "多久能收到回复？", a: "通常 1 个工作日内回复。" }, { q: "支持远程合作吗？", a: "支持，60% 客户来自异地。" }];
   if (variantId === "cfaq_simple")
     return (
-      <div className="grid gap-5 px-6 py-7 sm:grid-cols-[1fr_1.6fr]">
-      <div>
+      <div className="pv-stagger grid gap-5 px-6 py-7 sm:grid-cols-[1fr_1.6fr]">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>常见问题</SectionBadge>
           <h3 className="mt-2 text-lg font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{faq.title}</h3>
           <p className="mt-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p>
       </div>
-      <div>
-        {items.map((f) => (
-          <div key={f.q} className="border-b" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-in pv-stagger" style={{ ["--i" as string]: 1 }}>
+        {items.map((f, i) => (
+          <div key={f.q} className="pv-in pv-lift pv-spotlight border-b" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
             <div className="flex items-center justify-between py-3">
               <span className="text-[10px] font-medium">{f.q}</span>
               <span className="text-xs" style={{ color: "var(--primary)" }}>+</span>
@@ -5412,34 +5518,34 @@ function Misc404Preview({ variantId }: { variantId: string }) {
   const nf = PREVIEW_CONTENT.misc.notFound;
   if (variantId === "e404_minimal")
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-        <p className="text-5xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>404</p>
-        <p className="mt-2 text-sm font-medium">{nf.title}</p>
-        <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{nf.subtitle}</p>
-        <span className="mt-4 rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{nf.button}</span>
+      <div className="pv-stagger flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+        <p className="pv-in text-5xl font-black tracking-tight" style={{ ["--i" as string]: 0, fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>404</p>
+        <p className="pv-in mt-2 text-sm font-medium" style={{ ["--i" as string]: 1 }}>{nf.title}</p>
+        <p className="pv-in mt-0.5 text-[10px]" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>{nf.subtitle}</p>
+        <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-4 rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>{nf.button}</span>
       </div>
     );
   if (variantId === "e404_creative")
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-          <SectionBadge>404</SectionBadge>
-          <h3 className="mt-2 text-xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{nf.title}</h3>
-        <div className="mt-3 flex w-full max-w-55 items-center gap-1.5 rounded-full border px-3 py-1.5" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+          <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>404</SectionBadge></div>
+          <h3 className="pv-in mt-2 text-xl font-black tracking-tight" style={{ ["--i" as string]: 1, fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{nf.title}</h3>
+        <div className="pv-in mt-3 flex w-full max-w-55 items-center gap-1.5 rounded-full border px-3 py-1.5" style={{ ["--i" as string]: 2, borderColor: "var(--border)" }}>
           <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>⌕</span>
           <span className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{PREVIEW_CONTENT.docs.searchTitle}</span>
         </div>
-        <div className="mt-2.5 flex gap-1.5">
-          {[PREVIEW_CONTENT.nav.blog, PREVIEW_CONTENT.nav.faq].map((l) => <span key={l} className="rounded-full border px-2.5 py-0.5 text-[9px]" style={{ borderColor: "var(--border)" }}>{l}</span>)}
+        <div className="pv-in mt-2.5 flex gap-1.5" style={{ ["--i" as string]: 3 }}>
+          {[PREVIEW_CONTENT.nav.blog, PREVIEW_CONTENT.nav.faq].map((l) => <span key={l} className="pv-lift pv-spotlight rounded-full border px-2.5 py-0.5 text-[9px]" style={{ borderColor: "var(--border)" }}>{l}</span>)}
         </div>
       </div>
     );
   // 兜底：未知变体也渲染完整 404 而非空白
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-      <p className="text-5xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>404</p>
-      <p className="mt-2 text-sm font-medium">{nf.title}</p>
-      <p className="mt-0.5 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{nf.subtitle}</p>
-      <span className="mt-4 rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{nf.button}</span>
+    <div className="pv-stagger flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+      <p className="pv-in text-5xl font-black tracking-tight" style={{ ["--i" as string]: 0, fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>404</p>
+      <p className="pv-in mt-2 text-sm font-medium" style={{ ["--i" as string]: 1 }}>{nf.title}</p>
+      <p className="pv-in mt-0.5 text-[10px]" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>{nf.subtitle}</p>
+      <span className="pv-in pv-lift pv-spotlight pv-border-flow mt-4 rounded-md px-4 py-1.5 text-[10px] font-medium text-[var(--on-primary)]" style={{ ["--i" as string]: 3, background: "var(--primary)" }}>{nf.button}</span>
     </div>
   );
 }
@@ -5448,40 +5554,40 @@ function MiscComingPreview({ variantId }: { variantId: string }) {
   const cm = PREVIEW_CONTENT.misc.coming;
   if (variantId === "coming_email")
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-        <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
-          <SectionBadge>即将上线</SectionBadge>
-          <h3 className="mt-2 text-2xl font-black tracking-tight" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{cm.title}<span style={{ fontStyle: "italic", color: "var(--primary)" }}>。</span></h3>
-        <div className="mt-3 flex w-full max-w-60 items-center gap-1.5 rounded-full border p-1 pl-3" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+        <span className="pv-in flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ ["--i" as string]: 0, background: "var(--primary)" }}>✦</span>
+          <div className="pv-in" style={{ ["--i" as string]: 1 }}><SectionBadge>即将上线</SectionBadge></div>
+          <h3 className="pv-in mt-2 text-2xl font-black tracking-tight" style={{ ["--i" as string]: 2, fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{cm.title}<span style={{ fontStyle: "italic", color: "var(--primary)" }}>。</span></h3>
+        <div className="pv-in mt-3 flex w-full max-w-60 items-center gap-1.5 rounded-full border p-1 pl-3" style={{ ["--i" as string]: 3, borderColor: "var(--border)" }}>
           <span className="min-w-0 flex-1 text-[9px]" style={{ color: "var(--muted-foreground)" }}>you@example.com</span>
-          <span className="shrink-0 rounded-full px-3 py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{cm.button}</span>
+          <span className="pv-lift pv-spotlight pv-border-flow shrink-0 rounded-full px-3 py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{cm.button}</span>
         </div>
       </div>
     );
   if (variantId === "coming_timer")
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-          <SectionBadge>即将上线</SectionBadge>
-          <h3 className="mt-2 text-xl font-black tracking-tight">{cm.title}</h3>
-        <div className="mt-3 flex gap-2">
-          {[{ v: "12", l: "天" }, { v: "08", l: "小时" }, { v: "36", l: "分钟" }].map((x) => (
-            <div key={x.l} className="w-12 rounded-lg border py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+          <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionBadge>即将上线</SectionBadge></div>
+          <h3 className="pv-in mt-2 text-xl font-black tracking-tight" style={{ ["--i" as string]: 1 }}>{cm.title}</h3>
+        <div className="pv-stagger mt-3 flex gap-2">
+          {[{ v: "12", l: "天" }, { v: "08", l: "小时" }, { v: "36", l: "分钟" }].map((x, i) => (
+            <div key={x.l} className="pv-in pv-lift pv-spotlight w-12 rounded-lg border py-2" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <p className="font-mono text-base font-bold">{x.v}</p>
               <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{x.l}</p>
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{cm.date}</p>
+        <p className="pv-in mt-3 text-[8px]" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>{cm.date}</p>
       </div>
     );
   // 兜底：未知变体也渲染完整预告页而非空白
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
-      <span className="flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>
-          <SectionBadge>即将上线</SectionBadge>
-          <h3 className="mt-2 text-2xl font-black tracking-tight">{cm.title}</h3>
-      <p className="mt-2 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{cm.subtitle}</p>
-      <p className="mt-4 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{cm.date}</p>
+    <div className="pv-stagger flex min-h-56 flex-col items-center justify-center px-6 text-center" style={{ background: "var(--background)" }}>
+      <span className="pv-in flex size-8 items-center justify-center rounded-lg text-xs font-black text-[var(--on-primary)]" style={{ ["--i" as string]: 0, background: "var(--primary)" }}>✦</span>
+          <div className="pv-in" style={{ ["--i" as string]: 1 }}><SectionBadge>即将上线</SectionBadge></div>
+          <h3 className="pv-in mt-2 text-2xl font-black tracking-tight" style={{ ["--i" as string]: 2 }}>{cm.title}</h3>
+      <p className="pv-in mt-2 text-[10px]" style={{ ["--i" as string]: 3, color: "var(--muted-foreground)" }}>{cm.subtitle}</p>
+      <p className="pv-in mt-4 text-[10px]" style={{ ["--i" as string]: 4, color: "var(--muted-foreground)" }}>{cm.date}</p>
     </div>
   );
 }
@@ -5499,18 +5605,18 @@ function DocsNavPreview({ variantId }: { variantId: string }) {
     : ["路由", "数据获取"];
   if (variantId === "dnav_sidebar")
     return (
-      <div className="px-6 py-7">
-        <div className="w-48 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div className="flex items-center justify-between">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger pv-in pv-lift pv-spotlight w-48 rounded-lg border p-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in flex items-center justify-between" style={{ ["--i" as string]: 0 }}>
             <span className="text-xs font-bold">{PREVIEW_CONTENT.brand}</span>
             <span className="rounded-full border px-1.5 py-0.5 text-[8px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>v2.0</span>
           </div>
-          {dNavGroups.map((grp) => (
-            <div key={grp.g} className="mt-3">
+          {dNavGroups.map((grp, gi) => (
+            <div key={grp.g} className="pv-in mt-3" style={{ ["--i" as string]: gi + 1 }}>
               <p className="px-1.5 text-[8px] font-medium uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>{grp.g}</p>
-              <div className="mt-1 space-y-0.5">
+              <div className="pv-stagger mt-1 space-y-0.5">
                 {grp.items.map((it, i) => (
-                  <p key={it} className="rounded px-1.5 py-1 text-[10px]" style={i === 0 && grp.g === "快速开始" ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{it}</p>
+                  <p key={it} className="pv-in rounded px-1.5 py-1 text-[10px] transition-colors hover:text-[var(--primary)]" style={{ ["--i" as string]: i, ...(i === 0 && grp.g === "快速开始" ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }) }}>{it}</p>
                 ))}
               </div>
             </div>
@@ -5520,18 +5626,18 @@ function DocsNavPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "dnav_tree")
     return (
-      <div className="px-6 py-7">
-        <div className="w-48 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <p className="px-1 text-xs font-bold">{PREVIEW_CONTENT.brand} Docs</p>
-          {dTreeGroups.map((grp) => (
-            <div key={grp.g} className="mt-1.5">
-              <p className="flex items-center justify-between rounded px-1.5 py-1 text-[10px] font-medium">
-                {grp.g}<span className={"text-[8px] " + (grp.open ? "rotate-90" : "")} style={{ color: "var(--muted-foreground)" }}>▸</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger pv-in pv-lift pv-spotlight w-48 rounded-lg border p-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
+          <p className="pv-in px-1 text-xs font-bold" style={{ ["--i" as string]: 0 }}>{PREVIEW_CONTENT.brand} Docs</p>
+          {dTreeGroups.map((grp, gi) => (
+            <div key={grp.g} className="pv-in mt-1.5" style={{ ["--i" as string]: gi + 1 }}>
+              <p className="flex items-center justify-between rounded px-1.5 py-1 text-[10px] font-medium transition-colors hover:text-[var(--primary)]">
+                {grp.g}<span className={"text-[8px] transition-transform " + (grp.open ? "rotate-90" : "")} style={{ color: "var(--muted-foreground)" }}>▸</span>
               </p>
               {grp.open && (
-                <div className="ml-1.5 space-y-0.5 border-l pl-2.5" style={{ borderColor: "var(--border)" }}>
+                <div className="pv-stagger ml-1.5 space-y-0.5 border-l pl-2.5" style={{ borderColor: "var(--border)" }}>
                   {dTreeItems.map((it, i) => (
-                    <p key={it} className="rounded px-1.5 py-0.5 text-[9px]" style={i === 0 ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }}>{it}</p>
+                    <p key={it} className="pv-in rounded px-1.5 py-0.5 text-[9px] transition-colors hover:text-[var(--primary)]" style={{ ["--i" as string]: i, ...(i === 0 ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" } : { color: "var(--muted-foreground)" }) }}>{it}</p>
                   ))}
                 </div>
               )}
@@ -5540,7 +5646,11 @@ function DocsNavPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="DocsNavPreview" />;
+  return (
+    <div className="pv-stagger">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><PreviewFallback title="DocsNavPreview" /></div>
+    </div>
+  );
 }
 
 function DocsContentPreview({ variantId }: { variantId: string }) {
@@ -5550,39 +5660,43 @@ function DocsContentPreview({ variantId }: { variantId: string }) {
   const dApiParams = PREVIEW_CONTENT.docs.sections.slice(1).map((s, i) => ({ n: s.title, t: i % 2 ? "string" : "enum", r: "否" }));
   if (variantId === "dcont_article")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-md">
-          <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{dSubtitle}</p>
-          <h3 className="mt-1 text-lg font-bold tracking-tight">{dTitle}</h3>
-          <p className="mt-1.5 text-[10px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{dSec0?.body}</p>
-          <h4 className="mt-4 text-sm font-bold">{dSec0?.title}</h4>
-          <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[10px]"><li>Node.js 18+</li><li>npm 或 pnpm</li></ul>
-          <div className="mt-3 rounded-md border-l-2 p-2.5 text-[10px]" style={{ borderColor: "var(--primary)", background: "color-mix(in srgb, var(--primary) 6%, transparent)" }}><b>提示：</b>Windows 用户请使用 Git Bash。</div>
-          <pre className="mt-3 overflow-x-auto rounded-md border p-3 text-[9px]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>npm create {PREVIEW_CONTENT.brand}@latest my-app</pre>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-md">
+          <p className="pv-in text-[8px]" style={{ ["--i" as string]: 0, color: "var(--muted-foreground)" }}>{dSubtitle}</p>
+          <h3 className="pv-in mt-1 text-lg font-bold tracking-tight" style={{ ["--i" as string]: 1 }}>{dTitle}</h3>
+          <p className="pv-in mt-1.5 text-[10px] leading-relaxed" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>{dSec0?.body}</p>
+          <h4 className="pv-in mt-4 text-sm font-bold" style={{ ["--i" as string]: 3 }}>{dSec0?.title}</h4>
+          <ul className="pv-in mt-1.5 list-disc space-y-1 pl-4 text-[10px]" style={{ ["--i" as string]: 4 }}><li>Node.js 18+</li><li>npm 或 pnpm</li></ul>
+          <div className="pv-in pv-lift pv-spotlight mt-3 rounded-md border-l-2 p-2.5 text-[10px] transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 5, borderColor: "var(--primary)", background: "color-mix(in srgb, var(--primary) 6%, transparent)" }}><b>提示：</b>Windows 用户请使用 Git Bash。</div>
+          <pre className="pv-in pv-lift mt-3 overflow-x-auto rounded-md border p-3 text-[9px] transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 6, borderColor: "var(--border)", background: "var(--surface)" }}>npm create {PREVIEW_CONTENT.brand}@latest my-app</pre>
         </div>
       </div>
     );
   if (variantId === "dcont_api")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-md">
-          <div className="flex items-center gap-2">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto max-w-md">
+          <div className="pv-in flex items-center gap-2" style={{ ["--i" as string]: 0 }}>
             <span className="rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white">POST</span>
             <code className="text-[10px] font-semibold">/v1/projects</code>
           </div>
-          <table className="mt-3 w-full overflow-hidden rounded-md border text-left text-[9px]" style={{ borderColor: "var(--border)" }}>
+          <table className="pv-in mt-3 w-full overflow-hidden rounded-md border text-left text-[9px]" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
             <thead><tr className="border-b" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}><th className="p-1.5 font-medium">名称</th><th className="p-1.5 font-medium">类型</th><th className="p-1.5 font-medium">必填</th></tr></thead>
-            <tbody>
-              {dApiParams.map((p) => (
-                <tr key={p.n} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}><td className="p-1.5 font-mono">{p.n}</td><td className="p-1.5">{p.t}</td><td className="p-1.5">{p.r}</td></tr>
+            <tbody className="pv-stagger">
+              {dApiParams.map((p, i) => (
+                <tr key={p.n} className="pv-in border-b transition-colors last:border-0 hover:text-[var(--primary)]" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}><td className="p-1.5 font-mono">{p.n}</td><td className="p-1.5">{p.t}</td><td className="p-1.5">{p.r}</td></tr>
               ))}
             </tbody>
           </table>
-          <pre className="mt-3 overflow-x-auto rounded-md border p-3 text-[9px]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>curl -X POST https://api.example.com/v1/projects</pre>
+          <pre className="pv-in pv-lift mt-3 overflow-x-auto rounded-md border p-3 text-[9px] transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 2, borderColor: "var(--border)", background: "var(--surface)" }}>curl -X POST https://api.example.com/v1/projects</pre>
         </div>
       </div>
     );
-  return <PreviewFallback title="DocsContentPreview" />;
+  return (
+    <div className="pv-stagger">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><PreviewFallback title="DocsContentPreview" /></div>
+    </div>
+  );
 }
 
 function DocsSearchPreview({ variantId }: { variantId: string }) {
@@ -5592,26 +5706,26 @@ function DocsSearchPreview({ variantId }: { variantId: string }) {
     : [{ t: "快速开始", p: "指南 / 快速开始" }, { t: "配置项", p: "参考 / 配置项" }];
   if (variantId === "dsearch_bar")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto flex max-w-60 items-center gap-2 rounded-md border px-3 py-2" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>⌕</span>
-          <span className="min-w-0 flex-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{dSearchTitle}</span>
-          <kbd className="rounded border px-1 py-0.5 text-[8px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌘K</kbd>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger pv-in pv-lift pv-spotlight mx-auto flex max-w-60 items-center gap-2 rounded-md border px-3 py-2 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
+          <span className="pv-in text-[10px]" style={{ ["--i" as string]: 0, color: "var(--muted-foreground)" }}>⌕</span>
+          <span className="pv-in min-w-0 flex-1 text-[10px]" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>{dSearchTitle}</span>
+          <kbd className="pv-in rounded border px-1 py-0.5 text-[8px]" style={{ ["--i" as string]: 2, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>⌘K</kbd>
         </div>
       </div>
     );
   if (variantId === "dsearch_panel")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-64 overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <div className="flex items-center gap-2 border-b px-3 py-2" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger pv-in pv-lift pv-spotlight mx-auto max-w-64 overflow-hidden rounded-lg border transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in flex items-center gap-2 border-b px-3 py-2" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
             <span style={{ color: "var(--muted-foreground)" }}>⌕</span>
             <span className="min-w-0 flex-1 text-[10px]">{dSearchTitle}</span>
             <kbd className="rounded border px-1 text-[8px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>Esc</kbd>
           </div>
-          <div className="p-1.5">
-            {dSearchResults.map((r) => (
-              <div key={r.t} className="rounded px-2.5 py-2 hover:bg-muted">
+          <div className="pv-stagger p-1.5">
+            {dSearchResults.map((r, i) => (
+              <div key={r.t} className="pv-in pv-lift pv-spotlight rounded px-2.5 py-2 transition-transform hover:-translate-y-1 hover:bg-muted" style={{ ["--i" as string]: i }}>
                 <p className="text-[10px] font-medium">{r.t}</p>
                 <p className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{r.p}</p>
               </div>
@@ -5620,7 +5734,11 @@ function DocsSearchPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="DocsSearchPreview" />;
+  return (
+    <div className="pv-stagger">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><PreviewFallback title="DocsSearchPreview" /></div>
+    </div>
+  );
 }
 
 /* ───────── AI Chat ───────── */
@@ -5630,15 +5748,15 @@ function ChatWindowPreview({ variantId }: { variantId: string }) {
     ? PREVIEW_CONTENT.chat.messages.map((m) => ({ from: m.role === "user" ? "user" : "ai", text: m.text }))
     : [{ from: "ai", text: PREVIEW_CONTENT.chat.title }, { from: "user", text: "你好" }];
   return (
-    <div className="px-6 py-7">
-      <div className="mx-auto flex max-w-sm flex-col gap-3 rounded-xl border p-4" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-stagger pv-lift pv-spotlight mx-auto flex max-w-sm flex-col gap-3 rounded-xl border p-4 transition-transform hover:-translate-y-1" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         {chatMessages.map((m, i) => (
-          <div key={i} className={"flex items-start gap-2 " + (m.from === "user" ? "flex-row-reverse" : "")}>
-            {m.from === "ai" && <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✦</span>}
-            <div className={"max-w-[78%] rounded-xl px-3 py-2 text-[10px] " + (m.from === "user" ? "text-[var(--on-primary)]" : "")} style={m.from === "user" ? { background: "var(--primary)" } : { background: "var(--background)" }}>{m.text}</div>
+          <div key={i} className={"pv-in flex items-start gap-2 " + (m.from === "user" ? "flex-row-reverse" : "")} style={{ ["--i" as string]: i }}>
+            {m.from === "ai" && <span className="flex size-6 shrink-0 items-center justify-center rounded-full text-[9px] text-[var(--on-primary)] transition-transform hover:scale-105" style={{ background: "var(--primary)" }}>✦</span>}
+            <div className={"pv-lift pv-spotlight max-w-[78%] rounded-xl px-3 py-2 text-[10px] transition-transform hover:scale-105 " + (m.from === "user" ? "text-[var(--on-primary)]" : "")} style={m.from === "user" ? { background: "var(--primary)" } : { background: "var(--background)" }}>{m.text}</div>
           </div>
         ))}
-        <p className="text-center text-[8px]" style={{ color: "var(--muted-foreground)" }}>AI 生成内容，请注意甄别</p>
+        <p className="pv-in text-center text-[8px]" style={{ ["--i" as string]: chatMessages.length, color: "var(--muted-foreground)" }}>AI 生成内容，请注意甄别</p>
       </div>
     </div>
   );
@@ -5648,30 +5766,40 @@ function ChatInputPreview({ variantId }: { variantId: string }) {
   const chatPlaceholder = PREVIEW_CONTENT.chat.placeholder;
   if (variantId === "cinput_bar")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto flex max-w-sm items-center gap-2 rounded-full border p-1.5 pl-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>＋</span>
-          <span className="min-w-0 flex-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{chatPlaceholder}</span>
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>↑</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger pv-in pv-lift pv-spotlight mx-auto flex max-w-sm items-center gap-2 rounded-full border p-1.5 pl-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
+          <span className="pv-in text-[10px]" style={{ ["--i" as string]: 0, color: "var(--muted-foreground)" }}>＋</span>
+          <span className="pv-in min-w-0 flex-1 text-[10px]" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>{chatPlaceholder}</span>
+          <span className="pv-border-flow inline-flex shrink-0 rounded-full transition-transform hover:scale-105">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>↑</span>
+          </span>
         </div>
       </div>
     );
   if (variantId === "cinput_panel")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-sm rounded-xl border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-          <p className="min-h-6 text-[10px]" style={{ color: "var(--muted-foreground)" }}>{chatPlaceholder}（Enter 发送）</p>
-          <div className="flex items-center justify-between border-t pt-2" style={{ borderColor: "var(--border)" }}>
-            <div className="flex gap-1.5">
-              <span className="rounded-full border px-2 py-0.5 text-[8px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>智能模型 v2</span>
-              <span className="rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>对话</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger pv-in pv-lift pv-spotlight mx-auto max-w-sm rounded-xl border p-3 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
+          <p className="pv-in min-h-6 text-[10px]" style={{ ["--i" as string]: 0, color: "var(--muted-foreground)" }}>{chatPlaceholder}（Enter 发送）</p>
+          <div className="pv-in flex items-center justify-between border-t pt-2" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
+            <div className="pv-stagger flex gap-1.5">
+              <span className="pv-in rounded-full border px-2 py-0.5 text-[8px] transition-transform hover:scale-105" style={{ ["--i" as string]: 0, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>智能模型 v2</span>
+              <span className="pv-border-flow inline-flex rounded-full transition-transform hover:scale-105">
+                <span className="rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>对话</span>
+              </span>
             </div>
-            <span className="flex size-7 items-center justify-center rounded-full text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>↑</span>
+            <span className="pv-border-flow inline-flex rounded-full transition-transform hover:scale-105">
+              <span className="flex size-7 items-center justify-center rounded-full text-[10px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>↑</span>
+            </span>
           </div>
         </div>
       </div>
     );
-  return <PreviewFallback title="ChatInputPreview" />;
+  return (
+    <div className="pv-stagger">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><PreviewFallback title="ChatInputPreview" /></div>
+    </div>
+  );
 }
 
 function ChatSuggestPreview({ variantId }: { variantId: string }) {
@@ -5679,20 +5807,20 @@ function ChatSuggestPreview({ variantId }: { variantId: string }) {
   const suggCards = sugg.slice(0, 4).map((c, i) => ({ icon: [<FileText className="size-4" key="a" />, <PenLine className="size-4" key="b" />, <BarChart3 className="size-4" key="c" />, <Code className="size-4" key="d" />][i], t: c, d: c }));
   if (variantId === "csugg_chips")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto flex max-w-sm flex-wrap justify-center gap-2">
-          {sugg.map((c) => (
-            <span key={c} className="rounded-full border px-3 py-1 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto flex max-w-sm flex-wrap justify-center gap-2">
+          {sugg.map((c, i) => (
+            <span key={c} className="pv-in pv-lift pv-spotlight rounded-full border px-3 py-1 text-[9px] transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", color: "var(--muted-foreground)" }}>{c}</span>
           ))}
         </div>
       </div>
     );
   if (variantId === "csugg_card")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto grid max-w-sm grid-cols-2 gap-2">
-          {suggCards.map((c) => (
-            <div key={c.t} className="flex items-start gap-2 rounded-lg border p-3" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto grid max-w-sm grid-cols-2 gap-2">
+          {suggCards.map((c, i) => (
+            <div key={c.t} className="pv-in pv-lift pv-spotlight flex items-start gap-2 rounded-lg border p-3 transition-transform hover:scale-105" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
               <span className="text-sm" style={{ color: "var(--primary)" }}>{c.icon}</span>
               <span><span className="block text-[10px] font-semibold">{c.t}</span><span className="text-[8px]" style={{ color: "var(--muted-foreground)" }}>{c.d}</span></span>
             </div>
@@ -5700,7 +5828,11 @@ function ChatSuggestPreview({ variantId }: { variantId: string }) {
         </div>
       </div>
     );
-  return <PreviewFallback title="ChatSuggestPreview" />;
+  return (
+    <div className="pv-stagger">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><PreviewFallback title="ChatSuggestPreview" /></div>
+    </div>
+  );
 }
 
 // ── 动效联动（步骤3）：与 motion-library 变体 id 对应的示意动画 ──
@@ -6016,8 +6148,10 @@ function ContactPreview({ variantId }: { variantId: string }) {
 function LoaderSpinnerPreview({ variantId }: { variantId: string }) {
   void variantId;
   return (
-    <div className="flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
-      <span className="size-8 animate-spin rounded-full border-[3px]" style={{ borderColor: "var(--surface)", borderTopColor: "var(--primary)" }} />
+    <div className="pv-stagger flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
+      <div className="pv-in flex items-center justify-center" style={{ ["--i" as string]: 0 }}>
+        <span className="size-8 animate-spin rounded-full border-[3px]" style={{ borderColor: "var(--surface)", borderTopColor: "var(--primary)" }} />
+      </div>
     </div>
   );
 }
@@ -6025,11 +6159,11 @@ function LoaderSpinnerPreview({ variantId }: { variantId: string }) {
 function LoaderProgressPreview({ variantId }: { variantId: string }) {
   void variantId;
   return (
-    <div className="flex h-40 flex-col items-center justify-center gap-4 px-10" style={{ background: "var(--background)" }}>
-      <div className="w-full max-w-xs overflow-hidden rounded-full" style={{ height: 4, background: "var(--surface)" }}>
-        <div className="h-full rounded-full" style={{ width: "62%", background: "var(--primary)" }} />
+    <div className="pv-stagger flex h-40 flex-col items-center justify-center gap-4 px-10" style={{ background: "var(--background)" }}>
+      <div className="pv-in w-full max-w-xs overflow-hidden rounded-full" style={{ ["--i" as string]: 0, height: 4, background: "var(--surface)" }}>
+        <div className="pv-bar-fill h-full rounded-full" style={{ width: "62%", background: "var(--primary)" }} />
       </div>
-      <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>正在上传 · 62%</p>
+      <p className="pv-in text-sm" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>正在上传 · 62%</p>
     </div>
   );
 }
@@ -6037,10 +6171,12 @@ function LoaderProgressPreview({ variantId }: { variantId: string }) {
 function LoaderCircularPreview({ variantId }: { variantId: string }) {
   void variantId;
   return (
-    <div className="flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
-      <div className="relative size-16 rounded-full" style={{ background: "conic-gradient(var(--primary) 0 75%, var(--surface) 75% 100%)" }}>
-        <div className="absolute inset-1.5 flex items-center justify-center rounded-full text-sm font-semibold" style={{ background: "var(--background)" }}>
-          75%
+    <div className="pv-stagger flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
+      <div className="pv-in flex items-center justify-center" style={{ ["--i" as string]: 0 }}>
+        <div className="pv-breathe relative size-16 rounded-full" style={{ background: "conic-gradient(var(--primary) 0 75%, var(--surface) 75% 100%)" }}>
+          <div className="absolute inset-1.5 flex items-center justify-center rounded-full text-sm font-semibold" style={{ background: "var(--background)" }}>
+            75%
+          </div>
         </div>
       </div>
     </div>
@@ -6050,10 +6186,10 @@ function LoaderCircularPreview({ variantId }: { variantId: string }) {
 function LoaderSkeletonPreview({ variantId }: { variantId: string }) {
   void variantId;
   return (
-    <div className="flex h-40 flex-col justify-center gap-3 px-10" style={{ background: "var(--background)" }}>
-      <div className="h-3 w-2/3 rounded" style={{ background: "var(--surface)" }} />
-      <div className="h-3 w-1/3 rounded" style={{ background: "var(--surface)" }} />
-      <div className="mt-2 h-20 rounded-xl" style={{ background: "var(--surface)" }} />
+    <div className="pv-stagger flex h-40 flex-col justify-center gap-3 px-10" style={{ background: "var(--background)" }}>
+      <div className="pv-in h-3 w-2/3 rounded" style={{ ["--i" as string]: 0, background: "var(--surface)" }} />
+      <div className="pv-in h-3 w-1/3 rounded" style={{ ["--i" as string]: 1, background: "var(--surface)" }} />
+      <div className="pv-in mt-2 h-20 rounded-xl" style={{ ["--i" as string]: 2, background: "var(--surface)" }} />
     </div>
   );
 }
@@ -6064,18 +6200,19 @@ function LoaderShimmerPreview({ variantId }: { variantId: string }) {
   return (
     <>
       <style>{"@keyframes " + k + '{0%{background-position:120% 0}100%{background-position:-120% 0}}'}</style>
-      <div className="flex h-40 flex-col justify-center gap-3 px-10" style={{ background: "var(--background)" }}>
+      <div className="pv-stagger flex h-40 flex-col justify-center gap-3 px-10" style={{ background: "var(--background)" }}>
         {[12, 10, 72].map((h, i) => (
-          <div
-            key={i}
-            className="rounded"
-            style={{
-              height: h,
-              backgroundImage: "linear-gradient(100deg,var(--surface) 35%,color-mix(in srgb, var(--foreground) 10%, transparent) 50%,var(--surface) 65%)",
-              backgroundSize: "200% 100%",
-              animation: k + " 1.4s linear infinite",
-            }}
-          />
+          <div key={i} className="pv-in" style={{ ["--i" as string]: i }}>
+            <div
+              className="rounded"
+              style={{
+                height: h,
+                backgroundImage: "linear-gradient(100deg,var(--surface) 35%,color-mix(in srgb, var(--foreground) 10%, transparent) 50%,var(--surface) 65%)",
+                backgroundSize: "200% 100%",
+                animation: k + " 1.4s linear infinite",
+              }}
+            />
+          </div>
         ))}
       </div>
     </>
@@ -6085,11 +6222,15 @@ function LoaderShimmerPreview({ variantId }: { variantId: string }) {
 function LoaderButtonPreview({ variantId }: { variantId: string }) {
   void variantId;
   return (
-    <div className="flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
-      <button className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-[var(--on-primary)] opacity-80" style={{ background: "var(--primary)" }} disabled>
-        <span className="size-4 animate-spin rounded-full border-2" style={{ borderColor: "var(--on-primary)", borderTopColor: "transparent" }} />
-        提交中…
-      </button>
+    <div className="pv-stagger flex h-40 items-center justify-center" style={{ background: "var(--background)" }}>
+      <div className="pv-in flex items-center justify-center" style={{ ["--i" as string]: 0 }}>
+        <span className="pv-border-flow inline-flex rounded-xl">
+          <button className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-[var(--on-primary)] opacity-80" style={{ background: "var(--primary)" }} disabled>
+            <span className="size-4 animate-spin rounded-full border-2" style={{ borderColor: "var(--on-primary)", borderTopColor: "transparent" }} />
+            提交中…
+          </button>
+        </span>
+      </div>
     </div>
   );
 }
@@ -6097,9 +6238,11 @@ function LoaderButtonPreview({ variantId }: { variantId: string }) {
 function LoaderPagePreview({ variantId }: { variantId: string }) {
   void variantId;
   return (
-    <div className="flex h-40 flex-col items-center justify-center gap-3" style={{ background: "var(--background)" }}>
-      <span className="size-9 animate-spin rounded-full border-[3px]" style={{ borderColor: "var(--surface)", borderTopColor: "var(--primary)" }} />
-      <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>正在加载…</p>
+    <div className="pv-stagger flex h-40 flex-col items-center justify-center gap-3" style={{ background: "var(--background)" }}>
+      <div className="pv-in flex items-center justify-center" style={{ ["--i" as string]: 0 }}>
+        <span className="size-9 animate-spin rounded-full border-[3px]" style={{ borderColor: "var(--surface)", borderTopColor: "var(--primary)" }} />
+      </div>
+      <p className="pv-in text-xs" style={{ ["--i" as string]: 1, color: "var(--muted-foreground)" }}>正在加载…</p>
     </div>
   );
 }
