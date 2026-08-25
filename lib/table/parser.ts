@@ -172,9 +172,24 @@ function parseXlsx(buffer: Buffer): SheetInfo[] {
       raw: true,
       defval: null,
     });
-    const headerRow = (arr[0] || []) as unknown[];
+
+    // 幽灵列裁剪：!ref 常被 Excel 格式/模板残留撑大（如 A1:ZZ100 全是空列），
+    // 按"所有行最后一个非空单元格列 + 1"计算有效列数，避免虚高列数触发列数上限。
+    let effectiveCols = 1;
+    for (const row of arr) {
+      for (let i = row.length - 1; i >= 0; i--) {
+        const v = row[i];
+        if (v !== null && v !== undefined && String(v).trim() !== "") {
+          effectiveCols = Math.max(effectiveCols, i + 1);
+          break;
+        }
+      }
+    }
+    const trimmed = arr.map((row) => row.slice(0, effectiveCols));
+
+    const headerRow = (trimmed[0] || []) as unknown[];
     const headers = headerRow.map((h) => (h == null ? "" : String(h)));
-    const rows = arr.slice(1).map((row) => {
+    const rows = trimmed.slice(1).map((row) => {
       const r = row as unknown[];
       // 补齐到与 headers 等长，避免后续处理越界
       if (r.length < headers.length) {
