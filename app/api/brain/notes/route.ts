@@ -96,6 +96,8 @@ export async function POST(req: NextRequest) {
           ? body.codeContent
           : null,
       embedding: embedding ? JSON.stringify(embedding) : null,
+      // AI 整理完整结构化结果（OrganizedNote），随笔记一并落库，刷新不丢
+      struct: body?.struct ? JSON.stringify(body.struct).slice(0, 20000) : null,
     });
 
     // 策略：AI 拆出的策略落库，后续任务按 strategyIndex 关联。
@@ -171,6 +173,9 @@ export async function PUT(req: NextRequest) {
     if (typeof body?.summary === "string") patch.summary = body.summary.trim();
     if (body?.tags !== undefined) patch.tags = cleanArr(body.tags);
     if (body?.related !== undefined) patch.related = cleanArr(body.related);
+    if (body?.struct !== undefined) {
+      patch.struct = typeof body.struct === "string" ? body.struct : JSON.stringify(body.struct);
+    }
 
     if (!Object.keys(patch).length) {
       return NextResponse.json({ error: "nothing_to_update" }, { status: 400 });

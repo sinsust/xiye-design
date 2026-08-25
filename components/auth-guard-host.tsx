@@ -51,6 +51,13 @@ export function AuthGuardHost() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const showBlock = () =>
+      setShow((v) => {
+        if (v) return v;
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => setShow(false), 4500);
+        return true;
+      });
     const original = window.fetch.bind(window);
     const wrapped: typeof fetch = (input, init) => {
       const url =
@@ -64,18 +71,17 @@ export function AuthGuardHost() {
           (input instanceof Request ? input.method : "GET")) ||
         "GET";
       const path = safePath(url);
+      if (isGuardedWrite(path, method) && !hasLocalUser()) {
+        // 未登录：直接拦截该写请求，不发出；弹登录引导（不再静默/不必要发送）
+        showBlock();
+        return Promise.resolve(new Response(null, { status: 401 }));
+      }
       const promise = original(input, init);
       if (isGuardedWrite(path, method)) {
         promise
           .then((res) => {
-            if (res.status === 401 && !hasLocalUser()) {
-              setShow((v) => {
-                if (v) return v;
-                if (timer.current) clearTimeout(timer.current);
-                timer.current = setTimeout(() => setShow(false), 4500);
-                return true;
-              });
-            }
+            // 本地缓存存在但服务端已失效（会话过期/他端登出）时后端兜底
+            if (res.status === 401 && !hasLocalUser()) showBlock();
           })
           .catch(() => {
             /* 网络错误不触发 */

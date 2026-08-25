@@ -9,6 +9,7 @@ import {
   ArrowRight,
   FileUp,
   GraduationCap,
+  Inbox,
   Loader2,
   Pencil,
   RotateCcw,
@@ -19,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
 import { ImaImportModal } from "@/components/ImaImportModal";
+import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { InboxDrawer } from "@/components/InboxDrawer";
 import { detectLearningTopics } from "@/lib/brain-path";
 import type { LearningTopic } from "@/lib/brain-path";
 import type {
@@ -46,20 +49,39 @@ interface BrainNote {
   isSnippet: boolean;
   language: string | null;
   codeContent: string | null;
+  // AI 整理完整结构化结果（OrganizedNote JSON 字符串）；null 表示未整理
+  struct: string | null;
   createdAt: number;
   updatedAt: number;
 }
 
 interface OrganizedActionItem {
   text: string;
+  owner: string;
   dueDate: string | null;
   priority: BrainTaskPriority;
   strategyIndex?: number;
 }
 
+interface OrganizedMetric {
+  label: string;
+  value: string;
+}
+interface OrganizedProblemDomain {
+  domain: string;
+  status: string;
+  conclusion: string;
+}
+interface OrganizedStrategy {
+  angle: string;
+  logic: string;
+}
+
 interface OrganizedDraft {
   title: string;
   category: string;
+  // 输入类型：meeting/clip/jotting/markdown/snippet/task
+  type?: string;
   summary: string;
   tags: string[];
   related: string[];
@@ -67,12 +89,222 @@ interface OrganizedDraft {
   actionItems: OrganizedActionItem[];
   strategies: { title: string; description: string }[];
   decisions: string[];
+  attendees: string[];
+  metrics: OrganizedMetric[];
+  problemDomains: OrganizedProblemDomain[];
+  openQuestions: string[];
+  strategy: OrganizedStrategy[];
   isMeeting: boolean;
   isSnippet: boolean;
   language: string;
   codeContent: string;
+  // 复制粘贴/网页类：出处或来源链接
+  source?: string;
+  // 核心观点 / 要点（clip 与 jotting 用）
+  keyPoints?: { point: string }[];
+  // 我的批注 / 启发 / 灵感（clip 与 jotting 用）
+  insights?: string[];
   // 深度重写后的规范正文（Markdown）；空字符串表示未重写
   rewritten: string;
+}
+
+/** 自适应卡片输入：与 OrganizedDraft 结构化字段对齐 */
+interface StructViewData {
+  type?: string;
+  attendees?: string[];
+  metrics?: OrganizedMetric[];
+  problemDomains?: OrganizedProblemDomain[];
+  openQuestions?: string[];
+  actionItems?: OrganizedActionItem[];
+  strategy?: OrganizedStrategy[];
+  decisions?: string[];
+  source?: string;
+  keyPoints?: { point: string }[];
+  insights?: string[];
+}
+
+const TYPE_LABEL: Record<string, string> = {
+  meeting: "会议纪要",
+  clip: "阅读摘录",
+  jotting: "灵感碎片",
+  markdown: "文档",
+  snippet: "代码片段",
+  task: "待办清单",
+};
+
+/** 按输入类型自适应渲染 AI 结构化结果；无内容返回 null */
+function StructPreview({ d }: { d: StructViewData }) {
+  const type = d.type || "jotting";
+  const ai = d.actionItems ?? [];
+  const kp = d.keyPoints ?? [];
+  const ins = d.insights ?? [];
+  const has =
+    (d.attendees?.length || 0) +
+    (d.metrics?.length || 0) +
+    (d.problemDomains?.length || 0) +
+    ai.length +
+    (d.strategy?.length || 0) +
+    (d.openQuestions?.length || 0) +
+    (d.decisions?.length || 0) +
+    kp.length +
+    ins.length +
+    (d.source ? 1 : 0);
+  if (!has) return null;
+
+  const sectionTitle = (t: string) => (
+    <div className="mb-1 text-xs font-medium text-foreground">{t}</div>
+  );
+
+  return (
+    <div className="space-y-4 rounded-lg border border-dashed border-border p-3">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-semibold uppercase tracking-wide text-primary">AI 结构化拆解</div>
+        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+          {TYPE_LABEL[type] || "随手记"}
+        </span>
+      </div>
+
+      {/* 参会人 + 指标 chips：有则展示（会议/粘贴类常见） */}
+      {(d.attendees?.length || d.metrics?.length) ? (
+        <div className="flex flex-wrap gap-1.5">
+          {(d.attendees ?? []).map((a) => (
+            <span key={a} className="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+              {a}
+            </span>
+          ))}
+          {(d.metrics ?? []).map((m, i) => (
+            <span key={i} className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs text-foreground">
+              <span className="text-muted-foreground">{m.label}</span>{" "}
+              <span className="font-semibold">{m.value}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {/* 问题域表（会议） */}
+      {(d.problemDomains?.length || 0) > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="border border-border px-2 py-1 font-medium">问题域</th>
+                <th className="border border-border px-2 py-1 font-medium">现状 / 痛点</th>
+                <th className="border border-border px-2 py-1 font-medium">结论 / 待决策</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(d.problemDomains ?? []).map((p, i) => (
+                <tr key={i}>
+                  <td className="whitespace-nowrap border border-border px-2 py-1 font-medium text-foreground">
+                    {p.domain}
+                  </td>
+                  <td className="border border-border px-2 py-1 text-muted-foreground">{p.status}</td>
+                  <td className="border border-border px-2 py-1 text-foreground">{p.conclusion}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* 会议决议 */}
+      {(d.decisions?.length || 0) > 0 && (
+        <div>
+          {sectionTitle("会议决议")}
+          <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground">
+            {(d.decisions ?? []).map((x, i) => (
+              <li key={i}>{x}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 来源（clip） */}
+      {d.source ? (
+        <div>
+          {sectionTitle("来源")}
+          <p className="break-all text-xs text-muted-foreground">{d.source}</p>
+        </div>
+      ) : null}
+
+      {/* 核心观点 / 要点（clip / jotting） */}
+      {kp.length > 0 && (
+        <div>
+          {sectionTitle(type === "clip" ? "核心观点" : "要点")}
+          <ul className="space-y-1">
+            {kp.map((k, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 rounded-md border border-border bg-muted/40 px-2 py-1.5 text-xs text-foreground"
+              >
+                <span className="mt-0.5 text-primary">•</span>
+                <span className="flex-1">{k.point}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 我的批注 / 灵感 */}
+      {ins.length > 0 && (
+        <div>
+          {sectionTitle(type === "clip" ? "我的批注与启发" : "灵感")}
+          <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+            {ins.map((x, i) => (
+              <li key={i}>{x}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 行动项：所有类型通用 */}
+      {ai.length > 0 && (
+        <div>
+          {sectionTitle("行动项")}
+          <ul className="space-y-1">
+            {ai.map((a, i) => (
+              <li
+                key={i}
+                className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs"
+              >
+                <span className="text-foreground">{a.text}</span>
+                {a.owner && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{a.owner}</span>}
+                {a.dueDate && <span className="text-muted-foreground">{a.dueDate}</span>}
+                <span className="uppercase text-muted-foreground">{a.priority}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 策略规划建议（meeting） */}
+      {(d.strategy?.length || 0) > 0 && (
+        <div>
+          {sectionTitle("策略规划建议")}
+          <div className="space-y-1.5">
+            {(d.strategy ?? []).map((s, i) => (
+              <div key={i} className="rounded-md border border-border bg-muted/40 px-2 py-1.5">
+                <div className="text-xs font-semibold text-foreground">{s.angle}</div>
+                <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{s.logic}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 待决策 / 风险 */}
+      {(d.openQuestions?.length || 0) > 0 && (
+        <div>
+          {sectionTitle("待决策 / 风险")}
+          <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+            {(d.openQuestions ?? []).map((q, i) => (
+              <li key={i}>{q}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // 问答检索模式：仅本地 / 仅 ima / 混合
@@ -270,6 +502,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [editing, setEditing] = useState<BrainNote | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  // 编辑态结构化草稿（打开时从 editing.struct 解析，重新整理后刷新）
+  const [editStruct, setEditStruct] = useState<OrganizedDraft | null>(null);
+  const [reorging, setReorging] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -443,6 +678,86 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     } catch {
       /* 忽略 */
     }
+  }, []);
+
+  // ---------- ima 自动增量同步（打开页面 >24h 触发后台同步） ----------
+  const [imaSyncAuto, setImaSyncAuto] = useState(false);
+  const [imaSyncToast, setImaSyncToast] = useState<string | null>(null);
+  const refreshAll = useCallback(async () => {
+    try {
+      const res = await fetch("/api/brain/notes");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.notes)) setNotes(data.notes);
+    } catch {
+      /* 忽略 */
+    }
+    loadTasks();
+    loadStrategies();
+    loadSnippets();
+    loadReviews();
+  }, [loadTasks, loadStrategies, loadSnippets, loadReviews]);
+  // 打开页面时：已绑定 ima 且距上次同步 >24h（从未同步过则首次即同步）→ 后台自动增量同步
+  useEffect(() => {
+    let cancelled = false;
+    let toastTimer: ReturnType<typeof setTimeout> | null = null;
+    (async () => {
+      let bound = false;
+      try {
+        const r = await fetch("/api/account/ima");
+        const d = await r.json();
+        bound = Boolean(d.bound);
+      } catch {
+        bound = false;
+      }
+      if (cancelled || !bound) return;
+
+      let needSync = false;
+      try {
+        const r = await fetch("/api/brain/ima/sync?action=logs");
+        const d = await r.json();
+        const logs: { syncedAt?: string }[] = Array.isArray(d.logs) ? d.logs : [];
+        if (!logs.length) {
+          needSync = true;
+        } else if (logs[0]?.syncedAt) {
+          if (Date.now() - new Date(logs[0].syncedAt).getTime() > 24 * 3600_000) needSync = true;
+        }
+      } catch {
+        needSync = false;
+      }
+      if (cancelled || !needSync) return;
+
+      setImaSyncAuto(true);
+      try {
+        const res = await fetch("/api/brain/ima/sync", { method: "POST" });
+        const d = await res.json();
+        if (res.ok && d?.result) {
+          setImaSyncToast(
+            `自动同步：新建 ${d.result.created} · 更新 ${d.result.updated} · 跳过 ${d.result.skipped}`,
+          );
+        }
+      } catch {
+        setImaSyncToast("自动同步失败，可在个人中心重试");
+      }
+      if (!cancelled) {
+        setImaSyncAuto(false);
+        refreshAll();
+        toastTimer = setTimeout(() => setImaSyncToast(null), 6000);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (toastTimer) clearTimeout(toastTimer);
+    };
+  }, [refreshAll]);
+
+  // 从问答来源标签跳转到本地笔记：重置过滤 + 展开卡片 + 平滑滚动定位
+  const jumpToNote = useCallback((noteId: string) => {
+    setSourceFilter("all");
+    setListFilter("全部");
+    setExpanded(noteId);
+    requestAnimationFrame(() => {
+      document.getElementById(`note-${noteId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }, []);
 
   // ---------- 知识厚度统计 ----------
@@ -627,6 +942,19 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [wCode, setWCode] = useState("");
   // 深度重写后的规范正文（可编辑）；落库时作为 content
   const [wContent, setWContent] = useState("");
+  // 金标结构化字段：参会人 / 指标 / 问题域 / 待决策 / 策略建议
+  const [wAttendees, setWAttendees] = useState<string[]>([]);
+  const [wMetrics, setWMetrics] = useState<OrganizedMetric[]>([]);
+  const [wProblemDomains, setWProblemDomains] = useState<OrganizedProblemDomain[]>([]);
+  const [wOpenQuestions, setWOpenQuestions] = useState<string[]>([]);
+  const [wStrategy, setWStrategy] = useState<OrganizedStrategy[]>([]);
+  // 原始完整结构化草稿（OrganizedDraft），随笔记一并落库为 struct，刷新不丢
+  const [wStruct, setWStruct] = useState<OrganizedDraft | null>(null);
+  // 输入类型与 clip/jotting 专属字段
+  const [wType, setWType] = useState<string>("jotting");
+  const [wSource, setWSource] = useState("");
+  const [wKeyPoints, setWKeyPoints] = useState<{ point: string }[]>([]);
+  const [wInsights, setWInsights] = useState<string[]>([]);
   // 动态占位
   const [phIdx, setPhIdx] = useState(0);
   const PLACEHOLDERS = [
@@ -677,6 +1005,21 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets">("input");
   // 最近活跃流是否全部展开
   const [activityShowAll, setActivityShowAll] = useState(false);
+  // —— 第九阶段：顶层视图（首页=今日助理面板 / 工作台）+ 收件箱抽屉 ——
+  const [topView, setTopView] = useState<"dashboard" | "workbench">("dashboard");
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const [inboxPending, setInboxPending] = useState(0);
+  // 监听复习/任务变更 → 刷新面板
+  useEffect(() => {
+    const h = () => window.dispatchEvent(new Event("brain:data-changed"));
+    window.addEventListener("brain:dashboard-refresh", h);
+    return () => window.removeEventListener("brain:dashboard-refresh", h);
+  }, []);
+  // 顶部视图切换：切到工作台时找到对应二级 Tab，否则回整理笔记
+  const gotoTop = (v: "dashboard" | "workbench", tab?: typeof workTab) => {
+    if (v === "workbench" && tab) setWorkTab(tab);
+    setTopView(v);
+  };
 
   const filteredNotes = useMemo(() => {
     const bySource =
@@ -730,6 +1073,15 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         actionItems: [],
         strategies: [],
         decisions: [],
+        attendees: [],
+        metrics: [],
+        problemDomains: [],
+        openQuestions: [],
+        strategy: [],
+        type: "jotting",
+        source: "",
+        keyPoints: [],
+        insights: [],
         isMeeting: false,
         isSnippet: false,
         language: "",
@@ -752,11 +1104,22 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setWActionItems(Array.isArray(d.actionItems) ? d.actionItems : []);
     setWStrategies(Array.isArray(d.strategies) ? d.strategies : []);
     setWDecisions(Array.isArray(d.decisions) ? d.decisions : []);
+    setWAttendees(Array.isArray(d.attendees) ? d.attendees : []);
+    setWMetrics(Array.isArray(d.metrics) ? d.metrics : []);
+    setWProblemDomains(Array.isArray(d.problemDomains) ? d.problemDomains : []);
+    setWOpenQuestions(Array.isArray(d.openQuestions) ? d.openQuestions : []);
+    setWStrategy(Array.isArray(d.strategy) ? d.strategy : []);
+    setWType(d.type || "jotting");
+    setWSource(d.source ?? "");
+    setWKeyPoints(Array.isArray(d.keyPoints) ? d.keyPoints : []);
+    setWInsights(Array.isArray(d.insights) ? d.insights : []);
     setWSnippet(!!d.isSnippet);
     setWLanguage(d.language ?? "");
     setWCode(d.codeContent ?? "");
     // 规范正文：优先用 AI 深度重写；无则回落原始记录
     setWContent(d.rewritten || raw || "");
+    // 完整结构化草稿随笔记一并落库（struct）
+    setWStruct(d);
     setWorkspaceOpen(true);
   };
 
@@ -787,6 +1150,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           isSnippet: wSnippet,
           language: wLanguage,
           codeContent: wCode,
+          // 完整结构化草稿（金标字段），落库为 struct
+          struct: wStruct,
         }),
       });
       const data = await res.json();
@@ -801,6 +1166,16 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setWLanguage("");
       setWCode("");
       setWContent("");
+      setWAttendees([]);
+      setWMetrics([]);
+      setWProblemDomains([]);
+      setWOpenQuestions([]);
+      setWStrategy([]);
+      setWType("jotting");
+      setWSource("");
+      setWKeyPoints([]);
+      setWInsights([]);
+      setWStruct(null);
       setWorkspaceOpen(false);
       loadTasks();
       loadStrategies();
@@ -839,6 +1214,34 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setEditing(n);
     setEditTitle(n.title);
     setEditContent(n.content);
+    try {
+      setEditStruct(n.struct ? (JSON.parse(n.struct) as OrganizedDraft) : null);
+    } catch {
+      setEditStruct(null);
+    }
+  };
+
+  /** 存量笔记一键重新整理：跑 organizer 刷新标题/正文/结构化字段 */
+  const reorganizeExisting = async () => {
+    if (!editing || reorging) return;
+    setReorging(true);
+    try {
+      const res = await fetch("/api/brain/organize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: editContent }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.draft) throw new Error(data?.error);
+      const d = data.draft as OrganizedDraft;
+      setEditTitle(d.title || editTitle);
+      setEditContent(d.rewritten || editContent);
+      setEditStruct(d);
+    } catch {
+      window.alert("重新整理失败，请稍后重试");
+    } finally {
+      setReorging(false);
+    }
   };
 
   const saveEdit = async () => {
@@ -848,7 +1251,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       const res = await fetch(`/api/brain/notes?id=${editing.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editTitle, content: editContent }),
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          // 重新整理后的结构化草稿随保存落库
+          struct: editStruct ?? undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data?.note) throw new Error(data?.error);
@@ -882,6 +1290,23 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
 
   return (
     <div style={{ background: "#F9FAFB", minHeight: "100vh" }}>
+      {/* 收件箱抽屉（右侧滑出） */}
+      <InboxDrawer
+        open={inboxOpen}
+        onClose={() => setInboxOpen(false)}
+        onPendingChange={setInboxPending}
+      />
+      {/* ima 自动同步提示（打开页面后台触发时展示） */}
+      {imaSyncAuto && (
+        <div className="fixed left-1/2 top-4 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-lg">
+          <Loader2 className="size-3.5 animate-spin" /> 正在自动同步 ima 知识库…
+        </div>
+      )}
+      {imaSyncToast && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-emerald-600/20 bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-lg">
+          {imaSyncToast}
+        </div>
+      )}
       <div className="mx-auto max-w-7xl px-4 py-8">
         {imaOpen && (
           <ImaImportModal
@@ -893,7 +1318,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           />
         )}
         {/* 头部（精简） */}
-        <div className="mb-6 flex items-baseline gap-3 border-b border-border/70 pb-4">
+        <div className="mb-4 flex items-baseline gap-3 border-b border-border/70 pb-4">
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Brain className="size-5" />
@@ -916,6 +1341,57 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           </span>
         </div>
 
+        {/* 顶部导航：首页（默认）/ 知识沉淀 / 任务看板 / 策略 / 代码片段 + 收件箱 */}
+        <div className="mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border bg-white px-2 py-1.5 shadow-sm">
+          {[
+            { v: "dashboard" as const, label: "🏠 首页" },
+            { v: "input" as const, label: "📝 记一笔" },
+            { v: "kanban" as const, label: "📋 任务看板" },
+            { v: "strategies" as const, label: "🎯 策略" },
+            { v: "snippets" as const, label: "💻 代码片段" },
+          ].map((i) => {
+            const active = topView === "dashboard" ? i.v === "dashboard" : i.v === workTab;
+            return (
+              <button
+                key={i.v}
+                onClick={() => gotoTop(i.v === "dashboard" ? "dashboard" : "workbench", i.v as typeof workTab)}
+                className={
+                  "rounded-lg px-3 py-1.5 text-[13px] font-medium transition " +
+                  (active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")
+                }
+              >
+                {i.label}
+                {i.v === "kanban" && taskCounts.todo + taskCounts.in_progress > 0 && (
+                  <span className="ml-1 rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold text-primary-foreground">
+                    {taskCounts.todo + taskCounts.in_progress}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={() => setInboxOpen(true)}
+              className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              <Inbox className="size-4" />
+              收件箱
+              {inboxPending > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {inboxPending > 99 ? "99+" : inboxPending}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {topView === "dashboard" ? (
+          <DashboardPanel
+            onOpenInbox={() => setInboxOpen(true)}
+            onGoto={(tab) => gotoTop("workbench", tab as typeof workTab)}
+            onNewTask={() => gotoTop("workbench", "kanban")}
+          />
+        ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* ============ 左列 · 工作台 ============ */}
           <div className="space-y-6 lg:col-span-2">
@@ -1374,30 +1850,31 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                       {item.sources.length > 0 && (
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-[11px] text-muted-foreground">引用来源：</span>
-                          {item.sources.map((s, si) => (
-                            <span
-                              key={si}
-                              className={
-                                "inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[11px] " +
-                                (s.source === "ima"
-                                  ? "bg-sky-500/10 font-medium text-sky-600"
-                                  : "bg-muted/70 text-muted-foreground")
-                              }
-                              title={s.relevance != null ? `相关度 ${Math.round(s.relevance * 100)}%` : undefined}
-                            >
-                              {s.source === "ima" ? (
-                                <>
-                                  <span className="truncate text-sky-600">{s.title}</span>
-                                  <span className="shrink-0">· ima{s.sourceName ? " · " + s.sourceName : ""}</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="truncate">{s.title}</span>
-                                  <span className="shrink-0">· 本地</span>
-                                </>
-                              )}
-                            </span>
-                          ))}
+                          {item.sources.map((s, si) =>
+                            s.source === "ima" ? (
+                              <span
+                                key={si}
+                                className="inline-flex max-w-full items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium text-sky-600"
+                                title={s.relevance != null ? `相关度 ${Math.round(s.relevance * 100)}%` : undefined}
+                              >
+                                <span className="truncate">{s.title}</span>
+                                <span className="shrink-0">· ima{s.sourceName ? " · " + s.sourceName : ""}</span>
+                              </span>
+                            ) : (
+                              <button
+                                key={si}
+                                type="button"
+                                onClick={() => jumpToNote(s.noteId)}
+                                title={
+                                  (s.relevance != null ? `相关度 ${Math.round(s.relevance * 100)}%，点击定位到笔记` : "点击定位到笔记")
+                                }
+                                className="inline-flex max-w-full cursor-pointer items-center gap-1 rounded-full bg-muted/70 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+                              >
+                                <span className="truncate">{s.title}</span>
+                                <span className="shrink-0">· 本地</span>
+                              </button>
+                            ),
+                          )}
                         </div>
                       )}
                     </div>
@@ -1791,6 +2268,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* ============ 整理工作台 · 全屏模态 ============ */}
@@ -1919,6 +2397,23 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     />
                   </div>
 
+                  {/* 按输入类型自适应的结构化拆解 */}
+                  <StructPreview
+                    d={{
+                      type: wType,
+                      attendees: wAttendees,
+                      metrics: wMetrics,
+                      problemDomains: wProblemDomains,
+                      actionItems: wActionItems,
+                      strategy: wStrategy,
+                      openQuestions: wOpenQuestions,
+                      decisions: wDecisions,
+                      source: wSource,
+                      keyPoints: wKeyPoints,
+                      insights: wInsights,
+                    }}
+                  />
+
                   {/* 关联 */}
                   {wRelated.length > 0 && (
                     <div>
@@ -1979,6 +2474,17 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             <div className="overflow-auto p-5">
               <label className="text-xs uppercase tracking-wide text-muted-foreground">标题</label>
               <input className={inputCls + " mt-1.5"} value={editTitle} onChange={(ev) => setEditTitle(ev.target.value)} />
+              {editStruct && (
+                <div className="mt-4">
+                  <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                    AI 结构化拆解
+                  </label>
+                  <div className="mt-1.5">
+                    <StructPreview d={editStruct} />
+                  </div>
+                </div>
+              )}
+
               <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">原文</label>
               <textarea
                 className={inputCls + " mt-1.5 min-h-48 resize-y font-mono text-xs"}
@@ -1987,6 +2493,10 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               />
             </div>
             <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
+              <Button variant="outline" size="sm" onClick={reorganizeExisting} disabled={reorging || loading}>
+                {reorging ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />}
+                重新整理
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>取消</Button>
               <Button size="sm" onClick={saveEdit} disabled={loading || !editTitle.trim()}>
                 {loading ? "保存中…" : "保存"}
@@ -2081,6 +2591,7 @@ function NoteCard({
   const openCount = tasks.filter((t) => t.status !== "done").length;
   return (
     <div
+      id={`note-${note.id}`}
       className="group relative cursor-pointer rounded-[var(--radius)] border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
       onClick={onToggle}
     >

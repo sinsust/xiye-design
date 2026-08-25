@@ -7,7 +7,8 @@ import { pgTable, text, bigint, integer, doublePrecision, index, primaryKey } fr
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  // 密码交由 Supabase Auth 托管；业务侧该列为空。存量 bcrypt 账号迁移后亦清空为 null。
+  passwordHash: text("password_hash"),
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
 });
 
@@ -101,6 +102,8 @@ export const brainNotes = pgTable(
     embedding: text("embedding"),
     imaDocId: text("ima_doc_id"),
     imaSyncedAt: text("ima_synced_at"),
+    // AI 整理完整结构化结果（OrganizedNote JSON 字符串），供详情页全可视化
+    struct: text("struct"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
   },
@@ -130,6 +133,16 @@ export const brainTasks = pgTable(
     strategyId: text("strategy_id").references(() => brainStrategies.id, {
       onDelete: "set null",
     }),
+    projectId: text("project_id").references(() => brainProjects.id, {
+      onDelete: "set null",
+    }),
+    assignee: text("assignee"),
+    startDate: text("start_date"),
+    milestone: text("milestone"),
+    parentTaskId: text("parent_task_id"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    estimatedHours: doublePrecision("estimated_hours"),
+    actualHours: doublePrecision("actual_hours"),
   },
   (t) => ({
     userIdIdx: index("brain_tasks_user_id_idx").on(t.userId),
@@ -221,6 +234,87 @@ export const brainImaSyncLog = pgTable(
   })
 );
 
+// 第二大脑 · 收件箱（sqlite 镜像）：批量/零散输入的缓冲层。
+export const brainInboxItems = pgTable(
+  "brain_inbox_items",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    rawContent: text("raw_content").notNull(),
+    intent: text("intent"),
+    suggestedTitle: text("suggested_title"),
+    suggestedCategory: text("suggested_category"),
+    suggestedTags: text("suggested_tags"),
+    organized: text("organized"),
+    noteId: text("note_id"),
+    taskId: text("task_id"),
+    status: text("status").notNull().default("pending"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    processedAt: bigint("processed_at", { mode: "number" }),
+  },
+  (t) => ({
+    userIdIdx: index("brain_inbox_items_user_id_idx").on(t.userId),
+    statusIdx: index("brain_inbox_items_status_idx").on(t.userId, t.status),
+  })
+);
+
+// 第二大脑 · 项目（sqlite 镜像）。
+export const brainProjects = pgTable(
+  "brain_projects",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    status: text("status").notNull().default("active"),
+    color: text("color").notNull().default("#3B82F6"),
+    startDate: text("start_date"),
+    dueDate: text("due_date"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdIdx: index("brain_projects_user_id_idx").on(t.userId),
+  })
+);
+
+// 第二大脑 · 任务事件时间线（sqlite 镜像）。
+export const brainTaskTimeline = pgTable(
+  "brain_task_timeline",
+  {
+    id: text("id").primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => brainTasks.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    detail: text("detail"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    taskIdx: index("brain_task_timeline_task_id_idx").on(t.taskId),
+  })
+);
+
+// 第二大脑 · 任务备注/评论（sqlite 镜像）。
+export const brainTaskComments = pgTable(
+  "brain_task_comments",
+  {
+    id: text("id").primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => brainTasks.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    taskIdx: index("brain_task_comments_task_id_idx").on(t.taskId),
+  })
+);
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -231,3 +325,7 @@ export type BrainReviewRow = typeof brainReviews.$inferSelect;
 export type BrainStrategyRow = typeof brainStrategies.$inferSelect;
 export type UserPreferenceRow = typeof userPreferences.$inferSelect;
 export type BrainImaSyncLogRow = typeof brainImaSyncLog.$inferSelect;
+export type BrainInboxItemRow = typeof brainInboxItems.$inferSelect;
+export type BrainProjectRow = typeof brainProjects.$inferSelect;
+export type BrainTaskTimelineRow = typeof brainTaskTimeline.$inferSelect;
+export type BrainTaskCommentRow = typeof brainTaskComments.$inferSelect;

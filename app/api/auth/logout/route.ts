@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 export async function POST() {
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set({
-    name: SESSION_COOKIE,
-    value: "",
-    ...sessionCookieOptions(),
-    maxAge: 0,
-  });
-  return res;
+  const supabase = await createServerSupabase();
+  await supabase.auth.signOut(); // 清空会话 cookie
+  return NextResponse.json({ ok: true });
 }

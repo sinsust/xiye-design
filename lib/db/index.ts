@@ -32,6 +32,10 @@ let brainTasks: any;
 let brainReviews: any;
 let brainStrategies: any;
 let brainImaSyncLog: any;
+let brainInboxItems: any;
+let brainProjects: any;
+let brainTaskTimeline: any;
+let brainTaskComments: any;
 let userPreferences: any;
 let userImaConfig: any;
 let schema: any;
@@ -53,6 +57,10 @@ if (isPg) {
   brainReviews = schemaPg.brainReviews;
   brainStrategies = schemaPg.brainStrategies;
   brainImaSyncLog = schemaPg.brainImaSyncLog;
+  brainInboxItems = schemaPg.brainInboxItems;
+  brainProjects = schemaPg.brainProjects;
+  brainTaskTimeline = schemaPg.brainTaskTimeline;
+  brainTaskComments = schemaPg.brainTaskComments;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
   schema = schemaPg;
@@ -136,6 +144,12 @@ if (isPg) {
       /* 列已存在 */
     }
   }
+  // 阶段升级：brain_notes AI 整理结构化结果列（幂等补列）
+  try {
+    sqlite.exec(`alter table brain_notes add column struct text`);
+  } catch {
+    /* 列已存在 */
+  }
   sqlite.exec(`create table if not exists brain_ima_sync_log (
     id text primary key,
     user_id text not null,
@@ -209,6 +223,71 @@ if (isPg) {
     custom text not null default '{}',
     updated_at integer not null
   );`);
+  sqlite.exec(`create table if not exists brain_inbox_items (
+    id text primary key,
+    user_id text not null,
+    raw_content text not null,
+    intent text,
+    suggested_title text,
+    suggested_category text,
+    suggested_tags text,
+    organized text,
+    note_id text,
+    task_id text,
+    status text not null default 'pending',
+    created_at integer not null,
+    processed_at integer,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  // —— 第十阶段：结构化项目管理 ——
+  // brain_projects 先于 brain_tasks.project_id 外键创建。
+  sqlite.exec(`create table if not exists brain_projects (
+    id text primary key,
+    user_id text not null,
+    name text not null,
+    description text,
+    status text not null default 'active',
+    color text not null default '#3B82F6',
+    start_date text,
+    due_date text,
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  // 阶段升级：brain_tasks 新增项目管理字段（幂等补列，列已存在则忽略错误）
+  for (const col of [
+    `alter table brain_tasks add column project_id text references brain_projects(id) on delete set null`,
+    `alter table brain_tasks add column assignee text`,
+    `alter table brain_tasks add column start_date text`,
+    `alter table brain_tasks add column milestone text`,
+    `alter table brain_tasks add column parent_task_id text references brain_tasks(id) on delete set null`,
+    `alter table brain_tasks add column sort_order integer not null default 0`,
+    `alter table brain_tasks add column estimated_hours real`,
+    `alter table brain_tasks add column actual_hours real`,
+  ]) {
+    try {
+      sqlite.exec(col);
+    } catch {
+      /* 列已存在 */
+    }
+  }
+  // 任务事件时间线：任务变更自动日志
+  sqlite.exec(`create table if not exists brain_task_timeline (
+    id text primary key,
+    task_id text not null,
+    action text not null,
+    detail text,
+    created_at integer not null,
+    foreign key (task_id) references brain_tasks(id) on delete cascade
+  );`);
+  // 任务备注/评论
+  sqlite.exec(`create table if not exists brain_task_comments (
+    id text primary key,
+    task_id text not null,
+    content text not null,
+    created_at integer not null,
+    foreign key (task_id) references brain_tasks(id) on delete cascade
+  );`);
   db = drizzleSqlite(sqlite, { schema: schemaSqlite });
   users = schemaSqlite.users;
   projects = schemaSqlite.projects;
@@ -219,9 +298,13 @@ if (isPg) {
   brainReviews = schemaSqlite.brainReviews;
   brainStrategies = schemaSqlite.brainStrategies;
   brainImaSyncLog = schemaSqlite.brainImaSyncLog;
+  brainInboxItems = schemaSqlite.brainInboxItems;
+  brainProjects = schemaSqlite.brainProjects;
+  brainTaskTimeline = schemaSqlite.brainTaskTimeline;
+  brainTaskComments = schemaSqlite.brainTaskComments;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, userPreferences, userImaConfig, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, userPreferences, userImaConfig, schema };

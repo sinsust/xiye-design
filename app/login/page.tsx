@@ -1,20 +1,58 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AUTH_CHANGED_EVENT, AUTH_CACHE_KEY } from "@/lib/auth-events";
 
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-background p-4">
+          <div className="text-sm text-muted-foreground">加载中…</div>
+        </main>
+      }
+    >
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const verifyFailed = searchParams.get("verify") === "failed";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [resetState, setResetState] = useState<"idle" | "sending" | "sent">("idle");
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function sendReset(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!email) {
+      setError("请先填写邮箱");
+      return;
+    }
+    setError(null);
+    setResetState("sending");
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (res.ok) setResetState("sent");
+    else {
+      setResetState("idle");
+      setError("发送失败，请重试");
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,7 +79,7 @@ export default function LoginPage() {
       setLoading(false);
       setDone(true);
       redirectTimer.current = setTimeout(() => {
-        router.push("/builder");
+        router.push(next?.startsWith("/") ? next : "/builder");
       }, 1200);
       return;
     }
@@ -101,6 +139,29 @@ export default function LoginPage() {
           className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
           placeholder="••••••••"
         />
+
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-xs text-transparent">.</span>
+          <button
+            type="button"
+            onClick={sendReset}
+            disabled={resetState === "sending"}
+            className="text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+          >
+            {resetState === "sending" ? "发送中…" : "忘记密码？"}
+          </button>
+        </div>
+
+        {verifyFailed && (
+          <p className="mt-3 text-xs text-destructive">
+            重置链接已失效，请重新申请。
+          </p>
+        )}
+        {resetState === "sent" && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            已发送重置邮件，请查收后按邮件指引设置新密码。
+          </p>
+        )}
 
         {error && (
           <p className="mt-3 text-xs text-destructive">{error}</p>

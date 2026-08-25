@@ -5,13 +5,10 @@ import { z } from "zod";
 
 export const runtime = "nodejs";
 
-const bodySchema = z.object({
-  email: z.string().email().max(200),
-  password: z.string().min(1).max(100),
-});
+const bodySchema = z.object({ email: z.string().email().max(200) });
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`auth:login:${getClientIp(req)}`, 10, 60_000)) {
+  if (!rateLimit(`auth:reset:${getClientIp(req)}`, 5, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
   const json = await req.json().catch(() => null);
@@ -20,16 +17,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
 
+  const origin = new URL(req.url).origin;
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email.toLowerCase(),
-    password: parsed.data.password,
+  // 不区分「该邮箱是否存在」，统一返回成功，避免枚举账号
+  await supabase.auth.resetPasswordForEmail(parsed.data.email.toLowerCase(), {
+    redirectTo: `${origin}/auth/confirm`,
   });
-
-  if (error || !data.user) {
-    // 统一收窄为「账号/密码错误」，避免泄露账号是否存在
-    return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
-  }
-  const u = data.user;
-  return NextResponse.json({ user: { id: u.id, email: u.email } });
+  return NextResponse.json({ ok: true });
 }

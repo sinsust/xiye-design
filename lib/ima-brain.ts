@@ -2,7 +2,7 @@
 // 目标：ima 导入的笔记与手动录入完全平等 —— 分类/标签/摘要/任务/策略/代码识别，全流程参与。
 // 整理失败时降级：保留原文直接落库，category="未分类"，绝不阻断导入。
 
-import { organizeNote, type OrganizedNote } from "./brain-organizer";
+import { organizeNote, classifyInput, type OrganizedNote } from "./brain-organizer";
 import { embed, buildListableText } from "./embedding";
 import {
   insertBrainNote,
@@ -35,6 +35,7 @@ type OrganizedLike = Pick<
   OrganizedNote,
   | "title"
   | "category"
+  | "type"
   | "summary"
   | "tags"
   | "related"
@@ -44,6 +45,9 @@ type OrganizedLike = Pick<
   | "rewritten"
   | "actionItems"
   | "strategies"
+  | "source"
+  | "keyPoints"
+  | "insights"
 >;
 
 /**
@@ -63,6 +67,7 @@ async function runOrganize(
       organized: {
         title,
         category: "未分类",
+        type: classifyInput(content),
         summary: "",
         tags: [],
         related: [],
@@ -72,6 +77,9 @@ async function runOrganize(
         rewritten: "",
         actionItems: [],
         strategies: [],
+        source: "",
+        keyPoints: [],
+        insights: [],
       },
       degraded: true,
     };
@@ -124,6 +132,8 @@ export async function importImaNote(
     embedding: await embeddingFor(input.title, noteContent, organized),
     imaDocId: input.mediaId ?? null,
     imaSyncedAt: new Date().toISOString(),
+    // 完整结构化结果随笔记落库，导入即规范、刷新不丢
+    struct: JSON.stringify(organized).slice(0, 20000),
   });
   if (!note) return { note: null, degraded, createdTasks: 0, createdStrategies: 0 };
 
@@ -212,6 +222,7 @@ export async function updateImaNote(
     codeContent: organized.codeContent ?? note.codeContent,
     embedding: (await embeddingFor(input.title, noteContent, organized)) ?? note.embedding,
     imaSyncedAt: new Date().toISOString(),
+    struct: JSON.stringify(organized).slice(0, 20000),
   });
   return { note: updated, changed: true };
 }

@@ -28,25 +28,36 @@ import {
   Waves,
   X,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// 重型/带第三方依赖（three、canvas、gsap、整站 bundle）的预览改用 next/dynamic 代码分割，
+// 避免首屏静态打进这些大模块；加载中的兜底用轻量骨架。
+function PreviewLoading() {
+  return (
+    <div className="flex h-full min-h-[320px] items-center justify-center text-muted-foreground">
+      <Loader2 className="size-5 animate-spin" />
+    </div>
+  );
+}
 import { BRAND_SITES } from "@/data/brand-sites";
 import { PROJECT_TYPES } from "@/data/project-types";
 import { downloadBlob } from "@/lib/zip";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import FluidText from "@/components/originkit/ui/fluid-text";
-import SmokyText from "@/components/originkit/ui/smokytext";
-import FlashlightText from "@/components/originkit/ui/spotlighttext";
-import { RingGallery } from "@/components/originkit/ring-gallery";
-import Smooth3DSlideshow from "@/components/originkit/coverflow-gallery/ui/coverflowgallery";
-import RoundCarousel from "@/components/originkit/round-carousel/ui/roundcarousel";
+const FluidText = dynamic(() => import("@/components/originkit/ui/fluid-text"), { loading: PreviewLoading });
+const SmokyText = dynamic(() => import("@/components/originkit/ui/smokytext"), { loading: PreviewLoading });
+const FlashlightText = dynamic(() => import("@/components/originkit/ui/spotlighttext"), { loading: PreviewLoading });
+const RingGallery = dynamic(() => import("@/components/originkit/ring-gallery").then((m) => m.RingGallery), { loading: PreviewLoading });
+const Smooth3DSlideshow = dynamic(() => import("@/components/originkit/coverflow-gallery/ui/coverflowgallery"), { loading: PreviewLoading });
+const RoundCarousel = dynamic(() => import("@/components/originkit/round-carousel/ui/roundcarousel"), { loading: PreviewLoading });
 import ShinyPill from "@/components/originkit/ui/shiny-pill";
-import WaterButton from "@/components/originkit/ui/water-button";
+const WaterButton = dynamic(() => import("@/components/originkit/ui/water-button"), { loading: PreviewLoading });
 import KeycapButton from "@/components/originkit/ui/keycap-button";
 import MovingGradientButton from "@/components/originkit/ui/moving-gradient-button";
 import ButtonResource from "@/components/originkit/ui/button-resource";
-import Hero36 from "@/components/originkit/hero-36";
-import Hero19 from "@/components/originkit/hero-19";
-import Hero04 from "@/components/originkit/hero-04";
+const Hero36 = dynamic(() => import("@/components/originkit/hero-36"), { loading: PreviewLoading });
+const Hero19 = dynamic(() => import("@/components/originkit/hero-19"), { loading: PreviewLoading });
+const Hero04 = dynamic(() => import("@/components/originkit/hero-04"), { loading: PreviewLoading });
 import OutstandHero from "@/components/originkit/outstand/hero";
 import OutstandPricing from "@/components/originkit/outstand/pricing";
 import OutstandFaq from "@/components/originkit/outstand/faq";
@@ -98,10 +109,10 @@ import OutstandContactHero from "@/components/originkit/outstand/contact-hero";
 import OutstandContactSupport from "@/components/originkit/outstand/contact-support";
 import OutstandNotFound from "@/components/originkit/outstand/not-found";
 import OutstandPrivacyPolicy from "@/components/originkit/outstand/privacy-policy";
-import WexoStudio from "@/components/originkit/wexo/studio";
-import WexoSite from "@/components/originkit/wexo/site";
-import OutstandSite from "@/components/originkit/outstand/site";
-import GeniusSite from "@/components/originkit/genius/site";
+const WexoStudio = dynamic(() => import("@/components/originkit/wexo/studio"), { loading: PreviewLoading });
+const WexoSite = dynamic(() => import("@/components/originkit/wexo/site"), { loading: PreviewLoading });
+const OutstandSite = dynamic(() => import("@/components/originkit/outstand/site"), { loading: PreviewLoading });
+const GeniusSite = dynamic(() => import("@/components/originkit/genius/site"), { loading: PreviewLoading });
 import {
   COMPONENT_LIB,
   FLUID_PALETTES,

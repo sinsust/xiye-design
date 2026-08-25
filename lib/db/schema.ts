@@ -7,7 +7,8 @@ import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  // 密码交由 Supabase Auth 托管；业务侧该列一般为空
+  passwordHash: text("password_hash"),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -105,6 +106,9 @@ export const brainNotes = sqliteTable("brain_notes", {
   // ima 增量同步：来源文档唯一标识 + 最近一次同步时间
   imaDocId: text("ima_doc_id"),
   imaSyncedAt: text("ima_synced_at"),
+  // AI 整理完整结构化结果（OrganizedNote 的 JSON 字符串）：参会人/指标/问题域/策略/重写正文等，
+  // 与基础列(title/content/summary/tags)分开存，刷新不丢、可供详情页全可视化。
+  struct: text("struct"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
@@ -130,6 +134,24 @@ export const brainTasks = sqliteTable("brain_tasks", {
   strategyId: text("strategy_id").references(() => brainStrategies.id, {
     onDelete: "set null",
   }),
+  // —— 第十阶段：结构化项目管理 ——
+  // 归属项目（brain_projects.id）；删除/归档项目时置空（on delete set null）
+  projectId: text("project_id").references(() => brainProjects.id, {
+    onDelete: "set null",
+  }),
+  // 负责人（个人用标记角色："我" / "外包" / "合作方"…）
+  assignee: text("assignee"),
+  // 开始日期（ISO，YYYY-MM-DD）
+  startDate: text("start_date"),
+  // 里程碑名称（如"Q3 里程碑 1：完成调研"）
+  milestone: text("milestone"),
+  // 父任务 ID（子任务）：删除父任务时子任务悬浮为顶层（on delete set null）
+  parentTaskId: text("parent_task_id"),
+  // 排序权重（子任务排序用，小在前）
+  sortOrder: integer("sort_order").notNull().default(0),
+  // 预估 / 实际工时（小时）
+  estimatedHours: real("estimated_hours"),
+  actualHours: real("actual_hours"),
 });
 
 // 第二大脑：从会议纪要等输入中 AI 拆解出的策略。按 userId 隔离，noteId 关联来源笔记。
@@ -204,6 +226,77 @@ export const brainImaSyncLog = sqliteTable("brain_ima_sync_log", {
   failures: text("failures").notNull().default("[]"),
 });
 
+// 第二大脑 · 收件箱：批量/零散输入的缓冲层。AI 先整理出 intent + 建议，写入此表 pending；
+// 用户确认后才正式写入 brain_notes / brain_tasks，未确认不改库。按 userId 隔离。
+export const brainInboxItems = sqliteTable("brain_inbox_items", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // 原始输入内容（未经 AI 整理的原文）
+  rawContent: text("raw_content").notNull(),
+  // AI 识别意图：note / task / meeting / snippet / project / unknown
+  intent: text("intent"),
+  suggestedTitle: text("suggested_title"),
+  suggestedCategory: text("suggested_category"),
+  // AI 建议标签（JSON 数组字符串）
+  suggestedTags: text("suggested_tags"),
+  // AI 整理全量结果（OrganizedNote JSON），确认时据此落库
+  organized: text("organized"),
+  // 处理后关联的 brain_notes / brain_tasks ID
+  noteId: text("note_id"),
+  taskId: text("task_id"),
+  // pending（待处理）/ processed（已处理）/ dismissed（已忽略）
+  status: text("status").notNull().default("pending"),
+  // 时间戳（epoch ms，与其余 brain 表一致）
+  createdAt: integer("created_at").notNull(),
+  processedAt: integer("processed_at"),
+});
+
+// 第二大脑 · 项目：结构化项目管理的顶层容器。按 userId 隔离。
+// 任务通过 brain_tasks.projectId 关联到项目；状态 active/paused/completed/archived。
+export const brainProjects = sqliteTable("brain_projects", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  // active(进行中) / paused(暂停) / completed(已完成) / archived(已归档-软删除)
+  status: text("status").notNull().default("active"),
+  // 主题色（十六进制，进度条/看板/甘特图区分用）
+  color: text("color").notNull().default("#3B82F6"),
+  // 开始 / 截止日期（ISO，YYYY-MM-DD）
+  startDate: text("start_date"),
+  dueDate: text("due_date"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// 第二大脑 · 任务事件时间线：任务状态/子任务/截止日期等变更的自动日志。
+// 只读、不可手动编辑，供任务详情页按时间回溯。
+export const brainTaskTimeline = sqliteTable("brain_task_timeline", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => brainTasks.id, { onDelete: "cascade" }),
+  // created / status_changed / comment_added / subtask_added / dueDate_changed
+  action: text("action").notNull(),
+  // 变更详情（JSON 字符串，如 {"from":"todo","to":"doing"}）
+  detail: text("detail"),
+  createdAt: integer("created_at").notNull(),
+});
+
+// 第二大脑 · 任务备注/评论：任务详情内的讨论区。
+export const brainTaskComments = sqliteTable("brain_task_comments", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => brainTasks.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -214,3 +307,7 @@ export type BrainReviewRow = typeof brainReviews.$inferSelect;
 export type BrainStrategyRow = typeof brainStrategies.$inferSelect;
 export type UserPreferenceRow = typeof userPreferences.$inferSelect;
 export type BrainImaSyncLogRow = typeof brainImaSyncLog.$inferSelect;
+export type BrainInboxItemRow = typeof brainInboxItems.$inferSelect;
+export type BrainProjectRow = typeof brainProjects.$inferSelect;
+export type BrainTaskTimelineRow = typeof brainTaskTimeline.$inferSelect;
+export type BrainTaskCommentRow = typeof brainTaskComments.$inferSelect;

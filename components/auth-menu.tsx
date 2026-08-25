@@ -61,16 +61,22 @@ export function AuthMenu() {
   }, [open]);
 
   async function doLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    // 乐观登出：先立即关下拉、清前端态、跳首页，避免等待远程清 cookie 造成“停留”
+    setUser(null);
+    setOpen(false);
     try {
       localStorage.removeItem(AUTH_CACHE_KEY);
     } catch {
       /* ignore */
     }
     window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
-    setUser(null);
-    setOpen(false);
     router.push("/");
+    // cookie 清除放后台并行；完成后 refresh 一次，让首页以真实的未登录态渲染
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* ignore */
+    }
     router.refresh();
   }
 

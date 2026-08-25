@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [confirmPending, setConfirmPending] = useState(false);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function submit(e: React.FormEvent) {
@@ -31,6 +32,12 @@ export default function RegisterPage() {
     });
     const j = await res.json().catch(() => null);
     if (res.ok) {
+      // 该邮箱需先邮件确认（Supabase 开启 email confirm 时）
+      if (j?.requiresEmailConfirmation) {
+        setLoading(false);
+        setConfirmPending(true);
+        return;
+      }
       // 缓存用户信息，并广播事件让常驻的 AuthMenu 立即刷新右上角
       try {
         if (j?.user) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(j.user));
@@ -53,6 +60,26 @@ export default function RegisterPage() {
     if (j?.error === "email_taken") setError("该邮箱已被注册");
     else if (j?.error === "invalid_input") setError("请输入有效的邮箱与密码（≥8 位）");
     else setError("注册失败，请重试");
+  }
+
+  if (confirmPending) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
+          <CheckCircle2 className="mx-auto size-10 text-primary" />
+          <h1 className="mt-3 text-lg font-semibold text-foreground">注册成功</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            已向 {email} 发送确认邮件，请先查收并点击确认链接，再返回登录。
+          </p>
+          <Link
+            href="/login"
+            className="mt-4 inline-block text-sm text-primary hover:underline"
+          >
+            去登录
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   if (done) {

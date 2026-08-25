@@ -1,8 +1,8 @@
 // 第二大脑（Second Brain）数据访问层：用户私有的个人知识笔记读写。
 // 与 knowledge-db（云端共享技能库）不同，这里按 userId 硬隔离，仅本人可见。
 
-import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog } from "@/lib/db";
-import { eq, and, desc, isNull } from "drizzle-orm";
+import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments } from "@/lib/db";
+import { eq, and, desc, asc, isNull } from "drizzle-orm";
 
 export type BrainSource = "text" | "file" | "clip" | "voice" | "ima";
 
@@ -23,6 +23,15 @@ export interface BrainTask {
   archived: boolean;
   // 关联策略（可选），删除策略时置空
   strategyId: string | null;
+  // —— 第十阶段：项目 / 子任务 / 工时 ——
+  projectId: string | null;
+  assignee: string | null;
+  startDate: string | null;
+  milestone: string | null;
+  parentTaskId: string | null;
+  sortOrder: number;
+  estimatedHours: number | null;
+  actualHours: number | null;
 }
 
 export interface BrainNote {
@@ -53,6 +62,8 @@ export interface BrainNote {
   // ima 增量同步：来源文档唯一标识 + 最近一次同步时间
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  // AI 整理完整结构化结果（OrganizedNote 的 JSON 字符串）；null 表示未整理
+  struct: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -76,6 +87,7 @@ interface BrainRow {
   embedding: string | null;
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  struct: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -110,6 +122,7 @@ function toNote(r: BrainRow): BrainNote {
     embedding: r.embedding ?? null,
     imaDocId: r.imaDocId ?? null,
     imaSyncedAt: r.imaSyncedAt ?? null,
+    struct: r.struct ?? null,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -118,11 +131,33 @@ function toNote(r: BrainRow): BrainNote {
 /** 用户私有的全部笔记，按创建时间倒序。 */
 export async function listBrainNotes(userId: string): Promise<BrainNote[]> {
   try {
+    // 列表显式选列、剔除大字段 embedding（384 维向量，列表/详情用不到，减小首屏传输）
     const rows = (await db
-      .select()
+      .select({
+        id: brainNotes.id,
+        userId: brainNotes.userId,
+        source: brainNotes.source,
+        title: brainNotes.title,
+        content: brainNotes.content,
+        category: brainNotes.category,
+        summary: brainNotes.summary,
+        tags: brainNotes.tags,
+        related: brainNotes.related,
+        parentId: brainNotes.parentId,
+        version: brainNotes.version,
+        superseded: brainNotes.superseded,
+        isSnippet: brainNotes.isSnippet,
+        language: brainNotes.language,
+        codeContent: brainNotes.codeContent,
+        imaDocId: brainNotes.imaDocId,
+        imaSyncedAt: brainNotes.imaSyncedAt,
+        struct: brainNotes.struct,
+        createdAt: brainNotes.createdAt,
+        updatedAt: brainNotes.updatedAt,
+      })
       .from(brainNotes)
       .where(eq(brainNotes.userId, userId))
-      .orderBy(desc(brainNotes.createdAt))) as BrainRow[];
+      .orderBy(desc(brainNotes.createdAt))) as unknown as BrainRow[];
     return rows.map(toNote);
   } catch (err) {
     console.error("[brain-db] list failed:", err);
@@ -166,6 +201,8 @@ export type NewBrainNote = {
   // ima 增量同步字段
   imaDocId?: string | null;
   imaSyncedAt?: string | null;
+  // AI 整理完整结构化结果（JSON 字符串）；可选，落库/回填写入
+  struct?: string | null;
 };
 
 export async function insertBrainNote(
@@ -193,6 +230,7 @@ export async function insertBrainNote(
     embedding: row.embedding ?? null,
     imaDocId: row.imaDocId ?? null,
     imaSyncedAt: row.imaSyncedAt ?? null,
+    struct: row.struct ?? null,
     createdAt: now,
     updatedAt: now,
   });
@@ -216,6 +254,7 @@ export async function insertBrainNote(
     embedding: row.embedding ?? null,
     imaDocId: row.imaDocId ?? null,
     imaSyncedAt: row.imaSyncedAt ?? null,
+    struct: row.struct ?? null,
     createdAt: now,
     updatedAt: now,
   };
@@ -233,6 +272,7 @@ export type UpdateBrainNote = Partial<
     | "embedding"
     | "imaSyncedAt"
     | "codeContent"
+    | "struct"
   >
 >;
 
@@ -251,6 +291,7 @@ export async function updateBrainNote(
     embedding: patch.embedding === undefined ? undefined : (patch.embedding ?? null),
     imaSyncedAt: patch.imaSyncedAt === undefined ? undefined : (patch.imaSyncedAt ?? null),
     codeContent: patch.codeContent === undefined ? undefined : (patch.codeContent ?? null),
+    struct: patch.struct === undefined ? undefined : (patch.struct ?? null),
     updatedAt: Date.now(),
   };
   for (const k of Object.keys(set)) {
@@ -289,6 +330,14 @@ interface TaskRow {
   completedAt: number | null;
   archived: number | null;
   strategyId: string | null;
+  projectId: string | null;
+  assignee: string | null;
+  startDate: string | null;
+  milestone: string | null;
+  parentTaskId: string | null;
+  sortOrder: number | null;
+  estimatedHours: number | null;
+  actualHours: number | null;
 }
 
 function toTask(r: TaskRow): BrainTask {
@@ -304,6 +353,14 @@ function toTask(r: TaskRow): BrainTask {
     completedAt: r.completedAt ?? null,
     archived: r.archived === 1,
     strategyId: r.strategyId ?? null,
+    projectId: r.projectId ?? null,
+    assignee: r.assignee ?? null,
+    startDate: r.startDate ?? null,
+    milestone: r.milestone ?? null,
+    parentTaskId: r.parentTaskId ?? null,
+    sortOrder: Number(r.sortOrder ?? 0),
+    estimatedHours: r.estimatedHours != null ? Number(r.estimatedHours) : null,
+    actualHours: r.actualHours != null ? Number(r.actualHours) : null,
   };
 }
 
@@ -352,6 +409,15 @@ export type NewBrainTask = {
   dueDate?: string | null;
   priority?: BrainTaskPriority;
   strategyId?: string | null;
+  // 第十阶段：项目 / 子任务 / 工时 / 里程碑
+  projectId?: string | null;
+  assignee?: string | null;
+  startDate?: string | null;
+  milestone?: string | null;
+  parentTaskId?: string | null;
+  sortOrder?: number;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
 };
 
 export async function insertBrainTasks(
@@ -372,8 +438,16 @@ export async function insertBrainTasks(
         dueDate: item.dueDate ?? null,
         priority: item.priority ?? "medium",
         createdAt: now,
-        completedAt: null,
+        completedAt: item.status === "done" ? now : null,
         strategyId: item.strategyId ?? null,
+        projectId: item.projectId ?? null,
+        assignee: item.assignee ?? null,
+        startDate: item.startDate ?? null,
+        milestone: item.milestone ?? null,
+        parentTaskId: item.parentTaskId ?? null,
+        sortOrder: item.sortOrder ?? 0,
+        estimatedHours: item.estimatedHours ?? null,
+        actualHours: item.actualHours ?? null,
       });
       inserted.push({
         id,
@@ -384,10 +458,20 @@ export async function insertBrainTasks(
         dueDate: item.dueDate ?? null,
         priority: item.priority ?? "medium",
         createdAt: now,
-        completedAt: null,
+        completedAt: item.status === "done" ? now : null,
         archived: false,
         strategyId: item.strategyId ?? null,
+        projectId: item.projectId ?? null,
+        assignee: item.assignee ?? null,
+        startDate: item.startDate ?? null,
+        milestone: item.milestone ?? null,
+        parentTaskId: item.parentTaskId ?? null,
+        sortOrder: item.sortOrder ?? 0,
+        estimatedHours: item.estimatedHours ?? null,
+        actualHours: item.actualHours ?? null,
       });
+      // 记录"创建"时间线
+      await insertBrainTaskTimeline(userId, id, "created", { title: item.title });
     } catch (err) {
       console.error("[brain-db] insert task failed:", err);
     }
@@ -395,14 +479,34 @@ export async function insertBrainTasks(
   return inserted;
 }
 
+export type BrainTaskPatch = {
+  status?: BrainTaskStatus;
+  dueDate?: string | null;
+  priority?: BrainTaskPriority;
+  title?: string;
+  projectId?: string | null;
+  assignee?: string | null;
+  startDate?: string | null;
+  milestone?: string | null;
+  parentTaskId?: string | null;
+  sortOrder?: number;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
+  strategyId?: string | null;
+};
+
 export async function updateBrainTask(
   userId: string,
   id: string,
-  patch: { status?: BrainTaskStatus; dueDate?: string | null },
+  patch: BrainTaskPatch,
 ): Promise<BrainTask | null> {
   try {
-    const set: Record<string, unknown> = { ...patch, ...(patch.status ? { completedAt: patch.status === "done" ? Date.now() : null } : {}) };
-    if (set.dueDate === "" || set.dueDate === undefined) set.dueDate = null;
+    const set: Record<string, unknown> = { ...patch };
+    if (patch.status) set.completedAt = patch.status === "done" ? Date.now() : null;
+    for (const k of ["dueDate", "projectId", "assignee", "startDate", "milestone", "parentTaskId", "strategyId"] as const) {
+      const v = (patch as Record<string, unknown>)[k];
+      if (v === "" || v === undefined) set[k] = null;
+    }
     await db
       .update(brainTasks)
       .set(set)
@@ -411,7 +515,22 @@ export async function updateBrainTask(
       .select()
       .from(brainTasks)
       .where(and(eq(brainTasks.id, id), eq(brainTasks.userId, userId)))) as TaskRow[];
-    return rows[0] ? toTask(rows[0]) : null;
+    if (!rows[0]) return null;
+    // 状态变更 → 自动记录时间线
+    if (patch.status && patch.status !== rows[0].status) {
+      await insertBrainTaskTimeline(userId, id, "status_changed", {
+        from: rows[0].status,
+        to: patch.status,
+      });
+    }
+    // 截止日期变更 → 记录时间线
+    if (patch.dueDate !== undefined && patch.dueDate !== rows[0].dueDate) {
+      await insertBrainTaskTimeline(userId, id, "dueDate_changed", {
+        from: rows[0].dueDate,
+        to: patch.dueDate ?? null,
+      });
+    }
+    return toTask(rows[0]);
   } catch (err) {
     console.error("[brain-db] update task failed:", err);
     return null;
@@ -448,6 +567,291 @@ export async function archiveDoneTasksForNote(
   } catch (err) {
     console.error("[brain-db] archive tasks failed:", err);
     return false;
+  }
+}
+
+// ---------- 第十阶段：项目 / 子任务 / 时间线 / 评论 ----------
+
+export type BrainProjectStatus = "active" | "paused" | "completed" | "archived";
+
+export interface BrainProject {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  status: BrainProjectStatus;
+  color: string;
+  startDate: string | null;
+  dueDate: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type NewBrainProject = {
+  name: string;
+  description?: string | null;
+  status?: BrainProjectStatus;
+  color?: string;
+  startDate?: string | null;
+  dueDate?: string | null;
+};
+
+interface ProjectRow {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  status: string | null;
+  color: string | null;
+  startDate: string | null;
+  dueDate: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+function toProject(r: ProjectRow): BrainProject {
+  return {
+    id: r.id,
+    userId: r.userId,
+    name: r.name,
+    description: r.description ?? null,
+    status: (r.status ?? "active") as BrainProjectStatus,
+    color: r.color ?? "#3B82F6",
+    startDate: r.startDate ?? null,
+    dueDate: r.dueDate ?? null,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+/** 当前用户全部项目，按创建倒序；归档项目默认不返回。 */
+export async function listBrainProjects(userId: string): Promise<BrainProject[]> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainProjects)
+      .where(eq(brainProjects.userId, userId))) as ProjectRow[];
+    return rows.filter((r) => r.status !== "archived").map(toProject);
+  } catch (err) {
+    console.error("[brain-db] list projects failed:", err);
+    return [];
+  }
+}
+
+export async function getBrainProject(userId: string, id: string): Promise<BrainProject | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainProjects)
+      .where(and(eq(brainProjects.id, id), eq(brainProjects.userId, userId)))) as ProjectRow[];
+    return rows[0] ? toProject(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get project failed:", err);
+    return null;
+  }
+}
+
+export async function insertBrainProject(userId: string, input: NewBrainProject): Promise<BrainProject | null> {
+  const now = Date.now();
+  const id = `bp-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    await db.insert(brainProjects).values({
+      id,
+      userId,
+      name: input.name.slice(0, 200),
+      description: input.description ?? null,
+      status: input.status ?? "active",
+      color: input.color ?? "#3B82F6",
+      startDate: input.startDate ?? null,
+      dueDate: input.dueDate ?? null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return getBrainProject(userId, id);
+  } catch (err) {
+    console.error("[brain-db] insert project failed:", err);
+    return null;
+  }
+}
+
+export type BrainProjectPatch = {
+  name?: string;
+  description?: string | null;
+  status?: BrainProjectStatus;
+  color?: string;
+  startDate?: string | null;
+  dueDate?: string | null;
+};
+
+export async function updateBrainProject(
+  userId: string,
+  id: string,
+  patch: BrainProjectPatch,
+): Promise<BrainProject | null> {
+  try {
+    const set: Record<string, unknown> = { ...patch, updatedAt: Date.now() };
+    if (patch.dueDate === "" || patch.dueDate === undefined) set.dueDate = null;
+    if (patch.status === "archived") {
+      // 归档项目：关联任务 projectId 置空
+      await db
+        .update(brainTasks)
+        .set({ projectId: null })
+        .where(and(eq(brainTasks.projectId, id), eq(brainTasks.userId, userId)));
+    }
+    await db
+      .update(brainProjects)
+      .set(set)
+      .where(and(eq(brainProjects.id, id), eq(brainProjects.userId, userId)));
+    return getBrainProject(userId, id);
+  } catch (err) {
+    console.error("[brain-db] update project failed:", err);
+    return null;
+  }
+}
+
+/** 归档项目（软删除，status → archived）；与 updateBrainProject 的 archived 分支共用。 */
+export async function archiveBrainProject(userId: string, id: string): Promise<boolean> {
+  const r = await updateBrainProject(userId, id, { status: "archived" });
+  return !!r;
+}
+
+// —— 任务事件时间线 ——
+
+export type BrainTaskTimelineAction =
+  | "created"
+  | "status_changed"
+  | "comment_added"
+  | "subtask_added"
+  | "dueDate_changed";
+
+export interface BrainTaskTimelineItem {
+  id: string;
+  taskId: string;
+  action: BrainTaskTimelineAction;
+  detail: string | null;
+  createdAt: number;
+}
+
+export async function insertBrainTaskTimeline(
+  userId: string,
+  taskId: string,
+  action: string,
+  detail?: Record<string, unknown> | null,
+): Promise<void> {
+  try {
+    const id = `tt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    await db.insert(brainTaskTimeline).values({
+      id,
+      taskId,
+      action,
+      detail: detail && Object.keys(detail).length ? JSON.stringify(detail) : null,
+      createdAt: Date.now(),
+    });
+  } catch (err) {
+    console.error("[brain-db] insert timeline failed:", err);
+  }
+}
+
+export async function listBrainTaskTimeline(userId: string, taskId: string): Promise<BrainTaskTimelineItem[]> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainTaskTimeline)
+      .where(eq(brainTaskTimeline.taskId, taskId))) as (BrainTaskTimelineItem & { action: string })[];
+    return rows
+      .filter((r) => r) // 任务已删除时行不存在，无需过滤 userId（taskId 全局唯一）
+      .sort((a, b) => a.createdAt - b.createdAt);
+  } catch (err) {
+    console.error("[brain-db] list timeline failed:", err);
+    return [];
+  }
+}
+
+// —— 任务评论 ——
+
+export interface BrainTaskComment {
+  id: string;
+  taskId: string;
+  content: string;
+  createdAt: number;
+}
+
+export async function addBrainTaskComment(userId: string, taskId: string, content: string): Promise<BrainTaskComment | null> {
+  const id = `tc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    // 校验任务属于该用户
+    const task = await getBrainTaskById(userId, taskId);
+    if (!task) return null;
+    await db.insert(brainTaskComments).values({ id, taskId, content, createdAt: Date.now() });
+    await insertBrainTaskTimeline(userId, taskId, "comment_added", {});
+    return { id, taskId, content, createdAt: Date.now() };
+  } catch (err) {
+    console.error("[brain-db] add comment failed:", err);
+    return null;
+  }
+}
+
+export async function listBrainTaskComments(userId: string, taskId: string): Promise<BrainTaskComment[]> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainTaskComments)
+      .where(eq(brainTaskComments.taskId, taskId))
+      .orderBy(asc(brainTaskComments.createdAt))) as BrainTaskComment[];
+    return rows;
+  } catch (err) {
+    console.error("[brain-db] list comments failed:", err);
+    return [];
+  }
+}
+
+export async function getBrainTaskById(userId: string, id: string): Promise<BrainTask | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainTasks)
+      .where(and(eq(brainTasks.id, id), eq(brainTasks.userId, userId)))) as TaskRow[];
+    return rows[0] ? toTask(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get task failed:", err);
+    return null;
+  }
+}
+
+/** 子任务添加：校验 parent 归属后插入，并记录 subtask_added 时间线。 */
+export async function addBrainSubtask(
+  userId: string,
+  parentId: string,
+  title: string,
+  extra?: Partial<NewBrainTask>,
+): Promise<BrainTask | null> {
+  const parent = await getBrainTaskById(userId, parentId);
+  if (!parent) return null;
+  const maxOrder = (await getBrainSubtaskMaxOrder(userId, parentId));
+  const created = await insertBrainTasks(userId, [{
+    noteId: parent.noteId,
+    title,
+    parentTaskId: parentId,
+    sortOrder: maxOrder + 1,
+    projectId: parent.projectId,
+    dueDate: extra?.dueDate ?? null,
+    priority: extra?.priority ?? parent.priority,
+  }]);
+  if (created[0]) {
+    await insertBrainTaskTimeline(userId, created[0].id, "subtask_added", { parentTitle: parent.title });
+  }
+  return created[0] ?? null;
+}
+
+async function getBrainSubtaskMaxOrder(userId: string, parentId: string): Promise<number> {
+  try {
+    const rows = (await db
+      .select({ s: brainTasks.sortOrder })
+      .from(brainTasks)
+      .where(and(eq(brainTasks.parentTaskId, parentId), eq(brainTasks.userId, userId)))) as { s: number | null }[];
+    return rows.reduce((m, r) => Math.max(m, Number(r.s ?? 0)), 0);
+  } catch {
+    return 0;
   }
 }
 
@@ -1028,5 +1432,180 @@ export async function listBrainSnippets(
   } catch (err) {
     console.error("[brain-db] list snippets failed:", err);
     return [];
+  }
+}
+
+// ---------- 收件箱（Inbox） ----------
+
+export type BrainInboxIntent = "note" | "task" | "meeting" | "snippet" | "project" | "unknown";
+export type BrainInboxStatus = "pending" | "processed" | "dismissed";
+
+export interface BrainInboxItem {
+  id: string;
+  userId: string;
+  rawContent: string;
+  intent: BrainInboxIntent | null;
+  suggestedTitle: string;
+  suggestedCategory: string;
+  suggestedTags: string[];
+  organized: string | null;
+  noteId: string | null;
+  taskId: string | null;
+  status: BrainInboxStatus;
+  createdAt: number;
+  processedAt: number | null;
+}
+
+export type NewBrainInboxItem = {
+  rawContent: string;
+  intent?: BrainInboxIntent;
+  suggestedTitle?: string;
+  suggestedCategory?: string;
+  suggestedTags?: string[];
+  organized?: string;
+  noteId?: string | null;
+  taskId?: string | null;
+  status?: BrainInboxStatus;
+};
+
+interface InboxRow {
+  id: string;
+  userId: string;
+  rawContent: string;
+  intent: string | null;
+  suggestedTitle: string | null;
+  suggestedCategory: string | null;
+  suggestedTags: string | null;
+  organized: string | null;
+  noteId: string | null;
+  taskId: string | null;
+  status: string;
+  createdAt: number;
+  processedAt: number | null;
+}
+
+function toInbox(r: InboxRow): BrainInboxItem {
+  return {
+    id: r.id,
+    userId: r.userId,
+    rawContent: r.rawContent,
+    intent: (r.intent as BrainInboxIntent) ?? null,
+    suggestedTitle: r.suggestedTitle ?? "",
+    suggestedCategory: r.suggestedCategory ?? "",
+    suggestedTags: splitList(r.suggestedTags),
+    organized: r.organized ?? null,
+    noteId: r.noteId ?? null,
+    taskId: r.taskId ?? null,
+    status: (r.status ?? "pending") as BrainInboxStatus,
+    createdAt: Number(r.createdAt),
+    processedAt: r.processedAt != null ? Number(r.processedAt) : null,
+  };
+}
+
+/** 写入若干收件箱条目（初态 pending，先预览不直接落库）。 */
+export async function insertBrainInboxItems(
+  userId: string,
+  items: NewBrainInboxItem[],
+): Promise<BrainInboxItem[]> {
+  const now = Date.now();
+  const created: BrainInboxItem[] = [];
+  for (const it of items) {
+    const id = `bi-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    try {
+      await db.insert(brainInboxItems).values({
+        id,
+        userId,
+        rawContent: it.rawContent,
+        intent: it.intent ?? null,
+        suggestedTitle: it.suggestedTitle ?? null,
+        suggestedCategory: it.suggestedCategory ?? null,
+        suggestedTags: it.suggestedTags?.length ? JSON.stringify(it.suggestedTags) : null,
+        organized: it.organized ?? null,
+        noteId: it.noteId ?? null,
+        taskId: it.taskId ?? null,
+        status: it.status ?? "pending",
+        createdAt: now,
+        processedAt: null,
+      });
+      created.push({
+        id,
+        userId,
+        rawContent: it.rawContent,
+        intent: it.intent ?? null,
+        suggestedTitle: it.suggestedTitle ?? "",
+        suggestedCategory: it.suggestedCategory ?? "",
+        suggestedTags: it.suggestedTags ?? [],
+        organized: it.organized ?? null,
+        noteId: it.noteId ?? null,
+        taskId: it.taskId ?? null,
+        status: it.status ?? "pending",
+        createdAt: now,
+        processedAt: null,
+      });
+    } catch (err) {
+      console.error("[brain-db] insert inbox failed:", err);
+    }
+  }
+  return created;
+}
+
+export async function listBrainInboxItems(
+  userId: string,
+  status?: BrainInboxStatus,
+): Promise<BrainInboxItem[]> {
+  try {
+    let q = db
+      .select()
+      .from(brainInboxItems)
+      .where(eq(brainInboxItems.userId, userId));
+    if (status) q = q.where(eq(brainInboxItems.status, status));
+    const rows = (await q.orderBy(desc(brainInboxItems.createdAt))) as InboxRow[];
+    return rows.map(toInbox);
+  } catch (err) {
+    console.error("[brain-db] list inbox failed:", err);
+    return [];
+  }
+}
+
+export async function getBrainInboxItem(
+  userId: string,
+  id: string,
+): Promise<BrainInboxItem | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainInboxItems)
+      .where(and(eq(brainInboxItems.id, id), eq(brainInboxItems.userId, userId)))) as InboxRow[];
+    return rows[0] ? toInbox(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get inbox failed:", err);
+    return null;
+  }
+}
+
+/** 处理/忽略收件箱条目时更新状态与关联资产 ID。 */
+export async function updateBrainInboxItem(
+  userId: string,
+  id: string,
+  patch: {
+    status?: BrainInboxStatus;
+    noteId?: string | null;
+    taskId?: string | null;
+  },
+): Promise<BrainInboxItem | null> {
+  try {
+    const set: Record<string, unknown> = {};
+    if (patch.status) set.status = patch.status;
+    if (patch.noteId !== undefined) set.noteId = patch.noteId;
+    if (patch.taskId !== undefined) set.taskId = patch.taskId;
+    if (patch.status === "processed") set.processedAt = Date.now();
+    await db
+      .update(brainInboxItems)
+      .set(set)
+      .where(and(eq(brainInboxItems.id, id), eq(brainInboxItems.userId, userId)));
+    return getBrainInboxItem(userId, id);
+  } catch (err) {
+    console.error("[brain-db] update inbox failed:", err);
+    return null;
   }
 }

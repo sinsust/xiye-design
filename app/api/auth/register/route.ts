@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { db, users } from "@/lib/db";
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import {
-  hashPassword,
-  signSession,
-  sessionCookieOptions,
-  SESSION_COOKIE,
-} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -27,24 +21,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
   const email = parsed.data.email.toLowerCase();
-  const password = parsed.data.password;
 
-  const existing = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-  if (existing.length > 0) {
-    return NextResponse.json({ error: "email_taken" }, { status: 409 });
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: parsed.data.password,
+    options: {
+      emailRedirectTo: `${new URL(req.url).origin}/login`,
+    },
+  });
+
+  if (error) {
+    if (/already registered/i.test(error.message)) {
+      return NextResponse.json({ error: "email_taken" }, { status: 409 });
+    }
+    return NextResponse.json({ error: "register_failed" }, { status: 400 });
   }
 
-  const passwordHash = await hashPassword(password);
-  const id = crypto.randomUUID();
-  const now = Date.now();
-  await db.insert(users).values({ id, email, passwordHash, createdAt: now });
+  const u = data.user;
+  if (!u) {
+    return NextResponse.json({ error: "register_failed" }, { status: 400 });
+  }
 
-  const token = await signSession({ sub: id, email });
-  const res = NextResponse.json({ user: { id, email } });
-  res.cookies.set({ name: SESSION_COOKIE, value: token, ...sessionCookieOptions() });
-  return res;
+  // 落一条业务侧 profile（id 即 Supabase auth.users.id；密码由 Auth 托管，password_hash 置空）
+  try {
+    await db
+      .insert(users)
+      .values({ id: u.id, email, passwordHash: null, createdAt: Date.now() })
+      .onConflictDoNothing();
+  } catch {
+    /* 已存在/冲突可忽略，后续登录时以 auth 身份为准 */
+  }
+
+  // data.session 存在 = 免确认直接登录；否则站了邮箱确认流程，需等确认后再登录
+  if (data.session) {
+    return NextResponse.json({ user: { id: u.id, email: u.email } });
+  }
+  return NextResponse.json(
+    { user: { id: u.id, email: u.email }, requiresEmailConfirmation: true },
+    { status: 200 },
+  );
 }
