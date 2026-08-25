@@ -2153,7 +2153,7 @@ function StatsPreview({ variantId }: { variantId: string }) {
               <CountUp value={s.n} className="text-lg font-black" style={{ color: "var(--primary)" }} />
               <p className="mt-1 text-[10px] font-medium">{s.l}</p>
               <div className="mt-2 h-1 w-full overflow-hidden rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 14%, transparent)" }}>
-                <span className="block h-full rounded-full" style={{ width: [72, 58, 84, 46][i % 4] + "%", background: "var(--primary)" }} />
+                <span className="block h-full origin-left rounded-full pv-bar-fill" style={{ width: [72, 58, 84, 46][i % 4] + "%", background: "var(--primary)" }} />
               </div>
             </div>
           ))}
@@ -2183,6 +2183,7 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     ? testi.items.map((t) => ({ q: t.quote, n: t.name, r: t.role }))
     : [{ q: "让团队协作真正快起来了。", n: "林女士", r: "产品经理" }];
   const featured = items[0];
+  // 玻璃证言卡：悬停主色聚光 + 上浮（与 Featured/Footer 等玻璃语言统一）
   const av = (nm: string) => nm.slice(0, 1);
   const Quote = ({ t, small = false, big = false, className = "" }: { t: { q: string; n: string; r: string }; small?: boolean; big?: boolean; className?: string }) => (
     <div className={"group relative overflow-hidden rounded-2xl border pv-glass pv-spotlight pv-lift " + (small ? "p-3 " : "p-4 ") + className} style={{ borderColor: "color-mix(in oklch, var(--primary) 16%, var(--border))" }}>
@@ -2196,35 +2197,40 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
   );
   if (variantId === "testi_featured")
     return (
-      <div className="pv-stagger px-6 py-7 text-center">
-        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
-          <SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center />
-          <span className="mt-2 inline-block text-2xl" style={{ color: "var(--primary)" }}>"</span>
-        </div>
-        <blockquote className="pv-in mx-auto mt-1 max-w-xs text-base font-semibold leading-snug" style={{ ["--i" as string]: 1 }}>"{featured.q}"</blockquote>
-        <div className="pv-in mt-3 flex items-center justify-center gap-2" style={{ ["--i" as string]: 2 }}>
-          <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
-          <span className="text-xs"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
-        </div>
-        <div className="pv-stagger mt-4 grid grid-cols-3 gap-2">
-          {items.slice(1, 4).map((t, i) => (
-            <div key={t.n} className="pv-in pv-lift" style={{ ["--i" as string]: i }}>
-              <Card className="text-[10px]">"{t.q}"</Card>
+      <div className="pv-stagger relative overflow-hidden px-6 py-7 text-center">
+        <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-30" />
+        <div className="relative pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
+        <div className="relative pv-in mt-5" style={{ ["--i" as string]: 1 }}>
+          <div className="pv-breathe">
+            <div className="mx-auto max-w-xs overflow-hidden rounded-2xl border p-5 pv-glass pv-spotlight" style={{ borderColor: "color-mix(in oklch, var(--primary) 22%, var(--border))" }}>
+              <span aria-hidden className="pointer-events-none absolute -top-2 left-4 text-4xl leading-none opacity-25" style={{ color: "var(--primary)" }}>"</span>
+              <blockquote className="relative mt-1 text-base font-semibold leading-snug">"{featured.q}"</blockquote>
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <span className="flex size-8 items-center justify-center rounded-full text-xs font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
+                <span className="text-xs"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
+              </div>
             </div>
+          </div>
+        </div>
+        <div className="relative pv-stagger mt-4 grid grid-cols-3 gap-2">
+          {items.slice(1, 4).map((t, i) => (
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i } as React.CSSProperties}><Quote t={t} small /></div>
           ))}
         </div>
       </div>
     );
   if (variantId === "testi_dark")
     return (
-      <div className="pv-stagger relative overflow-hidden px-6 py-7 text-slate-50" style={{ background: "#0B0B0C" }}>
-        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-40" />
-        <div className="pv-in relative z-10" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={PREVIEW_CONTENT.testimonials?.title || "用户怎么说"} center /></div>
-        <div className="pv-stagger relative z-10 mx-auto mt-5 grid max-w-sm gap-2 sm:grid-cols-2">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-20" />
+        <div className="relative pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={PREVIEW_CONTENT.testimonials?.title || "用户怎么说"} center /></div>
+        <div className="relative pv-stagger mx-auto mt-5 grid max-w-sm gap-2 sm:grid-cols-2">
           {items.slice(0, 4).map((t, i) => (
-            <div key={t.n} className="pv-in pv-lift pv-spotlight rounded-lg border border-white/10 p-3" style={{ ["--i" as string]: i }}>
-              <p className="text-[11px] leading-relaxed text-slate-200">"{t.q}"</p>
-              <p className="mt-2 text-[10px] font-semibold">— {t.n}</p>
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <div className="group relative overflow-hidden rounded-lg border p-3 pv-spotlight pv-lift" style={{ borderColor: "#262629", background: "#141416" }}>
+                <p className="text-[11px] leading-relaxed text-slate-200">"{t.q}"</p>
+                <p className="mt-2 text-[10px] font-semibold text-white">— {t.n}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -2234,45 +2240,34 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     return (
       <div className="pv-stagger px-6 py-7">
         <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
-        <div className="pv-in mx-auto mt-3 max-w-md" style={{ ["--i" as string]: 1 }}>
-          <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="pv-in mt-3 max-w-md" style={{ ["--i" as string]: 1 }}>
+          <Carousel>
             {items.map((t, i) => (
-              <Card key={i} className="flex w-full min-w-[min(100%,17rem)] shrink-0 snap-center flex-col justify-center">
-                <span className="text-xl leading-none" style={{ color: "var(--primary)" }}>"</span>
-                <p className="mt-1 text-xs leading-relaxed">{t.q}</p>
-                <figcaption className="mt-3 flex items-center gap-2">
-                  <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
-                  <span className="text-[10px]"><span className="font-semibold">{t.n}</span> <span style={{ color: "var(--muted-foreground)" }}>{t.r}</span></span>
-                </figcaption>
-              </Card>
+              <Quote key={i} t={t} className="w-[17rem] shrink-0 snap-center" />
             ))}
-          </div>
-          <div className="mt-2 flex justify-center gap-1.5">
-            {items.map((t, i) => (
-              <span key={i} className="size-1.5 rounded-full" style={{ background: "var(--primary)", opacity: i === 0 ? 1 : 0.28 }} />
-            ))}
-          </div>
+          </Carousel>
         </div>
       </div>
     );
   if (variantId === "testi_logo")
     return (
       <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
+          <SectionBadge>客户证言</SectionBadge>
+          <h3 className="mb-3 mt-1.5 text-sm font-bold">来自行业领先团队</h3>
+        </div>
         <div className="pv-stagger grid grid-cols-3 gap-2.5">
           {getBrands().slice(0, 6).map((b, i) => (
-            <div key={i} className="pv-in flex items-center justify-center rounded-lg border px-3 py-3 transition-colors hover:border-[var(--primary)]" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
-              <span className="text-xs font-black tracking-tight" style={{ color: "var(--muted-foreground)" }}>{b}</span>
+            <div key={i} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <div className="flex h-14 items-center justify-center rounded-xl border pv-glass pv-spotlight pv-lift" style={{ borderColor: "color-mix(in oklch, var(--primary) 14%, var(--border))" }}>
+                <span style={{ color: "var(--foreground)" }}><BrandMark name={b} className="h-6 w-auto" /></span>
+              </div>
             </div>
           ))}
         </div>
         <div className="pv-stagger mt-3 grid grid-cols-3 gap-2.5">
           {items.slice(0, 3).map((t, i) => (
-            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i }}>
-              <Card>
-                <p className="text-[10px] leading-relaxed">"{t.q}"</p>
-                <p className="mt-1.5 text-[10px] font-semibold">— {t.n}</p>
-              </Card>
-            </div>
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}><Quote t={t} /></div>
           ))}
         </div>
       </div>
@@ -2281,40 +2276,23 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
     return (
       <div className="pv-stagger relative overflow-hidden py-7">
         <div className="pv-in mb-5" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
-        <div className="pv-in flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-          <div className="flex shrink-0 gap-2.5 pr-2.5 [animation:marqueeX_24s_linear_infinite] hover:[animation-play-state:paused]">
-            {items.map((t, i) => (
-              <Card key={i} className="w-44 shrink-0">
-                <p className="text-[10px] leading-relaxed">"{t.q}"</p>
-                <figcaption className="mt-2 flex items-center gap-1.5">
-                  <span className="flex size-4 items-center justify-center rounded-full text-[7px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
-                  <span className="truncate text-[10px] font-semibold">— {t.n}</span>
-                </figcaption>
-              </Card>
-            ))}
-          </div>
-          <div aria-hidden className="flex shrink-0 gap-2.5 pr-2.5 [animation:marqueeX_24s_linear_infinite] hover:[animation-play-state:paused]">
-            {items.map((t, i) => (
-              <Card key={i} className="w-44 shrink-0">
-                <p className="text-[10px] leading-relaxed">"{t.q}"</p>
-                <figcaption className="mt-2 flex items-center gap-1.5">
-                  <span className="flex size-4 items-center justify-center rounded-full text-[7px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
-                  <span className="truncate text-[10px] font-semibold">— {t.n}</span>
-                </figcaption>
-              </Card>
+        <div className="flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+          <div className="pv-marquee gap-2.5">
+            {[...items, ...items].map((t, i) => (
+              <Quote key={i} t={t} small className="w-44 shrink-0" />
             ))}
           </div>
         </div>
-        <style>{`@keyframes marqueeX { from { transform: translateX(0); } to { transform: translateX(-100%); } }`}</style>
       </div>
     );
   if (variantId === "testi_3dstack")
     return (
-      <div className="pv-stagger flex min-h-52 items-center justify-center px-6 py-7 [perspective:1200px]">
-        <div className="pv-in relative w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
+      <div className="pv-stagger relative flex min-h-52 items-center justify-center overflow-hidden px-6 py-7 [perspective:1200px]">
+        <div aria-hidden className="pointer-events-none absolute inset-0 pv-aurora opacity-20" />
+        <div className="relative pv-in w-full max-w-xs" style={{ ["--i" as string]: 0 }}>
           <div aria-hidden className="absolute inset-x-3 top-3 rounded-2xl border" style={{ borderColor: "var(--border)", background: "var(--surface)", transform: "translateY(16px) scale(0.96)", opacity: 0.5 }} />
           <TiltCard>
-            <figure className="relative rounded-2xl border p-5 shadow-[var(--shadow)]" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+            <figure className="relative rounded-2xl border p-5 pv-glass pv-spotlight" style={{ borderColor: "color-mix(in oklch, var(--primary) 22%, var(--border))" }}>
               <p className="text-sm font-semibold leading-snug">"{featured.q}"</p>
               <figcaption className="mt-3 flex items-center gap-2">
                 <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
@@ -2328,23 +2306,10 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
   if (variantId === "testi_split")
     return (
       <div className="pv-stagger grid gap-3 px-6 py-7 md:grid-cols-2">
-        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
-          <Card className="flex flex-col justify-center">
-            <p className="text-sm font-semibold leading-snug">"{featured.q}"</p>
-            <figcaption className="mt-3 flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-full text-[10px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{featured.n.slice(0, 1)}</span>
-              <span className="text-[10px]"><span className="font-semibold">{featured.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{featured.r}</span></span>
-            </figcaption>
-          </Card>
-        </div>
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><Quote t={featured} big /></div>
         <div className="pv-stagger grid grid-rows-2 gap-3">
           {items.slice(1, 3).map((t, i) => (
-            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i + 1 }}>
-              <Card className="flex flex-col justify-center">
-                <p className="text-[11px] leading-relaxed">"{t.q}"</p>
-                <figcaption className="mt-2 text-[10px] font-semibold">— {t.n}</figcaption>
-              </Card>
-            </div>
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}><Quote t={t} /></div>
           ))}
         </div>
       </div>
@@ -2355,14 +2320,16 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
         <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
         <div className="pv-stagger mt-4 grid gap-2 sm:grid-cols-3">
           {items.slice(0, 6).map((t, i) => (
-            <div key={t.n} className="pv-in pv-lift pv-spotlight flex flex-col rounded-xl border p-3" style={{ ["--i" as string]: i, borderColor: "var(--border)", background: "var(--surface)" }}>
-              <div className="flex gap-0.5 text-[9px]" style={{ color: "var(--primary)" }}>
-                {[0, 1, 2, 3, 4].map((s) => <span key={s}>★</span>)}
-              </div>
-              <p className="mt-1.5 flex-1 text-[10px] leading-relaxed">"{t.q}"</p>
-              <div className="mt-2.5 flex items-center gap-1.5 border-t pt-2" style={{ borderColor: "var(--border)" }}>
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
-                <span className="min-w-0 truncate text-[9px]"><span className="font-semibold">{t.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{t.r}</span></span>
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}>
+              <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border p-3 pv-glass pv-spotlight pv-lift" style={{ borderColor: "color-mix(in oklch, var(--primary) 14%, var(--border))" }}>
+                <div className="flex gap-0.5 text-[9px]" style={{ color: "var(--primary)" }}>
+                  {[0, 1, 2, 3, 4].map((s) => <span key={s}>★</span>)}
+                </div>
+                <p className="mt-1.5 flex-1 text-[10px] leading-relaxed">"{t.q}"</p>
+                <div className="mt-2.5 flex items-center gap-1.5 border-t pt-2" style={{ borderColor: "var(--border)" }}>
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
+                  <span className="min-w-0 truncate text-[9px]"><span className="font-semibold">{t.n}</span> · <span style={{ color: "var(--muted-foreground)" }}>{t.r}</span></span>
+                </div>
               </div>
             </div>
           ))}
@@ -2375,36 +2342,22 @@ function TestimonialsPreview({ variantId }: { variantId: string }) {
       <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="客户证言" title={testi.title || "他们怎么说"} sub={testi.subtitle} center /></div>
       <div className="pv-stagger mt-3 grid grid-cols-3 gap-3">
         {items.map((t, i) => (
-          <div key={t.n} className="pv-in" style={{ ["--i" as string]: i }}>
-            <Card className="flex flex-col">
-              <span className="text-sm" style={{ color: "var(--primary)" }}>"</span>
-              <p className="mt-1 flex-1 text-[10px] leading-relaxed">{t.q}</p>
-              <div className="mt-2 flex items-center gap-1.5">
-                <span className="flex size-6 items-center justify-center rounded-full text-[9px] font-bold text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>{t.n.slice(0, 1)}</span>
-                <div>
-                  <p className="text-[10px] font-semibold">{t.n}</p>
-                  <p className="text-[9px]" style={{ color: "var(--muted-foreground)" }}>{t.r}</p>
-                </div>
-              </div>
-            </Card>
-          </div>
+          <div key={t.n} className="pv-in" style={{ ["--i" as string]: i + 1 } as React.CSSProperties}><Quote t={t} /></div>
         ))}
       </div>
     </div>
   );
 }
-
-/* ───────── Pricing ───────── */
 function PricingPreview({ variantId }: { variantId: string }) {
   const [billing, setBilling] = useState<"m" | "y">("m");
   if (variantId === "price_single")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
-        <div className="mx-auto mt-5 max-w-xs rounded-xl border p-5 text-center" style={{ borderColor: "var(--primary)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center /></div>
+        <div className="pv-in mx-auto mt-5 max-w-xs rounded-xl border p-5 text-center pv-lift pv-spotlight" style={{ ["--i" as string]: 1, borderColor: "var(--primary)", background: "var(--surface)" }}>
           <p className="text-[length:var(--text-h1)] font-black">$19<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
           <p className="mt-1 text-[10px]" style={{ color: "var(--muted-foreground)" }}>包括所有功能，无隐藏费用。</p>
-          <span className="mt-4 block rounded-md py-2 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.02] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
+          <span className="pv-border-flow mt-4 block rounded-md py-2 text-xs font-medium transition-transform duration-150 hover:scale-[1.02] active:scale-95" style={{ color: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
           <ul className="mt-4 space-y-1.5 text-left text-[10px]">
             {["无限项目", "所有集成", "优先支持"].map((f) => (
               <li key={f} className="flex items-center gap-1.5"><span className="flex size-3.5 items-center justify-center rounded-full text-[8px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✓</span>{f}</li>
@@ -2415,34 +2368,36 @@ function PricingPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "price_billing")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
-        <div className="flex items-center justify-center gap-2.5 text-[10px]">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center /></div>
+        <div className="pv-in flex items-center justify-center gap-2.5 text-[10px]" style={{ ["--i" as string]: 1 }}>
           <button type="button" onClick={() => setBilling("m")} className={"cursor-pointer transition " + (billing === "m" ? "font-semibold" : "")} style={{ color: billing === "m" ? "var(--foreground)" : "var(--muted-foreground)" }}>月付</button>
           <button type="button" onClick={() => setBilling("y")} aria-label="切换计费周期" className="relative inline-flex h-4 w-8 cursor-pointer items-center rounded-full transition-colors" style={{ background: billing === "y" ? "var(--primary)" : "var(--muted-foreground)" }}>
             <span className="absolute size-3 rounded-full bg-white transition-transform duration-200" style={{ transform: billing === "y" ? "translateX(18px)" : "translateX(2px)" }} />
           </button>
           <span className={"font-semibold transition-opacity " + (billing === "y" ? "" : "opacity-0")}>年付 <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-medium text-green-700">省 20%</span></span>
         </div>
-        <div className="mx-auto mt-5 grid max-w-md grid-cols-2 gap-3">
+        <div className="pv-stagger mx-auto mt-5 grid max-w-md grid-cols-2 gap-3">
           {[
             { n: "基础版", m: "$15", y: "$12" },
             { n: "专业版", m: "$39", y: "$31" },
-          ].map((t) => (
-            <Card key={t.n}>
-              <p className="text-[10px] font-semibold">{t.n}</p>
-              <p className="mt-1 text-xl font-black tabular-nums">{billing === "y" ? t.y : t.m}<span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
-              <span className="mt-3 block cursor-pointer rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ background: "var(--primary)" }}>选择</span>
-            </Card>
+          ].map((t, i) => (
+            <div key={t.n} className="pv-in pv-lift" style={{ ["--i" as string]: i }}>
+              <Card>
+                <p className="text-[10px] font-semibold">{t.n}</p>
+                <p className="mt-1 text-xl font-black tabular-nums">{billing === "y" ? t.y : t.m}<span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
+                <span className="mt-3 block cursor-pointer rounded-md py-1.5 text-center text-[10px] font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.03] active:scale-95" style={{ background: "var(--primary)" }}>选择</span>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "price_compare")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
-        <div className="mx-auto mt-5 max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center /></div>
+        <div className="pv-in mx-auto mt-5 max-w-sm overflow-hidden rounded-lg border" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
           <table className="w-full text-[10px]">
             <thead>
               <tr className="border-b" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2458,7 +2413,7 @@ function PricingPreview({ variantId }: { variantId: string }) {
                 { f: "高级分析", v: ["—", "✓", "✓"] },
                 { f: "SSO", v: ["—", "—", "✓"] },
               ].map((r) => (
-                <tr key={r.f} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
+                <tr key={r.f} className="border-b last:border-0 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_6%,transparent)]" style={{ borderColor: "var(--border)" }}>
                   <td className="p-2">{r.f}</td>
                   {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v}</td>)}
                 </tr>
@@ -2470,18 +2425,19 @@ function PricingPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "price_neon")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <div className="mx-auto grid max-w-sm grid-cols-3 gap-2">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-40" />
+        <div className="pv-stagger relative z-10 mx-auto grid max-w-sm grid-cols-3 gap-2">
           {[
             { p: "基础", price: "$0", c: "#F472B6", hot: false },
             { p: "创意", price: "$19", c: "#22D3EE", hot: true },
             { p: "无限", price: "$49", c: "#34D399", hot: false },
-          ].map((x) => (
-            <div key={x.p} className={"rounded-lg p-2.5 " + (x.hot ? "ring-2" : "border")} style={x.hot ? { boxShadow: "0 0 0 2px " + x.c + ", 0 12px 30px -12px " + x.c, background: "color-mix(in srgb, " + x.c + " 8%, #141416)" } : { borderColor: "#262629", background: "#141416" }}>
+          ].map((x, i) => (
+            <div key={x.p} className={"pv-in pv-lift rounded-lg p-2.5 " + (x.hot ? "ring-2" : "border")} style={x.hot ? { ["--i" as string]: i, boxShadow: "0 0 0 2px " + x.c + ", 0 12px 30px -12px " + x.c, background: "color-mix(in srgb, " + x.c + " 8%, #141416)" } : { ["--i" as string]: i, borderColor: "#262629", background: "#141416" }}>
               {x.hot && <span className="block rounded-full text-center py-0.5 text-[7px] font-medium text-white" style={{ background: x.c }}>热门</span>}
               <h3 className="mt-1 text-sm font-semibold" style={{ color: x.c }}>{x.p}</h3>
               <p className="mt-0.5 text-lg font-black text-white">{x.price}<span className="text-[8px] text-slate-400">/月</span></p>
-              <span className="mt-1.5 block rounded border py-1 text-center text-[9px] font-semibold" style={{ borderColor: x.c, color: x.c }}>开始</span>
+              <span className="mt-1.5 block rounded border py-1 text-center text-[9px] font-semibold transition-shadow hover:shadow-[0_0_16px_var(--nc)]" style={{ ["--nc" as string]: x.c, borderColor: x.c, color: x.c }}>开始</span>
             </div>
           ))}
         </div>
@@ -2489,20 +2445,22 @@ function PricingPreview({ variantId }: { variantId: string }) {
     );
   // price_tiers
   return (
-    <div className="px-6 py-7">
-      <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center />
-      <div className="mx-auto mt-5 grid max-w-md grid-cols-3 gap-3">
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title || "简单透明的定价"} sub={PREVIEW_CONTENT.pricing.subtitle} center /></div>
+      <div className="pv-stagger mx-auto mt-5 grid max-w-md grid-cols-3 gap-3">
         {PREVIEW_CONTENT.pricing.plans.map((t, i) => {
           const pop = i === 1;
           return (
-            <Card key={t.name} className={["relative", pop ? "ring-2 ring-[var(--primary)]/30" : ""].join(" ")}>
-              {pop && (
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>
-              )}
-              <p className="text-[10px] font-semibold">{t.name}</p>
-              <p className="mt-1 text-lg font-black">{t.price}{t.period && <span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>{t.period}</span>}</p>
-              <span className="mt-2 block rounded-md py-1.5 text-center text-[9px] font-medium" style={pop ? { background: "var(--primary)", color: "#fff" } : { border: "1px solid var(--border)" }}>{t.cta}</span>
-            </Card>
+            <div key={t.name} className={"pv-in pv-lift" + (pop ? " scale-[1.02]" : "")} style={{ ["--i" as string]: i }}>
+              <Card className={["relative", pop ? "ring-2 ring-[var(--primary)]/30" : ""].join(" ")}>
+                {pop && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>
+                )}
+                <p className="text-[10px] font-semibold">{t.name}</p>
+                <p className="mt-1 text-lg font-black">{t.price}{t.period && <span className="text-[9px] font-normal" style={{ color: "var(--muted-foreground)" }}>{t.period}</span>}</p>
+                <span className="mt-2 block rounded-md py-1.5 text-center text-[9px] font-medium" style={pop ? { background: "var(--primary)", color: "#fff" } : { border: "1px solid var(--border)" }}>{t.cta}</span>
+              </Card>
+            </div>
           );
         })}
       </div>
@@ -2514,58 +2472,62 @@ function PricingPreview({ variantId }: { variantId: string }) {
 function PricingTiersPreview({ variantId }: { variantId: string }) {
   if (variantId === "ptiers_single")
     return (
-      <div className="px-6 py-7">
-        <div className="text-center">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in text-center" style={{ ["--i" as string]: 0 }}>
           <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title} sub={PREVIEW_CONTENT.pricing.subtitle} center />
         </div>
-        <Card className="mx-auto mt-5 max-w-xs text-center ring-2 ring-[var(--primary)]/30">
-          <p className="text-[length:var(--text-h1)] font-black">$19<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
-          <span className="mt-4 block rounded-md py-2 text-xs font-medium text-[var(--on-primary)] transition-transform duration-150 hover:scale-[1.02] active:scale-95" style={{ background: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
-          <ul className="mt-4 space-y-1.5 text-left text-[10px]">
-            {["无限项目", "所有集成", "优先支持"].map((f) => (
-              <li key={f} className="flex items-center gap-1.5"><span className="flex size-3.5 items-center justify-center rounded-full text-[8px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✓</span>{f}</li>
-            ))}
-          </ul>
-          <p className="mt-3 border-t pt-2 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>✓ 30 天退款保证</p>
-        </Card>
+        <div className="pv-in mx-auto mt-5 max-w-xs" style={{ ["--i" as string]: 1 }}>
+          <Card className="text-center ring-2 ring-[var(--primary)]/30">
+            <p className="text-[length:var(--text-h1)] font-black">$19<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/月</span></p>
+            <span className="pv-border-flow mt-4 block rounded-md py-2 text-xs font-medium transition-transform duration-150 hover:scale-[1.02] active:scale-95" style={{ color: "var(--primary)" }}>{PREVIEW_CONTENT.cta.primary}</span>
+            <ul className="mt-4 space-y-1.5 text-left text-[10px]">
+              {["无限项目", "所有集成", "优先支持"].map((f) => (
+                <li key={f} className="flex items-center gap-1.5"><span className="flex size-3.5 items-center justify-center rounded-full text-[8px] text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>✓</span>{f}</li>
+              ))}
+            </ul>
+            <p className="mt-3 border-t pt-2 text-[9px]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>✓ 30 天退款保证</p>
+          </Card>
+        </div>
       </div>
     );
   if (variantId === "ptiers_billing")
     return (
-      <div className="px-6 py-7">
-        <div className="flex items-center justify-center gap-2 text-[10px]">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in flex items-center justify-center gap-2 text-[10px]" style={{ ["--i" as string]: 0 }}>
           <span style={{ color: "var(--muted-foreground)" }}>月付</span>
           <span className="relative inline-block h-4 w-8 rounded-full" style={{ background: "var(--primary)" }}><span className="absolute left-[18px] top-0.5 size-3 rounded-full bg-white" /></span>
           <span className="font-semibold">年付 <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] text-green-700">省 20%</span></span>
         </div>
-        <div className="mx-auto mt-3 grid max-w-sm grid-cols-3 gap-2">
+        <div className="pv-stagger mx-auto mt-3 grid max-w-sm grid-cols-3 gap-2">
           {[
             { n: "基础", p: "$15" },
             { n: "专业", p: "$39" },
             { n: "旗舰", p: "$79" },
-          ].map((t) => (
-            <Card key={t.n} className="text-center">
-              <p className="text-[10px] font-semibold">{t.n}</p>
-              <p className="mt-1 text-base font-black">{t.p}</p>
-              <span className="mt-1.5 block rounded-md py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>选择</span>
-            </Card>
+          ].map((t, i) => (
+            <div key={t.n} className="pv-in" style={{ ["--i" as string]: i }}>
+              <Card className="text-center">
+                <p className="text-[10px] font-semibold">{t.n}</p>
+                <p className="mt-1 text-base font-black">{t.p}</p>
+                <span className="mt-1.5 block rounded-md py-1 text-[9px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>选择</span>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "ptiers_enterprise")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto grid max-w-sm grid-cols-3 items-stretch gap-2">
-          <div className="rounded-lg border p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto grid max-w-sm grid-cols-3 items-stretch gap-2">
+          <div className="pv-in pv-lift pv-spotlight rounded-lg border p-2.5" style={{ ["--i" as string]: 0, borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">免费</p><p className="mt-1 text-base font-black">$0</p>
             <span className="mt-1.5 block rounded-md border py-1 text-center text-[9px]" style={{ borderColor: "var(--border)" }}>开始</span>
           </div>
-          <div className="rounded-lg p-2.5 text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>
+          <div className="pv-in pv-lift pv-spotlight rounded-lg p-2.5 text-[var(--on-primary)]" style={{ ["--i" as string]: 1, background: "var(--primary)" }}>
             <p className="text-[10px] font-semibold">专业</p><p className="mt-1 text-base font-black">$29</p>
             <span className="mt-1.5 block rounded-md bg-white py-1 text-center text-[9px] font-medium text-slate-900">升级</span>
           </div>
-          <div className="rounded-lg border border-dashed p-2.5" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+          <div className="pv-in pv-lift pv-spotlight rounded-lg border border-dashed p-2.5" style={{ ["--i" as string]: 2, borderColor: "var(--border)", background: "var(--surface)" }}>
             <p className="text-[10px] font-semibold">企业</p><p className="mt-1 text-base font-black">定制</p>
             <span className="mt-1.5 block rounded-md border py-1 text-center text-[9px]" style={{ borderColor: "var(--border)" }}>联系</span>
           </div>
@@ -2574,27 +2536,28 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "ptiers_highlight")
     return (
-      <div className="px-6 py-7">
-        <div className="text-center">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in text-center" style={{ ["--i" as string]: 0 }}>
           <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title} center />
         </div>
-        <div className="mx-auto mt-6 grid max-w-md grid-cols-3 items-stretch gap-2">
+        <div className="pv-stagger mx-auto mt-6 grid max-w-md grid-cols-3 items-stretch gap-2">
           {[
             { n: "免费", p: "$0", f: ["3 个项目", "社区支持"], pop: false },
             { n: "专业", p: "$29", f: ["无限项目", "优先支持", "高级分析"], pop: true },
             { n: "企业", p: "定制", f: ["SSO / SAML", "专属客服"], pop: false },
-          ].map((t) => (
+          ].map((t, i) => (
             <div
               key={t.n}
-              className="relative flex flex-col rounded-xl p-3"
+              className="pv-in pv-lift pv-spotlight relative flex flex-col rounded-xl p-3"
               style={
                 t.pop
                   ? {
+                      ["--i" as string]: i,
                       background: "color-mix(in srgb, var(--primary) 8%, var(--surface))",
                       border: "1px solid var(--primary)",
                       boxShadow: "0 20px 44px -24px color-mix(in srgb, var(--primary) 70%, transparent)",
                     }
-                  : { background: "var(--surface)", border: "1px solid var(--border)" }
+                  : { ["--i" as string]: i, background: "var(--surface)", border: "1px solid var(--border)" }
               }
             >
               {t.pop && (
@@ -2620,22 +2583,24 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：三档 + 推荐档强调
   return (
-    <div className="px-6 py-7">
-      <div className="text-center">
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in text-center" style={{ ["--i" as string]: 0 }}>
         <SectionHead badge="定价方案" title={PREVIEW_CONTENT.pricing.title} center />
       </div>
-      <div className="mx-auto mt-5 grid max-w-md grid-cols-3 items-center gap-2">
+      <div className="pv-stagger mx-auto mt-5 grid max-w-md grid-cols-3 items-center gap-2">
         {[
           { n: "免费", p: "$0", pop: false },
           { n: "专业", p: "$29", pop: true },
           { n: "企业", p: "定制", pop: false },
-        ].map((t) => (
-          <Card key={t.n} className={["relative", t.pop ? "scale-[1.04] ring-2 ring-[var(--primary)]/30" : ""].join(" ")}>
-            {t.pop && <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>}
-            <p className="text-[10px] font-semibold">{t.n}</p>
-            <p className="mt-1 text-base font-black">{t.p}</p>
-            <span className="mt-1.5 block rounded-md py-1 text-center text-[9px] font-medium" style={t.pop ? { background: "var(--primary)", color: "#fff" } : { border: "1px solid var(--border)" }}>选择</span>
-          </Card>
+        ].map((t, i) => (
+          <div key={t.n} className="pv-in" style={{ ["--i" as string]: i }}>
+            <Card className={["relative", t.pop ? "scale-[1.04] ring-2 ring-[var(--primary)]/30" : ""].join(" ")}>
+              {t.pop && <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2 py-0.5 text-[8px] font-medium text-[var(--on-primary)]" style={{ background: "var(--primary)" }}>最受欢迎</span>}
+              <p className="text-[10px] font-semibold">{t.n}</p>
+              <p className="mt-1 text-base font-black">{t.p}</p>
+              <span className="mt-1.5 block rounded-md py-1 text-center text-[9px] font-medium" style={t.pop ? { background: "var(--primary)", color: "#fff" } : { border: "1px solid var(--border)" }}>选择</span>
+            </Card>
+          </div>
         ))}
       </div>
     </div>
@@ -2653,13 +2618,14 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
   }));
   if (variantId === "pcomp_dark")
     return (
-      <div className="bg-slate-900 px-6 py-7">
-        <div className="mx-auto max-w-sm overflow-hidden rounded-lg border border-white/10">
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-35" />
+        <div className="pv-in relative z-10 mx-auto max-w-sm overflow-hidden rounded-lg border border-white/10" style={{ ["--i" as string]: 0 }}>
           <table className="w-full text-[10px] text-slate-100">
             <thead><tr className="border-b border-white/10"><th className="p-2 text-left font-semibold">功能</th>{tierNames.map((p, i) => <th key={p} className="p-2 text-center font-semibold">{p}</th>)}</tr></thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.f} className="border-b border-white/10 last:border-0">
+                <tr key={r.f} className="border-b border-white/10 transition-colors last:border-0 hover:bg-white/5">
                   <td className="p-2 text-slate-300">{r.f}</td>
                   {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v === "✓" ? <span className="text-green-400">✓</span> : v === "—" ? <span className="text-slate-600">—</span> : v}</td>)}
                 </tr>
@@ -2671,8 +2637,8 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_highlight")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in mx-auto max-w-sm overflow-hidden rounded-lg border transition-shadow hover:shadow-[0_0_30px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)]" style={{ ["--i" as string]: 0, borderColor: "var(--border)" }}>
           <table className="w-full text-[10px]">
             <thead>
               <tr className="border-b" style={{ borderColor: "var(--border)" }}>
@@ -2686,7 +2652,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.f} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
+                <tr key={r.f} className="border-b last:border-0 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_5%,transparent)]" style={{ borderColor: "var(--border)" }}>
                   <td className="p-2">{r.f}</td>
                   {r.v.map((v, i) => <td key={i} className={"p-2 text-center " + (i === 1 ? "bg-primary/10" : "")}>{v}</td>)}
                 </tr>
@@ -2698,14 +2664,14 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_editorial")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto max-w-sm">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in mx-auto max-w-sm" style={{ ["--i" as string]: 0 }}>
           <div className="flex items-baseline justify-between border-b pb-1.5" style={{ borderColor: "var(--border)" }}>
             <span className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--muted-foreground)" }}>功能</span>
             <div className="flex gap-6">{tierNames.map((p, i) => <span key={p} className="w-10 text-center text-[11px] font-semibold" style={{ fontFamily: "var(--font-heading)", color: i === 1 ? "var(--primary)" : "var(--foreground)" }}>{p}</span>)}</div>
           </div>
-          {rows.map((r) => (
-            <div key={r.f} className="flex items-center justify-between border-b py-2.5" style={{ borderColor: "var(--border)" }}>
+          {rows.map((r, ri) => (
+            <div key={r.f} className="pv-in flex items-center justify-between border-b py-2.5 transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ ["--i" as string]: ri + 1, borderColor: "var(--border)" }}>
               <span className="text-[10px] font-medium">{r.f}</span>
               <div className="flex gap-6">{r.v.map((v, i) => <span key={i} className="w-10 text-center text-[10px]" style={{ fontFamily: "var(--font-heading)", color: i === 1 ? "var(--primary)" : v === "✓" ? "var(--foreground)" : "var(--muted-foreground)" }}>{v === "✓" ? <b>✓</b> : v}</span>)}</div>
             </div>
@@ -2715,10 +2681,10 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_bento")
     return (
-      <div className="px-6 py-7">
-        <div className="mx-auto grid max-w-sm grid-cols-3 gap-2">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-stagger mx-auto grid max-w-sm grid-cols-3 gap-2">
           {plans.map((x, xi) => (
-            <div key={x.name} className={"rounded-lg p-2.5 " + (xi === 1 ? "ring-2" : "border")} style={xi === 1 ? { background: "color-mix(in srgb, var(--primary) 8%, var(--surface))", boxShadow: "0 0 0 2px var(--primary)" } : { borderColor: "var(--border)", background: "var(--surface)" }}>
+            <div key={x.name} className={"pv-in pv-lift pv-spotlight rounded-lg p-2.5 " + (xi === 1 ? "ring-2" : "border")} style={xi === 1 ? { ["--i" as string]: xi, background: "color-mix(in srgb, var(--primary) 8%, var(--surface))", boxShadow: "0 0 0 2px var(--primary)" } : { ["--i" as string]: xi, borderColor: "var(--border)", background: "var(--surface)" }}>
               {xi === 1 && <span className="block rounded-full bg-primary px-1 py-0.5 text-center text-[7px] font-medium text-white">热门</span>}
               <p className="mt-1 text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{x.name}</p>
               <ul className="mt-1 space-y-0.5 text-[8px]" style={{ color: "var(--muted-foreground)" }}>{(x.features || []).slice(0, 3).map((n) => <li key={n} className="flex items-center gap-1"><span style={{ color: "var(--primary)" }}>✓</span>{n}</li>)}</ul>
@@ -2729,15 +2695,16 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_neon")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <div className="mx-auto max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "#262629" }}>
+      <div className="pv-stagger relative overflow-hidden px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <div className="pointer-events-none absolute inset-0 pv-aurora opacity-35" />
+        <div className="pv-in relative z-10 mx-auto max-w-sm overflow-hidden rounded-lg border" style={{ ["--i" as string]: 0, borderColor: "#262629" }}>
           <table className="w-full text-[9px] text-slate-100">
             <thead><tr className="border-b" style={{ borderColor: "#262629" }}><th className="p-2 text-left text-slate-400">功能</th>{tierNames.map((p, i) => <th key={p} className="p-2 text-center" style={{ color: i === 1 ? "#22D3EE" : "inherit" }}>{p}</th>)}</tr></thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.f} className="border-b last:border-0" style={{ borderColor: "#262629" }}>
+                <tr key={r.f} className="border-b last:border-0 transition-colors hover:bg-white/5" style={{ borderColor: "#262629" }}>
                   <td className="p-2 text-slate-300">{r.f}</td>
-                  {r.v.map((v, i) => <td key={i} className="p-2 text-center" style={{ color: i === 1 ? "#22D3EE" : "inherit" }}>{v === "✓" ? "◆" : v === "—" ? "·" : v}</td>)}
+                  {r.v.map((v, i) => <td key={i} className="p-2 text-center transition-colors" style={{ color: i === 1 ? "#22D3EE" : "inherit" }}>{v === "✓" ? "◆" : v === "—" ? "·" : v}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -2747,10 +2714,12 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pcomp_standard")
     return (
-      <div className="px-6 py-7">
-        <h3 className="text-center text-sm font-bold">功能对比</h3>
-        <p className="mt-1 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>逐项对齐，帮你选对档位</p>
-        <div className="mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
+          <h3 className="text-center text-sm font-bold">功能对比</h3>
+          <p className="mt-1 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>逐项对齐，帮你选对档位</p>
+        </div>
+        <div className="pv-in mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
           <table className="w-full text-[10px]">
             <thead>
               <tr style={{ background: "var(--surface)" }}>
@@ -2768,7 +2737,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
                 <tr key={r.f} style={{ background: ri % 2 === 1 ? "color-mix(in srgb, var(--foreground) 4%, transparent)" : "transparent" }}>
                   <td className="border-b p-2" style={{ borderColor: "var(--border)" }}>{r.f}</td>
                   {r.v.map((v, i) => (
-                    <td key={i} className="border-b p-2 text-center" style={{ borderColor: "var(--border)" }}>
+                    <td key={i} className="border-b p-2 text-center transition-colors" style={{ borderColor: "var(--border)" }}>
                       {v === "✓" ? <span style={{ color: "var(--primary)" }}>✓</span> : <span style={{ color: "var(--muted-foreground)" }}>{v}</span>}
                     </td>
                   ))}
@@ -2778,7 +2747,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
                 <td className="p-2" />
                 {plans.map((p) => (
                   <td key={p.name} className="p-2 text-center">
-                    <span className="inline-block rounded-md border px-2 py-0.5 text-[8px] font-medium" style={{ borderColor: "var(--border)" }}>选择</span>
+                    <span className="inline-block cursor-pointer rounded-md border px-2 py-0.5 text-[8px] font-medium transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]" style={{ borderColor: "var(--border)" }}>选择</span>
                   </td>
                 ))}
               </tr>
@@ -2789,9 +2758,11 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：分组对比表
   return (
-    <div className="px-6 py-7">
-      <h3 className="text-center text-sm font-bold">功能对比</h3>
-      <div className="mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ borderColor: "var(--border)" }}>
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in" style={{ ["--i" as string]: 0 }}>
+        <h3 className="text-center text-sm font-bold">功能对比</h3>
+      </div>
+      <div className="pv-in mx-auto mt-3 max-w-sm overflow-hidden rounded-lg border" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>
         <table className="w-full text-[10px]">
           <thead>
             <tr className="border-b" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -2800,16 +2771,16 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="bg-muted/40 p-1.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">基础</td></tr>
+            <tr className="border-b transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="p-1.5 text-[9px] font-semibold uppercase tracking-wider" style={{ background: "color-mix(in srgb, var(--muted-foreground) 12%, transparent)", color: "var(--muted-foreground)" }}>基础</td></tr>
             {rows.slice(0, 2).map((r) => (
-              <tr key={r.f} className="border-b" style={{ borderColor: "var(--border)" }}>
+              <tr key={r.f} className="border-b transition-colors last:border-0 hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}>
                 <td className="p-2">{r.f}</td>
                 {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v}</td>)}
               </tr>
             ))}
-            <tr className="border-b" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="bg-muted/40 p-1.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">企业</td></tr>
+            <tr className="border-b transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}><td colSpan={4} className="p-1.5 text-[9px] font-semibold uppercase tracking-wider" style={{ background: "color-mix(in srgb, var(--muted-foreground) 12%, transparent)", color: "var(--muted-foreground)" }}>企业</td></tr>
             {rows.slice(2).map((r) => (
-              <tr key={r.f} className="border-b last:border-0" style={{ borderColor: "var(--border)" }}>
+              <tr key={r.f} className="border-b transition-colors last:border-0 hover:bg-[color-mix(in_srgb,var(--primary)_4%,transparent)]" style={{ borderColor: "var(--border)" }}>
                 <td className="p-2">{r.f}</td>
                 {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v}</td>)}
               </tr>
