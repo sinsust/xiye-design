@@ -1235,13 +1235,13 @@ function FaqPreview({ variantId }: { variantId: string }) {
 
   const Accordion = ({ dark = false }: { dark?: boolean }) => (
     <div
-      className="mx-auto max-w-sm divide-y rounded-lg border"
+      className="mx-auto max-w-sm divide-y rounded-lg border pv-stagger"
       style={{ borderColor: dark ? "rgba(255,255,255,0.12)" : "var(--border)", background: dark ? "transparent" : "var(--surface)" }}
     >
       {items.map((f, i) => {
         const isOpen = open === i;
         return (
-          <div key={f.q}>
+          <div key={f.q} className="pv-in" style={{ ["--i" as string]: i } as React.CSSProperties}>
             <button
               type="button"
               onClick={() => toggle(i)}
@@ -1264,49 +1264,51 @@ function FaqPreview({ variantId }: { variantId: string }) {
 
   if (variantId === "faq_twocol")
     return (
-      <div className="grid gap-6 px-6 py-7 sm:grid-cols-[1fr_2fr]">
-        <div><SectionHead badge="常见问题" title={faq.title} sub={faq.subtitle} /></div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {items.map((f) => (
-            <Card key={f.q}>
-              <p className="text-xs font-medium">{f.q}</p>
-              <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>
-            </Card>
+      <div className="pv-stagger grid gap-6 px-6 py-7 sm:grid-cols-[1fr_2fr]">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="常见问题" title={faq.title} sub={faq.subtitle} /></div>
+        <div className="pv-stagger grid gap-3 sm:grid-cols-2">
+          {items.map((f, i) => (
+            <div key={f.q} className="pv-in" style={{ ["--i" as string]: i } as React.CSSProperties}>
+              <Card className="h-full">
+                <p className="text-xs font-medium">{f.q}</p>
+                <p className="mt-0.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>
+              </Card>
+            </div>
           ))}
         </div>
       </div>
     );
   if (variantId === "faq_search")
     return (
-      <div className="px-6 py-7">
-        <div className="text-center">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in text-center" style={{ ["--i" as string]: 0 }}>
           <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>常见问题</span>
           <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
           {faq.subtitle ? <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p> : null}
         </div>
-        <div className="mx-auto mt-5 max-w-sm cursor-text rounded-lg border px-3 py-2 text-xs transition-colors focus-within:border-[var(--primary)]" style={{ borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>🔍 搜索问题…</div>
-        <div className="mx-auto mt-3 max-w-sm space-y-2"><Accordion /></div>
+        <div className="pv-in mx-auto mt-5 max-w-sm cursor-text rounded-lg border px-3 py-2 text-xs transition-colors focus-within:border-[var(--primary)] pv-glass" style={{ ["--i" as string]: 1, borderColor: "var(--border)", background: "var(--surface)", color: "var(--muted-foreground)" }}>🔍 搜索问题…</div>
+        <div className="pv-in mx-auto mt-3 max-w-sm space-y-2" style={{ ["--i" as string]: 2 }}><Accordion /></div>
       </div>
     );
   if (variantId === "faq_dark")
     return (
-      <div className="bg-slate-900 px-6 py-7 text-slate-50">
-        <h3 className="text-center text-base font-bold">{faq.title}</h3>
-        <div className="mt-3"><Accordion dark /></div>
+      <div className="pv-stagger bg-slate-900 px-6 py-7 text-slate-50">
+        <h3 className="pv-in text-center text-base font-bold" style={{ ["--i" as string]: 0 }}>{faq.title}</h3>
+        <div className="pv-in mt-3" style={{ ["--i" as string]: 1 }}><Accordion dark /></div>
       </div>
     );
   if (variantId === "faq_accordion_animated")
     return (
-      <div className="px-6 py-7">
-        <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>常见问题</span>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in text-center" style={{ ["--i" as string]: 0 }}>
+          <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] pv-border-flow text-[var(--primary)]">常见问题</span>
           <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
         </div>
-        <div className="mx-auto mt-5 max-w-sm space-y-2">
+        <div className="pv-stagger mx-auto mt-5 max-w-sm space-y-2" style={{ ["--i" as string]: 1 }}>
           {items.map((f, i) => {
             const isOpen = open === i;
             return (
-              <div key={f.q} className="overflow-hidden rounded-lg border transition-colors" style={{ borderColor: "var(--border)", background: isOpen ? "color-mix(in srgb, var(--primary) 8%, var(--surface))" : "var(--surface)" }}>
+              <div key={f.q} className={"pv-in relative overflow-hidden rounded-lg border transition-colors " + (isOpen ? "pv-spotlight" : "")} style={{ ["--i" as string]: i, borderColor: isOpen ? "color-mix(in srgb, var(--primary) 45%, var(--border))" : "var(--border)", background: isOpen ? "color-mix(in srgb, var(--primary) 8%, var(--surface))" : "var(--surface)" } as React.CSSProperties}>
                 <button type="button" onClick={() => toggle(i)} className="flex w-full items-center justify-between px-4 py-3 text-left text-xs font-medium">
                   <span>{f.q}</span>
                   <span className={"text-sm transition-transform duration-300 " + (isOpen ? "rotate-180" : "")} style={{ color: "var(--primary)" }}>▾</span>
@@ -1324,17 +1326,17 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "faq_editorial")
     return (
-      <div className="grid gap-6 px-6 py-7 sm:grid-cols-[1fr_1.4fr]">
-        <div>
+      <div className="pv-stagger grid gap-6 px-6 py-7 sm:grid-cols-[1fr_1.4fr]">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
           <h3 className="text-lg font-bold tracking-tight">{faq.title}</h3>
           <p className="mt-1 text-xs" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p>
         </div>
-        <div className="divide-y" style={{ borderColor: "var(--border)" }}>
+        <div className="pv-stagger divide-y" style={{ borderColor: "var(--border)" }}>
           {items.map((f, i) => {
             const isOpen = open === i;
             return (
-              <div key={f.q}>
-                <button type="button" onClick={() => toggle(i)} className="flex w-full items-center justify-between py-3 text-left text-xs font-medium">
+              <div key={f.q} className="pv-in transition-colors" style={{ ["--i" as string]: i } as React.CSSProperties}>
+                <button type="button" onClick={() => toggle(i)} className="flex w-full items-center justify-between py-3 text-left text-xs font-medium transition-colors hover:text-[var(--primary)]">
                   <span>{f.q}</span>
                   <span className={"text-sm transition-transform duration-300 " + (isOpen ? "rotate-45" : "")} style={{ color: "var(--primary)" }}>+</span>
                 </button>
@@ -1347,12 +1349,14 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pfaq_editorial")
     return (
-      <div className="px-6 py-7">
-        <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--primary)" }}>定价 FAQ</p>
-        <h3 className="mt-1 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>{faq.title}</h3>
-        <div className="mt-3 grid gap-3 border-t pt-3 sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
-          {items.map((f) => (
-            <div key={f.q} className="border-b pb-2.5" style={{ borderColor: "var(--border)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
+          <p className="text-[8px] uppercase tracking-[0.2em]" style={{ color: "var(--primary)" }}>定价 FAQ</p>
+          <h3 className="mt-1 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>{faq.title}</h3>
+        </div>
+        <div className="pv-stagger mt-3 grid gap-3 border-t pt-3 sm:grid-cols-2" style={{ borderColor: "var(--border)" }}>
+          {items.map((f, i) => (
+            <div key={f.q} className="pv-in border-b pb-2.5 transition-colors hover:border-[var(--primary)]" style={{ ["--i" as string]: i, borderColor: "var(--border)" } as React.CSSProperties}>
               <p className="text-[10px] font-semibold" style={{ fontFamily: "var(--font-heading)" }}>{f.q}</p>
               <p className="mt-0.5 text-[9px]" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>
             </div>
@@ -1362,12 +1366,12 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pfaq_neon" || variantId === "faq_neon")
     return (
-      <div className="px-6 py-7" style={{ background: "#0B0B0C" }}>
-        <h3 className="text-center text-base font-bold text-white">{faq.title}</h3>
-        <div className="mx-auto mt-4 max-w-sm divide-y" style={{ borderColor: "#262629" }}>
-          {items.map((f) => (
-            <div key={f.q} className="py-2.5">
-              <p className="text-[11px] font-semibold" style={{ color: "#22D3EE" }}>{f.q}</p>
+      <div className="pv-stagger px-6 py-7" style={{ background: "#0B0B0C" }}>
+        <h3 className="pv-in text-center text-base font-bold text-white" style={{ ["--i" as string]: 0 }}>{faq.title}</h3>
+        <div className="pv-stagger mx-auto mt-4 max-w-sm divide-y" style={{ ["--i" as string]: 1, borderColor: "#262629" }}>
+          {items.map((f, i) => (
+            <div key={f.q} className="pv-in py-2.5 transition-colors" style={{ ["--i" as string]: i } as React.CSSProperties}>
+              <p className="text-[11px] font-semibold transition-colors" style={{ color: ["#22D3EE", "#F472B6", "#34D399", "#F59E0B"][i % 4] }}>{f.q}</p>
               <p className="mt-0.5 text-[9px]" style={{ color: "#9A9AA2" }}>{f.a}</p>
             </div>
           ))}
@@ -1376,9 +1380,9 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "faq_single")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="常见问题" title={faq.title} center />
-        <div className="mx-auto mt-4 max-w-sm divide-y overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="常见问题" title={faq.title} center /></div>
+        <div className="pv-in mx-auto mt-4 max-w-sm divide-y overflow-hidden rounded-xl border" style={{ ["--i" as string]: 1, borderColor: "var(--border)", background: "var(--surface)" }}>
           {items.map((f, i) => {
             const isOpen = open === i;
             return (
@@ -1397,21 +1401,21 @@ function FaqPreview({ variantId }: { variantId: string }) {
             );
           })}
         </div>
-        <p className="mt-3 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>单选展开 · 打开一条自动收起其他</p>
+        <p className="pv-in mt-3 text-center text-[9px]" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>单选展开 · 打开一条自动收起其他</p>
       </div>
     );
   if (variantId === "faq_multi")
     return (
-      <div className="px-6 py-7">
-        <SectionHead badge="常见问题" title={faq.title} center />
-        <div className="mx-auto mt-4 max-w-sm space-y-2">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}><SectionHead badge="常见问题" title={faq.title} center /></div>
+        <div className="pv-stagger mx-auto mt-4 max-w-sm space-y-2" style={{ ["--i" as string]: 1 }}>
           {items.map((f, i) => {
             const isOpen = openMulti.includes(i);
             return (
               <div
                 key={f.q}
-                className="overflow-hidden rounded-lg border"
-                style={{ borderColor: isOpen ? "color-mix(in srgb, var(--primary) 35%, var(--border))" : "var(--border)", background: "var(--surface)" }}
+                className="pv-in overflow-hidden rounded-lg border transition-colors"
+                style={{ ["--i" as string]: i, borderColor: isOpen ? "color-mix(in srgb, var(--primary) 35%, var(--border))" : "var(--border)", background: "var(--surface)" } as React.CSSProperties}
               >
                 <button
                   type="button"
@@ -1426,34 +1430,34 @@ function FaqPreview({ variantId }: { variantId: string }) {
             );
           })}
         </div>
-        <p className="mt-3 text-center text-[9px]" style={{ color: "var(--muted-foreground)" }}>可同时展开多条，互不干扰</p>
+        <p className="pv-in mt-3 text-center text-[9px]" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>可同时展开多条，互不干扰</p>
       </div>
     );
   if (variantId === "pfaq_single")
     return (
-      <div className="px-6 py-7">
-        <div className="text-center">
+      <div className="pv-stagger px-6 py-7">
+        <div className="pv-in text-center" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>计费相关</SectionBadge>
           <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
           <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>升级 · 退款 · 发票，一次只展开一条</p>
         </div>
-        <div className="mt-4"><Accordion /></div>
-        <p className="mt-3 text-center text-[10px]" style={{ color: "var(--muted-foreground)" }}>
+        <div className="pv-in mt-4" style={{ ["--i" as string]: 1 }}><Accordion /></div>
+        <p className="pv-in mt-3 text-center text-[10px]" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>
           还有问题？<span style={{ color: "var(--primary)" }}>联系我们 →</span>
         </p>
       </div>
     );
   if (variantId === "pfaq_twocol")
     return (
-      <div className="grid gap-6 px-6 py-7 sm:grid-cols-[1fr_2fr]">
-        <div>
+      <div className="pv-stagger grid gap-6 px-6 py-7 sm:grid-cols-[1fr_2fr]">
+        <div className="pv-in" style={{ ["--i" as string]: 0 }}>
           <SectionBadge>计费 FAQ</SectionBadge>
           <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
           <p className="mt-1.5 text-[11px]" style={{ color: "var(--muted-foreground)" }}>常见计费问题快速解答，无需展开</p>
         </div>
-        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-          {items.map((f) => (
-            <div key={f.q} className="border-l-2 pl-2.5" style={{ borderColor: "color-mix(in srgb, var(--primary) 45%, transparent)" }}>
+        <div className="pv-stagger grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          {items.map((f, i) => (
+            <div key={f.q} className="pv-in border-l-2 pl-2.5 transition-colors hover:border-[var(--primary)]" style={{ ["--i" as string]: i, borderColor: "color-mix(in srgb, var(--primary) 45%, transparent)" } as React.CSSProperties}>
               <p className="text-[11px] font-semibold">{f.q}</p>
               <p className="mt-0.5 text-[10px] leading-relaxed" style={{ color: "var(--muted-foreground)" }}>{f.a}</p>
             </div>
@@ -1463,17 +1467,17 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   if (variantId === "pfaq_dark")
     return (
-      <div className="px-6 py-7" style={{ background: "#0F1115" }}>
-        <h3 className="text-center text-base font-bold text-white">{faq.title}</h3>
-        <p className="mt-1 text-center text-[10px]" style={{ color: "#8A8A93" }}>计费 · 退款 · 升级</p>
-        <div className="mx-auto mt-4 max-w-sm space-y-2">
+      <div className="pv-stagger px-6 py-7" style={{ background: "#0F1115" }}>
+        <h3 className="pv-in text-center text-base font-bold text-white" style={{ ["--i" as string]: 0 }}>{faq.title}</h3>
+        <p className="pv-in mt-1 text-center text-[10px]" style={{ ["--i" as string]: 1, color: "#8A8A93" }}>计费 · 退款 · 升级</p>
+        <div className="pv-stagger mx-auto mt-4 max-w-sm space-y-2" style={{ ["--i" as string]: 2 }}>
           {items.map((f, i) => {
             const isOpen = open === i;
             return (
               <div
                 key={f.q}
-                className="rounded-xl border"
-                style={{ borderColor: "rgba(255,255,255,0.12)", background: isOpen ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)" }}
+                className="pv-in rounded-xl border transition-colors"
+                style={{ ["--i" as string]: i, borderColor: "rgba(255,255,255,0.12)", background: isOpen ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)" } as React.CSSProperties}
               >
                 <button
                   type="button"
@@ -1492,13 +1496,13 @@ function FaqPreview({ variantId }: { variantId: string }) {
     );
   // 未匹配变体兜底：居中标题 + 单开手风琴
   return (
-    <div className="px-6 py-7">
-      <div className="text-center">
+    <div className="pv-stagger px-6 py-7">
+      <div className="pv-in text-center" style={{ ["--i" as string]: 0 }}>
         <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)", color: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}>常见问题</span>
         <h3 className="mt-2.5 text-lg font-bold tracking-tight">{faq.title}</h3>
         {faq.subtitle ? <p className="mt-1.5 text-xs" style={{ color: "var(--muted-foreground)" }}>{faq.subtitle}</p> : null}
       </div>
-      <div className="mt-5"><Accordion /></div>
+      <div className="pv-in mt-5" style={{ ["--i" as string]: 1 }}><Accordion /></div>
     </div>
   );
 }
