@@ -343,6 +343,40 @@ export const brainReminderLog = sqliteTable("brain_reminder_log", {
   readAt: integer("read_at"),
 });
 
+// —— P4 通知队列：统一的站内通知中心数据模型 ——
+// 与 legacy brain_reminder_log（仅 read/log，驱动旧 ReminderCenter）并存；
+// 本表承载完整状态机（new/read/deferred/snoozed/done/ignored）、可跳转对象、可解释原因、
+// 稳定去重键、发送重试与用户隔离。站内通知中心以此表为唯一事实来源。
+export const brainNotifications = sqliteTable("brain_notifications", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // 触发类型：复用 ReminderType（task_overdue 等）+ proactive_suggestion / reminder_item
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  detail: text("detail"),
+  link: text("link"),
+  // 可跳转真实对象：task/plan/project/note/inbox/review/milestone/strategy/reminder_item/generic
+  refType: text("ref_type"),
+  refId: text("ref_id"),
+  // 可解释规则原因（"任务逾期：原定 2026-08-24 完成"），而非“AI 认为”
+  reason: text("reason"),
+  // new | read | deferred | snoozed | done | ignored
+  status: text("status").notNull().default("new"),
+  priority: text("priority").notNull().default("medium"),
+  // 稳定去重键：同键同日内未终态则不重复入队
+  dedupKey: text("dedup_key").notNull(),
+  deliveredAt: integer("delivered_at"),
+  snoozedUntil: integer("snoozed_until"),
+  completedAt: integer("completed_at"),
+  // 投递重试计数与最近一次错误
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 // —— P0 统一信息加工确认闭环 ——
 // 处理计划：任意输入经「AI 转译 → 用户编辑确认 → 统一写入」的持久化载体。
 // AI 阶段只落 plan(pending_confirmation)，绝不直接建正式对象；确认后才 apply 批量写入。

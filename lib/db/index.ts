@@ -46,6 +46,7 @@ let brainRelations: any;
 let brainCurationLog: any;
 let brainTaskOutcomes: any;
 let brainWeeklyReviews: any;
+let brainNotifications: any;
 let userPreferences: any;
 let userImaConfig: any;
 let schema: any;
@@ -81,6 +82,7 @@ if (isPg) {
   brainCurationLog = schemaPg.brainCurationLog;
   brainTaskOutcomes = schemaPg.brainTaskOutcomes;
   brainWeeklyReviews = schemaPg.brainWeeklyReviews;
+  brainNotifications = schemaPg.brainNotifications;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
   schema = schemaPg;
@@ -476,6 +478,31 @@ if (isPg) {
     foreign key (user_id) references users(id) on delete cascade
   );`);
   sqlite.exec(`create unique index if not exists brain_weekly_reviews_user_week_uidx on brain_weekly_reviews (user_id, week_key);`);
+  // P4：站内通知队列（幂等建表 + 索引支持按用户/去重键检索）
+  sqlite.exec(`create table if not exists brain_notifications (
+    id text primary key,
+    user_id text not null,
+    type text not null,
+    title text not null,
+    detail text,
+    link text,
+    ref_type text,
+    ref_id text,
+    reason text,
+    status text not null default 'new',
+    priority text not null default 'medium',
+    dedup_key text not null,
+    delivered_at integer,
+    snoozed_until integer,
+    completed_at integer,
+    attempts integer not null default 0,
+    last_error text,
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create index if not exists brain_notifications_user_status_idx on brain_notifications (user_id, status);`);
+  sqlite.exec(`create index if not exists brain_notifications_user_dedup_idx on brain_notifications (user_id, dedup_key);`);
   db = drizzleSqlite(sqlite, { schema: schemaSqlite });
   users = schemaSqlite.users;
   projects = schemaSqlite.projects;
@@ -500,9 +527,10 @@ if (isPg) {
   brainCurationLog = schemaSqlite.brainCurationLog;
   brainTaskOutcomes = schemaSqlite.brainTaskOutcomes;
   brainWeeklyReviews = schemaSqlite.brainWeeklyReviews;
+  brainNotifications = schemaSqlite.brainNotifications;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, userPreferences, userImaConfig, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainNotifications, userPreferences, userImaConfig, schema };

@@ -363,6 +363,38 @@ export const brainReminderLog = pgTable(
   })
 );
 
+// —— P4 通知队列（镜像 lib/db/schema.ts 的 brain_notifications）——
+export const brainNotifications = pgTable(
+  "brain_notifications",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    detail: text("detail"),
+    link: text("link"),
+    refType: text("ref_type"),
+    refId: text("ref_id"),
+    reason: text("reason"),
+    status: text("status").notNull().default("new"),
+    priority: text("priority").notNull().default("medium"),
+    dedupKey: text("dedup_key").notNull(),
+    deliveredAt: bigint("delivered_at", { mode: "number" }),
+    snoozedUntil: bigint("snoozed_until", { mode: "number" }),
+    completedAt: bigint("completed_at", { mode: "number" }),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_notifications_user_id_idx").on(t.userId),
+    dedupIdx: index("brain_notifications_user_dedup_idx").on(t.userId, t.dedupKey),
+  })
+);
+
 export const brainNoteAccessLog = pgTable(
   "brain_note_access_log",
   {

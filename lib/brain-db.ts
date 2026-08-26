@@ -1,7 +1,7 @@
 // 第二大脑（Second Brain）数据访问层：用户私有的个人知识笔记读写。
 // 与 knowledge-db（云端共享技能库）不同，这里按 userId 硬隔离，仅本人可见。
 
-import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews } from "@/lib/db";
+import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainNotifications } from "@/lib/db";
 import { eq, and, desc, asc, isNull, inArray, gt, gte, lt, lte, or } from "drizzle-orm";
 
 export type BrainSource = "text" | "file" | "clip" | "voice" | "ima";
@@ -2793,5 +2793,251 @@ export async function listBrainWeeklyReviews(userId: string): Promise<BrainWeekl
   } catch (err) {
     console.error("[brain-db] list weekly reviews failed:", err);
     return [];
+  }
+}
+
+// ---------------- P4 通知队列（站内通知中心数据层） ----------------
+
+export type BrainNotificationStatus =
+  | "new"
+  | "read"
+  | "deferred"
+  | "snoozed"
+  | "done"
+  | "ignored";
+export type BrainNotificationRefType =
+  | "task"
+  | "plan"
+  | "project"
+  | "note"
+  | "inbox"
+  | "review"
+  | "milestone"
+  | "strategy"
+  | "reminder_item"
+  | "generic";
+
+export interface BrainNotification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  detail: string | null;
+  link: string | null;
+  refType: string | null;
+  refId: string | null;
+  reason: string | null;
+  status: BrainNotificationStatus;
+  priority: "high" | "medium" | "low";
+  dedupKey: string;
+  deliveredAt: number | null;
+  snoozedUntil: number | null;
+  completedAt: number | null;
+  attempts: number;
+  lastError: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type NewBrainNotification = {
+  type: string;
+  title: string;
+  detail?: string | null;
+  link?: string | null;
+  refType?: BrainNotificationRefType | null;
+  refId?: string | null;
+  reason?: string | null;
+  dedupKey: string;
+  status?: BrainNotificationStatus;
+  priority?: "high" | "medium" | "low";
+  deliveredAt?: number | null;
+  snoozedUntil?: number | null;
+  completedAt?: number | null;
+};
+
+interface NotificationRow {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  detail: string | null;
+  link: string | null;
+  refType: string | null;
+  refId: string | null;
+  reason: string | null;
+  status: string;
+  priority: string;
+  dedupKey: string;
+  deliveredAt: number | null;
+  snoozedUntil: number | null;
+  completedAt: number | null;
+  attempts: number;
+  lastError: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+function toNotification(r: NotificationRow): BrainNotification {
+  return {
+    id: r.id,
+    userId: r.userId,
+    type: r.type,
+    title: r.title,
+    detail: r.detail,
+    link: r.link,
+    refType: r.refType,
+    refId: r.refId,
+    reason: r.reason,
+    status: r.status as BrainNotificationStatus,
+    priority: r.priority as BrainNotification["priority"],
+    dedupKey: r.dedupKey,
+    deliveredAt: r.deliveredAt,
+    snoozedUntil: r.snoozedUntil,
+    completedAt: r.completedAt,
+    attempts: r.attempts,
+    lastError: r.lastError,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
+/** 入队一条通知；严格按 userId 隔离。 */
+export async function insertBrainNotification(
+  userId: string,
+  input: NewBrainNotification,
+): Promise<BrainNotification | null> {
+  const now = Date.now();
+  const id = `bn-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    await db.insert(brainNotifications).values({
+      id,
+      userId,
+      type: input.type,
+      title: input.title,
+      detail: input.detail ?? null,
+      link: input.link ?? null,
+      refType: input.refType ?? null,
+      refId: input.refId ?? null,
+      reason: input.reason ?? null,
+      status: input.status ?? "new",
+      priority: input.priority ?? "medium",
+      dedupKey: input.dedupKey,
+      deliveredAt: input.deliveredAt ?? null,
+      snoozedUntil: input.snoozedUntil ?? null,
+      completedAt: input.completedAt ?? null,
+      attempts: 0,
+      lastError: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return getBrainNotification(userId, id);
+  } catch (err) {
+    console.error("[brain-db] insert notification failed:", err);
+    return null;
+  }
+}
+
+/** 读取单条通知；非本人返回 null（隔离）。 */
+export async function getBrainNotification(
+  userId: string,
+  id: string,
+): Promise<BrainNotification | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainNotifications)
+      .where(and(eq(brainNotifications.id, id), eq(brainNotifications.userId, userId)))
+      .limit(1)) as NotificationRow[];
+    return rows[0] ? toNotification(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get notification failed:", err);
+    return null;
+  }
+}
+
+export interface ListNotificationsOpts {
+  status?: BrainNotificationStatus | BrainNotificationStatus[];
+  refType?: BrainNotificationRefType;
+  limit?: number;
+}
+
+/** 列出某用户通知，按创建倒序；可按状态 / 类型过滤。 */
+export async function listBrainNotifications(
+  userId: string,
+  opts: ListNotificationsOpts = {},
+): Promise<BrainNotification[]> {
+  try {
+    const conds = [eq(brainNotifications.userId, userId)];
+    if (opts.status) {
+      const st = Array.isArray(opts.status) ? opts.status : [opts.status];
+      conds.push(inArray(brainNotifications.status, st as string[]));
+    }
+    if (opts.refType) conds.push(eq(brainNotifications.refType, opts.refType));
+    const q = db
+      .select()
+      .from(brainNotifications)
+      .where(and(...conds))
+      .orderBy(desc(brainNotifications.createdAt));
+    if (opts.limit != null) q.limit(opts.limit);
+    const rows = (await q) as NotificationRow[];
+    return rows.map(toNotification);
+  } catch (err) {
+    console.error("[brain-db] list notifications failed:", err);
+    return [];
+  }
+}
+
+/** 未读（status=new）通知计数，用于角标。 */
+export async function countUnreadBrainNotifications(userId: string): Promise<number> {
+  try {
+    const rows = (await db
+      .select({ id: brainNotifications.id })
+      .from(brainNotifications)
+      .where(and(eq(brainNotifications.userId, userId), eq(brainNotifications.status, "new")))) as {
+      id: string;
+    }[];
+    return rows.length;
+  } catch (err) {
+    console.error("[brain-db] count unread notifications failed:", err);
+    return 0;
+  }
+}
+
+export interface BrainNotificationPatch {
+  status?: BrainNotificationStatus;
+  priority?: "high" | "medium" | "low";
+  deliveredAt?: number | null;
+  snoozedUntil?: number | null;
+  completedAt?: number | null;
+  attempts?: number;
+  lastError?: string | null;
+}
+
+/** 更新通知字段；非本人返回 null（隔离）。递增 attempts 由服务层处理。 */
+export async function updateBrainNotification(
+  userId: string,
+  id: string,
+  patch: BrainNotificationPatch,
+): Promise<BrainNotification | null> {
+  try {
+    const existing = await getBrainNotification(userId, id);
+    if (!existing) return null;
+    const now = Date.now();
+    const set: Record<string, unknown> = { updatedAt: now };
+    if (patch.status !== undefined) set.status = patch.status;
+    if (patch.priority !== undefined) set.priority = patch.priority;
+    if (patch.deliveredAt !== undefined) set.deliveredAt = patch.deliveredAt;
+    if (patch.snoozedUntil !== undefined) set.snoozedUntil = patch.snoozedUntil;
+    if (patch.completedAt !== undefined) set.completedAt = patch.completedAt;
+    if (patch.attempts !== undefined) set.attempts = patch.attempts;
+    if (patch.lastError !== undefined) set.lastError = patch.lastError;
+    await db
+      .update(brainNotifications)
+      .set(set)
+      .where(and(eq(brainNotifications.id, id), eq(brainNotifications.userId, userId)));
+    return getBrainNotification(userId, id);
+  } catch (err) {
+    console.error("[brain-db] update notification failed:", err);
+    return null;
   }
 }

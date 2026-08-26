@@ -15,6 +15,7 @@
     "validate:p3a": "esbuild scripts/validation-p3a-project-workbench.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp3a.mjs && node scripts/.tmp-vp3a.mjs",
     "validate:p3b": "esbuild scripts/validation-p3b-task-outcomes.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp3b.mjs && node scripts/.tmp-vp3b.mjs",
     "validate:p3c": "esbuild scripts/validation-p3c-weekly-review.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp3c.mjs && node scripts/.tmp-vp3c.mjs",
+    "validate:p4base": "esbuild scripts/validation-p4base.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp4base.mjs && node scripts/.tmp-vp4base.mjs",
     "db:push:pg": "drizzle-kit push --config drizzle.config.pg.ts"
   },
   "dependencies": {
