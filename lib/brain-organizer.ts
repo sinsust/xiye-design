@@ -769,7 +769,7 @@ async function callQwen(
         },
       ],
     }),
-    signal: AbortSignal.timeout(25000),
+    signal: AbortSignal.timeout(40000),
   });
   if (!res.ok) throw new Error(`brain_organize_${res.status}`);
   const data = await res.json();

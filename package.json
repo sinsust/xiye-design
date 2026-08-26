@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3200",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "validate:plan": "esbuild scripts/validation-plan.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vplan.mjs && node scripts/.tmp-vplan.mjs",
+    "validate:today": "esbuild scripts/validation-today-brief.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vtoday.mjs && node scripts/.tmp-vtoday.mjs",
+    "validate:p15": "esbuild scripts/validation-p15-scenarios.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp15.mjs && node scripts/.tmp-vp15.mjs",
+    "validate:p2a": "esbuild scripts/validation-p2a-provenance.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp2a.mjs && node scripts/.tmp-vp2a.mjs",
     "db:push:pg": "drizzle-kit push --config drizzle.config.pg.ts"
   },
   "dependencies": {

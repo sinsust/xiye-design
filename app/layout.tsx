@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: "AI驱动的开发者资产平台",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="zh-CN"

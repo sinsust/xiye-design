@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 // GET /api/brain/notes/:id/versions → 沿版本链从初版到最新，返回 [{ id, title, version, superseded, createdAt, parentId }]
 export async function GET(
   _req: NextRequest,
-  ctx: { params: Promise<{ id: string }> | { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

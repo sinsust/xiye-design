@@ -9,36 +9,62 @@
 export interface ChatLLMOptions {
   /** 要求模型输出合法 JSON（OpenAI-compatible response_format） */
   json?: boolean;
-  /** 超时毫秒（默认 25s） */
+  /** 超时毫秒（默认 40s；长输出任务如批量解读请显式传更长） */
   timeoutMs?: number;
   /** 温度（默认 0.4） */
   temperature?: number;
+  /** 手动强制线路（默认自动：线路1 失败自动切线路2）；"qwen"|"deepseek" */
+  forceRoute?: "qwen" | "deepseek";
 }
 
-/**
- * 调用配置的 LLM（OpenAI-compatible chat completions）
- * @param system 系统提示词
- * @param user 用户内容
- * @returns 模型回复文本
- * @throws 未配置 LLM 或请求失败时抛明确错误
- */
-export async function chatLLM(system: string, user: string, opts: ChatLLMOptions = {}): Promise<string> {
-  const baseUrl = (process.env.LLM_MODEL_BASE_URL || "").replace(/\/+$/, "");
-  const apiKey = process.env.LLM_MODEL_API_KEY;
-  const model = process.env.LLM_MODEL_MODEL_ID;
+/** 双线路标识 */
+export type LLMRouteId = "qwen" | "deepseek";
 
-  if (!baseUrl || !apiKey || !model) {
-    throw new Error("LLM 未配置（LLM_MODEL_BASE_URL / LLM_MODEL_API_KEY / LLM_MODEL_MODEL_ID）");
-  }
+/** 一条线路的配置（读取对应 env） */
+interface LLMRoute {
+  id: LLMRouteId;
+  name: string;
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+}
 
-  const res = await fetch(`${baseUrl}/chat/completions`, {
+/** 读取全部已配置线路（未配置完整三件套的线路跳过） */
+export function listLLMRoutes(): LLMRoute[] {
+  const routes: LLMRoute[] = [
+    {
+      id: "qwen",
+      name: "Qwen",
+      baseUrl: (process.env.LLM_MODEL_BASE_URL || "").replace(/\/+$/, ""),
+      apiKey: process.env.LLM_MODEL_API_KEY || "",
+      model: process.env.LLM_MODEL_MODEL_ID || "",
+    },
+    {
+      id: "deepseek",
+      name: "DeepSeek",
+      baseUrl: (process.env.DEEPSEEK_BASE_URL || "").replace(/\/+$/, ""),
+      apiKey: process.env.DEEPSEEK_API_KEY || "",
+      model: process.env.DEEPSEEK_MODEL || "",
+    },
+  ];
+  return routes.filter((r) => r.baseUrl && r.apiKey && r.model);
+}
+
+/** 指定线路调用 LLM（OpenAI-compatible chat completions），返回回复文本 */
+async function chatLLMWithRoute(
+  route: LLMRoute,
+  system: string,
+  user: string,
+  opts: ChatLLMOptions = {},
+): Promise<string> {
+  const res = await fetch(`${route.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${route.apiKey}`,
     },
     body: JSON.stringify({
-      model,
+      model: route.model,
       temperature: opts.temperature ?? 0.4,
       ...(opts.json ? { response_format: { type: "json_object" } } : {}),
       messages: [
@@ -46,7 +72,7 @@ export async function chatLLM(system: string, user: string, opts: ChatLLMOptions
         { role: "user", content: user },
       ],
     }),
-    signal: AbortSignal.timeout(opts.timeoutMs ?? 25000),
+    signal: AbortSignal.timeout(opts.timeoutMs ?? 40000),
   });
 
   if (!res.ok) {
@@ -61,7 +87,24 @@ export async function chatLLM(system: string, user: string, opts: ChatLLMOptions
 }
 
 /**
+ * 调用配置的 LLM（OpenAI-compatible chat completions）
+ * 兼容旧接口：只走线路1（Qwen）；新代码请用 chatLLMRouted / chatLLMJsonRouted。
+ * @param system 系统提示词
+ * @param user 用户内容
+ * @returns 模型回复文本
+ * @throws 未配置 LLM 或请求失败时抛明确错误
+ */
+export async function chatLLM(system: string, user: string, opts: ChatLLMOptions = {}): Promise<string> {
+  const routes = listLLMRoutes();
+  if (routes.length === 0) {
+    throw new Error("LLM 未配置（LLM_MODEL_BASE_URL / LLM_MODEL_API_KEY / LLM_MODEL_MODEL_ID）");
+  }
+  return chatLLMWithRoute(routes[0], system, user, opts);
+}
+
+/**
  * 调用 LLM 并要求返回 JSON（自动去 markdown 代码块包裹）
+ * 兼容旧接口：只走线路1；新代码请用 chatLLMJsonRouted。
  * @returns 解析后的对象
  */
 export async function chatLLMJson<T = Record<string, unknown>>(
@@ -71,6 +114,39 @@ export async function chatLLMJson<T = Record<string, unknown>>(
 ): Promise<T> {
   const raw = await chatLLM(system, user, { ...opts, json: true });
   return parseJsonResponse<T>(raw);
+}
+
+/**
+ * 双线路路由调用：线路1（Qwen）失败自动切线路2（DeepSeek）重试一次。
+ * 支持 forceRoute 手动强制某条线路（跳过另一条）。
+ * @returns 解析结果 + 实际使用的线路
+ */
+export async function chatLLMJsonRouted<T = Record<string, unknown>>(
+  system: string,
+  user: string,
+  opts: ChatLLMOptions = {},
+): Promise<{ data: T; route: LLMRouteId }> {
+  const routes = listLLMRoutes();
+  if (routes.length === 0) {
+    throw new Error("LLM 未配置（需要 LLM_MODEL_* 或 DEEPSEEK_* 至少一组）");
+  }
+  // 强制线路：只用该条；自动：按配置顺序（线路1 → 线路2）
+  const order = opts.forceRoute
+    ? routes.filter((r) => r.id === opts.forceRoute)
+    : routes;
+
+  let lastErr: unknown = null;
+  for (const route of order) {
+    try {
+      const raw = await chatLLMWithRoute(route, system, user, { ...opts, json: true });
+      const data = parseJsonResponse<T>(raw);
+      return { data, route: route.id };
+    } catch (e) {
+      lastErr = e;
+      // 只有一条线路（或强制线路）时直接抛出
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("两条线路均调用失败");
 }
 
 /** 解析模型输出：容忍 ```json 代码块包裹与前后杂文本 */

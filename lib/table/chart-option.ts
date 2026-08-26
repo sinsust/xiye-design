@@ -80,16 +80,42 @@ function lineOption(r: AnalysisExecutionResult): Record<string, unknown> {
 }
 
 function barOption(r: AnalysisExecutionResult): Record<string, unknown> {
-  const data = (r.data ?? []) as Array<{ name: string; value: number }>;
+  const data = r.data as unknown;
+  // 多 series 形态（分组多维对比 execGroupBar：{categories, series}）
+  if (
+    data !== null &&
+    typeof data === "object" &&
+    !Array.isArray(data) &&
+    "categories" in data &&
+    "series" in data
+  ) {
+    const m = data as { categories: string[]; series: Array<{ name: string; data: number[] }> };
+    return {
+      tooltip: { trigger: "axis" },
+      legend: { top: 0, textStyle: baseText, type: "scroll" },
+      grid: { left: 44, right: 16, top: 32, bottom: 28 },
+      xAxis: { type: "category", data: m.categories, ...axisStyle() },
+      yAxis: { type: "value", ...axisStyle() },
+      series: m.series.map((s, i) => ({
+        name: s.name,
+        type: "bar",
+        data: s.data,
+        barWidth: "26%",
+        itemStyle: { borderRadius: [3, 3, 0, 0], color: PALETTE[i % PALETTE.length] },
+      })),
+    };
+  }
+  // 单 series 形态（分组聚合 / TopN 排名）
+  const items = (r.data ?? []) as Array<{ name: string; value: number }>;
   return {
     tooltip: { trigger: "axis" },
     grid: { left: 44, right: 16, top: 24, bottom: 28 },
-    xAxis: { type: "category", data: data.map((d) => d.name), ...axisStyle() },
+    xAxis: { type: "category", data: items.map((d) => d.name), ...axisStyle() },
     yAxis: { type: "value", ...axisStyle() },
     series: [
       {
         type: "bar",
-        data: data.map((d) => d.value),
+        data: items.map((d) => d.value),
         barWidth: "55%",
         itemStyle: {
           borderRadius: [4, 4, 0, 0],

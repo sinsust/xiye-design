@@ -101,7 +101,8 @@ export const SCROLL_TOKENS: TokenPreset[] = [
     id: "scroll-normal",
     name: "默认滚动",
     description: "原生滚动，无特殊行为",
-    css: `html { scroll-behavior: auto; }\n* { overflow-y: auto; }`,
+    // 注意：不要给 * 设 overflow-y:auto——会让全站元素都成为滚动容器、破坏 position:sticky 并产生嵌套滚动条。
+    css: `html { scroll-behavior: auto; }`,
     prompt: "Use native default scrolling with no special behavior.",
   },
   {

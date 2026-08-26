@@ -36,8 +36,15 @@ function getKey(): Buffer {
   const raw = process.env.IMA_ENC_KEY;
   if (raw && raw.length >= 32) return Buffer.from(raw.slice(0, 32), "utf8");
   if (raw) return Buffer.from(raw.padEnd(32, "0").slice(0, 32), "utf8");
+  // 安全红线：生产缺失 IMA_ENC_KEY 时拒绝服务（源码内兜底密钥可被任何人解密用户凭证），
+  // 仅本地开发允许使用固定兜底密钥。
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "[ima-config] 生产环境必须配置 IMA_ENC_KEY（≥32 字符），拒绝使用源码兜底密钥",
+    );
+  }
   console.warn(
-    "[ima-config] IMA_ENC_KEY 未设置，使用固定兜底密钥（仅限本地开发，生产必须配置）",
+    "[ima-config] IMA_ENC_KEY 未设置，使用固定兜底密钥（仅限本地开发；生产必须配置 IMA_ENC_KEY）",
   );
   return Buffer.from("xiye-dev-ima-fallback-key-0000000000".slice(0, 32), "utf8");
 }

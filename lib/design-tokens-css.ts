@@ -75,6 +75,11 @@ export function buildTailwindConfig(
   ds?: FlowState["designSystem"] | null,
 ): string {
   const p = style.palette;
+  // 字体取值与 buildCssVariables 同源：designSystem.font 覆盖优先，否则视觉风格默认——
+  // 修复此前「globals.css 用 Inter、tailwind.config 却写风格默认字体」的导出双轨矛盾。
+  const fontValue = ds?.font
+    ? FONT_OPTIONS.find((f) => f.id === ds.font)?.value ?? FONT_STACK[style.font]
+    : FONT_STACK[style.font];
   return `import type { Config } from "tailwindcss";
 
 export default {
@@ -89,9 +94,6 @@ export default {
           foreground: "var(--muted-foreground)",
         },
         border: "var(--border)",
-        boxShadow: {
-          DEFAULT: "var(--shadow)",
-        },
         primary: {
           DEFAULT: "var(--primary)",
           foreground: "var(--primary-foreground)",
@@ -100,8 +102,12 @@ export default {
           DEFAULT: "var(--secondary)",
         },
       },
+      // boxShadow 是独立主题命名空间，不能嵌在 colors 里（此前嵌套导致 shadow 配置无效）
+      boxShadow: {
+        DEFAULT: "var(--shadow)",
+      },
       fontFamily: {
-        sans: [${FONT_STACK[style.font]
+        sans: [${fontValue
           .split(",")
           .map((f) => `"${f.trim()}"`)
           .join(", ")}],

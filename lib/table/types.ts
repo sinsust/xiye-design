@@ -260,7 +260,7 @@ export interface TableProfileResult {
 
 /* ─────────────── 分析推荐与结果（Step 5/8 使用） ─────────────── */
 
-/** 图表类型 */
+/** 图表类型（含 P0 新增：topn 排名 / mom 同比环比 / groupbar 分组多维对比） */
 export type ChartType =
   | "line"
   | "bar"
@@ -269,7 +269,10 @@ export type ChartType =
   | "scatter"
   | "boxplot"
   | "histogram"
-  | "table";
+  | "table"
+  | "topn"
+  | "mom"
+  | "groupbar";
 
 /** AI 推荐的一个分析维度 */
 export interface AnalysisDimension {

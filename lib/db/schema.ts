@@ -246,11 +246,19 @@ export const brainInboxItems = sqliteTable("brain_inbox_items", {
   // 处理后关联的 brain_notes / brain_tasks ID
   noteId: text("note_id"),
   taskId: text("task_id"),
-  // pending（待处理）/ processed（已处理）/ dismissed（已忽略）
+  // pending(待处理) / processing(AI处理中) / pending_confirmation(待确认) /
+  // converted(已确认产出) / processed(旧数据已处理) / dismissed(已忽略) / failed(处理失败)
   status: text("status").notNull().default("pending"),
   // 时间戳（epoch ms，与其余 brain 表一致）
   createdAt: integer("created_at").notNull(),
   processedAt: integer("processed_at"),
+  // —— P2-A 来源/产出链路：关联的处理计划与已产出对象 ——
+  processingPlanId: text("processing_plan_id"),
+  outputTaskIds: text("output_task_ids"),
+  outputReminderIds: text("output_reminder_ids"),
+  outputProjectId: text("output_project_id"),
+  convertedAt: integer("converted_at"),
+  failedReason: text("failed_reason"),
 });
 
 // 第二大脑 · 项目：结构化项目管理的顶层容器。按 userId 隔离。
@@ -364,6 +372,8 @@ export const brainProcessingPlans = sqliteTable("brain_processing_plans", {
   createdAt: integer("created_at").notNull(),
   applyAt: integer("apply_at"),
   updatedAt: integer("updated_at").notNull(),
+  // 软归档时间戳（升级清理策略用）；null = 未归档。归档≠删除，审计记录永久保留。
+  archivedAt: integer("archived_at"),
 });
 
 // 用户确认创建的单条提醒（独立于规则推导型提醒）。

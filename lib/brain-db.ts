@@ -1438,7 +1438,18 @@ export async function listBrainSnippets(
 // ---------- 收件箱（Inbox） ----------
 
 export type BrainInboxIntent = "note" | "task" | "meeting" | "snippet" | "project" | "unknown";
-export type BrainInboxStatus = "pending" | "processed" | "dismissed";
+
+// 收件箱状态机（P2-A 扩展，保持既有值兼容）：
+// pending 新接收待处理 → processing AI 处理中 → pending_confirmation Plan 已生成待确认
+// → converted 已确认并产出正式对象；failed 处理失败可重试；dismissed 已忽略；processed 旧数据兼容。
+export type BrainInboxStatus =
+  | "pending"
+  | "processing"
+  | "pending_confirmation"
+  | "converted"
+  | "processed"
+  | "dismissed"
+  | "failed";
 
 export interface BrainInboxItem {
   id: string;
@@ -1454,6 +1465,13 @@ export interface BrainInboxItem {
   status: BrainInboxStatus;
   createdAt: number;
   processedAt: number | null;
+  // —— P2-A 来源/产出链路字段 ——
+  processingPlanId: string | null;
+  outputTaskIds: string[];
+  outputReminderIds: string[];
+  outputProjectId: string | null;
+  convertedAt: number | null;
+  failedReason: string | null;
 }
 
 export type NewBrainInboxItem = {
@@ -1466,6 +1484,12 @@ export type NewBrainInboxItem = {
   noteId?: string | null;
   taskId?: string | null;
   status?: BrainInboxStatus;
+  processingPlanId?: string | null;
+  outputTaskIds?: string[];
+  outputReminderIds?: string[];
+  outputProjectId?: string | null;
+  convertedAt?: number | null;
+  failedReason?: string | null;
 };
 
 interface InboxRow {
@@ -1482,6 +1506,12 @@ interface InboxRow {
   status: string;
   createdAt: number;
   processedAt: number | null;
+  processingPlanId: string | null;
+  outputTaskIds: string | null;
+  outputReminderIds: string | null;
+  outputProjectId: string | null;
+  convertedAt: number | null;
+  failedReason: string | null;
 }
 
 function toInbox(r: InboxRow): BrainInboxItem {
@@ -1499,6 +1529,12 @@ function toInbox(r: InboxRow): BrainInboxItem {
     status: (r.status ?? "pending") as BrainInboxStatus,
     createdAt: Number(r.createdAt),
     processedAt: r.processedAt != null ? Number(r.processedAt) : null,
+    processingPlanId: r.processingPlanId ?? null,
+    outputTaskIds: splitList(r.outputTaskIds),
+    outputReminderIds: splitList(r.outputReminderIds),
+    outputProjectId: r.outputProjectId ?? null,
+    convertedAt: r.convertedAt != null ? Number(r.convertedAt) : null,
+    failedReason: r.failedReason ?? null,
   };
 }
 
@@ -1526,6 +1562,12 @@ export async function insertBrainInboxItems(
         status: it.status ?? "pending",
         createdAt: now,
         processedAt: null,
+        processingPlanId: it.processingPlanId ?? null,
+        outputTaskIds: it.outputTaskIds?.length ? JSON.stringify(it.outputTaskIds) : null,
+        outputReminderIds: it.outputReminderIds?.length ? JSON.stringify(it.outputReminderIds) : null,
+        outputProjectId: it.outputProjectId ?? null,
+        convertedAt: it.convertedAt ?? null,
+        failedReason: it.failedReason ?? null,
       });
       created.push({
         id,
@@ -1541,6 +1583,12 @@ export async function insertBrainInboxItems(
         status: it.status ?? "pending",
         createdAt: now,
         processedAt: null,
+        processingPlanId: it.processingPlanId ?? null,
+        outputTaskIds: it.outputTaskIds ?? [],
+        outputReminderIds: it.outputReminderIds ?? [],
+        outputProjectId: it.outputProjectId ?? null,
+        convertedAt: it.convertedAt ?? null,
+        failedReason: it.failedReason ?? null,
       });
     } catch (err) {
       console.error("[brain-db] insert inbox failed:", err);
@@ -1583,7 +1631,7 @@ export async function getBrainInboxItem(
   }
 }
 
-/** 处理/忽略收件箱条目时更新状态与关联资产 ID。 */
+/** 处理/忽略收件箱条目时更新状态与关联资产 ID / 产出链路字段。 */
 export async function updateBrainInboxItem(
   userId: string,
   id: string,
@@ -1591,6 +1639,12 @@ export async function updateBrainInboxItem(
     status?: BrainInboxStatus;
     noteId?: string | null;
     taskId?: string | null;
+    processingPlanId?: string | null;
+    outputTaskIds?: string[];
+    outputReminderIds?: string[];
+    outputProjectId?: string | null;
+    convertedAt?: number | null;
+    failedReason?: string | null;
   },
 ): Promise<BrainInboxItem | null> {
   try {
@@ -1598,6 +1652,12 @@ export async function updateBrainInboxItem(
     if (patch.status) set.status = patch.status;
     if (patch.noteId !== undefined) set.noteId = patch.noteId;
     if (patch.taskId !== undefined) set.taskId = patch.taskId;
+    if (patch.processingPlanId !== undefined) set.processingPlanId = patch.processingPlanId;
+    if (patch.outputTaskIds !== undefined) set.outputTaskIds = patch.outputTaskIds.length ? JSON.stringify(patch.outputTaskIds) : null;
+    if (patch.outputReminderIds !== undefined) set.outputReminderIds = patch.outputReminderIds.length ? JSON.stringify(patch.outputReminderIds) : null;
+    if (patch.outputProjectId !== undefined) set.outputProjectId = patch.outputProjectId;
+    if (patch.convertedAt !== undefined) set.convertedAt = patch.convertedAt;
+    if (patch.failedReason !== undefined) set.failedReason = patch.failedReason;
     if (patch.status === "processed") set.processedAt = Date.now();
     await db
       .update(brainInboxItems)
@@ -1607,6 +1667,28 @@ export async function updateBrainInboxItem(
   } catch (err) {
     console.error("[brain-db] update inbox failed:", err);
     return null;
+  }
+}
+
+/** 与某条处理计划关联的收件箱条目（计划确认/失败时统一回写状态）。 */
+export async function getBrainInboxItemsByPlanId(
+  userId: string,
+  planId: string,
+): Promise<BrainInboxItem[]> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainInboxItems)
+      .where(
+        and(
+          eq(brainInboxItems.userId, userId),
+          eq(brainInboxItems.processingPlanId, planId),
+        ),
+      )) as InboxRow[];
+    return rows.map(toInbox);
+  } catch (err) {
+    console.error("[brain-db] get inbox by plan failed:", err);
+    return [];
   }
 }
 
@@ -1633,6 +1715,8 @@ export interface BrainProcessingPlan {
   createdAt: number;
   applyAt: number | null;
   updatedAt: number;
+  // 软归档时间戳（升级清理策略用）；null = 未归档。审计记录不硬删除。
+  archivedAt: number | null;
 }
 
 interface PlanRow {
@@ -1654,6 +1738,7 @@ interface PlanRow {
   createdAt: number;
   applyAt: number | null;
   updatedAt: number;
+  archivedAt: number | null;
 }
 
 const PLAN_STATUSES: BrainPlanStatus[] = ["draft", "pending_confirmation", "applied", "failed", "rejected"];
@@ -1690,6 +1775,7 @@ function toPlan(r: PlanRow): BrainProcessingPlan {
     createdAt: r.createdAt,
     applyAt: r.applyAt ?? null,
     updatedAt: r.updatedAt,
+    archivedAt: r.archivedAt ?? null,
   };
 }
 
@@ -1744,6 +1830,7 @@ export async function getBrainProcessingPlan(
 export async function listBrainProcessingPlans(
   userId: string,
   status?: BrainPlanStatus[],
+  includeArchived = false,
 ): Promise<BrainProcessingPlan[]> {
   try {
     const rows = (await db
@@ -1753,6 +1840,7 @@ export async function listBrainProcessingPlans(
         and(
           eq(brainProcessingPlans.userId, userId),
           status && status.length ? inArray(brainProcessingPlans.status, status) : undefined,
+          includeArchived ? undefined : isNull(brainProcessingPlans.archivedAt),
         ),
       )
       .orderBy(desc(brainProcessingPlans.createdAt))) as PlanRow[];
@@ -1774,6 +1862,7 @@ export type BrainPlanPatch = {
   failureReason?: string | null;
   recovery?: string | null;
   applyAt?: number | null;
+  archivedAt?: number | null;
 };
 
 export async function updateBrainProcessingPlan(
@@ -1793,6 +1882,7 @@ export async function updateBrainProcessingPlan(
     if (patch.failureReason !== undefined) set.failureReason = patch.failureReason;
     if (patch.recovery !== undefined) set.recovery = patch.recovery;
     if (patch.applyAt !== undefined) set.applyAt = patch.applyAt ?? null;
+    if (patch.archivedAt !== undefined) set.archivedAt = patch.archivedAt ?? null;
     await db
       .update(brainProcessingPlans)
       .set(set)

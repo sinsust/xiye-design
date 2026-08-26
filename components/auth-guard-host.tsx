@@ -80,8 +80,9 @@ export function AuthGuardHost() {
       if (isGuardedWrite(path, method)) {
         promise
           .then((res) => {
-            // 本地缓存存在但服务端已失效（会话过期/他端登出）时后端兜底
-            if (res.status === 401 && !hasLocalUser()) showBlock();
+            // 服务端 401：本地有缓存但会话已过期/他端登出——此时应提示重新登录（取反前的
+            // `!hasLocalUser()` 恰好在这个典型场景恒 false，导致过期后静默 401）。
+            if (res.status === 401) showBlock();
           })
           .catch(() => {
             /* 网络错误不触发 */

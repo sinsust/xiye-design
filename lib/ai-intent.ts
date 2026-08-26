@@ -538,15 +538,17 @@ export function applyIntentRecommendation(
   if (rec.uiLibrary) s.setUiLibrary({ main: rec.uiLibrary.main });
   if (rec.narrative) s.setIntentNarrative(rec.narrative);
 
-  // 骨架蓝图：清空后按 AI 组合预填
-  s.clearBlueprint();
-  for (const page of rec.blueprint) {
-    for (const c of page.components) {
-      s.addBlueprintComponent({
-        pageSlug: page.pageSlug,
-        componentId: c.componentId,
-        variantId: c.variantId,
-      });
+  // 骨架蓝图：仅当 AI 本次确实推导出蓝图时才替换（避免清空用户在 builder 手动搭建的页面骨架）
+  if (rec.blueprint && rec.blueprint.length) {
+    s.clearBlueprint();
+    for (const page of rec.blueprint) {
+      for (const c of page.components) {
+        s.addBlueprintComponent({
+          pageSlug: page.pageSlug,
+          componentId: c.componentId,
+          variantId: c.variantId,
+        });
+      }
     }
   }
 }

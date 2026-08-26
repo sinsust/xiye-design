@@ -53,6 +53,12 @@ export function executeDimension(
       return execBoxplot(dimension, colIndex, fields, rows);
     case "heatmap":
       return execHeatmap(dimension, colIndex, fields, rows);
+    case "topn":
+      return execTopN(dimension, colIndex, fields, rows, columnTypes);
+    case "mom":
+      return execMoM(dimension, colIndex, fields, rows, columnTypes);
+    case "groupbar":
+      return execGroupBar(dimension, colIndex, fields, rows, columnTypes);
     case "table":
     default:
       return execTable(dimension, colIndex, fields, rows);
@@ -316,6 +322,169 @@ function execTable(
   };
 }
 
+/**
+ * TopN 排名：按分类字段分组求和数值字段，输出 Top N（默认 10）。
+ * data: [{name, value, count}] 与 bar/pie 同构，图表可直接用 bar。
+ */
+function execTopN(
+  d: AnalysisDimension,
+  colIndex: (n: string) => number,
+  fields: string[],
+  rows: Row[],
+  columnTypes: FieldType[],
+): AnalysisExecutionResult {
+  const groupIdx = colIndex(fields[0]);
+  const valIdx = fields.length > 1 ? colIndex(fields[1]) : null;
+  const valIsNumeric = valIdx !== null && isNumericType(columnTypes[valIdx]);
+  // 支持从 description 提取 "Top N"（默认 10）
+  const topN = /top\s*(\d+)/i.exec(d.description) ? Number(/top\s*(\d+)/i.exec(d.description)![1]) : 10;
+
+  const map = new Map<string, { sum: number; count: number; n: number }>();
+  for (const r of rows) {
+    const key = toStr(r[groupIdx]) || "(空)";
+    const entry = map.get(key) || { sum: 0, count: 0, n: 0 };
+    entry.n++;
+    if (valIdx !== null) {
+      const v = toNum(r[valIdx]);
+      if (v !== null) {
+        entry.sum += v;
+        entry.count++;
+      }
+    }
+    map.set(key, entry);
+  }
+
+  const data = [...map.entries()]
+    .map(([name, e]) => ({
+      name,
+      value: valIsNumeric ? (e.count > 0 ? e.sum / e.count : 0) : e.n,
+      count: e.n,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, topN);
+
+  return {
+    name: d.name,
+    chartType: "bar",
+    data,
+    rows: rows.slice(0, 20),
+    summary: `按 ${fields[0]} 排名 Top ${data.length}（值 = ${
+      valIsNumeric ? fields[1] + " 合计" : "记录数"
+    }）：1.${data[0]?.name}(${data[0]?.value.toFixed(1)}) 2.${data[1]?.name}(${data[1]?.value.toFixed(1)}) 3.${data[2]?.name}(${data[2]?.value.toFixed(1)})`,
+  };
+}
+
+/**
+ * 同比环比：日期列按周期（月/周/日，默认月）聚合数值字段，
+ * 每期输出 {x, y, mom}（mom 为环比增速，无上期时为 null）。
+ * 图表用 line 画 y；summary 给出环比最高/最低期，供 AI 解读。
+ */
+function execMoM(
+  d: AnalysisDimension,
+  colIndex: (n: string) => number,
+  fields: string[],
+  rows: Row[],
+  columnTypes: FieldType[],
+): AnalysisExecutionResult {
+  const dateIdx = colIndex(fields[0]);
+  const valIdx = fields.length > 1 ? colIndex(fields[1]) : null;
+  const period = /月/.test(d.description) ? "month" : /周/.test(d.description) ? "week" : "month";
+
+  const periodKey = (s: string): string => {
+    // 期望 ISO 日期 YYYY-MM-DD；非日期格式原样返回
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return s;
+    if (period === "month") return `${m[1]}-${m[2]}`;
+    if (period === "week") {
+      const d0 = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      const day = d0.getDay() || 7;
+      const monday = new Date(d0.getTime() - (day - 1) * 86400_000);
+      return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+    }
+    return s.slice(0, 10);
+  };
+
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const key = periodKey(toStr(r[dateIdx]));
+    const n = valIdx !== null ? toNum(r[valIdx]) : 1;
+    if (n !== null) map.set(key, (map.get(key) || 0) + n);
+  }
+  const keys = [...map.keys()].sort((a, b) => a.localeCompare(b, "zh-CN"));
+  const data = keys.map((x, i) => {
+    const y = map.get(x) ?? 0;
+    const prev = i > 0 ? map.get(keys[i - 1]) : null;
+    const mom = prev != null && prev !== 0 ? (y - prev) / prev : null;
+    return { x, y, mom };
+  });
+
+  return {
+    name: d.name,
+    chartType: "line",
+    data,
+    rows: rows.slice(0, 20),
+    summary: `${fields[0]} 按${period === "month" ? "月" : period === "week" ? "周" : "日"}聚合 ${
+      fields[1] ?? "记录数"
+    }（${data.length} 期），环比最大: ${
+      data.filter((v) => v.mom !== null).sort((a, b) => (b.mom ?? -9) - (a.mom ?? -9))[0]?.x ?? "-"
+    }，环比最小: ${
+      data.filter((v) => v.mom !== null).sort((a, b) => (a.mom ?? 9) - (b.mom ?? 9))[0]?.x ?? "-"
+    }`,
+  };
+}
+
+/**
+ * 分组多维对比：按分类字段分组，对多个数值字段（2-3 个）分别求均值，
+ * 输出多 series 柱状图数据 {categories, series:[{name, data}]}。
+ */
+function execGroupBar(
+  d: AnalysisDimension,
+  colIndex: (n: string) => number,
+  fields: string[],
+  rows: Row[],
+  columnTypes: FieldType[],
+): AnalysisExecutionResult {
+  const groupIdx = colIndex(fields[0]);
+  const numFields = fields.slice(1).filter((f) => isNumericType(columnTypes[colIndex(f)]));
+  const numIdxs = numFields.map(colIndex);
+  if (numIdxs.length === 0) {
+    // 无数值字段时退化为计数分组
+    return execGroup(d, colIndex, [fields[0]], rows, columnTypes);
+  }
+  const agg = new Map<string, number[]>();
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    const key = toStr(r[groupIdx]) || "(空)";
+    let arr = agg.get(key);
+    if (!arr) {
+      arr = new Array(numIdxs.length).fill(0);
+      agg.set(key, arr);
+      counts.set(key, 0);
+    }
+    numIdxs.forEach((idx, k) => {
+      const n = toNum(r[idx]);
+      if (n !== null) arr[k] += n;
+    });
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  const categories = [...agg.keys()].sort((a, b) => a.localeCompare(b, "zh-CN"));
+  const series = numFields.map((f, k) => ({
+    name: f,
+    data: categories.map((c) => {
+      const cnt = counts.get(c) || 1;
+      return agg.get(c)![k] / cnt;
+    }),
+  }));
+  const data = { categories, series };
+  return {
+    name: d.name,
+    chartType: "bar",
+    data,
+    rows: rows.slice(0, 20),
+    summary: `按 ${fields[0]} 分组对比 ${numFields.join(" / ")}（${categories.length} 组，各指标为组内均值）`,
+  };
+}
+
 /** 等宽直方图（与分析画像共用同一算法，避免复制） */
 function buildHistogram(nums: number[], bins: number): { start: number; end: number; count: number }[] {
   if (nums.length === 0) return [];
@@ -370,11 +539,92 @@ ${lines.join("\n")}
 ${relLines.join("\n") || "无显著关联"}
 
 请推荐 8-10 个有价值的分析维度，每个包含：
-- name: 分析名称（简短）
-- description: 具体分析思路（用哪些字段、怎么算）
-- chartType: 'line'|'bar'|'pie'|'heatmap'|'scatter'|'boxplot'|'histogram'|'table'
-- fields: 用到的字段名数组
-- insight: 预期能得出什么业务洞察
+  - name: 分析名称（简短）
+  - description: 具体分析思路（用哪些字段、怎么算；TopN 排名可写 "Top 10"）
+  - chartType: 'line'|'bar'|'pie'|'heatmap'|'scatter'|'boxplot'|'histogram'|'table'|'topn'|'mom'|'groupbar'
+  - fields: 用到的字段名数组（按上述 chartType 要求的顺序）
+  - insight: 预期能得出什么业务洞察
 
-返回纯 JSON 数组，不要 markdown 代码块，不要其他文字。`;
+  图表类型说明：
+  - topn：按某分类字段对数值字段排名（fields: [分类, 数值]）
+  - mom：时间序列按周期（月/周）聚合 + 环比（fields: [日期, 数值]）
+  - groupbar：按分类字段对比多个数值字段（fields: [分类, 数值1, 数值2, ...]）
+  - 其余为基础图表。
+
+  返回纯 JSON 数组，不要 markdown 代码块，不要其他文字。`;
+}
+
+/* ─────────────── 推荐维度可读化描述（前端展示用） ─────────────── */
+
+/**
+ * 把分析维度翻译成用户一眼能懂的「怎么算 + 示例」。
+ * 不依赖 AI 的 description（可能抽象），全部由 chartType + 真实字段名 + 画像数据生成。
+ * @param d 分析维度
+ * @param profile 字段画像（取 distribution/mean/range 等拼真实示例）
+ */
+export function describeDimension(
+  d: AnalysisDimension,
+  profile: TableProfileResult,
+): { how: string; example: string } {
+  const f = d.fields;
+  const f0 = f[0] ?? "";
+  const f1 = f[1] ?? "";
+  const quote = (s: string) => `「${s}」`;
+
+  let how = "";
+  switch (d.chartType) {
+    case "topn":
+      how = `按 ${quote(f0)} 统计 ${quote(f1)} 合计 · 排名柱状图`;
+      break;
+    case "mom":
+      how = `按 ${quote(f0)} 按月聚合 ${quote(f1)} · 折线 + 环比`;
+      break;
+    case "groupbar":
+      how = `按 ${quote(f0)} 对比 ${f.slice(1).map(quote).join(" / ")} · 分组柱状`;
+      break;
+    case "line":
+      how = `按 ${quote(f0)} 的趋势（${quote(f1 || "记录数")}）· 折线`;
+      break;
+    case "bar":
+      how = `按 ${quote(f0)} 分组统计 ${quote(f1 || "记录数")} · 柱状`;
+      break;
+    case "pie":
+      how = `按 ${quote(f0)} 占比 · 饼图`;
+      break;
+    case "scatter":
+      how = `${quote(f0)} 与 ${quote(f1)} 的相关性 · 散点`;
+      break;
+    case "histogram":
+      how = `${quote(f0)} 的数值分布 · 直方图`;
+      break;
+    case "boxplot":
+      how = `${quote(f0)} 的分布区间（异常值）· 箱线`;
+      break;
+    case "heatmap":
+      how = `${quote(f0)} × ${quote(f1)} 交叉分布 · 热力图`;
+      break;
+    case "table":
+      how = `${f.map(quote).join("、")} 明细列表`;
+      break;
+    default:
+      how = `按 ${quote(f0)} 做分析`;
+      break;
+  }
+
+  // 示例：用主字段的画像拼真实值
+  const col = profile.columns.find((c) => c.name === f0);
+  let example = "";
+  if (col && "distribution" in col) {
+    example = col.distribution
+      .slice(0, 3)
+      .map((x) => `${x.value} ${(x.percentage * 100).toFixed(0)}%`)
+      .join(" · ");
+  } else if (col && "mean" in col) {
+    example = `均值 ${col.mean.toFixed(1)} · 范围 ${col.min}~${col.max}`;
+  } else if (col && "minDate" in col) {
+    example = `${col.minDate} ~ ${col.maxDate}`;
+  } else if (col) {
+    example = `唯一值 ${col.uniqueCount.toLocaleString()} 个`;
+  }
+  return { how, example };
 }

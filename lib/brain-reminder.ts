@@ -208,6 +208,8 @@ interface ComputedTrigger {
   title: string;
   detail: string;
   link: string;
+  // P2-A：携带独立提醒记录 id，供前端「来源与关联」回溯原始来源/处理计划
+  reminderId?: string;
 }
 
 /**

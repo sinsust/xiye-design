@@ -13,6 +13,7 @@ import { SheetSelector } from "./SheetSelector";
 import { ColumnProfilePanel } from "./ColumnProfilePanel";
 import { AnalysisRecommender } from "./AnalysisRecommender";
 import { AnalysisResultView } from "./AnalysisResultView";
+import { LLMRouteBadge, readForceRoute, writeLLMRoute } from "@/components/LLMRouteBadge";
 import type { AnalysisDimension, AnalysisResult } from "@/lib/table/types";
 
 type Phase = "upload" | "sheetSelect" | "profile" | "recommend" | "result";
@@ -26,6 +27,7 @@ export function TableAnalysisPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [results, setResults] = useState<AnalysisResult[]>([]);
+  const [resultTab, setResultTab] = useState(0);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,12 +44,14 @@ export function TableAnalysisPage() {
         body: JSON.stringify({
           profile: active.profile,
           tableId: active.tableId,
+          forceRoute: readForceRoute(),
           ...(userQuery ? { userQuery } : { selectedDimensions: dimensions }),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || data?.error || "分析失败");
       setResults(data.results ?? []);
+      if (data.route === "qwen" || data.route === "deepseek") writeLLMRoute(data.route);
       setPhase("result");
     } catch (e) {
       setError((e as Error).message);
@@ -82,20 +86,23 @@ export function TableAnalysisPage() {
           <Sparkles className="size-4 text-primary" />
           表格分析
         </div>
-        {phase !== "upload" && (
-          <button
-            onClick={() => {
-              setPhase("upload");
-              setUploadData(null);
-              setResults([]);
-              setError("");
-            }}
-            className="flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            重新上传
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <LLMRouteBadge />
+          {phase !== "upload" && (
+            <button
+              onClick={() => {
+                setPhase("upload");
+                setUploadData(null);
+                setResults([]);
+                setError("");
+              }}
+              className="flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground"
+            >
+              <ArrowLeft className="size-3.5" />
+              重新上传
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 步骤指示（克制：当前态 + 已完成态） */}
@@ -211,10 +218,28 @@ export function TableAnalysisPage() {
                 正在执行分析…
               </div>
             )}
-            {results.map((r, i) => (
-              <div key={i} className={i > 0 ? "border-t border-border/50" : ""}>
+            {results.length > 1 && !analyzing && (
+              <div className="flex flex-wrap items-center gap-1 border-b border-border/40 px-5 py-2">
+                {results.map((r, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setResultTab(i)}
+                    className={
+                      "rounded-full px-2.5 py-1 text-[11px] transition " +
+                      (resultTab === i
+                        ? "bg-primary/10 font-medium text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground")
+                    }
+                  >
+                    {r.title}
+                  </button>
+                ))}
+              </div>
+            )}
+            {!analyzing && results.length > 0 && (
+              <div className={results.length > 1 ? "" : ""}>
                 <AnalysisResultView
-                  result={r}
+                  result={results[Math.min(resultTab, results.length - 1)]}
                   headers={active?.headers ?? []}
                   onSaveNote={async (rr) => {
                     try {
@@ -226,7 +251,7 @@ export function TableAnalysisPage() {
                   }}
                 />
               </div>
-            ))}
+            )}
             {results.length > 0 && (
               <div className="border-t border-border/50 px-5 py-3">
                 <button

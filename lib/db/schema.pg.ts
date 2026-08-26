@@ -253,10 +253,18 @@ export const brainInboxItems = pgTable(
     status: text("status").notNull().default("pending"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     processedAt: bigint("processed_at", { mode: "number" }),
+    // —— P2-A 来源/产出链路字段（sqlite 镜像）——
+    processingPlanId: text("processing_plan_id"),
+    outputTaskIds: text("output_task_ids"),
+    outputReminderIds: text("output_reminder_ids"),
+    outputProjectId: text("output_project_id"),
+    convertedAt: bigint("converted_at", { mode: "number" }),
+    failedReason: text("failed_reason"),
   },
   (t) => ({
     userIdIdx: index("brain_inbox_items_user_id_idx").on(t.userId),
     statusIdx: index("brain_inbox_items_status_idx").on(t.userId, t.status),
+    planIdx: index("brain_inbox_items_plan_id_idx").on(t.userId, t.processingPlanId),
   })
 );
 
@@ -393,6 +401,7 @@ export const brainProcessingPlans = pgTable(
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     applyAt: bigint("apply_at", { mode: "number" }),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+    archivedAt: bigint("archived_at", { mode: "number" }),
   },
   (t) => ({
     userIdx: index("brain_processing_plans_user_id_idx").on(t.userId),

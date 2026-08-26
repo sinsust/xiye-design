@@ -144,8 +144,13 @@ async function summarizeOldMessages(
   apiKey: string | undefined,
 ): Promise<string> {
   if (!apiKey || !older.length) return "";
-  const first = older.find((m) => m.role === "user");
-  const key = `${older.length}|${first?.content.slice(0, 12) ?? ""}`;
+  // 缓存 key 必须能区分不同会话：仅用「条数+首条前缀」会让两个首条相似但后续不同的会话互相串摘要。
+  // 取全部 user 消息前缀拼接做指纹（消息数、首条、以及后续走向都参与区分）。
+  const fingerprint = older
+    .filter((m) => m.role === "user")
+    .map((m) => m.content.slice(0, 12))
+    .join("|");
+  const key = `${older.length}|${fingerprint}`;
   const cached = summaryCache.get(key);
   if (cached) return cached;
   try {

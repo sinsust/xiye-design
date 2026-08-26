@@ -201,5 +201,3 @@ export async function DELETE(req: NextRequest) {
   if (!ok) return NextResponse.json({ error: "delete_failed" }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
-
-export { getBrainNote };

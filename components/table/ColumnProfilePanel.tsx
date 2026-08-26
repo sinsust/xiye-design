@@ -335,10 +335,47 @@ function MiniViz({ col }: { col: Col }) {
   return null;
 }
 
+/** 该字段可做的分析动作（按类型，引导用户理解"这列能榨出什么"） */
+function canAnalyze(col: Col): string[] {
+  switch (col.type) {
+    case "category":
+    case "boolean":
+      return ["排名", "分组对比", "占比", "交叉分析"];
+    case "integer":
+    case "float":
+    case "percentage":
+    case "currency":
+      return ["分布", "趋势", "相关性", "异常值"];
+    case "date":
+      return ["按月趋势", "环比", "周期分布"];
+    case "text":
+    case "id":
+      return ["明细", "唯一值"];
+    case "email":
+    case "url":
+    case "phone":
+      return ["格式统计", "明细"];
+    default:
+      return [];
+  }
+}
+
 /** 展开详情（精简：去掉非空率/唯一数等基础数据，只保留可读洞察） */
 function DetailBody({ col }: { col: Col }) {
+  const actions = canAnalyze(col);
   return (
     <div className="border-t border-border/50 px-3.5 py-3 animate-in fade-in duration-200">
+      {/* 可做分析（引导：这列能做什么） */}
+      {actions.length > 0 && (
+        <div className="mb-2.5 flex flex-wrap items-center gap-1">
+          <span className="text-[10px] text-muted-foreground/70">可做：</span>
+          {actions.map((a) => (
+            <span key={a} className="rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
+              {a}
+            </span>
+          ))}
+        </div>
+      )}
       {/* 分类：完整分布 + 层级 */}
       {"distribution" in col && (
         <>

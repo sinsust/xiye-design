@@ -102,6 +102,8 @@ import {
   nextInHours,
   inputCls,
 } from "./brain/brain-utils";
+import { cachedGetJson } from "@/lib/api-cache";
+import { LLMRouteBadge } from "@/components/LLMRouteBadge";
 
 export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [notes, setNotes] = useState<BrainNote[]>(initial);
@@ -148,9 +150,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [tasks, setTasks] = useState<BrainTask[]>([]);
   const loadTasks = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/tasks");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.tasks)) setTasks(data.tasks);
+      const data = await cachedGetJson<{ tasks?: BrainTask[] }>("/api/brain/tasks");
+      if (Array.isArray(data.tasks)) setTasks(data.tasks);
     } catch {
       /* 忽略 */
     }
@@ -229,9 +230,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const loadReviews = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/reviews");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.due)) {
+      const data = await cachedGetJson<{ due?: DueReview[]; next?: { noteTitle: string; nextReviewAt: string } | null }>("/api/brain/reviews");
+      if (Array.isArray(data.due)) {
         setDueReviews(data.due);
         setNextReview(data.next ?? null);
       }
@@ -263,9 +263,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [strategyFilter, setStrategyFilter] = useState<"all" | "group" | string>("all");
   const loadStrategies = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/strategies");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.strategies)) setStrategies(data.strategies);
+      const data = await cachedGetJson<{ strategies?: BrainStrategy[] }>("/api/brain/strategies");
+      if (Array.isArray(data.strategies)) setStrategies(data.strategies);
     } catch {
       /* 忽略 */
     }
@@ -281,9 +280,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [expandedSnippet, setExpandedSnippet] = useState<string | null>(null);
   const loadSnippets = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/snippets");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.snippets)) setSnippets(data.snippets);
+      const data = await cachedGetJson<{ snippets?: BrainNote[] }>("/api/brain/snippets");
+      if (Array.isArray(data.snippets)) setSnippets(data.snippets);
     } catch {
       /* 忽略 */
     }
@@ -321,9 +319,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [imaSyncToast, setImaSyncToast] = useState<string | null>(null);
   const refreshAll = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/notes");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.notes)) setNotes(data.notes);
+      const data = await cachedGetJson<{ notes?: BrainNote[] }>("/api/brain/notes");
+      if (Array.isArray(data.notes)) setNotes(data.notes);
     } catch {
       /* 忽略 */
     }
@@ -623,10 +620,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setReporting(true);
     setReportError(false);
     try {
-      const res = await fetch("/api/brain/report");
-      const data = await res.json();
-      if (!res.ok || !data?.report) throw new Error(data?.error);
-      setReport(data);
+      const data = await cachedGetJson<{ report?: Record<string, unknown>; error?: string }>("/api/brain/report", 0);
+      if (!data?.report) throw new Error(data?.error ?? "report_failed");
+      setReport(data as never);
     } catch {
       setReportError(true);
     } finally {
@@ -948,9 +944,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   /** 拉取可恢复的待确认草稿列表（仅本人可见，天然隔离） */
   const refreshPendingPlans = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/plans");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.plans)) {
+      const data = await cachedGetJson<{ plans?: Array<Record<string, unknown>> }>("/api/brain/plans");
+      if (Array.isArray(data.plans)) {
         setRecoverPlans(
           data.plans.map((p: any) => ({
             id: p.id,
@@ -1243,6 +1238,21 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         open={inboxOpen}
         onClose={() => setInboxOpen(false)}
         onPendingChange={setInboxPending}
+        onOpenPlan={(id) => {
+          setInboxOpen(false);
+          gotoTop("workbench", "input");
+          resumePending(id);
+        }}
+        onOpenNote={(id) => {
+          setInboxOpen(false);
+          gotoTop("workbench", "input");
+          jumpToNote(id);
+        }}
+        onOpenTask={(id) => {
+          setInboxOpen(false);
+          gotoTop("workbench", "kanban");
+          setDetailTaskId(id);
+        }}
       />
       {/* 任务详情抽屉（右侧滑出） */}
       <TaskDetailDrawer
@@ -1291,17 +1301,20 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             第二大脑
           </h1>
           <span className="text-sm text-muted-foreground">AI 驱动的个人知识中枢</span>
-          {/* 问号提示 */}
-          <span className="group relative ml-auto">
-            <button
-              className="flex size-6 items-center justify-center rounded-full border border-border text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
-              aria-label="了解更多"
-            >
-              ?
-            </button>
-            <span className="pointer-events-none absolute right-0 top-8 z-30 w-64 rounded-xl border border-border bg-popover p-3 text-xs leading-relaxed text-popover-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-              只管往里扔，AI 帮你理清楚、记得住、用得上。粘贴会议纪要、学习笔记或临时想法，
-              自动分类、摘要、打标签、找关联；之后可基于你自己的全部笔记提问。
+          {/* 模型线路徽标 + 问号提示 */}
+          <span className="ml-auto flex items-center gap-2">
+            <LLMRouteBadge compact />
+            <span className="group relative">
+              <button
+                className="flex size-6 items-center justify-center rounded-full border border-border text-xs font-medium text-muted-foreground transition hover:border-primary hover:text-primary"
+                aria-label="了解更多"
+              >
+                ?
+              </button>
+              <span className="pointer-events-none absolute right-0 top-8 z-30 w-64 rounded-xl border border-border bg-popover p-3 text-xs leading-relaxed text-popover-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                只管往里扔，AI 帮你理清楚、记得住、用得上。粘贴会议纪要、学习笔记或临时想法，
+                自动分类、摘要、打标签、找关联；之后可基于你自己的全部笔记提问。
+              </span>
             </span>
           </span>
         </div>

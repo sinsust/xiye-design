@@ -7,11 +7,13 @@ import {
   listBrainProjects,
   listPendingBrainReviews,
   listBrainInboxItems,
+  listBrainProcessingPlans,
   type BrainTask,
   type BrainNote,
   type BrainStrategy,
   type BrainProject,
 } from "@/lib/brain-db";
+import { buildTodayBrief } from "@/lib/brain-priority";
 
 export const runtime = "nodejs";
 
@@ -48,13 +50,14 @@ function daysUntil(dateStr: string): number {
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const [notes, tasks, strategies, reviews, inbox, projects] = await Promise.all([
+  const [notes, tasks, strategies, reviews, inbox, projects, plans] = await Promise.all([
     listBrainNotes(user.sub),
     listBrainTasks(user.sub),
     listBrainStrategies(user.sub),
     listPendingBrainReviews(user.sub),
     listBrainInboxItems(user.sub),
     listBrainProjects(user.sub),
+    listBrainProcessingPlans(user.sub, ["pending_confirmation"]),
   ]);
 
   const now = Date.now();
@@ -176,6 +179,16 @@ export async function GET() {
       return aDue - bDue;
     });
 
+  // —— P1 今日助理：可解释优先级简报（在旧字段之外增量返回，兼容既有前端）——
+  const brief = buildTodayBrief({
+    tasks: tasks as Parameters<typeof buildTodayBrief>[0]["tasks"],
+    plans: plans.map((p) => ({ id: p.id, status: p.status, createdAt: p.createdAt, projectId: p.projectId ?? null, contentPreview: p.rawContent.slice(0, 40) })),
+    inbox: inbox.map((i) => ({ id: i.id, status: i.status, createdAt: i.createdAt, rawContent: i.rawContent })),
+    projects: projects.map((p) => ({ id: p.id, name: p.name, status: p.status, dueDate: p.dueDate, createdAt: p.createdAt })),
+    now,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  });
+
   return NextResponse.json({
     today: localDateStr(now),
     tasks: {
@@ -198,5 +211,6 @@ export async function GET() {
       strategyReviews: strategyReviews.slice(0, 5),
     },
     projects: projectsOut,
+    brief,
   });
 }

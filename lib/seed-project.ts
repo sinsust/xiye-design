@@ -446,17 +446,26 @@ coverage/
 // —— 各框架族生成器 ——
 
 function nextFiles(t: SeedTokens, state: FlowState, extra: SeedFile[] = []): SeedFile[] {
+  const isSupabase = state.techStack === "nextjs_supabase";
+  const isT3 = state.techStack === "t3_app";
   const pkg = {
     name: (state.projectInfo?.projectName ?? "xiye-app").toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
     version: "0.1.0",
     private: true,
-    scripts: { dev: "next dev", build: "next build", start: "next start", lint: "next lint" },
+    // Next 16 已移除 `next lint`，这里提供类型检查脚本作为质量门
+    scripts: { dev: "next dev", build: "next build", start: "next start", typecheck: "tsc --noEmit" },
     dependencies: {
       next: V.next,
       react: V.react,
       "react-dom": V.reactDom,
-      ...(state.techStack === "nextjs_supabase" || state.techStack === "nextjs_appwrite"
-        ? { "@supabase/supabase-js": V.supabaseJs, "@supabase/ssr": V.supabaseSsr }
+      // Supabase 栈装 supabase 客户端；t3_app 栈装 tRPC/Prisma/Zod（否则生成的文件 import 不到模块）
+      ...(isSupabase ? { "@supabase/supabase-js": V.supabaseJs, "@supabase/ssr": V.supabaseSsr } : {}),
+      ...(isT3
+        ? {
+            "@trpc/server": V.trpcServer,
+            "@prisma/client": V.prismaClient,
+            zod: V.zod,
+          }
         : {}),
     },
     devDependencies: {
@@ -467,6 +476,7 @@ function nextFiles(t: SeedTokens, state: FlowState, extra: SeedFile[] = []): See
       tailwindcss: V.tailwind,
       postcss: V.postcss,
       autoprefixer: V.autoprefixer,
+      ...(isT3 ? { prisma: V.prisma } : {}),
     },
   };
   return [

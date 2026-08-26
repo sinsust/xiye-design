@@ -10,13 +10,19 @@ export type { BrandSiteMeta } from "@/data/brand-sites";
 export { BRAND_SITES, findBrandSite } from "@/data/brand-sites";
 
 const EXCLUDE_DIRS = new Set(["node_modules", ".next", ".git", ".turbo"]);
+
+/** 文件级排除：任何 .env*（含 .env / .env.local / .env.example）不进入品牌包，防密钥/凭据外泄 */
+function isExcludedFile(name: string): boolean {
+  return name === ".env" || name.startsWith(".env.");
+}
 // 可被 AI 改写文案的文件扩展名
 const COPY_EXT = new Set([".tsx", ".ts", ".jsx", ".js"]);
 
-/** 递归收集目录下所有文件路径（排除 node_modules/.next/.git）。返回项目内绝对路径数组。 */
+/** 递归收集目录下所有文件路径（排除 node_modules/.next/.git 与 .env*）。返回项目内绝对路径数组。 */
 export function collectFilePaths(dir: string, prefix = ""): { abs: string; rel: string }[] {
   const out: { abs: string; rel: string }[] = [];
   for (const name of readdirSync(dir)) {
+    if (isExcludedFile(name)) continue;
     const abs = join(dir, name);
     const st = statSync(abs);
     if (st.isDirectory()) {

@@ -249,6 +249,21 @@ if (isPg) {
     processed_at integer,
     foreign key (user_id) references users(id) on delete cascade
   );`);
+  // 阶段升级：收件箱来源/产出链路列（P2-A，幂等补列，已存在则忽略错误）
+  for (const col of [
+    `alter table brain_inbox_items add column processing_plan_id text`,
+    `alter table brain_inbox_items add column output_task_ids text`,
+    `alter table brain_inbox_items add column output_reminder_ids text`,
+    `alter table brain_inbox_items add column output_project_id text`,
+    `alter table brain_inbox_items add column converted_at integer`,
+    `alter table brain_inbox_items add column failed_reason text`,
+  ]) {
+    try {
+      sqlite.exec(col);
+    } catch {
+      /* 列已存在 */
+    }
+  }
   // —— 第十阶段：结构化项目管理 ——
   // brain_projects 先于 brain_tasks.project_id 外键创建。
   sqlite.exec(`create table if not exists brain_projects (
@@ -345,6 +360,12 @@ if (isPg) {
     apply_at integer,
     updated_at integer not null
   );`);
+  // 阶段升级：plans 软归档列（幂等补列，列已存在则忽略错误）
+  try {
+    sqlite.exec(`alter table brain_processing_plans add column archived_at integer`);
+  } catch {
+    /* 列已存在 */
+  }
   sqlite.exec(`create table if not exists brain_reminder_items (
     id text primary key,
     user_id text not null,

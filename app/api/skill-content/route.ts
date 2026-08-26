@@ -7,7 +7,9 @@ import { SKILL_CATALOG } from "@/data/skill-catalog";
 // 仅允许读取已在 SKILL_CATALOG 中登记、且位于仓库合法路径内的文件，防目录穿越。
 export const runtime = "nodejs";
 
-const SKILL_REPO_ROOT = "D:/workspace/skill";
+// 本地 skill 仓库根目录：通过环境变量 SKILL_REPO_ROOT 注入（如 D:/workspace/skill），
+// 避免把开发者本机路径硬编码进生产代码（Vercel 等平台不存在该路径）。
+const SKILL_REPO_ROOT = process.env.SKILL_REPO_ROOT ?? "";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
@@ -18,6 +20,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { ok: false, error: "未知 skill" },
       { status: 404 },
+    );
+  }
+  if (!SKILL_REPO_ROOT) {
+    return NextResponse.json(
+      { ok: false, error: "SKILL_REPO_ROOT 未配置" },
+      { status: 503 },
     );
   }
 

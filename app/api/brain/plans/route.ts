@@ -4,6 +4,11 @@ import {
   applyProcessingPlan,
   parsePlanBody,
   listRecoverablePlans,
+  listPendingRecoveryPlans,
+  compensateProcessingPlan,
+  markPlanHandled,
+  retryProcessingPlan,
+  cleanupProcessingPlans,
   type ProcessingEdits,
 } from "@/lib/brain-plan";
 import {
@@ -23,7 +28,12 @@ export async function GET(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const id = req.nextUrl.searchParams.get("id");
+  const recoveryMode = req.nextUrl.searchParams.get("recovery") === "1";
   try {
+    if (recoveryMode) {
+      const recoveries = await listPendingRecoveryPlans(user.sub);
+      return NextResponse.json({ recoveries });
+    }
     if (id) {
       const plan = await getBrainProcessingPlan(user.sub, id);
       if (!plan) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -48,6 +58,34 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => null);
     const planId = typeof body?.planId === "string" ? body.planId : "";
+    // 运维动作：重试 / 补偿回滚 / 标记人工处理 / 触发清理策略
+    if (typeof body?.action === "string") {
+      switch (body.action) {
+        case "retry_apply": {
+          if (!planId) return NextResponse.json({ error: "plan_id_required" }, { status: 400 });
+          const r = await retryProcessingPlan(user.sub, planId);
+          return r.ok
+            ? NextResponse.json({ ok: true, plan: r.plan, noteId: r.note?.id, taskIds: r.taskIds, strategyIds: r.strategyIds, reminderIds: r.reminderIds })
+            : NextResponse.json({ error: r.error, reason: r.reason }, { status: r.error === "not_found" ? 404 : 409 });
+        }
+        case "compensate": {
+          if (!planId) return NextResponse.json({ error: "plan_id_required" }, { status: 400 });
+          const c = await compensateProcessingPlan(user.sub, planId);
+          return c.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: c.error }, { status: 422 });
+        }
+        case "mark_handled": {
+          if (!planId) return NextResponse.json({ error: "plan_id_required" }, { status: 400 });
+          const m = await markPlanHandled(user.sub, planId);
+          return m.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: m.error }, { status: 422 });
+        }
+        case "run_cleanup": {
+          const c = await cleanupProcessingPlans(user.sub);
+          return NextResponse.json({ ok: true, archived: c.archived, skipped: c.skipped });
+        }
+        default:
+          return NextResponse.json({ error: "unknown_action" }, { status: 400 });
+      }
+    }
     const edits: ProcessingEdits | null =
       body?.edits && typeof body.edits === "object" ? (body.edits as ProcessingEdits) : null;
     if (!planId) return NextResponse.json({ error: "plan_id_required" }, { status: 400 });

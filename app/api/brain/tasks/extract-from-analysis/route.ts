@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { insertBrainTasks } from "@/lib/brain-db";
+import { insertBrainTasks, insertBrainNote } from "@/lib/brain-db";
 import { chatLLMJson } from "@/lib/table/llm";
 import type { AnalysisResult } from "@/lib/table/types";
 
@@ -44,8 +44,6 @@ export async function POST(req: NextRequest) {
           (raw as { items?: unknown })?.items) ?? [];
     const valid = (Array.isArray(items) ? items : [])
       .map((it) => ({
-        // noteId 为 schema 必填；分析任务暂不关联笔记（空串占位，后续可手动关联）
-        noteId: "",
         title: String(it?.text ?? "").trim().slice(0, 60),
         priority: (it?.priority === "high" || it?.priority === "low" ? it.priority : "medium") as
           | "high"
@@ -59,7 +57,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ created: [], count: 0 });
     }
 
-    const created = await insertBrainTasks(user.sub, valid);
+    // noteId 为 schema 必填外键：先建一条轻量「分析任务」支撑笔记（与 POST /api/brain/tasks 同模式），
+    // 保证任务可落库且能回溯到本次分析来源。
+    const supporting = await insertBrainNote(user.sub, {
+      source: "text",
+      title: "分析任务 · " + (result.title ?? "").slice(0, 40),
+      content: `由表格分析「${result.title ?? ""}」提取的行动项。`,
+      category: "任务",
+      summary: "",
+      tags: [],
+      related: [],
+      isSnippet: false,
+    });
+    if (!supporting?.id) {
+      return NextResponse.json({ error: "source_note_failed", message: "创建来源笔记失败" }, { status: 500 });
+    }
+    const noteId = supporting.id;
+
+    const created = await insertBrainTasks(
+      user.sub,
+      valid.map((it) => ({ ...it, noteId })),
+    );
     return NextResponse.json({ created, count: created.length });
   } catch (err) {
     console.error("brain extract tasks failed:", err);

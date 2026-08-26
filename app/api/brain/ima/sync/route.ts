@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       const kbId = String(kb.id ?? "");
       if (!kbId) continue;
       try {
-        const list = await withTimeout(listKnowledgeBaseDocs(cfg, kbId), 30);
+        const list = await withTimeout(listKnowledgeBaseDocs(cfg, kbId), 30000);
         for (const h of list) {
           const mediaId = String(h.media_id ?? "");
           if (!mediaId) continue;

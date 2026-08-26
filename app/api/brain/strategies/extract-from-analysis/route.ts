@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { insertBrainStrategies } from "@/lib/brain-db";
+import { insertBrainStrategies, insertBrainNote } from "@/lib/brain-db";
 import { chatLLMJson } from "@/lib/table/llm";
 import type { AnalysisResult } from "@/lib/table/types";
 
@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
           (raw as { strategies?: unknown })?.strategies) ?? [];
     const valid = (Array.isArray(items) ? items : [])
       .map((it) => ({
-        noteId: "",
         title: String(it?.title ?? "").trim().slice(0, 40),
         description: String(it?.description ?? "").trim().slice(0, 120) || undefined,
       }))
@@ -54,7 +53,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ created: [], count: 0 });
     }
 
-    const created = await insertBrainStrategies(user.sub, valid);
+    // noteId 为 schema 必填外键：先建一条轻量「分析策略」支撑笔记（与 POST /api/brain/tasks 同模式），
+    // 保证策略可落库且能回溯到本次分析来源。
+    const supporting = await insertBrainNote(user.sub, {
+      source: "text",
+      title: "分析策略 · " + (result.title ?? "").slice(0, 40),
+      content: `由表格分析「${result.title ?? ""}」提炼的策略建议。`,
+      category: "策略",
+      summary: "",
+      tags: [],
+      related: [],
+      isSnippet: false,
+    });
+    if (!supporting?.id) {
+      return NextResponse.json({ error: "source_note_failed", message: "创建来源笔记失败" }, { status: 500 });
+    }
+    const noteId = supporting.id;
+
+    const created = await insertBrainStrategies(
+      user.sub,
+      valid.map((it) => ({ ...it, noteId })),
+    );
     return NextResponse.json({ created, count: created.length });
   } catch (err) {
     console.error("brain extract strategies failed:", err);

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Plus, Send, Check, ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
 import TaskTimeline from "@/components/tasks/TaskTimeline";
+import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 
 type TaskStatus = "todo" | "in_progress" | "done";
 
@@ -336,6 +337,9 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged }: TaskDet
               </button>
             </div>
           </section>
+
+          {/* 来源与关联（P2-A：任务 → 处理计划 → 原始来源/产出回溯） */}
+          <ProvenancePanel anchor={{ taskId }} title="来源与关联" />
 
           {/* 关联 */}
           {(data?.relatedNotes?.length || data?.relatedStrategy) && (

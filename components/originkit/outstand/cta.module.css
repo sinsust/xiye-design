@@ -1,5 +1,5 @@
 ﻿/* ===== scoped Outstand tokens (from styles/tokens.css) ===== */
-:local(cta) {
+.cta {
   --color-accent: rgb(205, 241, 64);
   --color-accent-soft: rgb(212, 244, 88);
   --color-accent-muted: rgb(218, 246, 111);
@@ -27,10 +27,10 @@
   --duration-hover: 0.3s;
 }
 /* ===== scoped [data-border] inner-border rule (replaces globals.css) ===== */
-:local(cta) [data-border='true'] {
+.cta [data-border='true'] {
   position: relative;
 }
-:local(cta) [data-border='true']::after {
+.cta [data-border='true']::after {
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 0; left: 0;

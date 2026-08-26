@@ -42,7 +42,8 @@ export const SKILL_CATEGORIES = [
 ];
 
 // 本地 skill 仓库根目录（AI 读取来源，也是「一键集成」的复制源根）。
-export const SKILL_REPO_ROOT = "D:/workspace/skill";
+// 生产/CI 通过环境变量 SKILL_REPO_ROOT 注入；未配置时为空（依赖该目录的能力自动降级/拒绝）。
+export const SKILL_REPO_ROOT = process.env.SKILL_REPO_ROOT ?? "";
 
 // UI/设计类技能面向任意 Web 框架，标记兼容全部技术栈。
 const UI = [...ALL_STACKS] as string[];

@@ -14,6 +14,9 @@ import {
   insertBrainProcessingPlan,
   getBrainProcessingPlan,
   updateBrainProcessingPlan,
+  getBrainInboxItem,
+  getBrainInboxItemsByPlanId,
+  updateBrainInboxItem,
   listBrainProjects,
   listBrainProcessingPlans,
   type BrainProcessingPlan,
@@ -234,6 +237,99 @@ export async function organizeToPlan(
   return { plan, body, duplicate };
 }
 
+// ---------------- 收件箱 ↔ 处理计划 状态编排（P2-A）----------------
+// 收件箱发起「查看并确认」：先标记 processing，据此驱动前端进入整理中态。
+// 幂等：仅当条目处于 pending / processing / failed 时允许推进，避免打扰已转化的旧数据。
+export async function markInboxProcessing(
+  userId: string,
+  inboxId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const item = await getBrainInboxItem(userId, inboxId);
+  if (!item) return { ok: false, error: "not_found" };
+  if (
+    item.status !== "pending" &&
+    item.status !== "processing" &&
+    item.status !== "failed"
+  ) {
+    return { ok: false, error: "already_processed" };
+  }
+  await updateBrainInboxItem(userId, inboxId, { status: "processing" });
+  return { ok: true };
+}
+
+/** 从收件箱条目走完整「整理 → 待确认计划」闭环：pending → processing → pending_confirmation。 */
+export async function organizeInboxToPlan(
+  userId: string,
+  inboxId: string,
+  overrides?: { source?: string },
+): Promise<{
+  ok: boolean;
+  error?: string;
+  plan?: Awaited<ReturnType<typeof organizeToPlan>>["plan"];
+  body?: Awaited<ReturnType<typeof organizeToPlan>>["body"];
+  duplicate?: Awaited<ReturnType<typeof organizeToPlan>>["duplicate"];
+}> {
+  const item = await getBrainInboxItem(userId, inboxId);
+  if (!item) return { ok: false, error: "not_found" };
+  if (item.status !== "pending" && item.status !== "processing" && item.status !== "failed") {
+    return { ok: false, error: "already_processed" };
+  }
+  await markInboxProcessing(userId, inboxId);
+  try {
+    const { plan, body, duplicate } = await organizeToPlan(userId, {
+      rawContent: item.rawContent,
+      source: overrides?.source ?? "inbox",
+    });
+    if (!plan) {
+      await updateBrainInboxItem(userId, inboxId, {
+        status: "failed",
+        failedReason: "处理计划生成失败，请重试",
+      });
+      return { ok: false, error: "plan_create_failed" };
+    }
+    await updateBrainInboxItem(userId, inboxId, {
+      status: "pending_confirmation",
+      processingPlanId: plan.id,
+    });
+    return { ok: true, plan, body, duplicate };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : "AI 整理失败";
+    await updateBrainInboxItem(userId, inboxId, { status: "failed", failedReason: reason });
+    return { ok: false, error: "organize_failed", duplicate: null };
+  }
+}
+
+/** 计划确认成功 / 失败后，把所有关联收件箱统一回写 converted / failed。仅 best-effort，不影响 P0 原子写入。 */
+async function syncInboxFromPlan(
+  userId: string,
+  planId: string,
+  patch: {
+    status: "converted" | "failed";
+    noteId?: string | null;
+    outputTaskIds?: string[];
+    outputReminderIds?: string[];
+    outputProjectId?: string | null;
+    failedReason?: string | null;
+  },
+): Promise<void> {
+  try {
+    const items = await getBrainInboxItemsByPlanId(userId, planId);
+    for (const it of items) {
+      await updateBrainInboxItem(userId, it.id, {
+        status: patch.status,
+        noteId: patch.status === "converted" ? (patch.noteId ?? null) : undefined,
+        outputTaskIds: patch.status === "converted" ? (patch.outputTaskIds ?? []) : undefined,
+        outputReminderIds: patch.status === "converted" ? (patch.outputReminderIds ?? []) : undefined,
+        outputProjectId: patch.status === "converted" ? (patch.outputProjectId ?? null) : undefined,
+        convertedAt: patch.status === "converted" ? Date.now() : undefined,
+        failedReason: patch.status === "failed" ? (patch.failedReason ?? "处理失败") : undefined,
+      });
+    }
+  } catch (err) {
+    console.error("[brain-plan] sync inbox from plan failed:", err);
+  }
+}
+
 // ---------------- 确认写入（统一写入服务） ----------------
 
 function toNewTask(
@@ -301,6 +397,11 @@ export async function applyProcessingPlan(
   plan: BrainProcessingPlan,
   edits?: ProcessingEdits | null,
 ): Promise<ApplyResult> {
+  // 并发/连点/页面恢复后的重复确认护栏：以库内最新状态为准，已应用则不再重复产出。
+  const fresh = await getBrainProcessingPlan(userId, plan.id);
+  if (fresh && fresh.status === "applied") {
+    return { ok: false, error: "already_applied", reason: "该计划已确认保存，请勿重复提交", strategyIds: [], taskIds: [], reminderIds: [], plan: fresh };
+  }
   let body: ProcessingPlanBody;
   try {
     body = JSON.parse(plan.planJson);
@@ -316,6 +417,8 @@ export async function applyProcessingPlan(
   const final = applyEdits(body, edits);
   const content = final.body?.trim() || plan.rawContent;
   if (!content.trim()) {
+    // P2-A：内容为空也算一次「处理失败」，统一回写关联收件箱为 failed，保证状态机闭合
+    await syncInboxFromPlan(userId, plan.id, { status: "failed", failedReason: "正文为空，无法保存" });
     return { ok: false, error: "content_required", reason: "正文为空，无法保存", strategyIds: [], taskIds: [], reminderIds: [], plan };
   }
 
@@ -327,28 +430,30 @@ export async function applyProcessingPlan(
   const { id: projectId } = await resolveProject(userId, final.suggestedProjectId);
 
   const fail = async (error: string, reason: string) => {
-    // 回滚本次已写入的对象（任务/策略/复习随笔记级联删除；独立提醒单独删）
-    const recovery: Record<string, unknown> = { noteId: createdNoteId, taskIds: createdTaskIds, strategyIds: createdStrategyIds, reminderIds: createdReminderIds };
-    try {
-      for (const id of createdReminderIds) await deleteBrainReminderItem(userId, id);
-      if (createdNoteId) await deleteBrainNote(userId, createdNoteId);
-      createdNoteId = null;
-      createdTaskIds = [];
-      createdStrategyIds = [];
-      createdReminderIds = [];
-      recovery.rolledBack = true;
-    } catch (rbErr) {
-      console.error("[brain-plan] rollback partial failed:", rbErr);
-      recovery.rolledBack = false;
-      recovery.recoveryState = "pending_recovery";
-    }
-    await updateBrainProcessingPlan(userId, plan.id, {
-      status: "failed",
-      failureReason: reason,
-      recovery: JSON.stringify(recovery),
-    });
-    return { ok: false, error, reason, strategyIds: createdStrategyIds, taskIds: createdTaskIds, reminderIds: createdReminderIds, plan } satisfies ApplyResult;
-  };
+      // 回滚本次已写入的对象（任务/策略/复习随笔记级联删除；独立提醒单独删）
+      const recovery: Record<string, unknown> = { noteId: createdNoteId, taskIds: createdTaskIds, strategyIds: createdStrategyIds, reminderIds: createdReminderIds };
+      try {
+        for (const id of createdReminderIds) await deleteBrainReminderItem(userId, id);
+        if (createdNoteId) await deleteBrainNote(userId, createdNoteId);
+        createdNoteId = null;
+        createdTaskIds = [];
+        createdStrategyIds = [];
+        createdReminderIds = [];
+        recovery.rolledBack = true;
+      } catch (rbErr) {
+        console.error("[brain-plan] rollback partial failed:", rbErr);
+        recovery.rolledBack = false;
+        recovery.recoveryState = "pending_recovery";
+      }
+      await updateBrainProcessingPlan(userId, plan.id, {
+        status: "failed",
+        failureReason: reason,
+        recovery: JSON.stringify(recovery),
+      });
+      // P2-A：关联收件箱统一回写 failed（best-effort）
+      await syncInboxFromPlan(userId, plan.id, { status: "failed", failedReason: reason });
+      return { ok: false, error, reason, strategyIds: createdStrategyIds, taskIds: createdTaskIds, reminderIds: createdReminderIds, plan } satisfies ApplyResult;
+    };
 
   try {
     // 1) 笔记 + 策略
@@ -449,6 +554,14 @@ export async function applyProcessingPlan(
       failureReason: null,
       recovery: null,
     });
+    // P2-A：关联收件箱统一回写 converted + 产出对象（best-effort，不阻断主流程）
+    await syncInboxFromPlan(userId, plan.id, {
+      status: "converted",
+      noteId: createdNoteId,
+      outputTaskIds: createdTaskIds,
+      outputReminderIds: createdReminderIds,
+      outputProjectId: projectId,
+    });
     const updated = await getBrainProcessingPlan(userId, plan.id);
     return { ok: true, note, strategyIds: createdStrategyIds, taskIds: createdTaskIds, reminderIds: createdReminderIds, plan: updated };
   } catch (err) {
@@ -502,6 +615,192 @@ export function parsePlanBody(plan: BrainProcessingPlan | null | undefined): Pro
 /** 可恢复性：查询用户的待确认/失败的 plan（刷新/重登后恢复草稿）。 */
 export async function listRecoverablePlans(userId: string, status?: BrainPlanStatus[]): Promise<BrainProcessingPlan[]> {
   return listBrainProcessingPlans(userId, status);
+}
+
+// ---------------- P0.5 恢复与运维安全网 ----------------
+
+export interface PlanRecoveryView {
+  id: string;
+  createdAt: number;
+  applyAt: number | null;
+  step: string | null; // 失败步骤（恢复链第一步）+ 语义化分类
+  reason: string | null;
+  status: BrainPlanStatus;
+  // 已写出的对象（用于内部人眼可读的补偿说明）
+  written: { noteId: string | null; taskIds: string[]; strategyIds: string[]; reminderIds: string[] };
+  // recovery 原样（JSON 字符串）
+  recovery: string | null;
+  rolledBack: boolean;
+  pendingRecovery: boolean;
+  contentPreview: string;
+}
+
+function parseRecovery(plan: BrainProcessingPlan): {
+  rolledBack: boolean;
+  pendingRecovery: boolean;
+  step: string | null;
+} {
+  let rolledBack = false;
+  let pendingRecovery = false;
+  let step: string | null = null;
+  if (plan.recovery) {
+    try {
+      const r = JSON.parse(plan.recovery);
+      rolledBack = r?.rolledBack === true;
+      pendingRecovery = r?.recoveryState === "pending_recovery";
+      step = r?.failedStep?.toString() ?? r?.step ?? null;
+    } catch {
+      /* 忽略 */
+    }
+  }
+  return { rolledBack, pendingRecovery, step };
+}
+
+/** 待恢复计划（failed / pending_recovery），内部回收站可见；审计记录永久保留，不做硬删除。 */
+export async function listPendingRecoveryPlans(userId: string): Promise<PlanRecoveryView[]> {
+  const failed = await listBrainProcessingPlans(userId, ["failed"]);
+  const out: PlanRecoveryView[] = [];
+  for (const p of failed) {
+    const { rolledBack, pendingRecovery, step } = parseRecovery(p);
+    out.push({
+      id: p.id,
+      createdAt: p.createdAt,
+      applyAt: p.applyAt,
+      step: step ?? "apply",
+      reason: p.failureReason,
+      status: p.status,
+      written: { noteId: p.noteId, taskIds: p.taskIds, strategyIds: p.strategyIds, reminderIds: p.reminderIds },
+      recovery: p.recovery,
+      rolledBack,
+      pendingRecovery,
+      contentPreview: (p.rawContent ?? "").slice(0, 60),
+    });
+  }
+  out.sort((a, b) => b.createdAt - a.createdAt);
+  return out;
+}
+
+/** 补偿回滚：删除失败计划已写出的对象（提醒 + 笔记级联任务/策略/复习），并保留审计记录。 */
+export async function compensateProcessingPlan(
+  userId: string,
+  planId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const plan = await getBrainProcessingPlan(userId, planId);
+  if (!plan) return { ok: false, error: "not_found" };
+  const reminderIds = [...(plan.reminderIds ?? [])];
+  const noteId = plan.noteId;
+  try {
+    for (const rid of reminderIds) {
+      try {
+        await deleteBrainReminderItem(userId, rid);
+      } catch (e) {
+        console.error("[brain-plan] compensate reminder failed:", rid, e);
+      }
+    }
+    if (noteId) {
+      try {
+        await deleteBrainNote(userId, noteId);
+      } catch (e) {
+        console.error("[brain-plan] compensate note failed:", noteId, e);
+      }
+    }
+    let recovery: Record<string, unknown> = { rolledBack: true, compensatedAt: Date.now(), noteId, reminderIds };
+    if (plan.recovery) {
+      try {
+        recovery = { ...JSON.parse(plan.recovery), ...recovery };
+      } catch {
+        /* 忽略 */
+      }
+    }
+    await updateBrainProcessingPlan(userId, planId, {
+      status: "rejected",
+      recovery: JSON.stringify(recovery),
+      failureReason: (plan.failureReason ?? "") + "（已人工补偿回滚）",
+    });
+    return { ok: true };
+  } catch (err) {
+    console.error("[brain-plan] compensate failed:", err);
+    return { ok: false, error: "compensate_failed" };
+  }
+}
+
+/** 标记人工已处理（不再出现在待恢复列表，但保留审计记录）。 */
+export async function markPlanHandled(
+  userId: string,
+  planId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const plan = await getBrainProcessingPlan(userId, planId);
+  if (!plan) return { ok: false, error: "not_found" };
+  let recovery: Record<string, unknown> = { handledBy: "manual", handledAt: Date.now() };
+  if (plan.recovery) {
+    try {
+      recovery = { ...JSON.parse(plan.recovery), ...recovery };
+    } catch {
+      /* 忽略 */
+    }
+  }
+  await updateBrainProcessingPlan(userId, planId, {
+    status: "rejected",
+    recovery: JSON.stringify(recovery),
+    failureReason: plan.failureReason ?? "（人工标记已处理）",
+  });
+  return { ok: true };
+}
+
+/** 重试应用：先补偿清理残留，再以用户已编辑的计划重新走原子写入。 */
+export async function retryProcessingPlan(
+  userId: string,
+  planId: string,
+): Promise<ApplyResult & { error?: string }> {
+  const plan = await getBrainProcessingPlan(userId, planId);
+  if (!plan) return { ok: false, error: "not_found", reason: "计划不存在", strategyIds: [], taskIds: [], reminderIds: [], plan: null };
+  if (plan.status === "applied") {
+    return { ok: false, error: "already_applied", reason: "计划已应用，无需重试", strategyIds: [], taskIds: [], reminderIds: [], plan };
+  }
+  const { rolledBack } = parseRecovery(plan);
+  if (!rolledBack && (plan.noteId || (plan.reminderIds ?? []).length || (plan.taskIds ?? []).length)) {
+    // 存在未回滚的部分产物，先补偿清理，避免重复产出
+    const comp = await compensateProcessingPlan(userId, planId);
+    if (!comp.ok) {
+      return { ok: false, error: comp.error ?? "prerequisite_cleanup_failed", reason: "清理残留失败，无法重试", strategyIds: [], taskIds: [], reminderIds: [], plan };
+    }
+  }
+  const edits: ProcessingEdits | null = plan.editsJson ? safeParse<ProcessingEdits>(plan.editsJson) : null;
+  return applyProcessingPlan(userId, plan, edits);
+}
+
+function safeParse<T>(json: string): T | null {
+  try {
+    return JSON.parse(json) as T;
+  } catch {
+    return null;
+  }
+}
+
+/** 计划清理策略（软归档，不硬删除审计记录）：
+ * - pending_confirmation / failed / draft：永久保留，直到用户确认/拒绝/人工处理；
+ * - applied：保留 180 天作为可追溯审计；
+ * - rejected：保留 30 天。
+ */
+export async function cleanupProcessingPlans(userId: string): Promise<{ archived: string[]; skipped: number }> {
+  const DAY = 86400_000;
+  const now = Date.now();
+  const plans = await listBrainProcessingPlans(userId, undefined, true);
+  const archived: string[] = [];
+  let skipped = 0;
+  for (const p of plans) {
+    if (p.archivedAt) continue;
+    const age = now - p.createdAt;
+    let shouldArchive = false;
+    if (p.status === "applied" && age > 180 * DAY) shouldArchive = true;
+    else if (p.status === "rejected" && age > 30 * DAY) shouldArchive = true;
+    if (shouldArchive) {
+      const ok = await updateBrainProcessingPlan(userId, p.id, { archivedAt: now });
+      if (ok) archived.push(p.id);
+      else skipped++;
+    }
+  }
+  return { archived, skipped };
 }
 
 export type { NoteType, OrganizedNote };

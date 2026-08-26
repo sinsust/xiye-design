@@ -377,7 +377,7 @@ export const useFlowStore = create<FlowState>()(
       uiLibrary: s.uiLibrary,
       componentVariants: s.componentVariants,
       projectInfo: s.projectInfo,
-      apiKeys: s.apiKeys,
+      // 安全：apiKeys 属用户私密凭据，不随项目快照落库/回传（生成 .env.local 是一次性动作）
       visualStyle: s.visualStyle,
       motionSelections: s.motionSelections,
       pageBlueprint: s.pageBlueprint,
@@ -400,7 +400,6 @@ export const useFlowStore = create<FlowState>()(
         uiLibrary: s.uiLibrary,
         componentVariants: s.componentVariants,
         projectInfo: s.projectInfo,
-        apiKeys: s.apiKeys,
         visualStyle: s.visualStyle,
         motionSelections: s.motionSelections,
         pageBlueprint: s.pageBlueprint,
@@ -436,7 +435,24 @@ export const useFlowStore = create<FlowState>()(
     {
       name: "xiye-flow-design",
       storage: createJSONStorage(() => flowPersistStorage),
+      onRehydrateStorage: () => () => {
+        // 安全迁移：历史版本曾把 apiKeys 明文持久化进 localStorage；现版本 partialize 已剔除。
+        // 此处一次性清理旧残留，避免密钥继续滞留浏览器。
+        try {
+          const raw = window.localStorage.getItem("xiye-flow-design");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.state?.apiKeys && Object.keys(parsed.state.apiKeys).length > 0) {
+              delete parsed.state.apiKeys;
+              window.localStorage.setItem("xiye-flow-design", JSON.stringify(parsed));
+            }
+          }
+        } catch {
+          /* noop */
+        }
+      },
       // 持久化：设计 token + Step 1 探索式访谈会话（避免每次进入都重新生成）。
+      // 注意：apiKeys 属用户私密凭据，一律不持久化（生成 .env.local 是一次性动作，刷新后需重填）。
       partialize: (state) => ({
         currentStep: state.currentStep,
         projectType: state.projectType,
@@ -446,7 +462,6 @@ export const useFlowStore = create<FlowState>()(
         uiLibrary: state.uiLibrary,
         componentVariants: state.componentVariants,
         projectInfo: state.projectInfo,
-        apiKeys: state.apiKeys,
         visualStyle: state.visualStyle,
         motionSelections: state.motionSelections,
         pageBlueprint: state.pageBlueprint,

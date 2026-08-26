@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 // 返回新笔记对象 + 完整版本链（供前端立即渲染时间线）。
 export async function POST(
   req: NextRequest,
-  ctx: { params: Promise<{ id: string }> | { id: string } },
+  ctx: { params: Promise<{ id: string }> },
 ) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

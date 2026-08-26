@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getSessionUser } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { packBrand, packBrandWithCopy } from "@/lib/brand-pack";
 
@@ -6,7 +7,24 @@ export const runtime = "nodejs";
 
 // GET  /api/brand/zip?site=Outstand        → 下载该品牌【原始完整】可运行项目（#1 高保真 + #2 完整）
 // POST /api/brand/zip  body { site, copyMap } → 在完整原始之上叠加【文案覆盖层】后打包（#3）
+// 均需登录（品牌包含完整站点源码，不应匿名导出）。
+async function requireLogin(): Promise<{ ok: true } | { ok: false; res: Response }> {
+  const user = await getSessionUser();
+  if (!user) {
+    return {
+      ok: false,
+      res: new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }),
+    };
+  }
+  return { ok: true };
+}
+
 export async function GET(req: NextRequest) {
+  const auth = await requireLogin();
+  if (!auth.ok) return auth.res;
   if (!rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }
@@ -30,6 +48,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireLogin();
+  if (!auth.ok) return auth.res;
   if (!rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }

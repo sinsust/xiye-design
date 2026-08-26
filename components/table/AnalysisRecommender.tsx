@@ -8,6 +8,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown, Loader2, Sparkles, XCircle } from "lucide-react";
+import { describeDimension } from "@/lib/table/analysis";
+import { readForceRoute, writeLLMRoute } from "@/components/LLMRouteBadge";
 import type { AnalysisDimension, TableProfileResult } from "@/lib/table/types";
 
 const CHART_ICONS: Record<string, string> = {
@@ -19,6 +21,9 @@ const CHART_ICONS: Record<string, string> = {
   boxplot: "📦",
   heatmap: "🔥",
   table: "📋",
+  topn: "🏆",
+  mom: "📊",
+  groupbar: "🧮",
 };
 
 const LOADING_PHASES = [
@@ -76,12 +81,13 @@ export function AnalysisRecommender({
       const res = await fetch("/api/brain/table/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profile, tableId }),
+        body: JSON.stringify({ profile, tableId, forceRoute: readForceRoute() }),
         signal: ctrl.signal,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || data?.error || "推荐失败");
       setDimensions(data.dimensions ?? []);
+      if (data.route === "qwen" || data.route === "deepseek") writeLLMRoute(data.route);
       setProgress(100);
     } catch (e) {
       if ((e as Error).name === "AbortError") {
@@ -202,7 +208,9 @@ export function AnalysisRecommender({
       {/* 推荐维度卡片 */}
       {!loading && dimensions.length > 0 && (
         <div className="mt-3 space-y-1.5">
-          {visible.map((d, i) => (
+          {visible.map((d, i) => {
+            const desc = describeDimension(d, profile);
+            return (
             <div
               key={i}
               className={
@@ -227,22 +235,23 @@ export function AnalysisRecommender({
                   <span className="shrink-0">{CHART_ICONS[d.chartType] ?? "📊"}</span>
                   <span className="truncate">{d.name}</span>
                 </div>
-                <div className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
-                  {d.description}
+                {/* 怎么算：机器生成的直观说明（不依赖 AI 描述） */}
+                <div className="mt-0.5 text-[11px] font-medium text-foreground/90">
+                  {desc.how}
                 </div>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {d.fields.slice(0, 4).map((f) => (
-                    <span key={f} className="rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
-                      {f}
-                    </span>
-                  ))}
-                  {d.chartType && (
-                    <span className="rounded bg-primary/8 px-1.5 py-px text-[10px] text-primary">{d.chartType}</span>
-                  )}
-                </div>
+                {/* 示例：真实画像数据 */}
+                {desc.example && (
+                  <div className="mt-0.5 truncate text-[10px] text-primary/80">
+                    示例：{desc.example}
+                  </div>
+                )}
+                {d.description && (
+                  <div className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground/70">{d.description}</div>
+                )}
               </button>
             </div>
-          ))}
+            );
+          })}
 
           {dimensions.length > 4 && (
             <button

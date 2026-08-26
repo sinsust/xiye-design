@@ -303,7 +303,7 @@ function buildCoreWords(ctx: {
   return out.length ? out.join("、") : "";
 }
 
-export const SYSTEM_PROMPT = (indexesHint: string, brandName?: string, brandWords?: string) => `你是一位顶级品牌文案与行业内容策略专家。你要把一套英文网站模板的全部「文案位」重写成简体中文，目标是让它**看起来就是这个项目自己的官网**，而不是任何行业都能套上的模板。
+const SYSTEM_PROMPT = (indexesHint: string, brandName?: string, brandWords?: string) => `你是一位顶级品牌文案与行业内容策略专家。你要把一套英文网站模板的全部「文案位」重写成简体中文，目标是让它**看起来就是这个项目自己的官网**，而不是任何行业都能套上的模板。
 
 【正在服务的项目】品牌名：${brandName || "（未提供品牌名）"}。项目是什么样的业务，由下方「项目背景」给出（用户消息里有行业、定位、目标用户、核心页面/功能/卖点）。你的一切创作都以这个具体项目为中心。
 

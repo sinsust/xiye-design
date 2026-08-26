@@ -76,17 +76,28 @@ export function ChatStream({
     return useFlowStore.persist.onFinishHydration(() => setHydrated(true));
   }, []);
 
-  // 首页 ?intent= / ?reset= 引导：清旧状态 + 用意图自动发起首条对话（替代老 /flow 的 Step0Intent）
+  // 首页 ?intent= / ?reset= 引导：清旧状态 + 用意图自动发起首条对话（替代老 /flow 的 Step0Intent）。
+  // 防重复扣费：参数消费后立即 replaceState 清理，刷新不再重放；
+  // 若缓存会话的首条用户消息与 intent 相同，则直接续用缓存，不重置、不重发（下方「恢复缓存会话」effect 接管）。
   useEffect(() => {
     if (!hydrated) return;
     const params = new URLSearchParams(window.location.search);
     const intent = params.get("intent")?.trim();
     const reset = params.get("reset") === "1";
     if (!intent && !reset) return;
-    if (reset) {
-      useFlowStore.getState().resetAll(1);
-      useFlowStore.getState().setSavedProjectId(null);
-    }
+
+    const cached = useFlowStore.getState().intentSession;
+    const firstUserMsg = cached?.messages.find((m) => m.role === "user");
+    const canResume = Boolean(intent) && !reset && Boolean(cached && cached.messages.length > 0 && firstUserMsg?.content === intent);
+
+    // 消费 URL 参数（与 ?pid= 的 replaceState 清理一致），避免刷新重放重复调 AI
+    params.delete("intent");
+    params.delete("reset");
+    history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+
+    if (canResume) return;
+    useFlowStore.getState().resetAll(1);
+    useFlowStore.getState().setSavedProjectId(null);
     if (intent) {
       startedRef.current = true;
       setPhase("chat");

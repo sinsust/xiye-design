@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  Bell,
   Check,
   ChevronDown,
   ClipboardList,
+  FileText,
   FolderPlus,
   Inbox,
+  Layers,
+  ListTodo,
   Loader2,
   MessageSquareText,
   Pencil,
@@ -16,9 +20,20 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProvenancePanel, type ProvenanceAnchor } from "@/components/brain/ProvenancePanel";
 
 // —— 类型（与后端 /api/brain/inbox 对齐）——
 type InboxIntent = "note" | "task" | "meeting" | "snippet" | "project" | "unknown";
+
+// P2-A：收件箱状态机
+type InboxStatus =
+  | "pending"
+  | "processing"
+  | "pending_confirmation"
+  | "converted"
+  | "processed"
+  | "dismissed"
+  | "failed";
 
 export interface InboxItem {
   id: string;
@@ -28,7 +43,27 @@ export interface InboxItem {
   suggestedTitle?: string;
   suggestedCategory?: string;
   suggestedTags?: string[];
+  // —— P2-A 状态与来源/产出链路 ——
+  status?: InboxStatus;
+  initialStatus?: InboxStatus;
+  processingPlanId?: string | null;
+  noteId?: string | null;
+  outputTaskIds?: string[];
+  outputReminderIds?: string[];
+  outputProjectId?: string | null;
+  convertedAt?: number | null;
+  failedReason?: string | null;
 }
+
+const STATUS_META: Record<InboxStatus, { label: string; cls: string }> = {
+  pending: { label: "待处理", cls: "bg-muted text-muted-foreground" },
+  processing: { label: "整理中", cls: "bg-amber-500/15 text-amber-600 animate-pulse" },
+  pending_confirmation: { label: "待确认", cls: "bg-indigo-500/15 text-indigo-600" },
+  converted: { label: "已转化", cls: "bg-emerald-500/15 text-emerald-600" },
+  processed: { label: "已处理", cls: "bg-sky-500/15 text-sky-600" },
+  dismissed: { label: "已忽略", cls: "bg-muted text-muted-foreground/70" },
+  failed: { label: "处理失败", cls: "bg-red-500/15 text-red-600" },
+};
 
 const INTENT_META: Record<InboxIntent, { icon: string; label: string; cls: string }> = {
   note: { icon: "📝", label: "笔记", cls: "bg-sky-500/10 text-sky-600" },
@@ -60,10 +95,16 @@ export function InboxDrawer({
   open,
   onClose,
   onPendingChange,
+  onOpenPlan,
+  onOpenNote,
+  onOpenTask,
 }: {
   open: boolean;
   onClose: () => void;
   onPendingChange: (n: number) => void;
+  onOpenPlan?: (planId: string) => void;
+  onOpenNote?: (noteId: string) => void;
+  onOpenTask?: (taskId: string) => void;
 }) {
   const [items, setItems] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -74,6 +115,8 @@ export function InboxDrawer({
   const [editing, setEditing] = useState<{ id: string; draft: EditState } | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [error, setError] = useState("");
+  // P2-A：展开查看「来源与关联」/ 已转化产物明细的条目 id
+  const [openPanel, setOpenPanel] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,7 +126,11 @@ export function InboxDrawer({
       const data = await res.json();
       if (res.ok && Array.isArray(data.items)) {
         setItems(data.items);
-        onPendingChange(data.stats?.pending ?? data.items.length);
+        // 徽标统计「可处理」条目（待处理 / 整理中 / 待确认 / 失败），已转化/已忽略不计数
+        const actionable = data.items.filter((i: InboxItem) =>
+          i.status === "pending" || i.status === "processing" || i.status === "pending_confirmation" || i.status === "failed",
+        ).length;
+        onPendingChange(actionable);
       } else {
         setError(data?.error || "加载收件箱失败");
       }
@@ -146,6 +193,29 @@ export function InboxDrawer({
     }
   };
 
+  // P2-A：失败的收件箱条目重试整理（走统一 organize→plans 闭环）
+  const retryOrganize = async (item: InboxItem) => {
+    setBusy(item.id);
+    setError("");
+    try {
+      const res = await fetch("/api/brain/organize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inboxId: item.id, source: "inbox" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "重新整理失败");
+      await load();
+      // 生成待确认计划后，引导用户直接确认
+      const planId = data.plan?.id ?? data.planId;
+      if (planId && onOpenPlan) onOpenPlan(planId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "重新整理失败");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   // 批量处理
   const batchProcess = async (action: "confirm" | "dismiss") => {
     if (!items.length) return;
@@ -179,6 +249,11 @@ export function InboxDrawer({
     });
   };
 
+  // 可处理条目数（待处理 / 整理中 / 待确认 / 失败）
+  const actionableCount = items.filter(
+    (i) => i.status === "pending" || i.status === "processing" || i.status === "pending_confirmation" || i.status === "failed",
+  ).length;
+
   return (
     <div
       className={
@@ -207,9 +282,9 @@ export function InboxDrawer({
           <div className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
             <Inbox className="size-4.5 text-primary" />
             收件箱
-            {items.length > 0 && (
+            {actionableCount > 0 && (
               <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600">
-                {items.length} 条待处理
+                {actionableCount} 条待处理
               </span>
             )}
           </div>
@@ -256,15 +331,18 @@ export function InboxDrawer({
           )}
           {items.map((item) => (
             <div key={item.id} className="rounded-lg border border-border bg-white p-3.5 shadow-sm">
-              {/* 意图 + 置信度 */}
+              {/* 意图 + 置信度 + 状态 */}
               <div className="mb-2 flex items-center gap-2">
                 <span className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium " + (INTENT_META[item.intent ?? "unknown"]?.cls)}>
                   {INTENT_META[item.intent ?? "unknown"]?.icon}{" "}
                   {INTENT_META[item.intent ?? "unknown"]?.label}
                 </span>
-                {item.confidence > 0 && (
+                {item.confidence > 0 && item.status !== "converted" && item.status !== "dismissed" && (
                   <span className="text-[11px] text-muted-foreground">置信度 {Math.round(item.confidence * 100)}%</span>
                 )}
+                <span className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium " + (STATUS_META[item.status ?? "pending"]?.cls ?? STATUS_META.pending.cls)}>
+                  {STATUS_META[item.status ?? "pending"]?.label ?? "待处理"}
+                </span>
               </div>
 
               {/* 原文预览 */}
@@ -382,19 +460,86 @@ export function InboxDrawer({
                       ) : null}
                     </div>
                   )}
-                  {/* 操作按钮 */}
+                  {/* P2-A：状态与去向展示 */}
+                  {item.status === "converted" && (item.noteId || (item.outputTaskIds?.length ?? 0) > 0) && (
+                    <div className="mt-2 space-y-1 rounded-md bg-emerald-500/5 px-3 py-2 text-xs">
+                      <div className="text-emerald-700">已转化</div>
+                      <div className="space-y-0.5">
+                        {item.noteId && (
+                          <button
+                            onClick={() => onOpenNote?.(item.noteId!)}
+                            className="flex items-center gap-1.5 text-foreground transition hover:text-primary"
+                          >
+                            <FileText className="size-3.5 text-emerald-600" /> → 笔记
+                          </button>
+                        )}
+                        {(item.outputTaskIds?.length ?? 0) > 0 && (
+                          <button
+                            onClick={() => onOpenTask?.(item.outputTaskIds![0])}
+                            className="flex items-center gap-1.5 text-foreground transition hover:text-primary"
+                          >
+                            <ListTodo className="size-3.5 text-emerald-600" /> → {item.outputTaskIds!.length} 项任务
+                          </button>
+                        )}
+                        {(item.outputReminderIds?.length ?? 0) > 0 && (
+                          <span className="flex items-center gap-1.5 text-muted-foreground">
+                            <Bell className="size-3.5 text-emerald-600" /> → {item.outputReminderIds!.length} 个提醒
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {item.status === "failed" && (
+                    <div className="mt-2 rounded-md bg-red-500/5 px-3 py-2 text-[11px] text-red-600">
+                      {item.failedReason || "处理失败"}，可重试整理
+                    </div>
+                  )}
+
+                  {/* 操作按钮（按状态路由到统一闭环） */}
                   <div className="mt-3 flex items-center gap-1.5">
-                    <Button size="sm" className="flex-1" disabled={busy !== null} onClick={() => processOne(item, "confirm")}>
-                      {busy === item.id ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-                      确认
-                    </Button>
-                    <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => startEdit(item)}>
-                      <Pencil className="size-3.5" /> 修改
-                    </Button>
-                    <Button size="sm" variant="ghost" className="text-muted-foreground" disabled={busy !== null} onClick={() => processOne(item, "dismiss")}>
-                      <Trash2 className="size-3.5" /> 忽略
-                    </Button>
+                    {item.status === "converted" || item.status === "processed" || item.status === "dismissed" ? (
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => setOpenPanel((v) => (v === item.id ? null : item.id))}>
+                        <Layers className="size-3.5" /> 来源与关联
+                      </Button>
+                    ) : item.status === "failed" ? (
+                      <Button size="sm" className="flex-1" disabled={busy !== null} onClick={() => retryOrganize(item)}>
+                        {busy === item.id ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                        重试整理
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          disabled={busy !== null}
+                          onClick={() => (item.processingPlanId && onOpenPlan ? onOpenPlan(item.processingPlanId) : processOne(item, "confirm"))}
+                        >
+                          {busy === item.id ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                          {item.processingPlanId && onOpenPlan ? "查看并确认" : "确认"}
+                        </Button>
+                        {!item.processingPlanId && (
+                          <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => startEdit(item)}>
+                            <Pencil className="size-3.5" /> 修改
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="text-muted-foreground" disabled={busy !== null} onClick={() => processOne(item, "dismiss")}>
+                          <Trash2 className="size-3.5" /> 忽略
+                        </Button>
+                      </>
+                    )}
                   </div>
+
+                  {/* P2-A：来源与关联面板（收件箱锚点） */}
+                  {openPanel === item.id && (
+                    <div className="mt-3">
+                      <ProvenancePanel
+                        anchor={{ inboxId: item.id } as ProvenanceAnchor}
+                        onOpenNote={onOpenNote}
+                        onOpenTask={onOpenTask}
+                        onOpenPlan={onOpenPlan}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -404,7 +549,7 @@ export function InboxDrawer({
         {/* 底部批量操作 */}
         {items.length > 0 && (
           <div className="flex items-center justify-between gap-2 border-t border-border/70 bg-white px-5 py-3">
-            <span className="text-xs text-muted-foreground">{items.length} 条待处理</span>
+            <span className="text-xs text-muted-foreground">{actionableCount} 条待处理</span>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => batchProcess("dismiss")}>
                 全部忽略

@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AUTH_CHANGED_EVENT, AUTH_CACHE_KEY } from "@/lib/auth-events";
 
@@ -30,9 +30,7 @@ function LoginInner() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
   const [resetState, setResetState] = useState<"idle" | "sending" | "sent">("idle");
-  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function sendReset(e: React.MouseEvent) {
     e.preventDefault();
@@ -77,36 +75,19 @@ function LoginInner() {
         /* ignore */
       }
       setLoading(false);
-      setDone(true);
-      // 预取下一页路由（warm /brain 的 chunk），缩短跳转后空白等待
+      // 直接跳转（不再停留「登录成功」卡片）：prefetch 已 warm 目标页 chunk，
+      // 目标页自己的 loading.tsx 骨架会无缝衔接，消除白屏等待
       try {
         router.prefetch(next?.startsWith("/") ? next : "/");
       } catch {
         /* ignore */
       }
-      // 用户反馈登录成功→跳转等待太长：从 1200ms 缩短到 400ms（足够看清「登录成功」，但不再卡顿）
-      redirectTimer.current = setTimeout(() => {
-        router.push(next?.startsWith("/") ? next : "/");
-      }, 400);
+      router.push(next?.startsWith("/") ? next : "/");
       return;
     }
     setLoading(false);
     setError(
       j?.error === "invalid_credentials" ? "邮箱或密码错误" : "登录失败，请重试",
-    );
-  }
-
-  if (done) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-          <CheckCircle2 className="mx-auto size-10 text-primary" />
-          <h1 className="mt-3 text-lg font-semibold text-foreground">登录成功</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            正在进入首页…欢迎回来，{email}
-          </p>
-        </div>
-      </main>
     );
   }
 

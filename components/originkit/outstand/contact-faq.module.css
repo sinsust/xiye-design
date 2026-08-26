@@ -1,5 +1,5 @@
 ﻿/* ===== scoped Outstand tokens ===== */
-:local(faq) {
+.faq {
   --color-accent: rgb(205, 241, 64);
   --color-accent-soft: rgb(212, 244, 88);
   --color-accent-muted: rgb(218, 246, 111);
@@ -26,10 +26,10 @@
   --duration-appear: 0.8s;
   --duration-hover: 0.3s;
 }
-:local(faq) [data-border='true'] {
+.faq [data-border='true'] {
   position: relative;
 }
-:local(faq) [data-border='true']::after {
+.faq [data-border='true']::after {
   content: "";
   position: absolute;
   top: 0; right: 0; bottom: 0; left: 0;

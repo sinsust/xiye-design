@@ -108,11 +108,14 @@ function inboxStats(items: BrainInboxItem[]) {
 }
 
 // GET /api/brain/inbox
-// 待处理条目列表 + 统计（含今日已处理、总量）。
+// P2-A：返回全部收件箱条目（含状态 / 处理计划 / 产出链路），便于前后台状态展示。
+// 兼容旧字段：items（含全部状态）+ stats.pending / processedToday / total。
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const all = await listBrainInboxItems(user.sub).catch(() => []);
-  const pending = all.filter((i) => i.status === "pending");
-  return NextResponse.json({ items: pending, stats: inboxStats(all) });
+  return NextResponse.json({
+    items: all,
+    stats: inboxStats(all),
+  });
 }

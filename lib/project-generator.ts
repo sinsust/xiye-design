@@ -679,7 +679,7 @@ export function buildPrdMd(
   // 9. 里程碑与交付范围
   const milestoneRows = [
     `### Phase 0 · 底座跑通（参照 \`seed/\`）\n- 启动工程并确认运行；读交接文档；verify.mjs 全部通过。`,
-    `### Phase 1 · 核心链路（P0，本关系型 - 共 ${p0} 个 P0 页面）\n> 范围：${p0Pages.map((p) => `\`${p.name}\``).join("、") || "核心 P0 页面"}\n- 打通端到端主流程，可被关键路径验收覆盖。`,
+    `### Phase 1 · 核心链路（P0 · 共 ${p0} 个 P0 页面）\n> 范围：${p0Pages.map((p) => `\`${p.name}\``).join("、") || "核心 P0 页面"}\n- 打通端到端主流程，可被关键路径验收覆盖。`,
     `### Phase 2 · 完善分层（P1 → P2）\n> 范围：P1 共 ${p1} 个、P2 共 ${p2} 个页面\n- 实现 P1 能力与打磨视觉/动效；P2 按需补齐；非目标（第 8 节）不做。`,
   ].join("\n\n");
 
@@ -710,6 +710,9 @@ ${guardSummary.summary ? `**核心结论**：${guardSummary.summary}\n\n` : ""}$
       ? `> 对话中已确认的设计系统（由产品方法论推导，供视觉落地参考）：\n\n${visualSpec.trim()}\n\n> 最终视觉 token 唯一真值以 \`docs/DESIGN_SPEC.md\` 与 \`globals.css\` 为准，此处为方向性参考。`
       : narrative.marketFit;
 
+  const positioningPart =
+    (narrative.positioning?.trim().replace(/[。；;]+$/, "") || "聚焦目标用户的核心场景") + "。";
+
   return `# ${projectName} · 产品需求文档（PRD）
 
 > 由 xiye 流程工作台生成 · ${now}
@@ -717,7 +720,7 @@ ${guardSummary.summary ? `**核心结论**：${guardSummary.summary}\n\n` : ""}$
 
 ## 1. 产品概述
 
-> 本产品定位为 **${pTypeName}**（基于 ${stackLabel}），围绕愿景「${narrative.vision}」展开。${narrative.positioning || "聚焦目标用户的核心场景。"}主要服务 ${state.productBrief?.targetAudience?.join("、") || "该品类的核心用户与决策者"}，${state.productBrief?.description || "围绕该场景提供端到端的可用体验"}。
+> 本产品定位为 **${pTypeName}**（基于 ${stackLabel}），围绕愿景「${narrative.vision}」展开。${positioningPart}主要服务 ${state.productBrief?.targetAudience?.join("、") || "该品类的核心用户与决策者"}，${state.productBrief?.description || "围绕该场景提供端到端的可用体验"}。
 
 | 项 | 内容 |
 | --- | --- |
@@ -817,7 +820,7 @@ ${guardSection}## 12. 价值主张（PR/FAQ 反向验证）
 
 来源：[amplitude/builder-skills](https://github.com/amplitude/builder-skills)（Amplitude 官方 PM 团队）。如需更深的结构化产出，可在 xiye 知识库「技能」类复制对应 skill 原文甩给 AI。
 
-> 视觉 token / 字体 / 圆角 / 动效等视觉规范详见 \`docs/DESIGN_SPEC.md。
+> 视觉 token / 字体 / 圆角 / 动效等视觉规范详见 \`docs/DESIGN_SPEC.md\`。
 `;
 
 }
