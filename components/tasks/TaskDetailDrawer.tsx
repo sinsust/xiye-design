@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X, Plus, Send, Check, ArrowRight, ArrowUp, ArrowDown } from "lucide-react";
+import { X, Plus, Send, Check, ArrowRight, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import TaskTimeline from "@/components/tasks/TaskTimeline";
 import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 
 type TaskStatus = "todo" | "in_progress" | "done";
+
+const STATUS_LABEL: Record<TaskStatus, string> = { todo: "待处理", in_progress: "进行中", done: "已完成" };
+const STATUS_DOT: Record<TaskStatus, string> = { todo: "#94a3b8", in_progress: "#f59e0b", done: "#22c55e" };
+const STATUS_NEXT: Record<TaskStatus, TaskStatus> = { todo: "in_progress", in_progress: "done", done: "todo" };
 
 interface SubTask {
   id: string;
@@ -35,6 +39,9 @@ interface DetailData {
     dueDate: string | null;
     assignee: string | null;
     milestone: string | null;
+    projectId: string | null;
+    noteId: string | null;
+    priority: string;
   };
   project: { id: string; name: string; color: string; status: string } | null;
   subtasks: SubTask[];
@@ -44,11 +51,26 @@ interface DetailData {
   relatedStrategy: { id: string; name: string } | null;
   timeline: TimelineItem[];
   comments: CommentItem[];
+  canRecordOutcome: boolean;
+  outcomes: {
+    id: string;
+    taskId: string;
+    status: string;
+    summary: string;
+    detail: string | null;
+    createdAt: number;
+    updatedAt: number;
+  }[];
 }
 
-const STATUS_LABEL: Record<TaskStatus, string> = { todo: "待处理", in_progress: "进行中", done: "已完成" };
-const STATUS_NEXT: Record<TaskStatus, TaskStatus> = { todo: "in_progress", in_progress: "done", done: "todo" };
-const STATUS_DOT: Record<string, string> = { todo: "#f59e0b", in_progress: "#3b82f6", done: "#22c55e" };
+type OutcomeStatus = "resolved" | "partial" | "new_issue" | "no_record";
+
+const OUTCOME_OPTIONS: { value: OutcomeStatus; label: string }[] = [
+  { value: "resolved", label: "已解决" },
+  { value: "partial", label: "部分完成" },
+  { value: "new_issue", label: "发现新问题" },
+  { value: "no_record", label: "无需记录" },
+];
 
 function fmtDate(v: number | string | null): string {
   if (!v) return "";
@@ -65,15 +87,30 @@ export interface TaskDetailDrawerProps {
   taskId: string | null;
   onClose: () => void;
   onChanged: () => void;
+  /** P3-B：new_issue 结果 → 打开既有 StructPreview 确认一条待确认处理计划 */
+  onOpenPlanPreview?: (planId: string, body: unknown) => void;
 }
 
-export default function TaskDetailDrawer({ taskId, onClose, onChanged }: TaskDetailDrawerProps) {
+export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPlanPreview }: TaskDetailDrawerProps) {
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(false);
   const [subInput, setSubInput] = useState("");
   const [commentInput, setCommentInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<"detail" | "timeline">("detail");
+  // P3-B 结果沉淀
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
+  const [outcomeStatus, setOutcomeStatus] = useState<OutcomeStatus>("resolved");
+  const [outcomeSummary, setOutcomeSummary] = useState("");
+  const [outcomeDetail, setOutcomeDetail] = useState("");
+  const [savingOutcome, setSavingOutcome] = useState(false);
+  const [outcomeError, setOutcomeError] = useState(false);
+  // P3-B 前端提交锁：state 更新为异步，双击/回车连点会诱发并发请求，用 ref 立即加锁防重入
+  const savingOutcomeRef = useRef(false);
+  const [savedOutcome, setSavedOutcome] = useState<DetailData["outcomes"][number] | null>(null);
+  const [organizePayload, setOrganizePayload] = useState<{ content: string; source: string } | null>(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planError, setPlanError] = useState(false);
 
   const load = useCallback(async (id: string) => {
     setLoading(true);
@@ -93,6 +130,14 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged }: TaskDet
   useEffect(() => {
     if (!taskId) {
       setData(null);
+      setOutcomeOpen(false);
+      setSavedOutcome(null);
+      setOrganizePayload(null);
+      setOutcomeError(false);
+      setPlanError(false);
+      setOutcomeStatus("resolved");
+      setOutcomeSummary("");
+      setOutcomeDetail("");
       return;
     }
     load(taskId);
@@ -207,6 +252,80 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged }: TaskDet
     }
   };
 
+  // —— P3-B：保存任务结果 ——
+  const saveOutcome = async () => {
+    if (!data || savingOutcome || savingOutcomeRef.current) return;
+    savingOutcomeRef.current = true;
+    const forceSummary =
+      outcomeStatus !== "no_record" && !outcomeSummary.trim()
+        ? `（${OUTCOME_OPTIONS.find((o) => o.value === outcomeStatus)?.label ?? ""}）`
+        : outcomeSummary.trim();
+    setSavingOutcome(true);
+    setOutcomeError(false);
+    setPlanError(false);
+    try {
+      // 同一明确操作中标记任务完成：结果通常跟着「完成」一起落地
+      const res = await fetch(`/api/brain/tasks/${data.task.id}/outcomes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: outcomeStatus,
+          summary: forceSummary,
+          detail: outcomeDetail.trim() || undefined,
+          markDone: data.task.status !== "done",
+        }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.error);
+      setSavedOutcome({
+        id: body.outcome.id,
+        taskId: body.outcome.taskId,
+        status: body.outcome.status,
+        summary: body.outcome.summary,
+        detail: body.outcome.detail ?? null,
+        createdAt: body.outcome.createdAt,
+        updatedAt: body.outcome.updatedAt,
+      });
+      setOrganizePayload(body.organize ?? null);
+      setOutcomeOpen(false);
+      if (body.task?.status !== data.task.status) await load(taskId);
+      setOutcomeSummary("");
+      setOutcomeDetail("");
+      onChanged();
+    } catch {
+      setOutcomeError(true);
+    } finally {
+      savingOutcomeRef.current = false;
+      setSavingOutcome(false);
+    }
+  };
+
+  const closeOutcome = () => {
+    setOutcomeOpen(false);
+    setOutcomeError(false);
+  };
+
+  // —— P3-B：new_issue → 根据该结果生成后续处理计划（走既有 organizeToPlan，仅建 pending_confirmation Plan）——
+  const buildPlanFromOutcome = async () => {
+    if (!data || !organizePayload || planOpen) return;
+    setPlanOpen(true);
+    setPlanError(false);
+    try {
+      const res = await fetch("/api/brain/organize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: organizePayload.content, source: organizePayload.source }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.plan) throw new Error(body?.error);
+      if (onOpenPlanPreview) onOpenPlanPreview(body.plan.id, body.body ?? null);
+      setPlanOpen(false);
+    } catch {
+      setPlanError(true);
+      setPlanOpen(false);
+    }
+  };
+
   const subs = [...(data?.subtasks ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
   const progress = data?.subtaskProgress?.total
     ? Math.round((data.subtaskProgress.completed / data.subtaskProgress.total) * 100)
@@ -279,6 +398,122 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged }: TaskDet
               截止：{data?.task.dueDate ? fmtDate(data.task.dueDate) : "未设置"}
             </span>
           </div>
+
+          {/* P3-B：任务结果沉淀 */}
+          {data && data.canRecordOutcome && (
+            <section className="rounded-xl border border-border p-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-foreground">任务结果</h4>
+                {!outcomeOpen && (
+                  <button
+                    onClick={() => setOutcomeOpen(true)}
+                    className="rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/15"
+                  >
+                    记录结果
+                  </button>
+                )}
+              </div>
+
+              {savedOutcome && savedOutcome.taskId === data.task.id && (
+                <div className="mt-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                    <Check className="size-3.5" /> 已保存任务结果
+                  </div>
+                  {organizePayload && (
+                    <button
+                      onClick={buildPlanFromOutcome}
+                      disabled={planOpen}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2 py-1.5 text-[11px] font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60"
+                    >
+                      {planOpen ? <Loader2 className="size-3 animate-spin" /> : <ArrowRight className="size-3" />}
+                      根据该结果生成后续处理计划
+                    </button>
+                  )}
+                  {planError && (
+                    <div className="text-[11px] text-red-600">生成处理计划失败，请重试。</div>
+                  )}
+                </div>
+              )}
+
+              {outcomeOpen && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {OUTCOME_OPTIONS.map((o) => (
+                      <button
+                        key={o.value}
+                        onClick={() => setOutcomeStatus(o.value)}
+                        className={
+                          "rounded-full border px-2.5 py-1 text-[11px] transition " +
+                          (outcomeStatus === o.value
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/40")
+                        }
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                  {outcomeStatus !== "no_record" && (
+                    <>
+                      <input
+                        value={outcomeSummary}
+                        onChange={(e) => setOutcomeSummary(e.target.value)}
+                        placeholder="结果摘要（一句话，如：方案定稿并落地）…"
+                        className="h-8 w-full rounded-lg border border-border bg-card px-2 text-xs focus:border-primary focus:outline-none"
+                      />
+                      <textarea
+                        value={outcomeDetail}
+                        onChange={(e) => setOutcomeDetail(e.target.value)}
+                        placeholder="补充经验 / 问题 / 后续方向（可选）…"
+                        rows={2}
+                        className="w-full resize-none rounded-lg border border-border bg-card px-2 py-1.5 text-xs focus:border-primary focus:outline-none"
+                      />
+                    </>
+                  )}
+                  {outcomeStatus === "no_record" && (
+                    <p className="text-[11px] text-muted-foreground">不保存结果，仅完成任务即可。</p>
+                  )}
+                  {outcomeError && (
+                    <div className="text-[11px] text-red-600">保存失败，请重试。</div>
+                  )}
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      onClick={closeOutcome}
+                      disabled={savingOutcome}
+                      className="rounded-md px-2 py-1 text-[11px] text-muted-foreground transition hover:bg-muted"
+                    >
+                      稍后再说
+                    </button>
+                    <button
+                      onClick={saveOutcome}
+                      disabled={savingOutcome || (outcomeStatus !== "no_record" && !outcomeSummary.trim())}
+                      className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {savingOutcome ? <Loader2 className="size-3 animate-spin" /> : null}
+                      保存结果
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {data.outcomes.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                  {data.outcomes.map((o) => (
+                    <div key={o.id} className="rounded-lg border border-border/60 bg-muted/20 px-2 py-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                          {OUTCOME_OPTIONS.find((x) => x.value === o.status)?.label ?? o.status}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">{fmtDate(o.createdAt)}</span>
+                      </div>
+                      {o.summary && <div className="mt-1 text-xs text-foreground">{o.summary}</div>}
+                      {o.detail && <div className="mt-0.5 whitespace-pre-wrap text-[11px] text-muted-foreground">{o.detail}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* 子任务 */}
           <section>

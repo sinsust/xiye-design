@@ -3,6 +3,7 @@
 // 优先 Qwen，失败/未配置时回退启发式聚合，保证始终能出可用报告。
 
 import type { BrainNote } from "./brain-db";
+import { listBrainTasks, listOutcomesInRange, type BrainTaskOutcome } from "./brain-db";
 
 export interface WeeklyReport {
   weekLabel: string;        // 如 "08.18 - 08.24"
@@ -11,6 +12,20 @@ export interface WeeklyReport {
   decisions: string[];      // 关键决策
   blockers: string[];       // 问题与阻塞
   next: string[];           // 下周计划
+  // —— P3-B 任务结果沉淀 ——
+  taskStats?: {
+    completedTasks: number;          // 本周完成任务数
+    outcomeCount: number;            // 本周记录的任务结果数
+    resolved: number;
+    partial: number;
+    newIssue: number;
+  };
+  outcomeSummaries?: {
+    id: string;
+    taskId: string;
+    status: BrainTaskOutcome["status"];
+    summary: string;
+  }[];                       // 最多 3 条有内容的结果摘要（供前端跳转）
 }
 
 /** 取给定时间戳所在周的周一零点（本地时区） */
@@ -138,16 +153,64 @@ async function callQwen(noteText: string, ws: Date, we: Date): Promise<Partial<W
   return parseReport(c);
 }
 
-/** 生成本周周报。服务端调用。返回报告 + 依据的笔记（供 UI 展示来源）。 */
+/** 生成本周周报。服务端调用。返回报告 + 依据的笔记（供 UI 展示来源）。
+ *  传入 userId 时额外聚合本周任务完成数、任务结果数与最多 3 条结果摘要。 */
 export async function generateWeeklyReport(
   notes: BrainNote[],
   now = Date.now(),
+  opts?: { userId?: string },
 ): Promise<{ report: WeeklyReport; source: BrainNote[] }> {
   const { picked, weekStart, weekEnd } = filterByThisWeek(notes, now);
   const base = heuristicReport(picked, weekStart, weekEnd);
 
-  if (!picked.length) {
-    return { report: base, source: picked };
+  // —— P3-B：本周任务完成 + 任务结果统计与摘要 ——
+  let taskStats: WeeklyReport["taskStats"];
+  let outcomeSummaries: WeeklyReport["outcomeSummaries"] = [];
+  if (opts?.userId) {
+    const allTasks = await listBrainTasks(opts.userId);
+    const completedTasks = allTasks.filter(
+      (t) => t.completedAt && t.completedAt >= weekStart.getTime() && t.completedAt < weekEnd.getTime(),
+    ).length;
+    const outcomes = await listOutcomesInRange(
+      opts.userId,
+      weekStart.getTime(),
+      weekEnd.getTime(),
+    );
+    const resolved = outcomes.filter((o) => o.status === "resolved").length;
+    const partial = outcomes.filter((o) => o.status === "partial").length;
+    const newIssue = outcomes.filter((o) => o.status === "new_issue").length;
+    taskStats = {
+      completedTasks,
+      outcomeCount: outcomes.length,
+      resolved,
+      partial,
+      newIssue,
+    };
+    outcomeSummaries = outcomes
+      .filter((o) => o.summary && o.summary !== "无需记录")
+      .slice(0, 3)
+      .map((o) => ({
+        id: o.id,
+        taskId: o.taskId,
+        status: o.status,
+        summary: o.summary,
+      }));
+  }
+
+  let summary = base.summary;
+  const completed = [...base.completed];
+  if (taskStats && (taskStats.completedTasks || taskStats.outcomeCount)) {
+    summary =
+      `本周完成 ${taskStats.completedTasks} 项任务，记录 ${taskStats.outcomeCount} 条任务结果` +
+      (notes.length ? `，整理 ${picked.length} 条笔记。` : "。");
+    completed.push(
+      `完成任务 ${taskStats.completedTasks} 项 · 记录结果 ${taskStats.outcomeCount} 条` +
+        `（已解决 ${taskStats.resolved} / 部分完成 ${taskStats.partial} / 新问题 ${taskStats.newIssue}）`,
+    );
+  }
+
+  if (!picked.length && !taskStats) {
+    return { report: { ...base, summary }, source: picked };
   }
 
   const apiKey = process.env.LLM_MODEL_API_KEY;
@@ -164,16 +227,19 @@ export async function generateWeeklyReport(
       const ai = await callQwen(noteText, weekStart, weekEnd);
       const report: WeeklyReport = {
         weekLabel: ai.weekLabel || base.weekLabel,
-        summary: ai.summary || base.summary,
-        completed: ai.completed?.length ? ai.completed : base.completed,
+        // 有任务结果统计时优先用覆盖后的 summary/completed；否则用 AI 结果或 base
+        summary: summary !== base.summary ? summary : ai.summary || base.summary,
+        completed: completed.length > base.completed.length ? completed : ai.completed?.length ? ai.completed : base.completed,
         decisions: ai.decisions?.length ? ai.decisions : base.decisions,
         blockers: ai.blockers?.length ? ai.blockers : base.blockers,
         next: ai.next?.length ? ai.next : base.next,
+        taskStats,
+        outcomeSummaries,
       };
       return { report, source: picked };
     } catch {
-      return { report: base, source: picked };
+      return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked };
     }
   }
-  return { report: base, source: picked };
+  return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked };
 }

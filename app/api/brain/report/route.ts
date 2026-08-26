@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const notes = await listBrainNotes(user.sub);
-    const { report, source } = await generateWeeklyReport(notes);
+    const { report, source } = await generateWeeklyReport(notes, Date.now(), { userId: user.sub });
     return NextResponse.json({
       report,
       source: source.map((n) => ({ id: n.id, title: n.title, category: n.category, summary: n.summary })),

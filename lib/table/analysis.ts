@@ -554,6 +554,78 @@ ${relLines.join("\n") || "无显著关联"}
   返回纯 JSON 数组，不要 markdown 代码块，不要其他文字。`;
 }
 
+/**
+ * 本地规则兜底推荐（LLM 双线路全不可用时使用，保证「分析建议」永不失败）。
+ * 纯规则：按字段类型（numeric/category/date）组合出 4+ 个可执行维度。
+ */
+export function buildFallbackDimensions(profile: TableProfileResult): AnalysisDimension[] {
+  const cols = profile.columns ?? [];
+  const numeric = cols.filter((c) => isNumericType(c.type));
+  const categorical = cols.filter((c) => c.type === "category" || c.type === "boolean");
+  const date = cols.find((c) => c.type === "date");
+  const dims: AnalysisDimension[] = [];
+
+  if (date && numeric.length > 0) {
+    const v = numeric[0];
+    dims.push({
+      name: `${v.name} 环比趋势`,
+      description: `按「${date.name}」聚合「${v.name}」，观察逐期环比变化`,
+      chartType: "mom",
+      fields: [date.name, v.name],
+      insight: "定位波动最大的周期，判断整体走势",
+    });
+  }
+  if (categorical.length > 0 && numeric.length > 0) {
+    const c = categorical[0];
+    const v = numeric[0];
+    dims.push({
+      name: `${c.name} 排名 TOP10`,
+      description: `按「${c.name}」汇总「${v.name}」取 Top 10`,
+      chartType: "topn",
+      fields: [c.name, v.name],
+      insight: "找出贡献最大的分类",
+    });
+    if (numeric.length > 1) {
+      dims.push({
+        name: `${c.name} × 多指标对比`,
+        description: `按「${c.name}」对比「${numeric.slice(0, 3).map((n) => n.name).join("、")}」均值`,
+        chartType: "groupbar",
+        fields: [c.name, ...numeric.slice(0, 3).map((n) => n.name)],
+        insight: "多指标横向对比，发现强弱项",
+      });
+    }
+  }
+  if (numeric.length > 0) {
+    const v = numeric[0];
+    dims.push({
+      name: `${v.name} 分布`,
+      description: `「${v.name}」数值分布直方图`,
+      chartType: "histogram",
+      fields: [v.name],
+      insight: "观察数值集中区间与极端值",
+    });
+  }
+  if (categorical.length > 0) {
+    const c = categorical[0];
+    dims.push({
+      name: `${c.name} 占比`,
+      description: `「${c.name}」各分类数量占比`,
+      chartType: "pie",
+      fields: [c.name],
+      insight: "看各分类构成比例",
+    });
+  }
+  // 兜底：至少给一个全表概览（保证非空，避免前端「无推荐」无限重试）
+  dims.push({
+    name: "全表概览",
+    description: "前 20 行明细预览",
+    chartType: "table",
+    fields: cols.slice(0, 2).map((c) => c.name),
+    insight: "快速浏览数据全貌",
+  });
+  return dims;
+}
+
 /* ─────────────── 推荐维度可读化描述（前端展示用） ─────────────── */
 
 /**

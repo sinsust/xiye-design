@@ -16,6 +16,13 @@ import { KnowledgeGraph } from "@/components/knowledge-graph";
 import type { LearningTopic } from "@/lib/brain-path";
 import { catColor, nextInHours, relativeTime, SOURCE_ICON } from "./brain-utils";
 
+const OUTCOME_LABEL: Record<string, string> = {
+  resolved: "已解决",
+  partial: "部分完成",
+  new_issue: "新问题",
+  no_record: "无需记录",
+};
+
 /** 概览浮层：固定右侧面板，展示知识厚度、最近活跃、待复习、周报、行动项、图谱、学习路径 */
 interface OverviewThickness {
   activeNoteIds: number;
@@ -50,6 +57,19 @@ interface OverviewReport {
     decisions: string[];
     blockers: string[];
     next: string[];
+    taskStats?: {
+      completedTasks: number;
+      outcomeCount: number;
+      resolved: number;
+      partial: number;
+      newIssue: number;
+    };
+    outcomeSummaries?: {
+      id: string;
+      taskId: string;
+      status: string;
+      summary: string;
+    }[];
   };
   source?: { id: string; title: string; category: string; summary: string }[];
 }
@@ -81,6 +101,8 @@ export interface OverviewPanelProps {
   learningTopics: LearningTopic[];
   openTopic: string | null;
   setOpenTopic: (value: string | null) => void;
+  /** P3-B：点击周报任务结果摘要 → 打开对应任务详情 */
+  onOpenOutcomeTask?: (taskId: string) => void;
 }
 
 export function OverviewPanel(props: OverviewPanelProps) {
@@ -104,6 +126,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
     learningTopics,
     openTopic,
     setOpenTopic,
+    onOpenOutcomeTask,
   } = props;
 
   return (
@@ -278,6 +301,35 @@ export function OverviewPanel(props: OverviewPanelProps) {
                   </span>
                 )}
               </div>
+              {/* P3-B：本周任务结果统计与摘要 */}
+              {report.report.taskStats && (report.report.taskStats.completedTasks || report.report.taskStats.outcomeCount) && (
+                <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-2.5">
+                  <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    完成任务 {report.report.taskStats.completedTasks}
+                  </span>
+                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+                    记录结果 {report.report.taskStats.outcomeCount}（已解决 {report.report.taskStats.resolved} · 部分 {report.report.taskStats.partial} · 新问题 {report.report.taskStats.newIssue}）
+                  </span>
+                </div>
+              )}
+              {report.report.outcomeSummaries && report.report.outcomeSummaries.length > 0 && (
+                <div className="space-y-1 border-t border-border/60 pt-2">
+                  {report.report.outcomeSummaries.map((o) => (
+                    <button
+                      key={o.id}
+                      onClick={() => onOpenOutcomeTask?.(o.taskId)}
+                      disabled={!onOpenOutcomeTask}
+                      className="flex w-full items-start gap-2 rounded-lg px-1 py-1 text-left text-xs leading-relaxed text-muted-foreground transition hover:bg-muted disabled:cursor-default"
+                      title="打开关联任务"
+                    >
+                      <span className="mt-1 shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-foreground">
+                        {OUTCOME_LABEL[o.status] ?? o.status}
+                      </span>
+                      <span className="line-clamp-2 min-w-0 flex-1">{o.summary}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {report.source && report.source.length > 0 && (
                 <details className="group">
                   <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground transition hover:text-primary">

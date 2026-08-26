@@ -1259,6 +1259,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         taskId={detailTaskId}
         onClose={() => setDetailTaskId(null)}
         onChanged={loadTasks}
+        onOpenPlanPreview={(planId, planBody) => {
+          // new_issue 结果 → 调起既有 StructPreview 确认待确认处理计划
+          setDetailTaskId(null);
+          setWPlanId(planId);
+          fillFromPlanBody(planBody);
+        }}
       />
       {/* ima 自动同步提示（打开页面后台触发时展示） */}
       {imaSyncAuto && (
@@ -1675,6 +1681,11 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       learningTopics={learningTopics}
       openTopic={openTopic}
       setOpenTopic={setOpenTopic}
+      onOpenOutcomeTask={(taskId) => {
+        setOverviewOpen(false);
+        gotoTop("workbench", "kanban");
+        setDetailTaskId(taskId);
+      }}
     />
   )}
         </div>

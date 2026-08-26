@@ -50,6 +50,7 @@ export function AnalysisRecommender({
   const [phase, setPhase] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState("");
+  const [recommendRoute, setRecommendRoute] = useState<"qwen" | "deepseek" | "local" | "">("");
   const abortRef = useRef<AbortController | null>(null);
 
   // 进度推进 + 阶段轮换（loading 时）
@@ -87,6 +88,7 @@ export function AnalysisRecommender({
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || data?.error || "推荐失败");
       setDimensions(data.dimensions ?? []);
+      setRecommendRoute(data.route === "local" ? "local" : data.route === "qwen" || data.route === "deepseek" ? data.route : "");
       if (data.route === "qwen" || data.route === "deepseek") writeLLMRoute(data.route);
       setProgress(100);
     } catch (e) {
@@ -206,6 +208,12 @@ export function AnalysisRecommender({
       )}
 
       {/* 推荐维度卡片 */}
+      {!loading && recommendRoute === "local" && dimensions.length > 0 && (
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] text-sky-800">
+          <Sparkles className="size-3 shrink-0" />
+          AI 线路暂不可用，已用本地规则推荐（仍可正常分析）
+        </div>
+      )}
       {!loading && dimensions.length > 0 && (
         <div className="mt-3 space-y-1.5">
           {visible.map((d, i) => {

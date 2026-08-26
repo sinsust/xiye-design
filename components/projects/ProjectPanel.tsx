@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, ArrowLeft, Trash2, Check, X } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, Check, X, LayoutDashboard } from "lucide-react";
 import MilestoneView from "@/components/MilestoneView";
+import { ProjectWorkbench } from "@/components/brain/projects/ProjectWorkbench";
 
 type TaskStatus = "todo" | "in_progress" | "done";
 interface TaskLite {
@@ -66,6 +67,16 @@ export default function ProjectPanel({ openTask, onTasksChanged, initialProjectI
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [busy, setBusy] = useState(false);
+  // 打开项目默认进入「项目工作台」；可切换到完整任务/里程碑视图
+  const [subView, setSubView] = useState<"workbench" | "detail">("workbench");
+
+  const prevSelected = useRef<string | null>(selectedId);
+  useEffect(() => {
+    if (selectedId !== prevSelected.current) {
+      prevSelected.current = selectedId;
+      if (selectedId) setSubView("workbench");
+    }
+  }, [selectedId]);
 
   // 来自外部（如每日助理点项目卡片）的跳转目标
   const prevTarget = useRef(initialProjectId);
@@ -205,12 +216,32 @@ export default function ProjectPanel({ openTask, onTasksChanged, initialProjectI
   if (selected) {
     const ring = 2 * Math.PI * 30;
     const ringDone = (selected.progress / 100) * ring;
+
+    // 默认「项目工作台」：聚合下一步 / 风险 / 里程碑 / 关键知识 / 活动 / 入口
+    if (subView === "workbench") {
+      return (
+        <ProjectWorkbench
+          projectId={selected.id}
+          onBack={() => setSelectedId(null)}
+          onOpenTask={openTask}
+          onChanged={() => onTasksChanged()}
+          onViewTasks={() => setSubView("detail")}
+        />
+      );
+    }
+
     return (
       <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
         {/* 顶栏 */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setSelectedId(null)} className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
+          <button onClick={() => setSubView("workbench")} className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground" title="返回项目工作台">
             <ArrowLeft className="size-4" />
+          </button>
+          <button
+            onClick={() => setSubView("workbench")}
+            className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/20"
+          >
+            <LayoutDashboard className="size-3.5" /> 工作台
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

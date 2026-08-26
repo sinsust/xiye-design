@@ -272,6 +272,10 @@ export const brainProjects = sqliteTable("brain_projects", {
   description: text("description"),
   // active(进行中) / paused(暂停) / completed(已完成) / archived(已归档-软删除)
   status: text("status").notNull().default("active"),
+  // P3-A：项目优先级（用于工作台风险/下一步排序）与可编辑目标摘要（objective）。
+  // objective 为 null 时空态展示 description 作为目标。
+  priority: text("priority").notNull().default("medium"),
+  objective: text("objective"),
   // 主题色（十六进制，进度条/看板/甘特图区分用）
   color: text("color").notNull().default("#3B82F6"),
   // 开始 / 截止日期（ISO，YYYY-MM-DD）
@@ -410,6 +414,120 @@ export const brainNoteAccessLog = sqliteTable("brain_note_access_log", {
   createdAt: integer("created_at").notNull(),
 });
 
+// —— P2-B 相似内容：检测候选 + 用户决策（绝不静默合并，仅记录决策与关系）——
+export const brainSimilarPairs = sqliteTable("brain_similar_pairs", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  noteIdA: text("note_id_a")
+    .notNull()
+    .references(() => brainNotes.id, { onDelete: "cascade" }),
+  noteIdB: text("note_id_b")
+    .notNull()
+    .references(() => brainNotes.id, { onDelete: "cascade" }),
+  // 相似度 0-1
+  score: real("score").notNull(),
+  // 检测方式：semantic(向量余弦) / keyword(关键词重叠)
+  method: text("method").notNull().default("keyword"),
+  // suggested(待处理) / related(标记相关) / independent(保留独立) / ignored(忽略)
+  status: text("status").notNull().default("suggested"),
+  createdAt: integer("created_at").notNull(),
+  decidedAt: integer("decided_at"),
+});
+
+// —— P2-B 关系建议：AI/规则提出，用户确认或忽略（不建图，仅记录关系边）——
+export const brainRelations = sqliteTable("brain_relations", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // 关系类型：derived_from(来源于) / belongs_to_project(属于项目) / produces_task(产生任务) /
+  //            supports_conclusion(支持结论) / blocks_task(阻塞任务) / depends_on_task(依赖任务) /
+  //            similar_to(与…相似) / may_conflict(可能冲突)
+  type: text("type").notNull(),
+  sourceId: text("source_id").notNull(),
+  sourceType: text("source_type").notNull(),
+  targetId: text("target_id").notNull(),
+  targetType: text("target_type").notNull(),
+  // 建议说明（AI 或规则生成的理由）
+  note: text("note"),
+  // suggested(待决策) / confirmed(已确认) / ignored(已忽略)
+  status: text("status").notNull().default("suggested"),
+  createdAt: integer("created_at").notNull(),
+  decidedAt: integer("decided_at"),
+});
+
+// —— P2-B 过期整理审计：保留用户对「可能过期」笔记的每个决策 ——
+export const brainCurationLog = sqliteTable("brain_curation_log", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  noteId: text("note_id")
+    .notNull()
+    .references(() => brainNotes.id, { onDelete: "cascade" }),
+  // not_updated(未更新) / not_referenced(未被引用)
+  reason: text("reason").notNull(),
+  thresholdDays: integer("threshold_days").notNull(),
+  staleDays: integer("stale_days").notNull(),
+  // keep(确认仍有效) / reorganize(重新整理) / archive(归档)
+  action: text("action").notNull(),
+  createdAt: integer("created_at").notNull(),
+  decidedAt: integer("decided_at").notNull(),
+});
+
+// —— P3-B 任务结果沉淀 ——
+// 重要任务完成后，用户以低成本留下「结果 / 经验 / 问题 / 后续方向」。
+// 独立于原任务、原笔记与 ProcessingPlan；不直接生成下游任务、提醒或关系。
+// status 枚举：
+//   resolved    —— 已解决
+//   partial     —— 部分完成
+//   new_issue   —— 发现新问题（仅保存结果文本，是否继续整理由用户/前端决定）
+//   no_record   —— 无需记录（一般不落库，仅作语义预留）
+// projectId / noteId 必须与任务的既有归属一致（由读写层校验），可为空。
+// idemKey 用于重复提交去重（任务 + 内容 + 时间窗口的可解释幂等策略）。
+export const brainTaskOutcomes = sqliteTable("brain_task_outcomes", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => brainTasks.id, { onDelete: "cascade" }),
+  projectId: text("project_id").references(() => brainProjects.id, {
+    onDelete: "set null",
+  }),
+  noteId: text("note_id").references(() => brainNotes.id, {
+    onDelete: "set null",
+  }),
+  status: text("status").notNull(),
+  summary: text("summary").notNull(),
+  detail: text("detail"),
+  // 幂等去重键；同任务同状态同摘要同窗口视为重复提交
+  idemKey: text("idem_key"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// —— P3-C：周报复盘（用户可保存每周一版；weekKey 幂等，覆盖旧值）——
+export const brainWeeklyReviews = sqliteTable("brain_weekly_reviews", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // 周键，如 "2026-W35"；同用户同周仅保留一版
+  weekKey: text("week_key").notNull(),
+  weekLabel: text("week_label").notNull(),
+  periodStart: integer("period_start").notNull(),
+  periodEnd: integer("period_end").notNull(),
+  summary: text("summary").notNull(),
+  // 完整复盘 JSON（完成/关键结果/风险/下周建议等），供恢复展示与历史回溯
+  payloadJson: text("payload_json").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -429,3 +547,8 @@ export type BrainReminderLogRow = typeof brainReminderLog.$inferSelect;
 export type BrainNoteAccessLogRow = typeof brainNoteAccessLog.$inferSelect;
 export type BrainProcessingPlanRow = typeof brainProcessingPlans.$inferSelect;
 export type BrainReminderItemRow = typeof brainReminderItems.$inferSelect;
+export type BrainSimilarPairRow = typeof brainSimilarPairs.$inferSelect;
+export type BrainRelationRow = typeof brainRelations.$inferSelect;
+export type BrainCurationLogRow = typeof brainCurationLog.$inferSelect;
+export type BrainTaskOutcomeRow = typeof brainTaskOutcomes.$inferSelect;
+export type BrainWeeklyReviewRow = typeof brainWeeklyReviews.$inferSelect;

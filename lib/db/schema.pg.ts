@@ -1,4 +1,4 @@
-import { pgTable, text, bigint, integer, doublePrecision, index, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, bigint, integer, doublePrecision, index, uniqueIndex, primaryKey } from "drizzle-orm/pg-core";
 
 // 线上（Supabase Postgres）镜像 lib/db/schema.ts 的 SQLite 表结构。
 // 注意：created_at / updated_at 用 bigint（存储 Date.now() 毫秒值，
@@ -279,6 +279,8 @@ export const brainProjects = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     status: text("status").notNull().default("active"),
+    priority: text("priority").notNull().default("medium"),
+    objective: text("objective"),
     color: text("color").notNull().default("#3B82F6"),
     startDate: text("start_date"),
     dueDate: text("due_date"),
@@ -433,6 +435,111 @@ export const brainReminderItems = pgTable(
   })
 );
 
+// —— P2-B 相似内容（sqlite 镜像）——
+export const brainSimilarPairs = pgTable(
+  "brain_similar_pairs",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    noteIdA: text("note_id_a")
+      .notNull()
+      .references(() => brainNotes.id, { onDelete: "cascade" }),
+    noteIdB: text("note_id_b")
+      .notNull()
+      .references(() => brainNotes.id, { onDelete: "cascade" }),
+    score: doublePrecision("score").notNull(),
+    method: text("method").notNull().default("keyword"),
+    // suggested / related / independent / ignored
+    status: text("status").notNull().default("suggested"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    decidedAt: bigint("decided_at", { mode: "number" }),
+  },
+  (t) => ({
+    userIdx: index("brain_similar_pairs_user_id_idx").on(t.userId),
+    pairIdx: index("brain_similar_pairs_note_idx").on(t.userId, t.noteIdA, t.noteIdB),
+  })
+);
+
+// —— P2-B 关系建议（sqlite 镜像）——
+export const brainRelations = pgTable(
+  "brain_relations",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    sourceId: text("source_id").notNull(),
+    sourceType: text("source_type").notNull(),
+    targetId: text("target_id").notNull(),
+    targetType: text("target_type").notNull(),
+    note: text("note"),
+    // suggested / confirmed / ignored
+    status: text("status").notNull().default("suggested"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    decidedAt: bigint("decided_at", { mode: "number" }),
+  },
+  (t) => ({
+    userIdx: index("brain_relations_user_id_idx").on(t.userId),
+    srcIdx: index("brain_relations_src_idx").on(t.userId, t.sourceId, t.sourceType),
+  })
+);
+
+// —— P2-B 过期整理审计（sqlite 镜像）——
+export const brainCurationLog = pgTable(
+  "brain_curation_log",
+  { id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    noteId: text("note_id")
+      .notNull()
+      .references(() => brainNotes.id, { onDelete: "cascade" }),
+    reason: text("reason").notNull(),
+    thresholdDays: integer("threshold_days").notNull(),
+    staleDays: integer("stale_days").notNull(),
+    action: text("action").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    decidedAt: bigint("decided_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_curation_log_user_id_idx").on(t.userId),
+    noteIdx: index("brain_curation_log_note_id_idx").on(t.userId, t.noteId),
+  })
+);
+
+// —— P3-B 任务结果沉淀（sqlite 镜像）——
+export const brainTaskOutcomes = pgTable(
+  "brain_task_outcomes",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => brainTasks.id, { onDelete: "cascade" }),
+    projectId: text("project_id").references(() => brainProjects.id, {
+      onDelete: "set null",
+    }),
+    noteId: text("note_id").references(() => brainNotes.id, {
+      onDelete: "set null",
+    }),
+    status: text("status").notNull(),
+    summary: text("summary").notNull(),
+    detail: text("detail"),
+    idemKey: text("idem_key"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_task_outcomes_user_id_idx").on(t.userId),
+    taskIdx: index("brain_task_outcomes_task_id_idx").on(t.userId, t.taskId),
+  })
+);
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -452,3 +559,31 @@ export type BrainReminderLogRow = typeof brainReminderLog.$inferSelect;
 export type BrainNoteAccessLogRow = typeof brainNoteAccessLog.$inferSelect;
 export type BrainProcessingPlanRow = typeof brainProcessingPlans.$inferSelect;
 export type BrainReminderItemRow = typeof brainReminderItems.$inferSelect;
+export type BrainSimilarPairRow = typeof brainSimilarPairs.$inferSelect;
+export type BrainRelationRow = typeof brainRelations.$inferSelect;
+export type BrainCurationLogRow = typeof brainCurationLog.$inferSelect;
+export type BrainTaskOutcomeRow = typeof brainTaskOutcomes.$inferSelect;
+export type BrainWeeklyReviewRow = typeof brainWeeklyReviews.$inferSelect;
+
+// —— P3-C：周报复盘（sqlite 镜像；按 (userId, weekKey) 幂等保存每周一版）——
+export const brainWeeklyReviews = pgTable(
+  "brain_weekly_reviews",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    weekKey: text("week_key").notNull(),
+    weekLabel: text("week_label").notNull(),
+    periodStart: bigint("period_start", { mode: "number" }).notNull(),
+    periodEnd: bigint("period_end", { mode: "number" }).notNull(),
+    summary: text("summary").notNull(),
+    payloadJson: text("payload_json").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_weekly_reviews_user_id_idx").on(t.userId),
+    weekUnique: uniqueIndex("brain_weekly_reviews_user_week_uidx").on(t.userId, t.weekKey),
+  })
+);

@@ -17,8 +17,12 @@ function daysUntil(dateStr: string): number {
 }
 
 const STATUSES = ["active", "paused", "completed", "archived"] as const;
+const PRIORITIES = ["high", "medium", "low"] as const;
 function isStatus(v: unknown): v is (typeof STATUSES)[number] {
   return typeof v === "string" && (STATUSES as readonly string[]).includes(v);
+}
+function isPriority(v: unknown): v is (typeof PRIORITIES)[number] {
+  return typeof v === "string" && (PRIORITIES as readonly string[]).includes(v);
 }
 function normalizeDate(v: unknown): string | null {
   if (typeof v === "string" && v.trim()) return v.trim().slice(0, 10);
@@ -61,6 +65,8 @@ export async function POST(req: NextRequest) {
     name,
     description: typeof body?.description === "string" ? body.description.slice(0, 2000) || null : null,
     status: isStatus(body?.status) ? body.status : "active",
+    priority: isPriority(body?.priority) ? body.priority : "medium",
+    objective: typeof body?.objective === "string" ? body.objective.slice(0, 2000) || null : null,
     color: typeof body?.color === "string" && /^#[0-9A-Fa-f]{6}$/.test(body.color) ? body.color : "#3B82F6",
     startDate: normalizeDate(body?.startDate),
     dueDate: normalizeDate(body?.dueDate),

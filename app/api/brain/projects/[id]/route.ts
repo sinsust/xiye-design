@@ -5,8 +5,12 @@ import { getBrainProject, updateBrainProject, archiveBrainProject } from "@/lib/
 export const runtime = "nodejs";
 
 const STATUSES = ["active", "paused", "completed", "archived"] as const;
+const PRIORITIES = ["high", "medium", "low"] as const;
 function isStatus(v: unknown): v is (typeof STATUSES)[number] {
   return typeof v === "string" && (STATUSES as readonly string[]).includes(v);
+}
+function isPriority(v: unknown): v is (typeof PRIORITIES)[number] {
+  return typeof v === "string" && (PRIORITIES as readonly string[]).includes(v);
 }
 function normalizeDate(v: unknown): string | null {
   if (typeof v === "string" && v.trim()) return v.trim().slice(0, 10);
@@ -27,6 +31,8 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
   }
   if (body?.description !== undefined) patch.description = typeof body.description === "string" ? body.description.slice(0, 2000) || null : null;
   if (body?.status !== undefined && isStatus(body.status)) patch.status = body.status;
+  if (body?.priority !== undefined && isPriority(body.priority)) patch.priority = body.priority;
+  if (body?.objective !== undefined) patch.objective = typeof body.objective === "string" ? body.objective.slice(0, 2000) || null : null;
   if (body?.color !== undefined) patch.color = typeof body.color === "string" && /^#[0-9A-Fa-f]{6}$/.test(body.color) ? body.color : undefined;
   if (body?.startDate !== undefined) patch.startDate = normalizeDate(body.startDate);
   if (body?.dueDate !== undefined) patch.dueDate = normalizeDate(body.dueDate);

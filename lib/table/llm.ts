@@ -117,7 +117,7 @@ export async function chatLLMJson<T = Record<string, unknown>>(
 }
 
 /**
- * 双线路路由调用：线路1（Qwen）失败自动切线路2（DeepSeek）重试一次。
+ * 双线路路由调用：多条线路**并行**发出（先成功者胜），避免串行 N×超时撞平台函数时限。
  * 支持 forceRoute 手动强制某条线路（跳过另一条）。
  * @returns 解析结果 + 实际使用的线路
  */
@@ -130,21 +130,28 @@ export async function chatLLMJsonRouted<T = Record<string, unknown>>(
   if (routes.length === 0) {
     throw new Error("LLM 未配置（需要 LLM_MODEL_* 或 DEEPSEEK_* 至少一组）");
   }
-  // 强制线路：只用该条；自动：按配置顺序（线路1 → 线路2）
+  // 强制线路：只用该条；自动：全部线路并行
   const order = opts.forceRoute
     ? routes.filter((r) => r.id === opts.forceRoute)
     : routes;
 
-  let lastErr: unknown = null;
-  for (const route of order) {
-    try {
+  if (order.length === 1) {
+    // 单线路：直接调用（强制线路 / 只配了一条）
+    const raw = await chatLLMWithRoute(order[0], system, user, { ...opts, json: true });
+    return { data: parseJsonResponse<T>(raw), route: order[0].id };
+  }
+
+  // 多线路并行：先成功者胜；全败取最后一次错误
+  const results = await Promise.allSettled(
+    order.map(async (route) => {
       const raw = await chatLLMWithRoute(route, system, user, { ...opts, json: true });
-      const data = parseJsonResponse<T>(raw);
-      return { data, route: route.id };
-    } catch (e) {
-      lastErr = e;
-      // 只有一条线路（或强制线路）时直接抛出
-    }
+      return { data: parseJsonResponse<T>(raw), route: route.id };
+    }),
+  );
+  let lastErr: unknown = null;
+  for (const r of results) {
+    if (r.status === "fulfilled") return r.value;
+    lastErr = r.reason;
   }
   throw lastErr instanceof Error ? lastErr : new Error("两条线路均调用失败");
 }

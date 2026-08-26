@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
+import { CuratePanel } from "@/components/brain/CuratePanel";
 import type { BrainStrategy, BrainTask } from "@/lib/brain-db";
 import {
   STRATEGY_COLOR,
@@ -193,6 +194,9 @@ export function NoteCard({
 
       {/* 来源与关联（P2-A：笔记 → 处理计划 → 原始来源/产出回溯） */}
       {expanded && <ProvenancePanel anchor={{ noteId: note.id }} title="来源与关联" />}
+
+      {/* 整理建议（P2-B：相似内容 / 可能过期 / 关系建议） */}
+      {expanded && !note.superseded && <CuratePanel noteId={note.id} />}
 
       {/* 展开关联策略 */}
       {expanded && strategies.length > 0 && (

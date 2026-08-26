@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { executeDimension, buildRecommendPrompt } from "@/lib/table/analysis";
+import { executeDimension, buildRecommendPrompt, buildFallbackDimensions } from "@/lib/table/analysis";
 import { chatLLMJsonRouted } from "@/lib/table/llm";
 import { getTableCache } from "@/lib/table/session-cache";
 import type {
@@ -128,16 +128,26 @@ export async function POST(req: NextRequest) {
 
 /* ─────────────── AI 三路 ─────────────── */
 
-/** b) 推荐维度（双线路路由） */
+/** b) 推荐维度（双线路并行 + LLM 失败本地规则兜底，永不 500） */
 async function recommendDimensions(
   profile: TableProfileResult,
   forceRoute?: "qwen" | "deepseek",
 ): Promise<{ dimensions: AnalysisDimension[]; route: string }> {
   const prompt = buildRecommendPrompt(profile);
-  const { data, route } = await chatLLMJsonRouted<AnalysisDimension[]>(prompt, "请推荐分析维度，返回 JSON 数组", {
-    forceRoute,
-  });
-  return { dimensions: (Array.isArray(data) ? data : []).slice(0, MAX_DIMENSIONS), route };
+  try {
+    const { data, route } = await chatLLMJsonRouted<AnalysisDimension[]>(prompt, "请推荐分析维度，返回 JSON 数组", {
+      forceRoute,
+      // 推荐输出短，25s 足够；并行双线路下最慢 25s 出结果（Vercel Pro 函数 60s 时限内）
+      timeoutMs: 25000,
+    });
+    const dims = (Array.isArray(data) ? data : []).slice(0, MAX_DIMENSIONS);
+    if (dims.length === 0) throw new Error("AI 未返回有效维度");
+    return { dimensions: dims, route };
+  } catch (e) {
+    // LLM 全线路失败 → 本地规则兜底：保证「分析建议」永远可用（AI 只做增强，不阻塞主流程）
+    console.warn("[table/analyze] LLM 推荐失败，回退本地规则:", (e as Error).message);
+    return { dimensions: buildFallbackDimensions(profile), route: "local" };
+  }
 }
 
 /** a) 自然语言查询理解（双线路路由） */

@@ -41,6 +41,11 @@ let brainReminderLog: any;
 let brainNoteAccessLog: any;
 let brainProcessingPlans: any;
 let brainReminderItems: any;
+let brainSimilarPairs: any;
+let brainRelations: any;
+let brainCurationLog: any;
+let brainTaskOutcomes: any;
+let brainWeeklyReviews: any;
 let userPreferences: any;
 let userImaConfig: any;
 let schema: any;
@@ -71,6 +76,11 @@ if (isPg) {
   brainNoteAccessLog = schemaPg.brainNoteAccessLog;
   brainProcessingPlans = schemaPg.brainProcessingPlans;
   brainReminderItems = schemaPg.brainReminderItems;
+  brainSimilarPairs = schemaPg.brainSimilarPairs;
+  brainRelations = schemaPg.brainRelations;
+  brainCurationLog = schemaPg.brainCurationLog;
+  brainTaskOutcomes = schemaPg.brainTaskOutcomes;
+  brainWeeklyReviews = schemaPg.brainWeeklyReviews;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
   schema = schemaPg;
@@ -279,6 +289,17 @@ if (isPg) {
     updated_at integer not null,
     foreign key (user_id) references users(id) on delete cascade
   );`);
+  // P3-A：项目优先级与目标摘要（幂等补列，列已存在则忽略错误）
+  for (const col of [
+    `alter table brain_projects add column priority text not null default 'medium'`,
+    `alter table brain_projects add column objective text`,
+  ]) {
+    try {
+      sqlite.exec(col);
+    } catch {
+      /* 列已存在 */
+    }
+  }
   // 阶段升级：brain_tasks 新增项目管理字段（幂等补列，列已存在则忽略错误）
   for (const col of [
     `alter table brain_tasks add column project_id text references brain_projects(id) on delete set null`,
@@ -380,6 +401,81 @@ if (isPg) {
     created_at integer not null,
     read_at integer
   );`);
+  // —— P2-B 相似内容 / 关系建议 / 过期整理审计（幂等建表）——
+  sqlite.exec(`create table if not exists brain_similar_pairs (
+    id text primary key,
+    user_id text not null,
+    note_id_a text not null,
+    note_id_b text not null,
+    score real not null,
+    method text not null default 'keyword',
+    status text not null default 'suggested',
+    created_at integer not null,
+    decided_at integer,
+    foreign key (user_id) references users(id) on delete cascade,
+    foreign key (note_id_a) references brain_notes(id) on delete cascade,
+    foreign key (note_id_b) references brain_notes(id) on delete cascade
+  );`);
+  sqlite.exec(`create table if not exists brain_relations (
+    id text primary key,
+    user_id text not null,
+    type text not null,
+    source_id text not null,
+    source_type text not null,
+    target_id text not null,
+    target_type text not null,
+    note text,
+    status text not null default 'suggested',
+    created_at integer not null,
+    decided_at integer,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create table if not exists brain_curation_log (
+    id text primary key,
+    user_id text not null,
+    note_id text not null,
+    reason text not null,
+    threshold_days integer not null,
+    stale_days integer not null,
+    action text not null,
+    created_at integer not null,
+    decided_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade,
+    foreign key (note_id) references brain_notes(id) on delete cascade
+  );`);
+  // P3-B：任务结果沉淀表（幂等建表，兼容旧库升级）
+  sqlite.exec(`create table if not exists brain_task_outcomes (
+    id text primary key,
+    user_id text not null,
+    task_id text not null,
+    project_id text,
+    note_id text,
+    status text not null,
+    summary text not null,
+    detail text,
+    idem_key text,
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade,
+    foreign key (task_id) references brain_tasks(id) on delete cascade,
+    foreign key (project_id) references brain_projects(id) on delete set null,
+    foreign key (note_id) references brain_notes(id) on delete set null
+  );`);
+  // P3-C：周报复盘表（幂等建表；(userId, weekKey) 同周仅保留一版，覆盖旧值）
+  sqlite.exec(`create table if not exists brain_weekly_reviews (
+    id text primary key,
+    user_id text not null,
+    week_key text not null,
+    week_label text not null,
+    period_start integer not null,
+    period_end integer not null,
+    summary text not null,
+    payload_json text not null,
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create unique index if not exists brain_weekly_reviews_user_week_uidx on brain_weekly_reviews (user_id, week_key);`);
   db = drizzleSqlite(sqlite, { schema: schemaSqlite });
   users = schemaSqlite.users;
   projects = schemaSqlite.projects;
@@ -399,9 +495,14 @@ if (isPg) {
   brainNoteAccessLog = schemaSqlite.brainNoteAccessLog;
   brainProcessingPlans = schemaSqlite.brainProcessingPlans;
   brainReminderItems = schemaSqlite.brainReminderItems;
+  brainSimilarPairs = schemaSqlite.brainSimilarPairs;
+  brainRelations = schemaSqlite.brainRelations;
+  brainCurationLog = schemaSqlite.brainCurationLog;
+  brainTaskOutcomes = schemaSqlite.brainTaskOutcomes;
+  brainWeeklyReviews = schemaSqlite.brainWeeklyReviews;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, userPreferences, userImaConfig, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, userPreferences, userImaConfig, schema };

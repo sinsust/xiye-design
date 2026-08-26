@@ -8,6 +8,10 @@ import {
   getBrainStrategy,
   listBrainTaskTimeline,
   listBrainTaskComments,
+  listBrainRelations,
+  listBrainProcessingPlans,
+  listBrainTaskOutcomes,
+  taskQualifiesForOutcome,
 } from "@/lib/brain-db";
 
 export const runtime = "nodejs";
@@ -35,11 +39,41 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const strategy = task.strategyId ? await getBrainStrategy(user.sub, task.strategyId) : null;
   const timeline = await listBrainTaskTimeline(user.sub, id);
   const comments = await listBrainTaskComments(user.sub, id);
+  const outcomes = await listBrainTaskOutcomes(user.sub, id);
 
   const completedSubtasks = subtasks.filter((t) => t.status === "done").length;
 
+  // —— P3-B：是否满足“记录结果”入口条件（复用可解释规则，避免与 lib 复制分叉）——
+  const riskRelations = await listBrainRelations(user.sub, { kind: "task", id });
+  const hasRiskRelation = riskRelations.some((r) =>
+    r.type === "blocks_task" || r.type === "depends_on_task",
+  );
+  const plans = await listBrainProcessingPlans(user.sub, undefined, true);
+  const hasSourcePlan = plans.some(
+    (p) =>
+      (p.taskIds?.includes(id) ?? false) ||
+      (p.noteId !== null && p.noteId === task.noteId),
+  );
+  const canRecordOutcome = taskQualifiesForOutcome({
+    hasProject: Boolean(task.projectId),
+    priority: task.priority,
+    commentCount: comments.length,
+    hasRiskRelation,
+    hasSourcePlan,
+  });
+
   return NextResponse.json({
-    task,
+    task: {
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      dueDate: task.dueDate,
+      assignee: task.assignee,
+      milestone: task.milestone,
+      projectId: task.projectId,
+      noteId: task.noteId,
+      priority: task.priority,
+    },
     project: project ? { id: project.id, name: project.name, color: project.color, status: project.status } : null,
     subtasks: subtasks.map((s) => ({
       id: s.id,
@@ -58,5 +92,15 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     relatedStrategy: strategy ? { id: strategy.id, name: strategy.title } : null,
     timeline,
     comments,
+    canRecordOutcome,
+    outcomes: outcomes.map((o) => ({
+      id: o.id,
+      taskId: o.taskId,
+      status: o.status,
+      summary: o.summary,
+      detail: o.detail,
+      createdAt: o.createdAt,
+      updatedAt: o.updatedAt,
+    })),
   });
 }

@@ -45,12 +45,15 @@ export function ProvenancePanel({
   onOpenTask,
   onOpenPlan,
   title = "来源与关联",
+  light = false,
 }: {
   anchor?: ProvenanceAnchor | null;
   onOpenNote?: (id: string) => void;
   onOpenTask?: (id: string) => void;
   onOpenPlan?: (planId: string) => void;
   title?: string;
+  // 紧凑模式：隐藏面板标题与卡片感，用于嵌在卡片内展示来源链路（P3-A 项目工作台关键知识）
+  light?: boolean;
 }) {
   const [view, setView] = useState<ProvenanceViewModel | null>(null);
   const [loading, setLoading] = useState(false);
@@ -115,18 +118,20 @@ export function ProvenancePanel({
   const project = view.outputProject;
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-          <Layers className="size-3.5 text-primary" />
-          {title}
+    <div className={light ? "rounded-lg bg-muted/20 p-2" : "rounded-xl border border-border/70 bg-card p-4"}>
+      {!light && (
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <Layers className="size-3.5 text-primary" />
+            {title}
+          </div>
+          {view.planId && view.planStatus && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+              计划 · {PLAN_STATUS_LABEL[view.planStatus] ?? view.planStatus}
+            </span>
+          )}
         </div>
-        {view.planId && view.planStatus && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-            计划 · {PLAN_STATUS_LABEL[view.planStatus] ?? view.planStatus}
-          </span>
-        )}
-      </div>
+      )}
 
       {/* 来源 */}
       <div className="mb-3 rounded-lg bg-muted/40 px-3 py-2">

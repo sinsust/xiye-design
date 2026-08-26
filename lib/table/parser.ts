@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import * as chardet from "chardet";
 import * as Papa from "papaparse";
 import * as iconv from "iconv-lite";
+import { parseDateString } from "./cleaner";
 
 import { detectFileMagic, type TableFileKind } from "./file-magic";
 import type { ParsedTable, SheetInfo } from "./types";
@@ -155,6 +156,48 @@ export async function parseFile(buffer: Buffer, fileName: string): Promise<Parse
 
 /* ─────────────── 格式分发解析 ─────────────── */
 
+/** 判断 Excel 显示串是否为日期格式 */
+function looksLikeDateDisplay(w: string): boolean {
+  if (!w) return false;
+  return (
+    /^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(w) || // ISO / 斜杠
+    /^\d{4}年\d{1,2}月\d{1,2}日?/.test(w) || // 中文完整
+    /^\d{1,2}月\d{1,2}日/.test(w) || // 中文缺年份
+    /^\d{1,2}[-/]\d{1,2}[-/]\d{4}/.test(w) // 美式 / 欧式
+  );
+}
+
+/**
+ * 对 Excel 日期格式单元格做 ISO 还原：
+ * 1. 优先用 Excel 原显示串 `.w`（yyyy-mm-dd / 2024年8月1日 等）
+ * 2. 显示串缺年份（如 "8月1日"）时 fallback 用序列号 `.v` 补全年份
+ * 3. 非日期格式单元格原样返回
+ */
+function formatDateCellWithFallback(
+  ws: XLSX.WorkSheet,
+  r: number,
+  c: number,
+  raw: unknown,
+): unknown {
+  const cell = ws[XLSX.utils.encode_cell({ r, c })];
+  if (!cell) return raw;
+  const isDateFormat = typeof cell.z === "string" && XLSX.SSF.is_date(cell.z);
+  const looksLikeDate = typeof cell.w === "string" && looksLikeDateDisplay(cell.w);
+  if (!isDateFormat && !looksLikeDate) return raw;
+  // ① 用 Excel 原显示串
+  if (cell.w) {
+    const parsed = parseDateString(cell.w);
+    if (parsed) return parsed;
+  }
+  // ② 显示串不完整（缺年份）时 fallback 序列号
+  const serial = typeof cell.v === "number" ? cell.v : Number(raw);
+  if (!Number.isNaN(serial)) {
+    const parsed = parseDateString(String(serial));
+    if (parsed) return parsed;
+  }
+  return raw;
+}
+
 /** 解析 xlsx/xls（xlsx 库统一处理） */
 function parseXlsx(buffer: Buffer): SheetInfo[] {
   let wb: XLSX.WorkBook;
@@ -186,10 +229,13 @@ function parseXlsx(buffer: Buffer): SheetInfo[] {
       }
     }
     const trimmed = arr.map((row) => row.slice(0, effectiveCols));
+    const dateAware = trimmed.map((row, r) =>
+      row.map((v, c) => formatDateCellWithFallback(ws, r, c, v)),
+    );
 
-    const headerRow = (trimmed[0] || []) as unknown[];
+    const headerRow = (dateAware[0] || []) as unknown[];
     const headers = headerRow.map((h) => (h == null ? "" : String(h)));
-    const rows = trimmed.slice(1).map((row) => {
+    const rows = dateAware.slice(1).map((row) => {
       const r = row as unknown[];
       // 补齐到与 headers 等长，避免后续处理越界
       if (r.length < headers.length) {

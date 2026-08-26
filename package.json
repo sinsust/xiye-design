@@ -11,6 +11,10 @@
     "validate:today": "esbuild scripts/validation-today-brief.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vtoday.mjs && node scripts/.tmp-vtoday.mjs",
     "validate:p15": "esbuild scripts/validation-p15-scenarios.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp15.mjs && node scripts/.tmp-vp15.mjs",
     "validate:p2a": "esbuild scripts/validation-p2a-provenance.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp2a.mjs && node scripts/.tmp-vp2a.mjs",
+    "validate:p2b": "esbuild scripts/validation-p2b.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp2b.mjs && node scripts/.tmp-vp2b.mjs",
+    "validate:p3a": "esbuild scripts/validation-p3a-project-workbench.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp3a.mjs && node scripts/.tmp-vp3a.mjs",
+    "validate:p3b": "esbuild scripts/validation-p3b-task-outcomes.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp3b.mjs && node scripts/.tmp-vp3b.mjs",
+    "validate:p3c": "esbuild scripts/validation-p3c-weekly-review.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vp3c.mjs && node scripts/.tmp-vp3c.mjs",
     "db:push:pg": "drizzle-kit push --config drizzle.config.pg.ts"
   },
   "dependencies": {
