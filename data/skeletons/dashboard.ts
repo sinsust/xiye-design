@@ -888,6 +888,114 @@ export const DASHBOARD_PAGE: SkeletonPage = {
 }`,
           interaction: "行级 shimmer；数据到达后替换为真实列表",
         },
+        {
+          id: "dlist_interactive",
+          name: "交互式表格",
+          description: "可排序 / 搜索 / 分页的数据表格，SKU 库存场景",
+          tags: ["表格", "交互", "数据"],
+          prompt:
+            "Build an interactive data table (SKU inventory): a toolbar with search input and row count, sortable column headers (asc/desc/toggle with ▲▼ arrows), status badges (on-sale/low-stock/out-of-stock with semantic colors), and pagination (prev/next + page indicator). Clickable headers sort, search filters all fields, empty state when no match. Pure React state, no dependencies.",
+          code: `export function DataTable() {
+  const rows = [
+    { sku: "SKU-1001", name: "机械键盘 K87", price: 329, stock: 42, status: "在售" },
+    { sku: "SKU-1002", name: "无线鼠标 M3", price: 129, stock: 5, status: "低库存" },
+    { sku: "SKU-1003", name: "显示器 27 寸 4K", price: 1899, stock: 18, status: "在售" },
+    { sku: "SKU-1004", name: "USB-C 扩展坞", price: 259, stock: 0, status: "缺货" },
+    { sku: "SKU-1005", name: "人体工学椅", price: 1099, stock: 12, status: "在售" },
+    { sku: "SKU-1006", name: "桌面支架 Pro", price: 199, stock: 64, status: "在售" },
+    { sku: "SKU-1007", name: "降噪耳机 H1", price: 799, stock: 3, status: "低库存" },
+    { sku: "SKU-1008", name: "摄像头 C920", price: 499, stock: 0, status: "缺货" },
+  ];
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(null);
+  const [page, setPage] = useState(0);
+  const size = 5;
+
+  const filtered = rows.filter((r) =>
+    Object.values(r).some((v) => String(v).toLowerCase().includes(query.toLowerCase()))
+  );
+  const sorted = sort
+    ? [...filtered].sort((a, b) => {
+        const va = String(a[sort.key as keyof typeof a]);
+        const vb = String(b[sort.key as keyof typeof b]);
+        return va === vb ? 0 : (va > vb ? 1 : -1) * sort.dir;
+      })
+    : filtered;
+  const pages = Math.max(1, Math.ceil(sorted.length / size));
+  const cur = sorted.slice(page * size, (page + 1) * size);
+
+  const toggle = (key: string) => {
+    setPage(0);
+    setSort((s) => (s && s.key === key ? (s.dir === 1 ? { key, dir: -1 } : null) : { key, dir: 1 }));
+  };
+
+  const badge = (s: string) => {
+    const color = s === "在售" ? "var(--success)" : s === "低库存" ? "var(--warning)" : "var(--danger)";
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "color-mix(in srgb, " + color + " 12%, transparent)", color }}>
+        <span className="size-1.5 rounded-full" style={{ background: color }} />
+        {s}
+      </span>
+    );
+  };
+
+  return (
+    <div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="flex items-center gap-3 border-b px-4 py-3" style={{ borderColor: "var(--border)" }}>
+        <svg className="size-4 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+        <input
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setPage(0); }}
+          placeholder="搜索 SKU / 名称 / 状态…"
+          className="w-full bg-transparent text-sm outline-none placeholder:opacity-50"
+          style={{ color: "var(--foreground)" }}
+        />
+        <span className="whitespace-nowrap text-xs" style={{ color: "var(--muted-foreground)" }}>{sorted.length} 项</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left text-xs" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
+              {["sku", "name", "price", "stock", "status"].map((k) => (
+                <th key={k} className="p-3">
+                  <button onClick={() => toggle(k)} className="flex items-center gap-1 font-medium uppercase tracking-wide transition hover:text-[var(--foreground)]">
+                    {k === "sku" ? "SKU" : k === "name" ? "商品" : k === "price" ? "价格" : k === "stock" ? "库存" : "状态"}
+                    <span className="text-[9px] opacity-70">{sort && sort.key === k ? (sort.dir === 1 ? "▲" : "▼") : "↕"}</span>
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {cur.map((r) => (
+              <tr key={r.sku} className="border-b last:border-0 transition-colors hover:bg-muted/40" style={{ borderColor: "var(--border)" }}>
+                <td className="p-3 font-medium" style={{ color: "var(--muted-foreground)" }}>{r.sku}</td>
+                <td className="p-3 font-medium">{r.name}</td>
+                <td className="p-3 tabular-nums">¥{r.price}</td>
+                <td className="p-3 tabular-nums" style={{ color: r.stock === 0 ? "var(--danger)" : r.stock < 10 ? "var(--warning)" : "var(--foreground)" }}>{r.stock}</td>
+                <td className="p-3">{badge(r.status)}</td>
+              </tr>
+            ))}
+            {cur.length === 0 && (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-sm" style={{ color: "var(--muted-foreground)" }}>没有匹配「{query}」的商品</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex items-center justify-between border-t px-4 py-2.5" style={{ borderColor: "var(--border)" }}>
+        <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>第 {page + 1} / {pages} 页</span>
+        <div className="flex gap-1.5">
+          <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="rounded-md border px-2.5 py-1 text-xs transition hover:bg-muted disabled:opacity-30" style={{ borderColor: "var(--border)" }}>上一页</button>
+          <button onClick={() => setPage(Math.min(pages - 1, page + 1))} disabled={page >= pages - 1} className="rounded-md border px-2.5 py-1 text-xs transition hover:bg-muted disabled:opacity-30" style={{ borderColor: "var(--border)" }}>下一页</button>
+        </div>
+      </div>
+    </div>
+  );
+}`,
+          interaction: "表头点击排序（三态）；搜索过滤全字段；分页；状态徽章语义色",
+        },
       ],
     },
     {

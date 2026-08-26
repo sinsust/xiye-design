@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Check,
   ClipboardList,
@@ -8,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 import type { BrainStrategy, BrainTask } from "@/lib/brain-db";
 import {
   STRATEGY_COLOR,
@@ -187,6 +190,9 @@ export function NoteCard({
           {note.content}
         </pre>
       )}
+
+      {/* 来源与关联（P2-A：笔记 → 处理计划 → 原始来源/产出回溯） */}
+      {expanded && <ProvenancePanel anchor={{ noteId: note.id }} title="来源与关联" />}
 
       {/* 展开关联策略 */}
       {expanded && strategies.length > 0 && (

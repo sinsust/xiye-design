@@ -29,6 +29,8 @@ export interface Reminder {
   detail: string;
   link: string;
   priority: ReminderPriority;
+  // P2-A：独立提醒记录 id，供前端「来源与关联」回溯
+  reminderId?: string;
 }
 
 const DAY_MS = 86400_000;
@@ -398,6 +400,7 @@ export async function checkReminders(userId: string): Promise<{
           detail: it.dueDate ? `提醒：${it.dueDate}` : "确认提醒",
           link: it.noteId ? `/brain?note=${it.noteId}` : "/brain?tab=tasks",
           priority: "medium",
+          reminderId: it.id,
         });
       }
     } catch (err) {

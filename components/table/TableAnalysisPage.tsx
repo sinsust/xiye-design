@@ -7,7 +7,7 @@
  */
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Loader2, Sparkles } from "lucide-react";
 import { TableUploader, type UploadResult } from "./TableUploader";
 import { SheetSelector } from "./SheetSelector";
 import { ColumnProfilePanel } from "./ColumnProfilePanel";
@@ -29,6 +29,7 @@ export function TableAnalysisPage() {
   const [results, setResults] = useState<AnalysisResult[]>([]);
   const [resultTab, setResultTab] = useState(0);
   const [analyzing, setAnalyzing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
 
   const active = uploadData?.results[activeIndex];
@@ -57,6 +58,34 @@ export function TableAnalysisPage() {
       setError((e as Error).message);
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const exportXlsx = async () => {
+    if (!active) return;
+    setExporting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/brain/table/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableId: active.tableId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "导出失败");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${active.headers?.[0] || "表格"}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -216,6 +245,18 @@ export function TableAnalysisPage() {
             {analyzing && (
               <div className="flex items-center justify-center gap-2 py-10 text-xs text-muted-foreground">
                 正在执行分析…
+              </div>
+            )}
+            {!analyzing && results.length > 0 && (
+              <div className="flex items-center justify-end border-b border-border/40 px-5 py-2">
+                <button
+                  onClick={exportXlsx}
+                  disabled={exporting || !active}
+                  className="flex items-center gap-1.5 rounded-lg border border-border/70 px-2.5 py-1.5 text-[11px] text-foreground transition hover:border-primary/40 hover:text-primary disabled:opacity-40"
+                >
+                  {exporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+                  {exporting ? "导出中…" : "导出 xlsx"}
+                </button>
               </div>
             )}
             {results.length > 1 && !analyzing && (

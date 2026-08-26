@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, Check, Settings2, X } from "lucide-react";
+import { Bell, Check, Settings2, X, Layers } from "lucide-react";
 import {
   notificationsSupported,
   notificationPermission,
   requestNotificationPermission,
   sendNotification,
 } from "@/lib/browser-notification";
+import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 import type { ReminderType, ReminderPriority } from "@/lib/brain-reminder";
 
 type Reminder = {
@@ -16,6 +17,7 @@ type Reminder = {
   detail: string;
   link: string;
   priority: ReminderPriority;
+  reminderId?: string;
 };
 
 interface RuleSetting {
@@ -340,15 +342,22 @@ function ReminderList({
             </div>
             <div className="space-y-1.5">
               {items.map((r) => (
-                <button
-                  key={r.type}
-                  onClick={() => onClick(r)}
-                  className="block w-full rounded-lg border border-border/70 bg-muted/20 px-2.5 py-2 text-left transition hover:border-primary/40 hover:bg-primary/5"
-                >
-                  <div className="text-xs font-medium text-foreground">{r.title}</div>
-                  {r.detail && <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{r.detail}</div>}
-                  <div className="mt-1 text-[10px] font-medium text-primary">去处理 →</div>
-                </button>
+                <div key={r.type} className="rounded-lg border border-border/70 bg-muted/20 transition hover:border-primary/40 hover:bg-primary/5">
+                  <button
+                    onClick={() => onClick(r)}
+                    className="block w-full px-2.5 py-2 text-left"
+                  >
+                    <div className="text-xs font-medium text-foreground">{r.title}</div>
+                    {r.detail && <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{r.detail}</div>}
+                    <div className="mt-1 text-[10px] font-medium text-primary">去处理 →</div>
+                  </button>
+                  {/* P2-A：确认提醒 → 来源与关联 */}
+                  {r.type === "reminder_item" && r.reminderId && (
+                    <div className="border-t border-border/50 p-2">
+                      <ProvenancePanel anchor={{ reminderId: r.reminderId }} title="来源与关联" />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
