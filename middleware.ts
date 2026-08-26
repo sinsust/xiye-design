@@ -22,5 +22,8 @@ export const config = {
     "/account/:path*",
     "/skills/:path*",
     "/styles/:path*",
+    // API 也经过 middleware：负责刷新 auth cookie（否则 access token 1h 过期后，
+    // 停在页面的用户调 API 会 401 —— 页面导航能触发刷新，但 API 请求不会）
+    "/api/:path*",
   ],
 };

@@ -189,6 +189,19 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
                       <option value="medium">medium</option>
                       <option value="low">low</option>
                     </select>
+                    <label className="inline-flex cursor-pointer select-none items-center gap-1 text-[11px] text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        checked={!!a.makeReminder}
+                        onChange={(ev) => {
+                          const next = [...ai];
+                          next[i] = { ...next[i], makeReminder: ev.target.checked };
+                          onActionItemsChange(next);
+                        }}
+                        className="size-3.5 accent-primary"
+                      />
+                      建提醒
+                    </label>
                   </div>
                 </div>
               ))}

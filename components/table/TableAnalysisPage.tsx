@@ -7,7 +7,7 @@
  */
 
 import { useState } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { TableUploader, type UploadResult } from "./TableUploader";
 import { SheetSelector } from "./SheetSelector";
 import { ColumnProfilePanel } from "./ColumnProfilePanel";
@@ -159,22 +159,49 @@ export function TableAnalysisPage() {
         )}
 
         {phase === "profile" && active && (
-          <ColumnProfilePanel
-            profile={active.profile as Parameters<typeof ColumnProfilePanel>[0]["profile"]}
-            onSelect={setSelectedField}
-            selected={selectedField}
-          />
+          <>
+            <ColumnProfilePanel
+              profile={active.profile as Parameters<typeof ColumnProfilePanel>[0]["profile"]}
+              onSelect={setSelectedField}
+              selected={selectedField}
+            />
+            {/* 下一步 CTA：让 AI 推荐分析维度 */}
+            <div className="sticky bottom-0 -mx-5 mt-4 border-t border-border/60 bg-white/90 px-5 py-3 backdrop-blur">
+              <button
+                onClick={() => {
+                  setSelectedField(null);
+                  setPhase("recommend");
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/85 px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/20 transition-all duration-200 hover:shadow-lg active:scale-[0.98]"
+              >
+                <Sparkles className="size-4" />
+                让 AI 推荐分析维度
+                <ArrowRight className="size-4" />
+              </button>
+            </div>
+          </>
         )}
 
         {phase === "recommend" && active && (
-          <AnalysisRecommender
-            profile={active.profile as Parameters<typeof AnalysisRecommender>[0]["profile"]}
-            tableId={active.tableId}
-            onRun={(dims, q) => {
-              if (analyzing) return;
-              void runAnalysis(dims, q);
-            }}
-          />
+          <>
+            <div className="flex items-center gap-1.5 px-5 pt-3 text-[11px] text-muted-foreground">
+              <button
+                onClick={() => setPhase("profile")}
+                className="flex items-center gap-1 transition hover:text-primary"
+              >
+                <ArrowLeft className="size-3" />
+                返回字段画像
+              </button>
+            </div>
+            <AnalysisRecommender
+              profile={active.profile as Parameters<typeof AnalysisRecommender>[0]["profile"]}
+              tableId={active.tableId}
+              onRun={(dims, q) => {
+                if (analyzing) return;
+                void runAnalysis(dims, q);
+              }}
+            />
+          </>
         )}
 
         {phase === "result" && (

@@ -6,8 +6,8 @@
  * 自定义输入走 userQuery 模式（AI 理解意图后执行）。
  */
 
-import { useCallback, useState } from "react";
-import { ArrowRight, Check, ChevronDown, Loader2, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowRight, Check, ChevronDown, Loader2, Sparkles, XCircle } from "lucide-react";
 import type { AnalysisDimension, TableProfileResult } from "@/lib/table/types";
 
 const CHART_ICONS: Record<string, string> = {
@@ -20,6 +20,13 @@ const CHART_ICONS: Record<string, string> = {
   heatmap: "🔥",
   table: "📋",
 };
+
+const LOADING_PHASES = [
+  "正在分析字段画像",
+  "正在识别字段关联",
+  "正在生成维度建议",
+  "最后整理中",
+];
 
 export function AnalysisRecommender({
   profile,
@@ -34,28 +41,63 @@ export function AnalysisRecommender({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [error, setError] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
+
+  // 进度推进 + 阶段轮换（loading 时）
+  useEffect(() => {
+    if (!loading) {
+      setProgress(0);
+      setPhase(0);
+      return;
+    }
+    const start = Date.now();
+    // 0→90% 平滑推进：预计 12s 到达 90%
+    const tick = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      const pct = Math.min(90, 8 + elapsed * 6.5);
+      setProgress(pct);
+      // 每 2.5s 切换阶段文案
+      setPhase(Math.min(3, Math.floor(elapsed / 2.5)));
+    }, 200);
+    return () => clearInterval(tick);
+  }, [loading]);
 
   const loadRecommendations = useCallback(async () => {
     if (dimensions.length > 0) return;
     setLoading(true);
     setError("");
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
       const res = await fetch("/api/brain/table/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile, tableId }),
+        signal: ctrl.signal,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || data?.error || "推荐失败");
       setDimensions(data.dimensions ?? []);
+      setProgress(100);
     } catch (e) {
-      setError((e as Error).message);
+      if ((e as Error).name === "AbortError") {
+        setError("已取消");
+      } else {
+        setError((e as Error).message);
+      }
     } finally {
       setLoading(false);
+      abortRef.current = null;
     }
   }, [profile, tableId, dimensions.length]);
+
+  const cancel = () => {
+    abortRef.current?.abort();
+  };
 
   // 进入面板即请求推荐（惰性一次）
   if (dimensions.length === 0 && !loading && !error) {
@@ -77,14 +119,83 @@ export function AnalysisRecommender({
       <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">分析建议</div>
 
       {loading && (
-        <div className="flex items-center justify-center gap-2 py-14 text-xs text-muted-foreground">
-          <Loader2 className="size-4 animate-spin text-primary" />
-          正在分析字段画像，推荐有价值的维度…
+        <div className="flex flex-col gap-3 py-8 animate-in fade-in duration-200">
+          {/* 多阶段进度条：每阶段独立进度，反映各任务完成度 */}
+          <div className="w-full max-w-xs space-y-1.5">
+            {LOADING_PHASES.map((label, i) => {
+              const start = i * 25;
+              const end = (i + 1) * 25;
+              const done = progress >= end;
+              const current = !done && progress >= start;
+              const stagePct = done ? 100 : current ? ((progress - start) / 25) * 100 : 0;
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  {done ? (
+                    <Check className="size-3 shrink-0 text-primary" />
+                  ) : current ? (
+                    <Loader2 className="size-3 shrink-3 animate-spin text-primary" />
+                  ) : (
+                    <span className="flex size-3 shrink-0 items-center justify-center rounded-full border border-muted-foreground/30 text-[9px] text-muted-foreground/40" />
+                  )}
+                  <span
+                    className={
+                      "w-20 shrink-0 text-[11px] " +
+                      (done ? "text-muted-foreground" : current ? "font-medium text-foreground" : "text-muted-foreground/50")
+                    }
+                  >
+                    {label}
+                  </span>
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={
+                        "h-full rounded-full transition-all duration-300 " +
+                        (done
+                          ? "bg-primary"
+                          : current
+                            ? "bg-gradient-to-r from-primary to-primary/70"
+                            : "bg-transparent")
+                      }
+                      style={{ width: `${stagePct}%` }}
+                    />
+                  </div>
+                  <span className="w-7 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/70">
+                    {done ? "100%" : current ? `${Math.round(stagePct)}%` : ""}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {/* 取消按钮 */}
+          <button
+            onClick={cancel}
+            className="flex items-center gap-1 text-[10px] text-muted-foreground/60 transition hover:text-red-600"
+          >
+            <XCircle className="size-3" />
+            取消
+          </button>
         </div>
       )}
       {error && (
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          {error} <button className="ml-1 text-amber-700 underline" onClick={() => { setError(""); setDimensions([]); void loadRecommendations(); }}>重试</button>
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <span className="flex-1 break-all">{error}</span>
+          <button
+            className="text-amber-700 underline"
+            onClick={() => {
+              setError("");
+              setDimensions([]);
+              void loadRecommendations();
+            }}
+          >
+            重试
+          </button>
+          {error.includes("未登录") && (
+            <button
+              className="rounded bg-amber-200/60 px-2 py-0.5 text-amber-900"
+              onClick={() => location.reload()}
+            >
+              重新登录
+            </button>
+          )}
         </div>
       )}
 

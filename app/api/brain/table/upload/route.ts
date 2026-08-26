@@ -34,18 +34,21 @@ const PREVIEW_ROWS = 20;
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "unauthorized", message: "未登录" }, { status: 401 });
 
   try {
     const form = await req.formData();
     const file = form.get("file");
     if (!(file instanceof File) || !file) {
-      return NextResponse.json({ error: "file_required" }, { status: 400 });
+      return NextResponse.json({ error: "file_required", message: "请选择要上传的文件" }, { status: 400 });
     }
 
     // 闸门 1：文件大小
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: "file_too_large", maxMB: 100 }, { status: 413 });
+      return NextResponse.json(
+        { error: "file_too_large", maxMB: 100, message: `文件超过 100MB 上限（当前 ${(file.size / 1024 / 1024).toFixed(1)}MB）` },
+        { status: 413 },
+      );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -58,7 +61,7 @@ export async function POST(req: NextRequest) {
     const maxCols = Math.max(0, ...parsed.sheets.map((s) => s.headers.length));
     if (maxCols > MAX_COLUMNS) {
       return NextResponse.json(
-        { error: "too_many_columns", maxColumns: MAX_COLUMNS, actual: maxCols },
+        { error: "too_many_columns", maxColumns: MAX_COLUMNS, actual: maxCols, message: `字段数（${maxCols} 列）超过 ${MAX_COLUMNS} 列上限，请精简后再上传` },
         { status: 422 },
       );
     }
@@ -97,8 +100,8 @@ export async function POST(req: NextRequest) {
         truncated.push(`${name}（仅分析前 ${cellLimit.toLocaleString()} 行）`);
       }
       const profile = profileTable(headers, finalRows, columnTypes, name);
-      // 服务端缓存全量（截断后）数据，供 analyze 使用
-      const tableId = cacheTable(headers, finalRows, columnTypes);
+      // 服务端缓存全量（截断后）数据，供 analyze 使用（绑定归属用户防串读）
+      const tableId = cacheTable(user.sub, headers, finalRows, columnTypes);
       results.push({
         sheetName: name,
         headers,
@@ -143,7 +146,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("brain table upload failed:", err);
     return NextResponse.json(
-      { error: "upload_failed", message: (err as Error).message },
+      { error: "upload_failed", message: `文件解析失败：${(err as Error).message}` },
       { status: 500 },
     );
   }

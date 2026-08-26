@@ -51,6 +51,8 @@ export interface OrganizedActionItem {
   dueDate: string | null;
   priority: BrainTaskPriority;
   strategyIndex?: number;
+  // P0：是否为此任务创建一条独立提醒（确认写入时生效）
+  makeReminder?: boolean;
 }
 
 export interface OrganizedMetric {

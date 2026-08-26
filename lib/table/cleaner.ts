@@ -322,8 +322,12 @@ export function inferColumnType(values: unknown[]): FieldType {
 /* ─────────────── Sheet 整合 ─────────────── */
 
 /**
- * 清洗整个 sheet：parser 已提取表头，cleaner 只做：重复列名加序号 + 逐 cell 清洗 + 逐列类型推断
- * 如上游传入的 sheet.headers 不可信（如直接构造的 raw 数据），可显式传 headerIdx 重测
+ * 清洗整个 sheet：
+ *  - 表头识别：用 detectHeaderRow 在【表头+数据行合并】里重新打分（不信任 parser.headers，
+ *    避免用户表的"说明/标题行"被误当表头），命中后从该行下方取数据。
+ *  - 重复列名加序号 + 逐 cell 清洗 + 逐列类型推断
+ *
+ * 上游若有可信的 sheet.headers（如已人工标注），可显式传 options.headerIdx 跳过重测。
  */
 export function cleanSheet(
   sheet: SheetInfo,
@@ -337,22 +341,15 @@ export function cleanSheet(
     return { cleanedHeaders: [], cleanedRows: [], columnTypes: [] };
   }
 
-  // 默认信任 sheet.headers（parser 已识别）；显式传 headerIdx 则重测
-  let headerIdx: number;
-  if (options.headerIdx !== undefined) {
-    headerIdx = options.headerIdx;
-  } else if (sheet.headers && sheet.headers.length > 0) {
-    headerIdx = -1; // 哨兵：直接用 sheet.headers
-  } else {
-    headerIdx = detectHeaderRow(sheet.rows);
-  }
+  // 把 parser 提取的 sheet.headers 放回第一行，让 detectHeaderRow 在完整数据上打分
+  const allRows: unknown[][] = [
+    ...(Array.isArray(sheet.headers) && sheet.headers.length > 0 ? [sheet.headers as unknown[]] : []),
+    ...sheet.rows,
+  ];
 
-  let rawHeaders: unknown[];
-  if (headerIdx === -1) {
-    rawHeaders = sheet.headers;
-  } else {
-    rawHeaders = sheet.rows[headerIdx] || [];
-  }
+  // 表头行索引：默认重测；显式传 headerIdx 跳过
+  const headerIdx = options.headerIdx ?? detectHeaderRow(allRows);
+  const rawHeaders = allRows[headerIdx] || [];
 
   // 表头清洗：trim，空名兜底为 column_N
   let cleanedHeaders = rawHeaders.map((h, i) => {
@@ -368,8 +365,8 @@ export function cleanSheet(
     return n > 1 ? `${h}_${n}` : h;
   });
 
-  // 数据行
-  const dataRows = headerIdx === -1 ? sheet.rows : sheet.rows.slice(headerIdx + 1);
+  // 数据行（表头之后）
+  const dataRows = allRows.slice(headerIdx + 1);
 
   // 收集每列值（用于类型推断）
   const colCount = cleanedHeaders.length;

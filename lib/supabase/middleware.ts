@@ -32,7 +32,9 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  // API 请求：不重定向（未登录由路由自身返回 401 JSON），只负责刷新 cookie
+  const isApi = request.nextUrl.pathname.startsWith("/api/");
+  if (!user && !isApi) {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(login);

@@ -29,7 +29,7 @@ const MAX_DIMENSIONS = 10;
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "unauthorized", message: "未登录" }, { status: 401 });
 
   try {
     const body = await req.json().catch(() => null);
@@ -41,9 +41,15 @@ export async function POST(req: NextRequest) {
     let rows: unknown[][] = Array.isArray(body?.rows) ? body.rows : [];
     let columnTypes: FieldType[] = Array.isArray(body?.columnTypes) ? body.columnTypes : [];
     if (tableId) {
-      const cache = getTableCache(tableId);
+      const cache = getTableCache(tableId, user.sub);
       if (!cache) {
-        return NextResponse.json({ error: "table_expired" }, { status: 410 });
+        return NextResponse.json(
+          {
+            error: "table_expired",
+            message: "表格数据已失效（页面停留过久或服务重启导致），请重新上传后再分析",
+          },
+          { status: 410 },
+        );
       }
       headers = cache.headers;
       rows = cache.rows;
@@ -54,10 +60,10 @@ export async function POST(req: NextRequest) {
     const selected: AnalysisDimension[] = Array.isArray(body?.selectedDimensions) ? body.selectedDimensions : [];
 
     if (!profile || !Array.isArray(profile.columns) || profile.columns.length === 0) {
-      return NextResponse.json({ error: "profile_required" }, { status: 400 });
+      return NextResponse.json({ error: "profile_required", message: "缺少字段画像信息" }, { status: 400 });
     }
     if (selected.length > MAX_DIMENSIONS) {
-      return NextResponse.json({ error: "too_many_dimensions" }, { status: 400 });
+      return NextResponse.json({ error: "too_many_dimensions", message: `一次最多分析 ${MAX_DIMENSIONS} 个维度` }, { status: 400 });
     }
 
     /* ── a) 自然语言查询：AI 理解意图 → 生成维度 → 执行 → 解读 ── */
@@ -99,7 +105,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("brain table analyze failed:", err);
     return NextResponse.json(
-      { error: "analyze_failed", message: (err as Error).message },
+      { error: "analyze_failed", message: `分析失败：${(err as Error).message}` },
       { status: 500 },
     );
   }

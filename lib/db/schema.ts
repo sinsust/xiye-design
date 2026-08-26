@@ -331,6 +331,64 @@ export const brainReminderLog = sqliteTable("brain_reminder_log", {
   readAt: integer("read_at"),
 });
 
+// —— P0 统一信息加工确认闭环 ——
+// 处理计划：任意输入经「AI 转译 → 用户编辑确认 → 统一写入」的持久化载体。
+// AI 阶段只落 plan(pending_confirmation)，绝不直接建正式对象；确认后才 apply 批量写入。
+export const brainProcessingPlans = sqliteTable("brain_processing_plans", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // 原始输入（未经整理）
+  rawContent: text("raw_content").notNull(),
+  // 输入类型：meeting/clip/jotting/markdown/snippet/task
+  inputType: text("input_type"),
+  // AI 建议的完整 ProcessingPlan（含标题/摘要/正文/实体/任务/提醒/项目/置信度/理由/证据等，JSON）
+  planJson: text("plan_json").notNull(),
+  // 用户确认时提交的编辑覆盖（标题/内容/分类/项目/行动项/提醒开关等，JSON）
+  editsJson: text("edits_json"),
+  // draft / pending_confirmation / applied / failed / rejected
+  status: text("status").notNull().default("pending_confirmation"),
+  // 来源入口：workbench / inbox / api…
+  source: text("source").notNull().default("workbench"),
+  // apply 成功后回填的产物 ID
+  noteId: text("note_id"),
+  taskIds: text("task_ids"),
+  strategyIds: text("strategy_ids"),
+  reminderIds: text("reminder_ids"),
+  projectId: text("project_id"),
+  // 写入失败的可读原因
+  failureReason: text("failure_reason"),
+  // 已部分写入对象与补偿/回滚信息（JSON），apply 中途失败时记录
+  recovery: text("recovery"),
+  createdAt: integer("created_at").notNull(),
+  applyAt: integer("apply_at"),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// 用户确认创建的单条提醒（独立于规则推导型提醒）。
+// 由 checkReminders 以 custom_reminder 类型接入提醒中心。
+export const brainReminderItems = sqliteTable("brain_reminder_items", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  // 触发时间（ISO）；按日期时可用 dueDate，触发时间可选
+  remindAt: text("remind_at"),
+  // 关联日期 YYYY-MM-DD
+  dueDate: text("due_date"),
+  noteId: text("note_id"),
+  taskId: text("task_id"),
+  planId: text("plan_id"),
+  // 0=未完成 1=已完成
+  done: integer("done").notNull().default(0),
+  // pending / triggered / read
+  status: text("status").notNull().default("pending"),
+  createdAt: integer("created_at").notNull(),
+  readAt: integer("read_at"),
+});
+
 // 知识衰减：笔记被「查看/编辑/RAG 引用/复习」的访问流水，用于判定"最近 60 天是否被使用"。
 export const brainNoteAccessLog = sqliteTable("brain_note_access_log", {
   id: text("id").primaryKey(),
@@ -359,3 +417,5 @@ export type BrainTaskCommentRow = typeof brainTaskComments.$inferSelect;
 export type BrainReminderRuleRow = typeof brainReminderRules.$inferSelect;
 export type BrainReminderLogRow = typeof brainReminderLog.$inferSelect;
 export type BrainNoteAccessLogRow = typeof brainNoteAccessLog.$inferSelect;
+export type BrainProcessingPlanRow = typeof brainProcessingPlans.$inferSelect;
+export type BrainReminderItemRow = typeof brainReminderItems.$inferSelect;

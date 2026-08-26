@@ -394,8 +394,13 @@ export function detectSheetStructure(sheets: SheetInfo[]): {
   sameStructureGroups: SheetInfo[][];
   differentSheets: SheetInfo[];
 } {
-  if (sheets.length <= 1) {
-    return { sameStructureGroups: sheets.length === 1 ? [sheets] : [], differentSheets: [] };
+  if (sheets.length === 0) {
+    return { sameStructureGroups: [], differentSheets: [] };
+  }
+
+  // 单 sheet 直接走独立，避免"1 个 Sheet 合并"的啰嗦提示
+  if (sheets.length === 1) {
+    return { sameStructureGroups: [], differentSheets: [sheets[0]] };
   }
 
   const groups: SheetInfo[][] = [];

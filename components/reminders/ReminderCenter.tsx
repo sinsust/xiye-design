@@ -39,8 +39,10 @@ const RULE_LABELS: Record<ReminderType, string> = {
   knowledge_decay: "知识衰减预警",
   project_milestone: "里程碑截止提醒",
   task_complete_followup: "任务完成跟进",
+  reminder_item: "确认提醒",
 };
-const RULE_TYPES = Object.keys(RULE_LABELS) as ReminderType[];
+// 独立提醒无规则开关，设置页不展示对应开关
+const RULE_TYPES = (Object.keys(RULE_LABELS) as ReminderType[]).filter((t) => t !== "reminder_item");
 
 export interface ReminderCenterProps {
   onNavigate: (link: string) => void;

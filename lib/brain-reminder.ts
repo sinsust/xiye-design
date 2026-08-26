@@ -6,6 +6,7 @@ import {
   listPendingBrainReviews,
   listBrainInboxItems,
   listBrainStrategies,
+  listPendingBrainReminderItems,
 } from "@/lib/brain-db";
 
 export const REMINDER_TYPES = [
@@ -18,7 +19,8 @@ export const REMINDER_TYPES = [
   "project_milestone",
   "task_complete_followup",
 ] as const;
-export type ReminderType = (typeof REMINDER_TYPES)[number];
+// 用户确认创建的单条「独立提醒」；不在规则枚举里（无开关，仅展示/触发）
+export type ReminderType = (typeof REMINDER_TYPES)[number] | "reminder_item";
 export type ReminderPriority = "high" | "medium" | "low";
 
 export interface Reminder {
@@ -41,6 +43,7 @@ const DEFAULT_ADVANCE: Record<ReminderType, number> = {
   knowledge_decay: 0, // 每周一
   project_milestone: 4320, // 提前 3 天
   task_complete_followup: 10080, // 完成后 7 天
+  reminder_item: 0, // 用户确认的单条提醒按设定时刻触发
 };
 const DEFAULT_PRIORITY: Record<ReminderType, ReminderPriority> = {
   task_overdue: "high",
@@ -51,6 +54,7 @@ const DEFAULT_PRIORITY: Record<ReminderType, ReminderPriority> = {
   knowledge_decay: "low",
   project_milestone: "medium",
   task_complete_followup: "medium",
+  reminder_item: "medium",
 };
 export const DEFAULT_QUIET_START = "22:00";
 export const DEFAULT_QUIET_END = "08:00";
@@ -375,8 +379,29 @@ export async function checkReminders(userId: string): Promise<{
     // 今日已触发的全部（含早前触发的）都随日志返回，供前端展示当前待办
     const all: Reminder[] = triggers.map((t) => ({
       ...t,
-      priority: DEFAULT_PRIORITY[t.type],
+      priority: DEFAULT_PRIORITY[t.type] ?? "medium",
     }));
+
+    // —— 用户确认的单条独立提醒（reminder_item）：到时间即触发 ——
+    try {
+      const items = await listPendingBrainReminderItems(userId);
+      for (const it of items) {
+        const due =
+          (it.remindAt && new Date(it.remindAt).getTime() <= now) ||
+          (it.dueDate && it.dueDate <= today);
+        if (!due) continue;
+        all.push({
+          type: "reminder_item",
+          title: `⏰ ${it.title}`,
+          detail: it.dueDate ? `提醒：${it.dueDate}` : "确认提醒",
+          link: it.noteId ? `/brain?note=${it.noteId}` : "/brain?tab=tasks",
+          priority: "medium",
+        });
+      }
+    } catch (err) {
+      console.error("[reminder] load reminder items failed:", err);
+    }
+
     const order: Record<ReminderPriority, number> = { high: 0, medium: 1, low: 2 };
     all.sort((a, b) => order[a.priority] - order[b.priority] || a.type.localeCompare(b.type));
 

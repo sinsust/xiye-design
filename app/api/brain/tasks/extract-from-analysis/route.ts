@@ -14,13 +14,13 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "unauthorized", message: "未登录" }, { status: 401 });
 
   try {
     const body = await req.json().catch(() => null);
     const result = body?.analysisResult as AnalysisResult | undefined;
     if (!result || !result.title) {
-      return NextResponse.json({ error: "analysis_result_required" }, { status: 400 });
+      return NextResponse.json({ error: "analysis_result_required", message: "缺少分析结果信息" }, { status: 400 });
     }
 
     // AI 提取行动项（3-8 条）
@@ -63,6 +63,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ created, count: created.length });
   } catch (err) {
     console.error("brain extract tasks failed:", err);
-    return NextResponse.json({ error: "extract_failed", message: (err as Error).message }, { status: 500 });
+    return NextResponse.json({ error: "extract_failed", message: `提取任务失败：${(err as Error).message}` }, { status: 500 });
   }
 }

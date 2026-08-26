@@ -368,6 +368,62 @@ export const brainNoteAccessLog = pgTable(
   })
 );
 
+// —— P0 统一信息加工确认闭环（sqlite 镜像）——
+// 处理计划：AI 只落 plan(pending_confirmation)，确认后统一 apply 写入正式资产。
+export const brainProcessingPlans = pgTable(
+  "brain_processing_plans",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    rawContent: text("raw_content").notNull(),
+    inputType: text("input_type"),
+    planJson: text("plan_json").notNull(),
+    editsJson: text("edits_json"),
+    status: text("status").notNull().default("pending_confirmation"),
+    source: text("source").notNull().default("workbench"),
+    noteId: text("note_id"),
+    taskIds: text("task_ids"),
+    strategyIds: text("strategy_ids"),
+    reminderIds: text("reminder_ids"),
+    projectId: text("project_id"),
+    failureReason: text("failure_reason"),
+    recovery: text("recovery"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    applyAt: bigint("apply_at", { mode: "number" }),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_processing_plans_user_id_idx").on(t.userId),
+    statusIdx: index("brain_processing_plans_status_idx").on(t.userId, t.status),
+  })
+);
+
+// 用户确认创建的单条提醒（独立于规则推导型提醒），由 checkReminders 以 custom_reminder 接入。
+export const brainReminderItems = pgTable(
+  "brain_reminder_items",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    remindAt: text("remind_at"),
+    dueDate: text("due_date"),
+    noteId: text("note_id"),
+    taskId: text("task_id"),
+    planId: text("plan_id"),
+    done: integer("done").notNull().default(0),
+    status: text("status").notNull().default("pending"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    readAt: bigint("read_at", { mode: "number" }),
+  },
+  (t) => ({
+    userIdx: index("brain_reminder_items_user_id_idx").on(t.userId),
+  })
+);
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -385,3 +441,5 @@ export type BrainTaskCommentRow = typeof brainTaskComments.$inferSelect;
 export type BrainReminderRuleRow = typeof brainReminderRules.$inferSelect;
 export type BrainReminderLogRow = typeof brainReminderLog.$inferSelect;
 export type BrainNoteAccessLogRow = typeof brainNoteAccessLog.$inferSelect;
+export type BrainProcessingPlanRow = typeof brainProcessingPlans.$inferSelect;
+export type BrainReminderItemRow = typeof brainReminderItems.$inferSelect;

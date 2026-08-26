@@ -43,7 +43,7 @@ import { ImaImportModal } from "@/components/ImaImportModal";
 import BatchImportModal from "@/components/BatchImportModal";
 import { MarkdownView } from "@/components/MarkdownView";
 import { ReminderCenter } from "@/components/reminders/ReminderCenter";
-import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { TodayAssistantPanel } from "@/components/dashboard/TodayAssistantPanel";
 import { InboxDrawer } from "@/components/InboxDrawer";
 import TaskDetailDrawer from "@/components/tasks/TaskDetailDrawer";
 import ProjectPanel from "@/components/projects/ProjectPanel";
@@ -593,6 +593,18 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [wSource, setWSource] = useState("");
   const [wKeyPoints, setWKeyPoints] = useState<{ point: string }[]>([]);
   const [wInsights, setWInsights] = useState<string[]>([]);
+  // —— P0 统一信息加工确认闭环 ——
+  // 当前待确认处理计划 id（organize → 确认写入的路上）
+  const [wPlanId, setWPlanId] = useState<string | null>(null);
+  // 关联项目选择（确认时绑定到任务/审计）
+  const [wProjectId, setWProjectId] = useState<string>("");
+  // 确认写入失败的可见反馈（banner + 重试），不误显示"已保存"
+  const [applyError, setApplyError] = useState<string | null>(null);
+  // 可恢复的待确认草稿（刷新/重登后回来续写）
+  const [recoverPlans, setRecoverPlans] = useState<
+    { id: string; rawContent: string; status: string; createdAt: number }[]
+  >([]);
+  const [resuming, setResuming] = useState(false);
   // 动态占位
   const [phIdx, setPhIdx] = useState(0);
   const PLACEHOLDERS = [
@@ -774,24 +786,31 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   }, [notes, learningTopics]);
 
   /** 整理：打开工作台并将 AI 建议填充到可编辑表单 */
-  const organize = async () => {
-    const t = text.trim();
+  const organize = async (overrideContent?: string) => {
+    const t = (overrideContent ?? text).trim();
     if (!t || organizing) return;
     setOrganizing(true);
     setOrganizeError(false);
     setRaw(t);
+    setApplyError(null);
+    setWProjectId("");
     try {
       const res = await fetch("/api/brain/organize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: t }),
+        body: JSON.stringify({ content: t, source: "workbench" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error);
       // 近似重复检测：与已有笔记高度相似时提示更新
       setDupWarning(data?.duplicate ?? null);
-      fillDraft(data.draft);
+      // 持久化的待确认处理计划：AI 阶段只用它承载建议，确认后才统一写入
+      const planId = data?.plan?.id;
+      setWPlanId(planId ?? null);
+      fillFromPlanBody(data.body);
+      if (!planId) throw new Error("no_plan");
     } catch {
+      setWPlanId(null);
       fillDraft({
         title: t.split("\n")[0].slice(0, 30),
         category: "随手记",
@@ -861,46 +880,143 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setWTagInput("");
   };
 
-  /** 采纳并入库 */
-  const saveDraft = async () => {
-    if (!raw || saving) return;
-    setSaving(true);
+  /**
+   * 把一条待确认 ProcessingPlan 的 body 填充到工作台可编辑表单。
+   * 仅承载 AI 建议；正式写入必须走确认后的 apply 服务。
+   */
+  const fillFromPlanBody = (body: any) => {
+    if (!body || typeof body !== "object") return;
+    const t: any[] = Array.isArray(body.suggestedTasks) ? body.suggestedTasks : [];
+    setWTitle(body.title || "");
+    setWCategory(body.category || "随手记");
+    setWSummary(body.summary || "");
+    setWTags(Array.isArray(body.tags) ? body.tags : []);
+    setWRelated(Array.isArray(body.related) ? body.related : []);
+    setWRelatedReason(body.note?.relatedReason ?? "");
+    setWActionItems(
+      t.map((a) => ({
+        text: a.title ?? "",
+        owner: a.owner ?? "",
+        dueDate: a.dueDate ?? null,
+        priority: a.priority ?? "medium",
+        strategyIndex: a.strategyIndex,
+        makeReminder: !!a.makeReminder,
+      })),
+    );
+    const n = body.note ?? {};
+    setWStrategies(Array.isArray(n.strategies) ? n.strategies : []);
+    setWDecisions(Array.isArray(n.decisions) ? n.decisions : []);
+    setWAttendees(Array.isArray(n.attendees) ? n.attendees : []);
+    setWMetrics(Array.isArray(n.metrics) ? n.metrics : []);
+    setWProblemDomains(Array.isArray(n.problemDomains) ? n.problemDomains : []);
+    setWOpenQuestions(Array.isArray(n.openQuestions) ? n.openQuestions : []);
+    setWStrategy(Array.isArray(n.strategy) ? n.strategy : []);
+    setWType(body.inputType || "jotting");
+    setWSource(n.source ?? "");
+    setWKeyPoints(Array.isArray(n.keyPoints) ? n.keyPoints : []);
+    setWInsights(Array.isArray(n.insights) ? n.insights : []);
+    setWSnippet(!!n.isSnippet);
+    setWLanguage(n.language ?? "");
+    setWCode(n.codeContent ?? "");
+    setWContent(typeof body.body === "string" && body.body.trim() ? body.body : (typeof body.rawContent === "string" ? body.rawContent : ""));
+    setWStruct(null);
+    setWProjectId(body.suggestedProjectId ?? "");
+    setWorkspaceOpen(true);
+  };
+
+  /** 恢复一条历史待确认草稿（刷新/重登后），重新填表并打开工作台 */
+  const resumePending = async (id: string) => {
+    if (resuming) return;
+    setResuming(true);
+    setApplyError(null);
     try {
-      const res = await fetch("/api/brain/notes", {
+      const res = await fetch(`/api/brain/plans?id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (!res.ok || !data?.body) throw new Error(data?.error);
+      setRaw(data.body.rawContent ?? data.plan?.rawContent ?? "");
+      setWPlanId(data.plan?.id ?? id);
+      setDupWarning(null);
+      fillFromPlanBody(data.body);
+      refreshPendingPlans();
+    } catch {
+      setApplyError("恢复草稿失败，请刷新后再试");
+    } finally {
+      setResuming(false);
+    }
+  };
+
+  /** 拉取可恢复的待确认草稿列表（仅本人可见，天然隔离） */
+  const refreshPendingPlans = useCallback(async () => {
+    try {
+      const res = await fetch("/api/brain/plans");
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.plans)) {
+        setRecoverPlans(
+          data.plans.map((p: any) => ({
+            id: p.id,
+            rawContent: p.rawContent ?? "",
+            status: p.status,
+            createdAt: p.createdAt,
+          })),
+        );
+      }
+    } catch {
+      /* 忽略 */
+    }
+  }, []);
+  useEffect(() => {
+    refreshPendingPlans();
+  }, [refreshPendingPlans]);
+
+  /** 采纳并入库（统一写入服务） */
+  const saveDraft = async () => {
+    // 确认写入必须基于一条持久化的待确认计划（统一写入服务）
+    if (!raw || !wPlanId || saving) {
+      if (!wPlanId) setApplyError("缺少待确认计划，请先点击「帮我整理」重新生成");
+      return;
+    }
+    setSaving(true);
+    setApplyError(null);
+    try {
+      const res = await fetch("/api/brain/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: wContent?.trim() || raw,
-          title: wTitle,
-          category: wCategory,
-          summary: wSummary,
-          tags: wTags,
-          related: wRelated,
-          actionItems: wActionItems.filter((a) => a.text.trim()),
-          strategies: wStrategies,
-          decisions: wDecisions,
-          isSnippet: wSnippet,
-          language: wLanguage,
-          codeContent: wCode,
-          // 完整结构化草稿（金标字段），落库为 struct；同步编辑过的行动项与类型字段
-          struct: wStruct
-            ? {
-                ...wStruct,
-                actionItems: wActionItems.filter((a) => a.text.trim()),
-                type: wType,
-                source: wSource,
-                keyPoints: wKeyPoints,
-                insights: wInsights,
-              }
-            : wStruct,
+          planId: wPlanId,
+          edits: {
+            title: wTitle,
+            category: wCategory,
+            summary: wSummary,
+            body: wContent?.trim() || raw,
+            tags: wTags,
+            related: wRelated,
+            suggestedProjectId: wProjectId || null,
+            tasks: wActionItems
+              .filter((a) => a.text.trim())
+              .map((a) => ({
+                title: a.text,
+                owner: a.owner ?? "",
+                dueDate: a.dueDate ?? null,
+                priority: a.priority ?? "medium",
+                strategyIndex: a.strategyIndex,
+                makeReminder: !!a.makeReminder,
+              })),
+          },
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data?.note) throw new Error(data?.error);
-      setNotes((prev) => [data.note, ...prev]);
+      if (!res.ok || !data?.ok || !data?.note) {
+        // 失败：不误显示"已保存"，保留可编辑草稿，允许重试
+        setApplyError(data?.reason || data?.error || "保存失败，请重试");
+        return;
+      }
+      const note = data.note as BrainNote;
+      setNotes((prev) => [note, ...prev]);
       setText("");
       setRaw("");
       setDupWarning(null);
+      setWPlanId(null);
+      setWProjectId("");
       setWActionItems([]);
       setWStrategies([]);
       setWDecisions([]);
@@ -919,11 +1035,14 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setWInsights([]);
       setWStruct(null);
       setWorkspaceOpen(false);
+      refreshPendingPlans();
       loadTasks();
       loadStrategies();
       loadSnippets();
+      // 写入完成 → 跳转到该笔记详情
+      setExpanded(note.id);
     } catch {
-      window.alert("入库失败");
+      setApplyError("保存中断，请重试（不会误判为已保存）");
     } finally {
       setSaving(false);
     }
@@ -1295,14 +1414,22 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
 
         {topView === "dashboard" ? (
           <div key="view-dashboard" className="animate-in fade-in duration-200 ease-out">
-            <DashboardPanel
-              onOpenInbox={() => setInboxOpen(true)}
-              onGoto={(tab) => gotoTop("workbench", tab as typeof workTab)}
-              onNewTask={() => gotoTop("workbench", "kanban")}
+            <TodayAssistantPanel
+              quickBusy={organizing}
+              onQuickOrganize={(content) => {
+                gotoTop("workbench", "input");
+                organize(content);
+              }}
+              onOpenTask={(id) => {
+                setDetailTaskId(id);
+                gotoTop("workbench", "kanban");
+              }}
+              onConfirmPlan={resumePending}
               onOpenProject={(id) => {
                 setOpenProjectId(id);
                 gotoTop("workbench", "projects");
               }}
+              onProcessInbox={() => setInboxOpen(true)}
             />
           </div>
         ) : workTab === "projects" ? (
@@ -1381,6 +1508,28 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 />
               )}
             </div>
+
+            {/* 可恢复草稿（刷新/重登后回来续写） */}
+            {recoverPlans.length > 0 && (
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-xs text-indigo-800">
+                <span className="font-medium">✉️ 有 {recoverPlans.length} 条待确认草稿</span>
+                <span className="text-indigo-500/80">（刷新或重新登录后仍可继续编辑确认）</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  {recoverPlans.slice(0, 3).map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => resumePending(p.id)}
+                      disabled={resuming}
+                      className="rounded bg-white px-2 py-0.5 font-medium text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:opacity-60"
+                      title={p.rawContent?.slice(0, 60)}
+                    >
+                      {resuming ? "恢复中…" : "继续编辑第 " + (recoverPlans.length > 1 ? recoverPlans.indexOf(p) + 1 : 1) + " 条"}
+                    </button>
+                  ))}
+                  {recoverPlans.length > 3 && <span className="text-indigo-500/70">+{recoverPlans.length - 3}</span>}
+                </span>
+              </div>
+            )}
 
             {/* 笔记列表 · 高密度 */}
             <div className="rounded-xl border border-border bg-white shadow-sm">
@@ -1627,6 +1776,41 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     </div>
                   </div>
 
+                  {/* 关联项目（确认时绑定到该项目的任务与审计） */}
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">关联项目</label>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <button
+                        onClick={() => setWProjectId("")}
+                        className={
+                          "rounded-[var(--radius)] px-2.5 py-1 text-xs transition " +
+                          (!wProjectId ? "bg-primary font-medium text-white" : "bg-muted text-muted-foreground hover:bg-muted/70")
+                        }
+                      >
+                        无
+                      </button>
+                      {projects.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setWProjectId(wProjectId === p.id ? "" : p.id)}
+                          className={
+                            "inline-flex items-center gap-1 rounded-[var(--radius)] px-2.5 py-1 text-xs transition " +
+                            (wProjectId === p.id
+                              ? "font-medium text-white"
+                              : "bg-muted text-muted-foreground hover:bg-muted/70")
+                          }
+                          style={wProjectId === p.id ? { background: p.color || "#3B82F6" } : undefined}
+                        >
+                          <span
+                            className="size-1.5 rounded-full"
+                            style={{ background: wProjectId === p.id ? "#fff" : p.color || "#3B82F6" }}
+                          />
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* 标签 */}
                   <div>
                     <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">标签</label>
@@ -1757,20 +1941,34 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             </div>
 
             {/* 底栏操作 */}
-            <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={organize} disabled={organizing}>
-                  <RotateCcw className="size-3.5" />
-                  重新生成
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setWorkspaceOpen(false)}>
-                  取消
+            <div className="border-t border-border px-5 pt-3">
+              {applyError && (
+                <div className="mb-2 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
+                  <span className="flex-1">保存失败：{applyError} —— 你的修改仍在，可直接重试。</span>
+                  <button
+                    onClick={saveDraft}
+                    disabled={saving}
+                    className="shrink-0 rounded bg-red-600 px-2 py-0.5 font-medium text-white transition hover:bg-red-700"
+                  >
+                    重试保存
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-2 pb-3">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => organize()} disabled={organizing}>
+                    <RotateCcw className="size-3.5" />
+                    重新生成
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setWorkspaceOpen(false)}>
+                    取消
+                  </Button>
+                </div>
+                <Button size="sm" onClick={saveDraft} disabled={saving || !wTitle.trim() || !wPlanId}>
+                  {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                  {saving ? "入库中…" : "采纳并入库"}
                 </Button>
               </div>
-              <Button size="sm" onClick={saveDraft} disabled={saving || !wTitle.trim()}>
-                {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                {saving ? "入库中…" : "采纳并入库"}
-              </Button>
             </div>
           </div>
         </div>

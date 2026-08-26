@@ -52,6 +52,14 @@ export function ColumnProfilePanel({
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<GroupKey>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  // 每组的折叠状态（默认全展开；点分组标签收起整个组）
+  const [groupCollapsed, setGroupCollapsed] = useState<Record<GroupKey, boolean>>({
+    all: false,
+    category: false,
+    numeric: false,
+    date: false,
+    text: false,
+  });
 
   // 分组统计
   const counts = useMemo(() => {
@@ -73,6 +81,27 @@ export function ColumnProfilePanel({
       return true;
     });
   }, [profile.columns, query, group]);
+
+  // 按类型分组渲染（支持整组折叠）
+  const grouped: Array<{ key: GroupKey; label: string; cols: Col[] }> = useMemo(() => {
+    const groups: Record<Exclude<GroupKey, "all">, Col[]> = { category: [], numeric: [], date: [], text: [] };
+    for (const col of filtered) {
+      if ("distribution" in col) groups.category.push(col);
+      else if ("mean" in col) groups.numeric.push(col);
+      else if ("minDate" in col) groups.date.push(col);
+      else groups.text.push(col);
+    }
+    const list: Array<{ key: GroupKey; label: string; cols: Col[] }> = [];
+    if (group === "all") {
+      list.push({ key: "category", label: GROUP_LABELS.category, cols: groups.category });
+      list.push({ key: "numeric", label: GROUP_LABELS.numeric, cols: groups.numeric });
+      list.push({ key: "date", label: GROUP_LABELS.date, cols: groups.date });
+      list.push({ key: "text", label: GROUP_LABELS.text, cols: groups.text });
+    } else {
+      list.push({ key: group, label: GROUP_LABELS[group], cols: filtered });
+    }
+    return list;
+  }, [filtered, group]);
 
   const relOf = (colName: string) =>
     profile.relations.filter((r) => r.columns.includes(colName));
@@ -107,74 +136,93 @@ export function ColumnProfilePanel({
         </div>
       </div>
 
-      {/* 字段卡片列表 */}
-      <div className="mt-4 space-y-1.5">
+      {/* 按类型分组渲染 */}
+      <div className="mt-4 space-y-3">
         {filtered.length === 0 && (
           <div className="py-10 text-center text-xs text-muted-foreground">没有匹配的字段</div>
         )}
-        {filtered.map((col) => {
-          const isOpen = expanded === col.name;
-          const isSel = selected === col.name;
-          const rels = relOf(col.name);
+        {grouped.map(({ key: gKey, label, cols }) => {
+          if (cols.length === 0) return null;
+          const collapsed = groupCollapsed[gKey];
           return (
-            <div
-              key={col.name}
-              className={
-                "rounded-xl border transition-all duration-200 " +
-                (isSel
-                  ? "border-primary/60 bg-primary/5 shadow-sm"
-                  : isOpen
-                    ? "border-border bg-white shadow-sm"
-                    : "border-border/70 bg-white hover:border-primary/25 hover:bg-muted/20")
-              }
-            >
-              {/* 概要行 */}
+            <div key={gKey}>
               <button
-                onClick={() => {
-                  setExpanded(isOpen ? null : col.name);
-                  onSelect?.(col.name);
-                }}
-                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left"
+                onClick={() =>
+                  setGroupCollapsed((prev) => ({ ...prev, [gKey]: !prev[gKey] }))
+                }
+                className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground transition hover:text-foreground"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-[13px] font-medium text-foreground">{col.name}</span>
-                    <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
-                      {TYPE_LABELS[col.type] ?? col.type}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                    {summaryLine(col)}
-                  </div>
-                </div>
-
-                {/* 关联徽标 */}
-                {rels.length > 0 && (
-                  <div className="flex shrink-0 flex-col items-end gap-0.5">
-                    {rels.slice(0, 2).map((r, i) => (
-                      <span
-                        key={i}
-                        className="flex items-center gap-1 rounded bg-primary/8 px-1.5 py-px text-[10px] text-primary"
-                        title={r.detail}
-                      >
-                        <Link2 className="size-2.5" />
-                        {r.columns.find((c) => c !== col.name)} · {r.strength.toFixed(2)}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {isSel && <Check className="size-3.5 shrink-0 text-primary" />}
                 <ChevronDown
-                  className={"size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 " + (isOpen ? "rotate-180" : "")}
+                  className={"size-3 transition-transform " + (collapsed ? "-rotate-90" : "")}
                 />
+                {label}
+                <span className="rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
+                  {cols.length}
+                </span>
               </button>
+              {!collapsed && (
+                <div className="space-y-1">
+                  {cols.map((col) => {
+                    const isOpen = expanded === col.name;
+                    const isSel = selected === col.name;
+                    const rels = relOf(col.name);
+                    return (
+                      <div
+                        key={col.name}
+                        className={
+                          "rounded-lg border transition-all duration-200 " +
+                          (isSel
+                            ? "border-primary/60 bg-primary/5 shadow-sm"
+                            : isOpen
+                              ? "border-border bg-white shadow-sm"
+                              : "border-border/70 bg-white hover:border-primary/25")
+                        }
+                      >
+                        {/* 概要行（紧凑：高度 ~44px） */}
+                        <button
+                          onClick={() => {
+                            setExpanded(isOpen ? null : col.name);
+                            onSelect?.(col.name);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left"
+                        >
+                          <span className="truncate text-[13px] font-medium text-foreground">{col.name}</span>
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
+                            {TYPE_LABELS[col.type] ?? col.type}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+                            {summaryLine(col)}
+                          </span>
+                          {rels.length > 0 && (
+                            <div className="flex shrink-0 gap-1">
+                              {rels.slice(0, 1).map((r, i) => (
+                                <span
+                                  key={i}
+                                  className="flex items-center gap-1 rounded bg-primary/8 px-1.5 py-px text-[10px] text-primary"
+                                  title={r.detail}
+                                >
+                                  <Link2 className="size-2.5" />
+                                  {r.columns.find((c) => c !== col.name)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {isSel && <Check className="size-3.5 shrink-0 text-primary" />}
+                          <ChevronDown
+                            className={
+                              "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 " +
+                              (isOpen ? "rotate-180" : "")
+                            }
+                          />
+                        </button>
 
-              {/* 迷你可视化（概要行下方，仅当有数据且未展开时） */}
-              {!isOpen && <MiniViz col={col} />}
-
-              {/* 展开详情 */}
-              {isOpen && <DetailBody col={col} />}
+                        {/* 展开详情（精简） */}
+                        {isOpen && <DetailBody col={col} />}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
@@ -287,20 +335,14 @@ function MiniViz({ col }: { col: Col }) {
   return null;
 }
 
-/** 展开详情 */
+/** 展开详情（精简：去掉非空率/唯一数等基础数据，只保留可读洞察） */
 function DetailBody({ col }: { col: Col }) {
   return (
     <div className="border-t border-border/50 px-3.5 py-3 animate-in fade-in duration-200">
-      {/* 完整性 / 唯一性（公共） */}
-      <div className="grid grid-cols-3 gap-2 text-[11px]">
-        <InfoItem label="非空" value={`${col.nonNullCount.toLocaleString()} · ${Math.round(col.nonNullRate * 100)}%`} />
-        <InfoItem label="唯一" value={col.isUnique ? "全部唯一" : `${col.uniqueCount.toLocaleString()} 个`} />
-        <InfoItem label="空值" value={`${col.nullCount.toLocaleString()} 个`} />
-      </div>
-
+      {/* 分类：完整分布 + 层级 */}
       {"distribution" in col && (
         <>
-          <div className="mt-3 space-y-1">
+          <div className="space-y-1">
             {col.distribution.slice(0, 12).map((d) => (
               <div key={d.value} className="flex items-center gap-2">
                 <span className="w-20 shrink-0 truncate text-[11px] text-foreground">{d.value}</span>
@@ -322,41 +364,36 @@ function DetailBody({ col }: { col: Col }) {
             )}
           </div>
           {col.hasHierarchy && (
-            <div className="mt-2 text-[11px] text-primary">检测到层级结构：{col.hierarchyLevels.join(" / ")}</div>
+            <div className="mt-2 text-[11px] text-primary">层级结构：{col.hierarchyLevels.join(" / ")}</div>
           )}
         </>
       )}
 
+      {/* 数值：关键分位 + 异常值（去掉标准差/偏度等冗余技术字段） */}
       {"mean" in col && (
-        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-          <InfoItem label="标准差" value={fmtNum(col.stdDev)} />
-          <InfoItem label="偏度" value={`${fmtNum(col.skewness)}${col.isNormalDistribution ? "（近正态）" : "（偏态）"}`} />
-          <InfoItem label="分位 q25/q75" value={`${fmtNum(col.quantiles.q25)} / ${fmtNum(col.quantiles.q75)}`} />
-          <InfoItem label="q90/q95/q99" value={`${fmtNum(col.quantiles.q90)} / ${fmtNum(col.quantiles.q95)} / ${fmtNum(col.quantiles.q99)}`} />
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+          <InfoItem label="中位数 / 均值" value={`${fmtNum(col.median)} / ${fmtNum(col.mean)}`} />
+          <InfoItem label="四分位距" value={`${fmtNum(col.quantiles.q25)} ~ ${fmtNum(col.quantiles.q75)}`} />
+          <InfoItem label="极值" value={`${fmtNum(col.min)} ~ ${fmtNum(col.max)}`} />
+          {col.hasOutliers && (
+            <InfoItem label="异常值" value={`${col.outlierCount} 个（最高 ${fmtNum(Math.max(...col.outlierValues))}）`} />
+          )}
           <InfoItem label="合计" value={fmtNum(col.sum)} />
-          <InfoItem label="零值/负值" value={`${col.zeroCount} / ${col.negativeCount}`} />
+          <InfoItem label="零值 / 负值" value={`${col.zeroCount} / ${col.negativeCount}`} />
         </div>
       )}
 
+      {/* 日期：范围/粒度 + 缺失（去掉星期/月分布详情，太冗长） */}
       {"minDate" in col && (
-        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
           <InfoItem label="跨度" value={`${col.dateRange} 天`} />
           <InfoItem label="粒度" value={GRANULARITY_LABELS[col.detectedGranularity] ?? col.detectedGranularity} />
-          <div>
-            <div className="text-muted-foreground/70">星期分布</div>
-            <div className="mt-0.5 flex flex-wrap gap-1">
-              {col.dayOfWeekDistribution.map((d) => (
-                <span key={d.day} className="rounded bg-muted px-1.5 py-px text-[10px] text-foreground">
-                  {d.label} {d.count}
-                </span>
-              ))}
-            </div>
-          </div>
+          <InfoItem label="连续性" value={col.isContinuous ? "无缺失" : `${col.missingDates.length} 处缺失`} />
           {col.missingDates.length > 0 && (
             <div>
               <div className="text-muted-foreground/70">缺失日期</div>
               <div className="mt-0.5 flex flex-wrap gap-1">
-                {col.missingDates.map((m, i) => (
+                {col.missingDates.slice(0, 8).map((m, i) => (
                   <span key={i} className="rounded bg-red-50 px-1.5 py-px text-[10px] text-red-600">
                     {m}
                   </span>
@@ -367,18 +404,28 @@ function DetailBody({ col }: { col: Col }) {
         </div>
       )}
 
+      {/* 文本：高频词 + 格式（精简：去掉长度限制/有效格式等技术检测） */}
       {!("distribution" in col) && !("mean" in col) && !("minDate" in col) && (
-        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-          <InfoItem label="长度" value={`${col.minLength} ~ ${col.maxLength}`} />
-          <InfoItem label="格式" value={formatHits(col)} />
-          {col.idPattern && <InfoItem label="ID 模式" value={col.idPattern} />}
+        <div className="space-y-2 text-[11px]">
           {col.topWords.length > 0 && (
             <div>
-              <div className="text-muted-foreground/70">高频词</div>
-              <div className="mt-0.5 flex flex-wrap gap-1">
-                {col.topWords.slice(0, 8).map((w) => (
+              <div className="mb-1 text-muted-foreground/70">高频词</div>
+              <div className="flex flex-wrap gap-1">
+                {col.topWords.slice(0, 10).map((w) => (
                   <span key={w.word} className="rounded bg-muted px-1.5 py-px text-[10px] text-foreground">
                     {w.word} {w.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {col.samples.length > 0 && (
+            <div>
+              <div className="mb-1 text-muted-foreground/70">示例</div>
+              <div className="flex flex-wrap gap-1">
+                {col.samples.slice(0, 5).map((s, i) => (
+                  <span key={i} className="rounded bg-muted/50 px-1.5 py-px text-[10px] text-foreground/80">
+                    {String(s).length > 30 ? String(s).slice(0, 30) + "…" : String(s)}
                   </span>
                 ))}
               </div>
@@ -388,14 +435,6 @@ function DetailBody({ col }: { col: Col }) {
       )}
     </div>
   );
-}
-
-function formatHits(col: Col & { containsChinese?: boolean; containsEnglish?: boolean; containsNumbers?: boolean }): string {
-  const parts: string[] = [];
-  if (col.containsChinese) parts.push("中文");
-  if (col.containsEnglish) parts.push("英文");
-  if (col.containsNumbers) parts.push("数字");
-  return parts.join("+") || "—";
 }
 
 function InfoItem({ label, value }: { label: string; value: string }) {

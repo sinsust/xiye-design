@@ -1,8 +1,8 @@
 // 第二大脑（Second Brain）数据访问层：用户私有的个人知识笔记读写。
 // 与 knowledge-db（云端共享技能库）不同，这里按 userId 硬隔离，仅本人可见。
 
-import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments } from "@/lib/db";
-import { eq, and, desc, asc, isNull } from "drizzle-orm";
+import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems } from "@/lib/db";
+import { eq, and, desc, asc, isNull, inArray } from "drizzle-orm";
 
 export type BrainSource = "text" | "file" | "clip" | "voice" | "ima";
 
@@ -1607,5 +1607,324 @@ export async function updateBrainInboxItem(
   } catch (err) {
     console.error("[brain-db] update inbox failed:", err);
     return null;
+  }
+}
+
+// ---------------- P0 统一信息加工确认闭环 ----------------
+
+export type BrainPlanStatus = "draft" | "pending_confirmation" | "applied" | "failed" | "rejected";
+
+export interface BrainProcessingPlan {
+  id: string;
+  userId: string;
+  rawContent: string;
+  inputType: string | null;
+  planJson: string;
+  editsJson: string | null;
+  status: BrainPlanStatus;
+  source: string;
+  noteId: string | null;
+  taskIds: string[];
+  strategyIds: string[];
+  reminderIds: string[];
+  projectId: string | null;
+  failureReason: string | null;
+  recovery: string | null;
+  createdAt: number;
+  applyAt: number | null;
+  updatedAt: number;
+}
+
+interface PlanRow {
+  id: string;
+  userId: string;
+  rawContent: string;
+  inputType: string | null;
+  planJson: string;
+  editsJson: string | null;
+  status: string;
+  source: string;
+  noteId: string | null;
+  taskIds: string | null;
+  strategyIds: string | null;
+  reminderIds: string | null;
+  projectId: string | null;
+  failureReason: string | null;
+  recovery: string | null;
+  createdAt: number;
+  applyAt: number | null;
+  updatedAt: number;
+}
+
+const PLAN_STATUSES: BrainPlanStatus[] = ["draft", "pending_confirmation", "applied", "failed", "rejected"];
+
+function parseIdList(v: string | null): string[] {
+  if (!v) return [];
+  try {
+    const arr = JSON.parse(v);
+    return Array.isArray(arr) ? arr.map(String).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function toPlan(r: PlanRow): BrainProcessingPlan {
+  const status =
+    PLAN_STATUSES.find((s) => s === r.status) ?? "pending_confirmation";
+  return {
+    id: r.id,
+    userId: r.userId,
+    rawContent: r.rawContent,
+    inputType: r.inputType ?? null,
+    planJson: r.planJson,
+    editsJson: r.editsJson,
+    status,
+    source: r.source || "workbench",
+    noteId: r.noteId ?? null,
+    taskIds: parseIdList(r.taskIds),
+    strategyIds: parseIdList(r.strategyIds),
+    reminderIds: parseIdList(r.reminderIds),
+    projectId: r.projectId ?? null,
+    failureReason: r.failureReason ?? null,
+    recovery: r.recovery ?? null,
+    createdAt: r.createdAt,
+    applyAt: r.applyAt ?? null,
+    updatedAt: r.updatedAt,
+  };
+}
+
+/** 创建一条处理计划（pending_confirmation）。 */
+export async function insertBrainProcessingPlan(
+  userId: string,
+  input: {
+    rawContent: string;
+    inputType: string | null;
+    planJson: string;
+    source: string;
+  },
+): Promise<BrainProcessingPlan | null> {
+  const now = Date.now();
+  const id = `bp-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    await db.insert(brainProcessingPlans).values({
+      id,
+      userId,
+      rawContent: input.rawContent,
+      inputType: input.inputType,
+      planJson: input.planJson,
+      status: "pending_confirmation",
+      source: input.source || "workbench",
+      createdAt: now,
+      updatedAt: now,
+    });
+    return getBrainProcessingPlan(userId, id);
+  } catch (err) {
+    console.error("[brain-db] insert plan failed:", err);
+    return null;
+  }
+}
+
+export async function getBrainProcessingPlan(
+  userId: string,
+  id: string,
+): Promise<BrainProcessingPlan | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainProcessingPlans)
+      .where(and(eq(brainProcessingPlans.id, id), eq(brainProcessingPlans.userId, userId)))) as PlanRow[];
+    return rows[0] ? toPlan(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get plan failed:", err);
+    return null;
+  }
+}
+
+/** 当前用户的处理计划（可按状态过滤，desc 时间）。供恢复草稿。 */
+export async function listBrainProcessingPlans(
+  userId: string,
+  status?: BrainPlanStatus[],
+): Promise<BrainProcessingPlan[]> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainProcessingPlans)
+      .where(
+        and(
+          eq(brainProcessingPlans.userId, userId),
+          status && status.length ? inArray(brainProcessingPlans.status, status) : undefined,
+        ),
+      )
+      .orderBy(desc(brainProcessingPlans.createdAt))) as PlanRow[];
+    return rows.map(toPlan);
+  } catch (err) {
+    console.error("[brain-db] list plans failed:", err);
+    return [];
+  }
+}
+
+export type BrainPlanPatch = {
+  status?: BrainPlanStatus;
+  editsJson?: string | null;
+  noteId?: string | null;
+  taskIds?: string[] | null;
+  strategyIds?: string[] | null;
+  reminderIds?: string[] | null;
+  projectId?: string | null;
+  failureReason?: string | null;
+  recovery?: string | null;
+  applyAt?: number | null;
+};
+
+export async function updateBrainProcessingPlan(
+  userId: string,
+  id: string,
+  patch: BrainPlanPatch,
+): Promise<BrainProcessingPlan | null> {
+  try {
+    const set: Record<string, unknown> = { updatedAt: Date.now() };
+    if (patch.status) set.status = patch.status;
+    if (patch.editsJson !== undefined) set.editsJson = patch.editsJson;
+    if (patch.noteId !== undefined) set.noteId = patch.noteId;
+    if (patch.taskIds !== undefined) set.taskIds = patch.taskIds && patch.taskIds.length ? JSON.stringify(patch.taskIds) : null;
+    if (patch.strategyIds !== undefined) set.strategyIds = patch.strategyIds && patch.strategyIds.length ? JSON.stringify(patch.strategyIds) : null;
+    if (patch.reminderIds !== undefined) set.reminderIds = patch.reminderIds && patch.reminderIds.length ? JSON.stringify(patch.reminderIds) : null;
+    if (patch.projectId !== undefined) set.projectId = patch.projectId;
+    if (patch.failureReason !== undefined) set.failureReason = patch.failureReason;
+    if (patch.recovery !== undefined) set.recovery = patch.recovery;
+    if (patch.applyAt !== undefined) set.applyAt = patch.applyAt ?? null;
+    await db
+      .update(brainProcessingPlans)
+      .set(set)
+      .where(and(eq(brainProcessingPlans.id, id), eq(brainProcessingPlans.userId, userId)));
+    return getBrainProcessingPlan(userId, id);
+  } catch (err) {
+    console.error("[brain-db] update plan failed:", err);
+    return null;
+  }
+}
+
+export interface BrainReminderItem {
+  id: string;
+  userId: string;
+  title: string;
+  remindAt: string | null;
+  dueDate: string | null;
+  noteId: string | null;
+  taskId: string | null;
+  planId: string | null;
+  done: boolean;
+  status: string;
+  createdAt: number;
+  readAt: number | null;
+}
+
+interface ReminderItemRow {
+  id: string;
+  userId: string;
+  title: string;
+  remindAt: string | null;
+  dueDate: string | null;
+  noteId: string | null;
+  taskId: string | null;
+  planId: string | null;
+  done: number | null;
+  status: string | null;
+  createdAt: number;
+  readAt: number | null;
+}
+
+function toReminderItem(r: ReminderItemRow): BrainReminderItem {
+  return {
+    id: r.id,
+    userId: r.userId,
+    title: r.title,
+    remindAt: r.remindAt ?? null,
+    dueDate: r.dueDate ?? null,
+    noteId: r.noteId ?? null,
+    taskId: r.taskId ?? null,
+    planId: r.planId ?? null,
+    done: (r.done ?? 0) === 1,
+    status: r.status ?? "pending",
+    createdAt: r.createdAt,
+    readAt: r.readAt ?? null,
+  };
+}
+
+/** 用户确认后创建单条提醒。 */
+export async function insertBrainReminderItem(
+  userId: string,
+  input: {
+    title: string;
+    remindAt?: string | null;
+    dueDate?: string | null;
+    noteId?: string | null;
+    taskId?: string | null;
+    planId?: string | null;
+  },
+): Promise<BrainReminderItem | null> {
+  const now = Date.now();
+  const id = `bri-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  try {
+    await db.insert(brainReminderItems).values({
+      id,
+      userId,
+      title: input.title,
+      remindAt: input.remindAt ?? null,
+      dueDate: input.dueDate ?? null,
+      noteId: input.noteId ?? null,
+      taskId: input.taskId ?? null,
+      planId: input.planId ?? null,
+      done: 0,
+      status: "pending",
+      createdAt: now,
+    });
+    return getBrainReminderItem(userId, id);
+  } catch (err) {
+    console.error("[brain-db] insert reminder item failed:", err);
+    return null;
+  }
+}
+
+export async function getBrainReminderItem(
+  userId: string,
+  id: string,
+): Promise<BrainReminderItem | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainReminderItems)
+      .where(and(eq(brainReminderItems.id, id), eq(brainReminderItems.userId, userId)))) as ReminderItemRow[];
+    return rows[0] ? toReminderItem(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get reminder item failed:", err);
+    return null;
+  }
+}
+
+/** 当前用户待触发的提醒条目（未完成且未读）。 */
+export async function listPendingBrainReminderItems(userId: string): Promise<BrainReminderItem[]> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainReminderItems)
+      .where(and(eq(brainReminderItems.userId, userId), eq(brainReminderItems.done, 0)))
+      .orderBy(asc(brainReminderItems.createdAt))) as ReminderItemRow[];
+    return rows.map(toReminderItem);
+  } catch (err) {
+    console.error("[brain-db] list reminder items failed:", err);
+    return [];
+  }
+}
+
+export async function deleteBrainReminderItem(userId: string, id: string): Promise<boolean> {
+  try {
+    await db
+      .delete(brainReminderItems)
+      .where(and(eq(brainReminderItems.id, id), eq(brainReminderItems.userId, userId)));
+    return true;
+  } catch (err) {
+    console.error("[brain-db] delete reminder item failed:", err);
+    return false;
   }
 }

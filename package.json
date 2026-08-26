@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "validate:plan": "esbuild scripts/validation-plan.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-vplan.mjs && node scripts/.tmp-vplan.mjs",
     "db:push:pg": "drizzle-kit push --config drizzle.config.pg.ts"
   },
   "dependencies": {

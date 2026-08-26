@@ -10,6 +10,8 @@ import { randomUUID } from "crypto";
 
 /** 缓存条目 */
 interface CacheEntry {
+  /** 归属用户（防止他人凭 tableId 串读） */
+  userId: string;
   /** 清洗后表头 */
   headers: string[];
   /** 清洗后数据行（截断后） */
@@ -26,22 +28,26 @@ const CLEAN_INTERVAL_MS = 5 * 60 * 1000; // 每 5 分钟清理过期
 const store = new Map<string, CacheEntry>();
 let lastClean = Date.now();
 
-/** 保存解析结果，返回 tableId */
-export function cacheTable(headers: string[], rows: unknown[][], columnTypes: string[]): string {
+/** 保存解析结果（绑定归属用户），返回 tableId */
+export function cacheTable(userId: string, headers: string[], rows: unknown[][], columnTypes: string[]): string {
   cleanup();
   const id = randomUUID().replace(/-/g, "").slice(0, 16);
-  store.set(id, { headers, rows, columnTypes, createdAt: Date.now() });
+  store.set(id, { userId, headers, rows, columnTypes, createdAt: Date.now() });
   return id;
 }
 
-/** 取缓存；不存在或已过期返回 null */
-export function getTableCache(id: string): { headers: string[]; rows: unknown[][]; columnTypes: string[] } | null {
+/** 取缓存；不存在 / 已过期 / 非本人 → null */
+export function getTableCache(
+  id: string,
+  userId: string,
+): { headers: string[]; rows: unknown[][]; columnTypes: string[] } | null {
   const entry = store.get(id);
   if (!entry) return null;
   if (Date.now() - entry.createdAt > TTL_MS) {
     store.delete(id);
     return null;
   }
+  if (entry.userId !== userId) return null; // 防串读
   return { headers: entry.headers, rows: entry.rows, columnTypes: entry.columnTypes };
 }
 
