@@ -101,10 +101,12 @@ pnpm-workspace.yaml
 # 本地构建产物 / 一次性脚本 / 测试库（防误提交，2026-08-26）
 .next-old/
 .next-bak-*/
+.next-*/
 build.log
 build.err.log
 # 一次性构建日志 / 调试 scratch（防误提交，2026-08-27）
 build-t*.log
+pnpm-*.log
 scripts/.build-*.log
 scripts/.scratch-*.mjs
 xiye-p3b-debug.db
