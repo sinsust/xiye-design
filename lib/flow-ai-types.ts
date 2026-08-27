@@ -72,6 +72,13 @@ export const FLOW_OPERATION = {
   intent: "intent",
   brandName: "brand_name",
   siteCopy: "site_copy",
+  buildConceptBrief: "build_concept_brief",
+  updateConceptBrief: "update_concept_brief",
+  initBlueprint: "init_blueprint",
+  updateBlueprint: "update_blueprint",
+  confirmBlueprint: "confirm_blueprint",
+  rebuildBlueprint: "rebuild_blueprint",
+  restoreBlueprint: "restore_blueprint",
 } as const;
 export type FlowOperation = (typeof FLOW_OPERATION)[keyof typeof FLOW_OPERATION];
 

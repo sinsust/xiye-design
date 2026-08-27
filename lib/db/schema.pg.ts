@@ -747,3 +747,27 @@ export const brainProactiveActions = pgTable(
     userIdx: index("brain_proactive_actions_user_idx").on(t.userId),
   })
 );
+
+// —— F1-A：流程操作幂等台账（与 SQLite 镜像；同 user+project+op 唯一）——
+export const flowOpLedger = pgTable(
+  "flow_op_ledger",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: text("project_id").notNull(),
+    operationId: text("operation_id").notNull(),
+    operationType: text("operation_type").notNull(),
+    resultJson: text("result_json"),
+    appliedAt: bigint("applied_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    opUnique: uniqueIndex("flow_op_ledger_unique").on(
+      t.userId,
+      t.projectId,
+      t.operationId,
+      t.operationType,
+    ),
+  })
+);

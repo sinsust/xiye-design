@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // 本地：SQLite（better-sqlite3）。
 // PHASE B（线上 Supabase）：另建 lib/db/schema.pg.ts 用 pg-core 镜像下表，
@@ -672,6 +672,33 @@ export const brainProactiveActions = sqliteTable("brain_proactive_actions", {
   projectId: text("project_id"),
   createdAt: integer("created_at").notNull(),
 });
+
+// —— F1-A：流程操作幂等台账 ——
+// 同 (user, project, operationId, operationType) 只应用一次；重试返回既有结果，
+// 杜绝重复新增版本 / 重复写入消息。只服务「做产品」流程的受控操作，不泛化到全四阶段。
+export const flowOpLedger = sqliteTable(
+  "flow_op_ledger",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: text("project_id").notNull(),
+    operationId: text("operation_id").notNull(),
+    operationType: text("operation_type").notNull(),
+    // 已应用操作的可恢复结果（JSON 字符串），重试时原样返回
+    resultJson: text("result_json"),
+    appliedAt: integer("applied_at").notNull(),
+  },
+  (t) => ({
+    opUnique: uniqueIndex("flow_op_ledger_unique").on(
+      t.userId,
+      t.projectId,
+      t.operationId,
+      t.operationType,
+    ),
+  })
+);
 
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;

@@ -54,6 +54,7 @@ let brainProactiveActions: any;
 let brainNotifications: any;
 let userPreferences: any;
 let userImaConfig: any;
+let flowOpLedger: any;
 let schema: any;
 
 if (isPg) {
@@ -95,6 +96,7 @@ if (isPg) {
   brainNotifications = schemaPg.brainNotifications;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
+  flowOpLedger = schemaPg.flowOpLedger;
   schema = schemaPg;
 } else {
   const [{ default: Database }, { drizzle: drizzleSqlite }, schemaSqlite] =
@@ -134,6 +136,19 @@ if (isPg) {
     primary key (user_id, role),
     foreign key (user_id) references users(id) on delete cascade
   );`);
+  // F1-A 流程操作幂等台账：同 (user, project, operationId, operationType) 只落一次。
+  sqlite.exec(`create table if not exists flow_op_ledger (
+    id text primary key,
+    user_id text not null,
+    project_id text not null,
+    operation_id text not null,
+    operation_type text not null,
+    result_json text,
+    applied_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create unique index if not exists flow_op_ledger_unique
+    on flow_op_ledger (user_id, project_id, operation_id, operation_type);`);
   // 本地零运维：直接幂等建表（避免每次手动 drizzle-kit push）
   sqlite.exec(`create table if not exists knowledge_entries (
     slug text primary key,
@@ -667,7 +682,8 @@ if (isPg) {
   brainNotifications = schemaSqlite.brainNotifications;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
+  flowOpLedger = schemaSqlite.flowOpLedger;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, flowOpLedger, schema };
