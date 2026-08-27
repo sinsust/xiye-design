@@ -6,3 +6,8 @@ allowBuilds:
   protobufjs: true
   sharp: true
   unrs-resolver: true
+
+# pnpm 11 配置迁移到本文件（.npmrc 的 node-linker 已不读）：
+# 扁平布局（无 .pnpm symlink 农场），Next 产物内函数 node_modules 为真实文件，
+# 避免 Vercel 在 "Deploying outputs" 上传校验拒绝符号链接。
+nodeLinker: hoisted
