@@ -7,6 +7,7 @@
     {
       "name": "Sheet1",
       "recommended": true,
+      "expectedRole": "primary_data",
       "expectedHeaderRow": 0,
       "expectedEffectiveRows": 8,
       "expectedEffectiveColumns": 4,

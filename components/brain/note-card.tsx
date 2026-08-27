@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 import { CuratePanel } from "@/components/brain/CuratePanel";
+import { LearningPlanPanel } from "@/components/brain/learning-plan-panel";
 import type { BrainStrategy, BrainTask } from "@/lib/brain-db";
 import {
   STRATEGY_COLOR,
@@ -197,6 +198,9 @@ export function NoteCard({
 
       {/* 整理建议（P2-B：相似内容 / 可能过期 / 关系建议） */}
       {expanded && !note.superseded && <CuratePanel noteId={note.id} />}
+
+      {/* 学习计划（P4-B：加入 / 暂停 / 恢复 + 复习进度与下次复习时间） */}
+      {expanded && <LearningPlanPanel noteId={note.id} noteSuperseded={note.superseded} />}
 
       {/* 展开关联策略 */}
       {expanded && strategies.length > 0 && (

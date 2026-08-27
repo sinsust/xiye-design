@@ -595,6 +595,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [wPlanId, setWPlanId] = useState<string | null>(null);
   // 关联项目选择（确认时绑定到任务/审计）
   const [wProjectId, setWProjectId] = useState<string>("");
+  // P5-A：按名称预填关联项目（产品流程沉淀；尚不存在的项目名，确认时自动创建）
+  const [wPendingProjectName, setWPendingProjectName] = useState<string>("");
   // 确认写入失败的可见反馈（banner + 重试），不误显示"已保存"
   const [applyError, setApplyError] = useState<string | null>(null);
   // 可恢复的待确认草稿（刷新/重登后回来续写）
@@ -688,15 +690,19 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setTopView(v);
   };
 
-  // 提醒中心跳转：/brain?tab=tasks → 任务看板；/brain?tab=reviews → 复习；/brain?note=xxx → 展开笔记
+  // 提醒中心跳转：/brain?tab=tasks → 任务看板；/brain?tab=reviews → 复习；/brain?tab=projects&project=xxx → 项目工作台；/brain?note=xxx → 展开笔记
   const gotoNav = useCallback((link: string) => {
     const tabMatch = link.match(/[?&]tab=([^&]+)/);
     const noteMatch = link.match(/[?&]note=([^&]+)/);
+    const projectMatch = link.match(/[?&]project=([^&]+)/);
     if (tabMatch) {
       const t = tabMatch[1];
       if (t === "tasks") gotoTop("workbench", "kanban");
       else if (t === "reviews" || t === "strategies") gotoTop("workbench", (t === "reviews" ? "input" : "strategies") as "input" | "strategies");
-      else gotoTop("workbench", "input");
+      else if (t === "projects") {
+        if (projectMatch) setOpenProjectId(decodeURIComponent(projectMatch[1]));
+        gotoTop("workbench", "projects");
+      } else gotoTop("workbench", "input");
     } else if (noteMatch) {
       gotoTop("workbench", "input");
       jumpToNote(decodeURIComponent(noteMatch[1]));
@@ -790,6 +796,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setRaw(t);
     setApplyError(null);
     setWProjectId("");
+    setWPendingProjectName("");
     try {
       const res = await fetch("/api/brain/organize", {
         method: "POST",
@@ -916,7 +923,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setWCode(n.codeContent ?? "");
     setWContent(typeof body.body === "string" && body.body.trim() ? body.body : (typeof body.rawContent === "string" ? body.rawContent : ""));
     setWStruct(null);
-    setWProjectId(body.suggestedProjectId ?? "");
+    // P5-A：项目预填 —— 有 id 直接用 id；仅给名称时，命中已有项目选中，否则记为待建名称
+    const pid = body.suggestedProjectId ? String(body.suggestedProjectId) : "";
+    const pname = typeof body.suggestedProjectName === "string" ? body.suggestedProjectName.trim() : "";
+    const matched = pid ? null : (pname && projects.find((p) => p.name === pname)?.id) || "";
+    setWProjectId(pid || matched);
+    setWPendingProjectName(pid || matched ? "" : pname);
     setWorkspaceOpen(true);
   };
 
@@ -963,6 +975,18 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     refreshPendingPlans();
   }, [refreshPendingPlans]);
 
+  // P5-A：从产品流程「沉淀到第二大脑」跳转进来（/brain?tab=workbench&plan=<id>），自动续写该待确认计划
+  useEffect(() => {
+    const planId = new URLSearchParams(window.location.search).get("plan");
+    if (!planId) return;
+    const t = setTimeout(() => {
+      gotoTop("workbench", "input");
+      void resumePending(planId);
+    }, 60);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /** 采纳并入库（统一写入服务） */
   const saveDraft = async () => {
     // 确认写入必须基于一条持久化的待确认计划（统一写入服务）
@@ -986,6 +1010,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             tags: wTags,
             related: wRelated,
             suggestedProjectId: wProjectId || null,
+            suggestedProjectName: wPendingProjectName || null,
             tasks: wActionItems
               .filter((a) => a.text.trim())
               .map((a) => ({
@@ -1012,6 +1037,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setDupWarning(null);
       setWPlanId(null);
       setWProjectId("");
+      setWPendingProjectName("");
       setWActionItems([]);
       setWStrategies([]);
       setWDecisions([]);
@@ -1448,6 +1474,10 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 setOpenProjectId(id);
                 gotoTop("workbench", "projects");
               }}
+              onOpenNote={(id) => {
+                gotoTop("workbench", "input");
+                jumpToNote(id);
+              }}
               onProcessInbox={() => setInboxOpen(true)}
             />
           </div>
@@ -1805,7 +1835,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">关联项目</label>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <button
-                        onClick={() => setWProjectId("")}
+                        onClick={() => { setWProjectId(""); setWPendingProjectName(""); }}
                         className={
                           "rounded-[var(--radius)] px-2.5 py-1 text-xs transition " +
                           (!wProjectId ? "bg-primary font-medium text-white" : "bg-muted text-muted-foreground hover:bg-muted/70")
@@ -1813,6 +1843,20 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                       >
                         无
                       </button>
+                      {/* P5-A：待建项目名预填（产品流程沉淀；确认时自动创建） */}
+                      {wPendingProjectName ? (
+                        <button
+                          onClick={() => { setWProjectId(""); setWPendingProjectName(wPendingProjectName); }}
+                          title="确认时按该名称创建并关联项目"
+                          className={
+                            "inline-flex items-center gap-1 rounded-[var(--radius)] px-2.5 py-1 text-xs transition " +
+                            (wProjectId ? "cursor-not-allowed bg-muted text-muted-foreground/60" : "bg-primary font-medium text-white")
+                          }
+                        >
+                          <span className="size-1.5 rounded-full bg-white" />
+                          新建「{wPendingProjectName}」
+                        </button>
+                      ) : null}
                       {projects.map((p) => (
                         <button
                           key={p.id}

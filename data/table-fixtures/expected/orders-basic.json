@@ -7,8 +7,9 @@
     {
       "name": "Sheet1",
       "recommended": true,
+      "expectedRole": "primary_data",
       "expectedHeaderRow": 0,
-      "expectedEffectiveRows": 10,
+      "expectedEffectiveRows": 11,
       "expectedEffectiveColumns": 7,
       "expectedColumns": [
         { "displayName": "订单号", "normalizedName": "订单号", "expectedType": "id", "required": true },

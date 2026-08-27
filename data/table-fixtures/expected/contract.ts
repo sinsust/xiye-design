@@ -34,6 +34,16 @@ export const FIELD_TYPES = [
 ] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
+/** Sheet 角色（与 lib/table/types.ts SheetRole 对齐；此处自包含一份字面量联合） */
+export const SHEET_ROLES = [
+  "primary_data",
+  "secondary_data",
+  "summary",
+  "notes",
+  "unknown",
+] as const;
+export type SheetRoleName = (typeof SHEET_ROLES)[number];
+
 /** 单个期望字段 */
 export const ExpectedColumnSchema = z.object({
   /** 清洗后应出现的列名（重复列名会带 _2 / _3 后缀，需与 cleanSheet 行为一致） */
@@ -72,6 +82,8 @@ export const ExpectedSheetContractSchema = z.object({
   name: z.string(),
   /** 是否应被推荐为核心分析 sheet（Overview/Notes 之类应=false） */
   recommended: z.boolean(),
+  /** 期望推荐器给出的角色分类（T1-D1 起；若声明则基线硬断言 recommendSheet 角色一致） */
+  expectedRole: z.enum(SHEET_ROLES).optional(),
   /** 表头行在"原始解析 rows"中的 0-based 索引（CSV 通常为 0；header-offset 为 2） */
   expectedHeaderRow: z.number().int().nonnegative(),
   /** 清洗后的有效数据行数（不含表头与空行/说明行） */

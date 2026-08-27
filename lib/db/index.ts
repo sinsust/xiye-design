@@ -46,6 +46,11 @@ let brainRelations: any;
 let brainCurationLog: any;
 let brainTaskOutcomes: any;
 let brainWeeklyReviews: any;
+let brainLearningReviews: any;
+let brainLearningReviewEvents: any;
+let brainProactiveState: any;
+let brainProactivePreferences: any;
+let brainProactiveActions: any;
 let brainNotifications: any;
 let userPreferences: any;
 let userImaConfig: any;
@@ -82,6 +87,11 @@ if (isPg) {
   brainCurationLog = schemaPg.brainCurationLog;
   brainTaskOutcomes = schemaPg.brainTaskOutcomes;
   brainWeeklyReviews = schemaPg.brainWeeklyReviews;
+  brainLearningReviews = schemaPg.brainLearningReviews;
+  brainLearningReviewEvents = schemaPg.brainLearningReviewEvents;
+  brainProactiveState = schemaPg.brainProactiveState;
+  brainProactivePreferences = schemaPg.brainProactivePreferences;
+  brainProactiveActions = schemaPg.brainProactiveActions;
   brainNotifications = schemaPg.brainNotifications;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
@@ -96,6 +106,34 @@ if (isPg) {
   const sqlite = new Database(process.env.SQLITE_PATH || "./xiye.db");
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
+  // C2 修复：补建 users / projects / agent_settings
+  // 此前遗漏这三张表；在 foreign_keys=ON 下，首个引用 users 的 FK 表 CREATE 会因父表不存在而 abort，
+  // 导致全新环境（删库/克隆）注册/登录/脑库写入全挂。此处必须位于任何 references users(id) 的表之前。
+  sqlite.exec(`create table if not exists users (
+    id text primary key,
+    email text not null unique,
+    password_hash text,
+    created_at integer not null
+  );`);
+  sqlite.exec(`create table if not exists projects (
+    id text primary key,
+    user_id text not null,
+    name text not null,
+    data text not null,
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create table if not exists agent_settings (
+    user_id text not null,
+    role text not null,
+    name text not null,
+    avatar_url text,
+    created_at integer not null,
+    updated_at integer not null,
+    primary key (user_id, role),
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
   // 本地零运维：直接幂等建表（避免每次手动 drizzle-kit push）
   sqlite.exec(`create table if not exists knowledge_entries (
     slug text primary key,
@@ -478,6 +516,91 @@ if (isPg) {
     foreign key (user_id) references users(id) on delete cascade
   );`);
   sqlite.exec(`create unique index if not exists brain_weekly_reviews_user_week_uidx on brain_weekly_reviews (user_id, week_key);`);
+  // P4-B：学习笔记复习闭环（幂等建表 + 索引；独立于普通 SM-2 复习）
+  sqlite.exec(`create table if not exists brain_learning_reviews (
+    id text primary key,
+    user_id text not null,
+    note_id text not null,
+    stage integer not null default 0,
+    interval_days integer not null,
+    next_review_at integer not null,
+    last_reviewed_at integer,
+    review_count integer not null default 0,
+    status text not null default 'active',
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade,
+    foreign key (note_id) references brain_notes(id) on delete cascade
+  );`);
+  sqlite.exec(`create index if not exists brain_learning_reviews_user_id_idx on brain_learning_reviews (user_id);`);
+  sqlite.exec(`create index if not exists brain_learning_reviews_user_note_idx on brain_learning_reviews (user_id, note_id);`);
+  sqlite.exec(`create index if not exists brain_learning_reviews_user_next_idx on brain_learning_reviews (user_id, next_review_at);`);
+  // P4-B：学习复习历史（可追溯每次复习动作；级联随复习/笔记删除）
+  sqlite.exec(`create table if not exists brain_learning_review_events (
+    id text primary key,
+    user_id text not null,
+    review_id text not null,
+    note_id text not null,
+    reviewed_at integer not null,
+    action text not null,
+    stage_before integer not null,
+    stage_after integer not null,
+    next_review_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade,
+    foreign key (review_id) references brain_learning_reviews(id) on delete cascade,
+    foreign key (note_id) references brain_notes(id) on delete cascade
+  );`);
+  sqlite.exec(`create index if not exists brain_learning_review_events_user_id_idx on brain_learning_review_events (user_id);`);
+  sqlite.exec(`create index if not exists brain_learning_review_events_review_id_idx on brain_learning_review_events (review_id);`);
+  // P4-C：主动风险简报（幂等建表 + 索引；独立于全部业务对象，仅消费真实数据）
+  sqlite.exec(`create table if not exists brain_proactive_state (
+    id text primary key,
+    user_id text not null,
+    brief_key text not null,
+    type text not null,
+    title text not null,
+    summary text not null,
+    severity text not null default 'medium',
+    score real not null default 0,
+    reasons_json text not null default '[]',
+    target_type text not null,
+    target_id text not null,
+    project_id text,
+    link text not null,
+    primary_action_json text not null default '{}',
+    action_status text,
+    created_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create index if not exists brain_proactive_state_user_created_idx on brain_proactive_state (user_id, created_at);`);
+  sqlite.exec(`create index if not exists brain_proactive_state_user_brief_key_idx on brain_proactive_state (user_id, brief_key);`);
+  sqlite.exec(`create table if not exists brain_proactive_preferences (
+    id text primary key,
+    user_id text not null,
+    type text not null,
+    scope text not null,
+    target_type text,
+    target_id text,
+    project_id text,
+    week_key text not null,
+    created_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create index if not exists brain_proactive_preferences_user_scope_idx on brain_proactive_preferences (user_id, type, week_key);`);
+  sqlite.exec(`create table if not exists brain_proactive_actions (
+    id text primary key,
+    user_id text not null,
+    brief_id text,
+    action text not null,
+    scope text not null,
+    brief_type text not null,
+    target_type text not null,
+    target_id text,
+    project_id text,
+    created_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create index if not exists brain_proactive_actions_user_idx on brain_proactive_actions (user_id);`);
   // P4：站内通知队列（幂等建表 + 索引支持按用户/去重键检索）
   sqlite.exec(`create table if not exists brain_notifications (
     id text primary key,
@@ -503,6 +626,15 @@ if (isPg) {
   );`);
   sqlite.exec(`create index if not exists brain_notifications_user_status_idx on brain_notifications (user_id, status);`);
   sqlite.exec(`create index if not exists brain_notifications_user_dedup_idx on brain_notifications (user_id, dedup_key);`);
+  // H2 修复：去重硬兜底（原仅 SELECT 再 INSERT，非原子，竞态下可突破每日上限/产生重复通知）。
+  // 先剔除同 (user_id, dedup_key, 当日) 的历史重复行，保证唯一索引可建；随后以「每日唯一索引」兜底：
+  // 竞态下第二次 INSERT 触发 UNIQUE 异常，被 insertBrainNotification 的 try/catch 吞掉返回 null，不产生重复行。
+  sqlite.exec(`delete from brain_notifications where id not in (
+    select min(id) from brain_notifications
+    group by user_id, dedup_key, date(created_at / 1000, 'unixepoch')
+  );`);
+  sqlite.exec(`create unique index if not exists brain_notifications_user_dedup_day_idx
+    on brain_notifications (user_id, dedup_key, date(created_at / 1000, 'unixepoch'));`);
   db = drizzleSqlite(sqlite, { schema: schemaSqlite });
   users = schemaSqlite.users;
   projects = schemaSqlite.projects;
@@ -527,10 +659,15 @@ if (isPg) {
   brainCurationLog = schemaSqlite.brainCurationLog;
   brainTaskOutcomes = schemaSqlite.brainTaskOutcomes;
   brainWeeklyReviews = schemaSqlite.brainWeeklyReviews;
+  brainLearningReviews = schemaSqlite.brainLearningReviews;
+  brainLearningReviewEvents = schemaSqlite.brainLearningReviewEvents;
+  brainProactiveState = schemaSqlite.brainProactiveState;
+  brainProactivePreferences = schemaSqlite.brainProactivePreferences;
+  brainProactiveActions = schemaSqlite.brainProactiveActions;
   brainNotifications = schemaSqlite.brainNotifications;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainNotifications, userPreferences, userImaConfig, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, schema };

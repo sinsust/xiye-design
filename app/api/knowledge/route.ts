@@ -6,6 +6,7 @@ import {
 } from "@/lib/knowledge-types";
 import { generateKnowledgeMeta } from "@/lib/knowledge-generator";
 import { getSessionUser } from "@/lib/auth";
+import { randomSuffix } from "@/lib/id";
 import {
   getCloudKnowledge,
   insertCloudKnowledge,
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       localPath,
     });
 
-    const slug = `kg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const slug = `kg-${Date.now().toString(36)}-${randomSuffix()}`;
     const today = new Date().toISOString().slice(0, 10);
 
     const input: NewCloudKnowledge = {

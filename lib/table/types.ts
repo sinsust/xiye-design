@@ -22,6 +22,38 @@ export type FieldType =
   | "url"
   | "phone";
 
+/**
+ * 字段类型推断结果（T1-B）：可解释的候选类型、置信度与理由。
+ *
+ * 设计原则（T1-B）：
+ *  - 不只靠列名，也不只靠值形态，而是 列名语义 + 样本值形态 + 非空比例 + 唯一率 +
+ *    可解析比例 + 混合值比例 → 推断类型 / 置信度 / 理由；
+ *  - 低置信度仍允许推断，但必须明确标记（confidence 低 + reasons 说明），不得伪装为确定类型；
+ *  - 该结构是 ColumnProfile 的可选附加字段，向后兼容（既有的 type 字段仍是权威类型，
+ *    本结构为其提供解释性元数据，供 T2 用户确认界面使用）。
+ */
+export interface TypeInferenceResult {
+  /** 推断出的字段类型（与 ColumnProfile.type 一致） */
+  inferredType: FieldType;
+  /** 置信度 0~1（< 0.6 视为低置信度，需在 UI 明确提示） */
+  confidence: number;
+  /** 推断理由（人类可读，供用户确认界面展示） */
+  reasons: string[];
+  /** 推断所依据的样本统计 */
+  parseStats: {
+    /** 非空值数量 */
+    nonNullCount: number;
+    /** 可解析为本推断类型的值数量 */
+    parseableCount: number;
+    /** 唯一值数量（非空去重后） */
+    uniqueCount: number;
+    /** 唯一率 0~1（uniqueCount / nonNullCount） */
+    uniqueRatio: number;
+    /** 不可解析为本类型的值数量（nonNullCount - parseableCount） */
+    invalidCount: number;
+  };
+}
+
 /* ─────────────── 解析层 ─────────────── */
 
 /** 单个工作表（sheet）的原始解析结果 */
@@ -61,6 +93,8 @@ export interface ExcludedRow {
   rowIndex: number;
   /** 排除原因（如 "空行" / "说明行" / "全 NULL"） */
   reason: string;
+  /** 可选预览（原始行前若干个单元格的字符串化，截断以避免大值/敏感值；不含完整业务数据） */
+  preview?: unknown[];
 }
 
 /**
@@ -73,6 +107,42 @@ export interface ExcludedColumn {
   name: string;
   /** 排除原因（如 "幽灵列（全空）" / "无表头"） */
   reason: string;
+  /** 该列在有效行中的非空值数量（用于审计与报告） */
+  nonNullCount?: number;
+}
+
+/* ─────────────── 数据质量信号（T1-C 结构化输出） ─────────────── */
+
+/** 质量信号严重度 */
+export type QualitySeverity = "info" | "warning" | "error";
+
+/**
+ * 结构化数据质量问题（T1-C）：由纯质量检测模块 detectTableQualityIssues 产出，
+ * 与清洗解耦——除空白行/幽灵列这些结构性无效项外，检测器只报告问题、不自动改写业务值。
+ *
+ * 设计为可追溯、可截断、低敏感暴露：samples 仅保留少量去敏感的样本（如行号、列名、序列号），
+ * 不承载完整业务记录；affectedRows / affectedColumns 给出影响面供下游（profiler / 分析推荐 /
+ * 后续 LLM Context）消费。
+ */
+export interface QualityIssue {
+  /** 问题代码（与 Expected Contract 的 expectedQualityIssues.code 对齐，便于断言） */
+  code: string;
+  /** 严重度 */
+  severity: QualitySeverity;
+  /** 关联字段归一化 id（可选） */
+  fieldId?: string;
+  /** 关联列显示名（可选） */
+  columnName?: string;
+  /** 人类可读描述 */
+  message: string;
+  /** 受影响行数（可选） */
+  affectedRows?: number;
+  /** 受影响列数（可选） */
+  affectedColumns?: number;
+  /** 样本（严格截断，最多 5 项，不暴露不必要敏感值） */
+  samples?: string[];
+  /** 建议处置动作（可选） */
+  suggestedAction?: string;
 }
 
 /**
@@ -115,6 +185,100 @@ export interface EffectiveDataset {
   excludedColumns: ExcludedColumn[];
   /** 非阻断的边界警告（如幽灵列未裁剪等） */
   warnings: string[];
+  /** 结构化数据质量信号（T1-C：由 detectTableQualityIssues 产出；未实现检测时为可选空数组） */
+  qualityIssues?: QualityIssue[];
+}
+
+/* ─────────────── Sheet 推荐与表头确认（T1-D1） ─────────────── */
+
+/**
+ * Sheet 角色（T1-D1）：用于区分主数据 / 次数据 / 汇总 / 备注 / 无法判断。
+ *
+ * 语义：
+ *  - primary_data：明细业务数据，表头明确、行列充足、含可分析字段，可直接进入分析；
+ *  - secondary_data：可分析但需人工确认（表头需确认、行数偏少、可分析字段较弱）；
+ *  - summary：汇总/概览类（KPI 表），不适合作为明细分析对象；
+ *  - notes：说明/备注/README 类纯文本；
+ *  - unknown：结构不足以判断（无表头、无可分析字段且行数极少）。
+ */
+export type SheetRole = "primary_data" | "secondary_data" | "summary" | "notes" | "unknown";
+
+/**
+ * 表头评估结果（T1-D1）：在不修改 detectHeaderRow 的前提下，
+ * 由 sheet-recommender 独立复算候选并给出置信度与歧义判定，用于决定是否要求用户确认表头。
+ */
+export interface SheetHeaderAssessment {
+  /** EffectiveDataset 给出的表头行（allRows 坐标系，0-based） */
+  detectedHeaderRow: number;
+  /** 推荐器独立评估出的最佳表头候选行（同坐标系） */
+  bestCandidateRow: number;
+  /** 表头置信度 0~1 */
+  confidence: number;
+  /** 最佳与次佳候选的分差（越小越有歧义） */
+  margin: number;
+  /** 是否存在歧义（低置信 / 多候选竞争 / 与检测结果不一致 / 无有效表头） */
+  ambiguous: boolean;
+  /** 表头是否位于第 1 行 */
+  headerRowIsFirstRow: boolean;
+}
+
+/**
+ * 推荐所依据的统计摘要（T1-D1）：只含聚合统计，不含任何单元格原文，
+ * 避免推荐结果泄露样本或敏感业务数据。
+ */
+export interface SheetRecommendationMetrics {
+  /** 有效数据行数（EffectiveDataset 边界） */
+  effectiveRowCount: number;
+  /** 有效列数（EffectiveDataset 边界） */
+  effectiveColumnCount: number;
+  /** 可分析列数（日期 / 数值 / 分类 / ID） */
+  analyzableColumnCount: number;
+  dateColumnCount: number;
+  numericColumnCount: number;
+  categoryColumnCount: number;
+  idColumnCount: number;
+  /** 是否仅有文本类字段（无任何可分析字段） */
+  textOnly: boolean;
+  /** 空值比例 0~1（有效集内） */
+  nullRatio: number;
+  /** 行填充稳定性 0~1（各行非空率的一致程度，越高越像规整明细表） */
+  rowFillStability: number;
+  /** 被排除的行 / 列数（来自 EffectiveDataset 边界，供解释） */
+  excludedRowCount: number;
+  excludedColumnCount: number;
+}
+
+/**
+ * Sheet 推荐结果（T1-D1）：向后兼容的加法结构，
+ * 由纯规则模块 lib/table/sheet-recommender.ts 产出，不调用 LLM、不读其他用户数据。
+ *
+ * 铁律：
+ *  - 只做「推荐 + 是否需确认表头」，绝不自动合并任何 Sheet；
+ *  - 输入仅为单个 Sheet 的解析/清洗/画像摘要（含前若干行预览用于表头候选评估）；
+ *  - reasons 必须可解释（含表头位置说明），且不承载单元格原文。
+ */
+export interface SheetRecommendation {
+  /** 与 EffectiveDataset.sheetId 一致 */
+  sheetId: string;
+  sheetName: string;
+  /** 角色判定 */
+  role: SheetRole;
+  /** 综合得分 0~100（集中权重配置，稳定可复现） */
+  score: number;
+  /** 判定置信度 0~1 */
+  confidence: number;
+  /** 可解释理由（人类可读，供 UI 展示；不含样本原文） */
+  reasons: string[];
+  /** 是否必须由用户确认表头（表头非首行 / 低置信 / 多候选 / 无有效表头） */
+  requiresHeaderConfirmation: boolean;
+  /** 是否推荐为可分析对象（role ∈ primary_data | secondary_data） */
+  recommended: boolean;
+  /** 稳定排序后的序号（1 起） */
+  rank: number;
+  /** 表头评估细节 */
+  header: SheetHeaderAssessment;
+  /** 统计摘要 */
+  metrics: SheetRecommendationMetrics;
 }
 
 /* ─────────────── 字段画像层 ─────────────── */
@@ -147,6 +311,8 @@ export interface ColumnProfile {
   duplicateTopValues: { value: string; count: number; percentage: number }[];
   /** 抽样值（最多 20 个，保留原始类型用于展示） */
   samples: unknown[];
+  /** 字段类型推断解释（T1-B）：可解释的类型/置信度/理由，向后兼容可选字段 */
+  inference?: TypeInferenceResult;
 }
 
 /** 分类分布的一项 */

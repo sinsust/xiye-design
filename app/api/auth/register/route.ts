@@ -32,10 +32,14 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    if (/already registered/i.test(error.message)) {
-      return NextResponse.json({ error: "email_taken" }, { status: 409 });
-    }
-    return NextResponse.json({ error: "register_failed" }, { status: 400 });
+    // 防账户枚举：已注册 / 其他注册失败一律返回与"待邮箱确认"一致的统一响应，
+    // 外部探测无法通过状态码或错误码区分该邮箱是否已注册。
+    return attachCookies(
+      NextResponse.json(
+        { user: null, requiresEmailConfirmation: true },
+        { status: 200 },
+      ),
+    );
   }
 
   const u = data.user;

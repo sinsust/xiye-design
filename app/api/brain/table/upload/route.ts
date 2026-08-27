@@ -7,19 +7,28 @@
  *  - 单元格总量 ≤ 200 万（422，含截断逻辑：超出按行截断并提示）
  *  - 字段数 ≤ 200 列（422）
  *
- * 链路：parseFile → cleanSheet → detectSheetStructure（同结构合并加来源Sheet列）→ profileTable
+ * 链路：parseFile → detectSheetStructure（同结构合并加来源Sheet列）→ buildEffectiveDataset（清洗 + 幽灵列/空行裁剪 + 质量信号）→ profileEffectiveDataset
+ * 注意：产品链路与确定性验证链（scripts/validation-table-baseline.mts）共用 buildEffectiveDataset，
+ *       确保「被验证的链路 = 产品跑的链路」（C1 修复：此前裁剪只存在于验证脚本，产品上传链路不生效）。
  * 结果缓存到服务端（返回 tableId，30min TTL），响应精简（rows 只含预览前 20 行）。
  * 返回：{ tableId, truncated, parsedInfo, structure, results: [{ sheetName, headers, rows(preview), columnTypes, profile }] }
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { parseFile } from "@/lib/table/parser";
-import { cleanSheet } from "@/lib/table/cleaner";
-import { profileTable } from "@/lib/table/profiler";
-import { detectSheetStructure } from "@/lib/table/parser";
+import { parseFile, detectSheetStructure } from "@/lib/table/parser";
+import { buildEffectiveDataset } from "@/lib/table/cleaner";
+import { profileEffectiveDataset } from "@/lib/table/profiler";
 import { cacheTable } from "@/lib/table/session-cache";
-import type { FieldType, SheetInfo, TableProfileResult } from "@/lib/table/types";
+import type {
+  EffectiveDataset,
+  ExcludedColumn,
+  ExcludedRow,
+  FieldType,
+  QualityIssue,
+  SheetInfo,
+  TableProfileResult,
+} from "@/lib/table/types";
 
 export const runtime = "nodejs";
 
@@ -66,14 +75,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ② 清洗
-    const cleaned = parsed.sheets.map((sheet) => {
-      const result = cleanSheet(sheet);
-      return { sheet, ...result };
-    });
-
-    // ③ 同结构判定
+    // ② 同结构判定（基于原始 sheet 列结构，仅用于分组；不在此裁剪）
     const structure = detectSheetStructure(parsed.sheets);
+
+    // ③ 有效数据集边界（T1-A/T1-C）：清洗 + 幽灵列/空行裁剪 + 质量信号
+    //    产品链路与确定性验证链共用 buildEffectiveDataset，确保「被验证的链路 = 产品跑的链路」（C1 修复）。
+    const buildEffective = (sheet: SheetInfo): EffectiveDataset => buildEffectiveDataset(sheet);
 
     // ④ 画像 + 缓存：同结构合并组 / 独立 sheet 分别处理
     const results: Array<{
@@ -83,55 +90,58 @@ export async function POST(req: NextRequest) {
       columnTypes: FieldType[];
       profile: TableProfileResult;
       tableId: string;
+      detectedHeaderRow: number;
+      effectiveRowCount: number;
+      effectiveColumnCount: number;
+      excludedRows: ExcludedRow[];
+      excludedColumns: ExcludedColumn[];
+      qualityIssues: QualityIssue[];
     }> = [];
     const truncated: string[] = [];
 
-    const analyzeGroup = (
-      name: string,
-      headers: string[],
-      rows: unknown[][],
-      columnTypes: FieldType[],
-    ) => {
-      // 闸门 3：单元格总量 → 超出行数截断
-      const cellLimit = Math.max(1, Math.floor(MAX_CELLS / Math.max(headers.length, 1)));
-      let finalRows = rows;
-      if (rows.length > cellLimit) {
-        finalRows = rows.slice(0, cellLimit);
+    const analyzeDataset = (name: string, ds: EffectiveDataset) => {
+      // 闸门 3：单元格总量 → 超出行数截断（仅影响画像/缓存规模，不丢业务行语义）
+      const cellLimit = Math.max(1, Math.floor(MAX_CELLS / Math.max(ds.effectiveColumnCount, 1)));
+      let finalRows = ds.rows;
+      if (ds.effectiveRowCount > cellLimit) {
+        finalRows = ds.rows.slice(0, cellLimit);
         truncated.push(`${name}（仅分析前 ${cellLimit.toLocaleString()} 行）`);
       }
-      const profile = profileTable(headers, finalRows, columnTypes, name);
-      // 服务端缓存全量（截断后）数据，供 analyze 使用（绑定归属用户防串读）
-      const tableId = cacheTable(user.sub, headers, finalRows, columnTypes);
+      // 画像走 EffectiveDataset 边界（与验证链一致）
+      const profile = profileEffectiveDataset({
+        ...ds,
+        rows: finalRows,
+        effectiveRowCount: finalRows.length,
+      });
+      // 服务端缓存有效（裁剪后）数据，供 analyze 使用（绑定归属用户防串读）
+      const tableId = cacheTable(user.sub, ds.headers, finalRows, ds.columns);
       results.push({
         sheetName: name,
-        headers,
+        headers: ds.headers,
         rows: finalRows.slice(0, PREVIEW_ROWS), // 响应只给预览
-        columnTypes,
+        columnTypes: ds.columns,
         profile,
         tableId,
+        detectedHeaderRow: ds.detectedHeaderRow,
+        effectiveRowCount: finalRows.length,
+        effectiveColumnCount: ds.effectiveColumnCount,
+        excludedRows: ds.excludedRows ?? [],
+        excludedColumns: ds.excludedColumns ?? [],
+        qualityIssues: ds.qualityIssues ?? [],
       });
     };
 
     for (const group of structure.sameStructureGroups) {
       const merged = mergeSheets(group);
-      const { cleanedHeaders, cleanedRows, columnTypes } = cleanSheet({
-        name: merged.name,
-        headers: merged.headers,
-        rows: merged.rows,
-        rowCount: merged.rows.length,
-        colCount: merged.headers.length,
-      });
-      analyzeGroup(merged.name, cleanedHeaders, cleanedRows, columnTypes);
+      analyzeDataset(merged.name, buildEffectiveDataset(merged, { headerIdx: 0 }));
     }
     for (const sheet of structure.differentSheets) {
-      const c = cleaned.find((x) => x.sheet.name === sheet.name);
-      if (!c) continue;
-      analyzeGroup(sheet.name, c.cleanedHeaders, c.cleanedRows, c.columnTypes);
+      const raw = parsed.sheets.find((s) => s.name === sheet.name);
+      if (!raw) continue;
+      analyzeDataset(sheet.name, buildEffective(raw));
     }
     if (results.length === 0 && parsed.sheets.length > 0) {
-      const sheet = parsed.sheets[0];
-      const c = cleaned.find((x) => x.sheet.name === sheet.name);
-      if (c) analyzeGroup(sheet.name, c.cleanedHeaders, c.cleanedRows, c.columnTypes);
+      analyzeDataset(parsed.sheets[0].name, buildEffective(parsed.sheets[0]));
     }
 
     return NextResponse.json({
@@ -153,7 +163,7 @@ export async function POST(req: NextRequest) {
 }
 
 /** 合并同结构 sheet：headers 取第一个，行拼接；若原表无"来源Sheet"列则追加 */
-function mergeSheets(group: SheetInfo[]): { name: string; headers: string[]; rows: unknown[][] } {
+function mergeSheets(group: SheetInfo[]): SheetInfo {
   const first = group[0];
   const headers = [...first.headers];
   const hasSource = headers.some((h) => h.includes("来源") || h.toLowerCase().includes("sheet"));
@@ -172,5 +182,7 @@ function mergeSheets(group: SheetInfo[]): { name: string; headers: string[]; row
     name: `${group.length} 个结构相同的 Sheet 合并`,
     headers,
     rows,
+    rowCount: rows.length,
+    colCount: headers.length,
   };
 }

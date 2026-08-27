@@ -18,6 +18,7 @@ import type {
   TableProfileResult,
   TextProfile,
 } from "./types";
+import { inferColumnTypeDetailed } from "./cleaner";
 
 /* ─────────────── 统计工具 ─────────────── */
 
@@ -102,7 +103,7 @@ export function detectOutliersIQR(values: number[]): number[] {
 
 /* ─────────────── 公共画像基座 ─────────────── */
 
-/** 组装 ColumnProfile 公共字段（完整性/唯一性/样本） */
+/** 组装 ColumnProfile 公共字段（完整性/唯一性/样本 + T1-B 推断解释） */
 function baseProfile(name: string, index: number, type: FieldType, values: unknown[]): ColumnProfile {
   const totalCount = values.length;
   const nonNullValues = values.filter((v) => v !== null && v !== undefined && String(v).trim() !== "");
@@ -133,6 +134,9 @@ function baseProfile(name: string, index: number, type: FieldType, values: unkno
   // 样本（前 20 个非空）
   const samples = nonNullValues.slice(0, 20);
 
+  // T1-B：附加可解释的字段类型推断结果（消费 EffectiveDataset 的有效行 + 列名语义）
+  const inference = inferColumnTypeDetailed(values, name);
+
   return {
     name,
     originalName: name,
@@ -147,6 +151,7 @@ function baseProfile(name: string, index: number, type: FieldType, values: unkno
     isUnique,
     duplicateTopValues,
     samples,
+    inference,
   };
 }
 
@@ -472,8 +477,8 @@ function toISO(d: Date): string {
 /* ─────────────── 文本画像 ─────────────── */
 
 /** 文本字段画像 */
-function profileText(name: string, index: number, values: unknown[]): TextProfile {
-  const base = baseProfile(name, index, "text", values);
+function profileText(name: string, index: number, values: unknown[], type: FieldType): TextProfile {
+  const base = baseProfile(name, index, type, values);
   const strs = values
     .map((v) => (v === null || v === undefined ? null : String(v).trim()))
     .filter((s): s is string => s !== null && s !== "");
@@ -488,8 +493,13 @@ function profileText(name: string, index: number, values: unknown[]): TextProfil
   const containsEnglish = /[a-zA-Z]/.test(joined);
   const containsNumbers = /\d/.test(joined);
 
-  // 格式检测（按列名 + 内容模式推断 kind + idPattern）
-  const { kind, idPattern } = detectTextKind(name, base, strs);
+  // 格式检测：若已推断为 id/email/url/phone，直接采用该 kind（不再由内容二次覆盖）；
+  // 否则按列名 + 内容模式推断（detectTextKind 仅对 text 子类型生效）
+  const explicitKind =
+    type === "id" || type === "email" || type === "url" || type === "phone" ? type : undefined;
+  const { kind, idPattern } = explicitKind
+    ? { kind: explicitKind, idPattern: null }
+    : detectTextKind(name, base, strs);
 
   // Top20 高频词（空格/标点切分）
   const topWords = buildTopWords(strs, 20);
@@ -591,7 +601,7 @@ export function profileColumn(
     case "phone":
     case "text":
     default:
-      return profileText(name, index, values);
+      return profileText(name, index, values, type);
   }
 }
 

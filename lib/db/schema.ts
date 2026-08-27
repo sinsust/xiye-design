@@ -562,6 +562,117 @@ export const brainWeeklyReviews = sqliteTable("brain_weekly_reviews", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+// —— P4-B：学习笔记复习闭环（独立于普通 SM-2 复习；stage 0→3 递进，间隔 1→7→21→30 天）——
+// 复习状态是独立领域数据，通知只负责提醒；noteId 严格归属当前用户。
+export const brainLearningReviews = sqliteTable("brain_learning_reviews", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  noteId: text("note_id")
+    .notNull()
+    .references(() => brainNotes.id, { onDelete: "cascade" }),
+  // 熟练阶段：0(新学) / 1 / 2 / 3(已掌握)
+  stage: integer("stage").notNull().default(0),
+  // 当前间隔天数（1→7→21→30）
+  intervalDays: integer("interval_days").notNull(),
+  // 下次复习时间（epoch ms）
+  nextReviewAt: integer("next_review_at").notNull(),
+  lastReviewedAt: integer("last_reviewed_at"),
+  reviewCount: integer("review_count").notNull().default(0),
+  // active(学习中) / mastered(已掌握) / paused(暂停)
+  status: text("status").notNull().default("active"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// —— P4-B：学习复习历史（可追溯每次复习动作：mastered / not_sure / snoozed / skipped）——
+export const brainLearningReviewEvents = sqliteTable("brain_learning_review_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  reviewId: text("review_id")
+    .notNull()
+    .references(() => brainLearningReviews.id, { onDelete: "cascade" }),
+  noteId: text("note_id")
+    .notNull()
+    .references(() => brainNotes.id, { onDelete: "cascade" }),
+  reviewedAt: integer("reviewed_at").notNull(),
+  // mastered / not_sure / snoozed / skipped
+  action: text("action").notNull(),
+  stageBefore: integer("stage_before").notNull(),
+  stageAfter: integer("stage_after").notNull(),
+  nextReviewAt: integer("next_review_at").notNull(),
+});
+
+// —— P4-C：主动风险简报（"今天值得关注"推送层）——
+// 只消费既有真实数据、不调用 LLM；主动简报是独立于规则通知的"推送层"，
+// 通过 brain_notifications（同一状态机）提醒，简报自身不落具体业务对象。
+// brain_proactive_state：一天的简报项快照，用于 24h 去重 / 每日上限 / 用户控制动作状态；
+// statement：同一 (userId, briefKey) 每天最多一条；跨天随窗口重置重新生成。
+// actionStatus: null | tomorrow(明天提醒) | done(立即处理) | ignored(本周静默/忽略)
+export const brainProactiveState = sqliteTable("brain_proactive_state", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // 稳定去重键 = `${type}:${targetType}:${targetId}`
+  briefKey: text("brief_key").notNull(),
+  // proactive_<kind>（task/plan/project/inbox/note/review/week）
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  summary: text("summary").notNull(),
+  severity: text("severity").notNull().default("medium"),
+  score: real("score").notNull().default(0),
+  reasonsJson: text("reasons_json").notNull().default("[]"),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  projectId: text("project_id").references(() => brainProjects.id, {
+    onDelete: "set null",
+  }),
+  link: text("link").notNull(),
+  primaryActionJson: text("primary_action_json").notNull().default("{}"),
+  actionStatus: text("action_status"),
+  createdAt: integer("created_at").notNull(),
+});
+
+// 本周不再提示 / 忽略范围偏好（作用域 type | object | project；按 weekKey 生效）
+export const brainProactivePreferences = sqliteTable("brain_proactive_preferences", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // proactive_<kind>
+  type: text("type").notNull(),
+  // type | object | project
+  scope: text("scope").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  projectId: text("project_id"),
+  // 生效周（如 2026-W35）
+  weekKey: text("week_key").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+// 主动简报控制动作审计（立即处理 / 明天提醒 / 本周静默 / 忽略）
+export const brainProactiveActions = sqliteTable("brain_proactive_actions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  briefId: text("brief_id"),
+  // handle_now | tomorrow | silence_week | ignore
+  action: text("action").notNull(),
+  // type | object | project | none
+  scope: text("scope").notNull(),
+  briefType: text("brief_type").notNull(),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id"),
+  projectId: text("project_id"),
+  createdAt: integer("created_at").notNull(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
@@ -586,3 +697,8 @@ export type BrainRelationRow = typeof brainRelations.$inferSelect;
 export type BrainCurationLogRow = typeof brainCurationLog.$inferSelect;
 export type BrainTaskOutcomeRow = typeof brainTaskOutcomes.$inferSelect;
 export type BrainWeeklyReviewRow = typeof brainWeeklyReviews.$inferSelect;
+export type BrainLearningReviewRow = typeof brainLearningReviews.$inferSelect;
+export type BrainLearningReviewEventRow = typeof brainLearningReviewEvents.$inferSelect;
+export type BrainProactiveStateRow = typeof brainProactiveState.$inferSelect;
+export type BrainProactivePreferenceRow = typeof brainProactivePreferences.$inferSelect;
+export type BrainProactiveActionRow = typeof brainProactiveActions.$inferSelect;

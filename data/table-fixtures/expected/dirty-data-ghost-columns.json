@@ -7,8 +7,9 @@
     {
       "name": "DirtyData",
       "recommended": true,
+      "expectedRole": "primary_data",
       "expectedHeaderRow": 0,
-      "expectedEffectiveRows": 6,
+      "expectedEffectiveRows": 7,
       "expectedEffectiveColumns": 17,
       "note": "有效字段 17（含重复列名『备注』×2）；原始 !ref 撑大到 200 逻辑列，必须被裁剪为 17，且不得因虚高列数误触字段数量上限。",
       "expectedColumns": [

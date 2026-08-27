@@ -7,8 +7,10 @@ import { TodayPriorityList } from "./today-priority-list";
 import { PendingPlanList } from "./pending-plan-list";
 import { DueSoonList } from "./due-soon-list";
 import { ProjectRiskList } from "./project-risk-list";
+import { LearningReviewList } from "./learning-review-list";
 import { QuickCapture } from "./quick-capture";
 import { RecoveryManager } from "./RecoveryManager";
+import { ProactiveBriefList } from "./ProactiveBriefList";
 
 export interface TodayAssistantPanelProps {
   quickBusy: boolean;
@@ -16,6 +18,7 @@ export interface TodayAssistantPanelProps {
   onOpenTask: (taskId: string) => void;
   onConfirmPlan: (planId: string) => void;
   onOpenProject: (projectId: string) => void;
+  onOpenNote: (noteId: string) => void;
   onProcessInbox: () => void;
 }
 
@@ -111,8 +114,10 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
 
       {brief && (
         <>
+          <ProactiveBriefList />
           <TodayPriorityList items={brief.priorities} onAction={handleAction} />
           <PendingPlanList plans={brief.pendingPlans} onConfirm={props.onConfirmPlan} />
+          <LearningReviewList onOpenNote={props.onOpenNote} />
           {(brief.dueSoon.length > 0 || brief.headline.overdueTasks > 0) && (
             <DueSoonList items={brief.dueSoon} onOpenTask={props.onOpenTask} />
           )}

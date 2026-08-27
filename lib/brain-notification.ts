@@ -5,14 +5,18 @@
 // 触发源复用 lib/brain-reminder 的 checkReminders（真实数据 → 提醒），不重写业务规则。
 
 import { db, brainNotifications } from "@/lib/db";
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, or } from "drizzle-orm";
 import { checkReminders, isInQuietHours } from "./brain-reminder";
+import { listDueLearningReviewNotificationIntents } from "./brain-learning-review";
 import {
   insertBrainNotification,
   listBrainNotifications,
   getBrainNotification,
   updateBrainNotification,
   countUnreadBrainNotifications,
+  listBrainProcessingPlans,
+  listBrainTasks,
+  markBrainReminderItemDone,
   type BrainNotification,
   type BrainNotificationStatus,
   type BrainNotificationRefType,
@@ -69,6 +73,8 @@ const REASON_EN: Record<string, string> = {
   project_milestone: "规则：里程碑任务临近截止",
   task_complete_followup: "规则：已完成任务待复盘（完成 7 天）",
   reminder_item: "规则：用户设定的单条提醒到时间",
+  plan_pending: "规则：有待确认的处理计划尚未处理",
+  project_risk: "规则：项目存在高优先级逾期任务",
 };
 function reasonFor(type: string, fallback: string | null): string {
   return REASON_EN[type] ?? fallback ?? `规则触发：${type}`;
@@ -86,7 +92,7 @@ export async function enqueueNotification(
   now = Date.now(),
 ): Promise<EnqueueResult> {
   try {
-    // 1) 去重：同键在 24h 窗口内已入队 → 跳过
+    // 1) 去重：同键在 24h 窗口内已入队 → 跳过；H3 修复：已 snooze 且未过期也继续阻断，避免「稍后提醒」过期后变两条
     const dup = (await db
       .select({ id: brainNotifications.id })
       .from(brainNotifications)
@@ -94,7 +100,10 @@ export async function enqueueNotification(
         and(
           eq(brainNotifications.userId, userId),
           eq(brainNotifications.dedupKey, input.dedupKey),
-          gte(brainNotifications.createdAt, now - DEDUP_WINDOW_MS),
+          or(
+            gte(brainNotifications.createdAt, now - DEDUP_WINDOW_MS),
+            gte(brainNotifications.snoozedUntil, now),
+          ),
         ),
       )
       .limit(1)) as { id: string }[];
@@ -172,6 +181,92 @@ export async function checkAndDeliverNotifications(
     if (res.skipped) skipped.push({ type: r.type, reason: res.skipReason ?? "unknown" });
     else enqueued++;
   }
+
+  // —— plan_pending：有待确认的处理计划（不直接建任务，只提醒去确认）——
+  try {
+    const plans = await listBrainProcessingPlans(userId, ["pending_confirmation"]);
+    if (plans.length) {
+      const res = await enqueueNotification(
+        userId,
+        {
+          type: "plan_pending",
+          title: `${plans.length} 条待确认计划尚未处理`,
+          detail: plans
+            .slice(0, 3)
+            .map((p) => p.rawContent.slice(0, 18))
+            .join("、"),
+          link: "/brain?tab=input",
+          refType: "plan",
+          refId: plans[0].id,
+          reason: reasonFor("plan_pending", null),
+          priority: "medium",
+          dedupKey: `plan_pending:${today}`,
+        },
+        now,
+      );
+      if (res.skipped) skipped.push({ type: "plan_pending", reason: res.skipReason ?? "unknown" });
+      else enqueued++;
+    }
+  } catch (err) {
+    console.error("[notify] plan_pending failed:", err);
+  }
+
+  // —— project_risk：项目存在高优先级逾期任务（按项目聚合，可跳回项目工作台）——
+  try {
+    const tasks = await listBrainTasks(userId);
+    const overdueHigh = tasks.filter(
+      (t) =>
+        t.status !== "done" &&
+        t.priority === "high" &&
+        t.dueDate != null &&
+        t.dueDate < today &&
+        t.projectId != null,
+    );
+    const byProject = new Map<string, typeof overdueHigh>();
+    for (const t of overdueHigh) {
+      if (!t.projectId) continue;
+      const arr = byProject.get(t.projectId) ?? [];
+      arr.push(t);
+      byProject.set(t.projectId, arr);
+    }
+    for (const [projectId, ts] of byProject) {
+      const res = await enqueueNotification(
+        userId,
+        {
+          type: "project_risk",
+          title: `项目有 ${ts.length} 个高优先级任务逾期`,
+          detail: ts
+            .slice(0, 3)
+            .map((t) => t.title.slice(0, 16))
+            .join("、"),
+          link: `/brain?tab=projects&project=${projectId}`,
+          refType: "project",
+          refId: projectId,
+          reason: reasonFor("project_risk", null),
+          priority: "high",
+          dedupKey: `project_risk:${projectId}`,
+        },
+        now,
+      );
+      if (res.skipped) skipped.push({ type: "project_risk", reason: res.skipReason ?? "unknown" });
+      else enqueued++;
+    }
+  } catch (err) {
+    console.error("[notify] project_risk failed:", err);
+  }
+
+  // —— P4-B：学习笔记复习到期（每条到期学习项一条 review_due，link 指向笔记阅读态）——
+  try {
+    const intents = await listDueLearningReviewNotificationIntents(userId, now);
+    for (const it of intents) {
+      const res = await enqueueNotification(userId, it, now);
+      if (res.skipped) skipped.push({ type: it.type, reason: res.skipReason ?? "unknown" });
+      else enqueued++;
+    }
+  } catch (err) {
+    console.error("[notify] learning_review failed:", err);
+  }
+
   return { enqueued, inQuietHours, today, skipped };
 }
 
@@ -240,13 +335,27 @@ export async function applyNotificationAction(
     case "done":
       patch.status = "done";
       patch.completedAt = now;
+      // H5 修复：关联 reminder_item 的通知被完成/忽略时，联动置底层条目 done=1，避免每 24h 复发
+      await maybeCompleteReminderItem(userId, cur);
       break;
     case "ignore":
       patch.status = "ignored";
       patch.completedAt = now;
+      await maybeCompleteReminderItem(userId, cur);
       break;
   }
   return updateBrainNotification(userId, id, patch);
+}
+
+/** H5：若通知关联单条提醒（reminder_item），完成时联动置底层条目 done=1（防每 24h 复发）。 */
+async function maybeCompleteReminderItem(userId: string, n: BrainNotification): Promise<void> {
+  if (n.refType === "reminder_item" && n.refId) {
+    try {
+      await markBrainReminderItemDone(userId, n.refId);
+    } catch (err) {
+      console.error("[notify] mark reminder item done failed:", err);
+    }
+  }
 }
 
 /** 批量动作，返回处理成功数。 */
@@ -262,6 +371,14 @@ export async function applyNotificationBatch(
     if (r) n++;
   }
   return n;
+}
+
+/** 全部未读标记为已读，返回处理条数。 */
+export async function markAllNotificationsRead(userId: string): Promise<number> {
+  const unread = await listBrainNotifications(userId, { status: ["new", "deferred", "snoozed"] });
+  const ids = unread.map((n) => n.id);
+  if (!ids.length) return 0;
+  return applyNotificationBatch(userId, ids, "read");
 }
 
 /** date 过滤辅助（供 API 查询今日/历史用）。 */

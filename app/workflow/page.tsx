@@ -18,8 +18,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
+import { Brain, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { buildFlowSedimentPayload, hasFlowConclusions } from "@/lib/flow-sediment";
 import { STEP_DEFS, type StepDef } from "./steps";
 import { StepBar } from "./components/step-bar";
 import { CollabStage } from "./components/collab-stage";
@@ -125,6 +126,47 @@ export default function FlowV2Page() {
   const hasDraft = Boolean(
     projectName || pageBlueprint?.length || productBrief?.description || productBrief?.vision,
   );
+
+  // —— P5-A：沉淀到第二大脑 ——
+  // 只要有已确认结论即可用；点击 → 提取结论 → organize 生成待确认计划 → 跳脑机调起确认。
+  const [sedimenting, setSedimenting] = useState(false);
+  const [sedimentError, setSedimentError] = useState<string | null>(null);
+  const hasSediment = useFlowStore((s) => hasFlowConclusions(s));
+  const sedimentToBrain = useCallback(async () => {
+    if (sedimenting) return;
+    const store = useFlowStore.getState();
+    if (!hasFlowConclusions(store)) return;
+    const payload = buildFlowSedimentPayload(store);
+    if (!payload.content) return;
+    setSedimenting(true);
+    setSedimentError(null);
+    try {
+      const res = await fetch("/api/brain/organize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: payload.content,
+          source: "flow-sediment",
+          preset: {
+            title: payload.title,
+            category: payload.category,
+            tags: payload.tags,
+            suggestedProjectName: payload.suggestedProjectName,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "organize_failed");
+      const planId = data?.plan?.id;
+      if (!planId) throw new Error("no_plan");
+      // 跳脑机：打开整理工作台并自动续写该待确认计划（StructPreview 确认链）
+      router.push(`/brain?tab=workbench&plan=${planId}`);
+    } catch {
+      setSedimentError("沉淀失败，请稍后重试");
+    } finally {
+      setSedimenting(false);
+    }
+  }, [sedimenting, router]);
 
   // 离开弹窗摘要数据
   const stageLabel = STEP_DEFS[active]?.label ?? "产品创意";
@@ -340,6 +382,17 @@ export default function FlowV2Page() {
           <StepBar active={active} done={done} onJump={goTo} />
         </div>
         <Button
+          size="sm"
+          variant="outline"
+          className="shrink-0 gap-1.5"
+          disabled={sedimenting || !hasSediment}
+          onClick={() => void sedimentToBrain()}
+          title="把已确认的产品定位 / 目标用户 / 关键功能决策等沉淀到第二大脑"
+        >
+          <Brain className="size-4" />
+          {sedimenting ? "整理中…" : "沉淀到第二大脑"}
+        </Button>
+        <Button
           size="icon"
           variant="outline"
           className="shrink-0"
@@ -373,6 +426,7 @@ export default function FlowV2Page() {
       />
 
       {saveMsg && <div className="pointer-events-none fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-foreground px-3 py-1.5 text-xs text-background shadow-lg">{saveMsg}</div>}
+      {sedimentError && <div className="pointer-events-none fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-destructive px-3 py-1.5 text-xs text-white shadow-lg">{sedimentError}</div>}
     </div>
   );
 }

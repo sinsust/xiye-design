@@ -21,6 +21,7 @@ import { interpretIntent, type IntentNarrative } from "@/lib/ai-intent";
 import { METHODOLOGY_INJECTION } from "@/lib/ai-methodology";
 import { SKILL_ASSEMBLY_INJECTION } from "@/lib/skill-assembly";
 import { buildRagContext } from "@/lib/rag";
+import { randomSuffix } from "@/lib/id";
 
 export const DEEPSEEK_BASE_URL =
   process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
@@ -397,7 +398,7 @@ function sanitizeBranches(raw: unknown): Branch[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((x: any) => ({
-      id: typeof x?.id === "string" ? x.id : Math.random().toString(36).slice(2, 8),
+      id: typeof x?.id === "string" ? x.id : randomSuffix(),
       label: typeof x?.label === "string" ? x.label.trim() : "方向",
       description: typeof x?.description === "string" ? x.description.trim() : "",
       preview: typeof x?.preview === "string" ? x.preview.trim() : undefined,

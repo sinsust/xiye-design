@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 import { z } from "zod";
 
@@ -8,6 +9,9 @@ const bodySchema = z.object({ password: z.string().min(8).max(100) });
 
 /** 重置密码后调用：仅允许在已建立（重置）会话的上下文里改密。 */
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`auth:update-password:${getClientIp(req)}`, 10, 60_000)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {

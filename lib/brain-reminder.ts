@@ -3,11 +3,14 @@ import { db, brainReminderRules, brainReminderLog, brainNoteAccessLog } from "@/
 import {
   listBrainTasks,
   listBrainNotes,
+  listBrainNoteMetas,
   listPendingBrainReviews,
   listBrainInboxItems,
   listBrainStrategies,
   listPendingBrainReminderItems,
 } from "@/lib/brain-db";
+import type { BrainNoteMeta } from "@/lib/brain-db";
+import { genId } from "@/lib/id";
 
 export const REMINDER_TYPES = [
   "task_overdue",
@@ -98,7 +101,7 @@ function daysAgo(days: number): number {
 }
 
 function uid(prefix: string): string {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  return genId(prefix);
 }
 
 // —— 规则初始化 / 读取 ——
@@ -423,12 +426,13 @@ function isMonday(ts: number): boolean {
 
 /** 返回当前用户的衰减笔记列表（superseded=0 且 60 天无访问）。 */
 export async function getDecayedNotes(userId: string): Promise<{ id: string; title: string; days: number }[]> {
-  const notes = await listBrainNotes(userId);
+  // 轮询只用到 id/title/superseded/createdAt，改用轻量投影避免加载 content/struct 等大字段（审计 H6）
+  const notes = await listBrainNoteMetas(userId);
   return computeDecayedNotes(notes, Date.now());
 }
 
 async function computeDecayedNotes(
-  notes: Awaited<ReturnType<typeof listBrainNotes>>,
+  notes: BrainNoteMeta[],
   now: number,
 ): Promise<{ id: string; title: string; days: number }[]> {
   const cutoff = now - 60 * DAY_MS;

@@ -22,9 +22,10 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { detectFileMagic } from "../lib/table/file-magic";
 import { parseFile, detectSheetStructure } from "../lib/table/parser";
-import { detectHeaderRow, buildEffectiveDataset } from "../lib/table/cleaner";
+import { detectHeaderRow, buildEffectiveDataset, INFERENCE_THRESHOLDS } from "../lib/table/cleaner";
 import { profileEffectiveDataset } from "../lib/table/profiler";
-import { type EffectiveDataset, type TableProfileResult } from "../lib/table/types";
+import { recommendSheet, buildSheetRecommendationInput } from "../lib/table/sheet-recommender";
+import { type EffectiveDataset, type TableProfileResult, type QualityIssue as DetectedQualityIssue } from "../lib/table/types";
 import { parseContract, type FixtureContract, type QualityIssue } from "../data/table-fixtures/expected/contract";
 import { generateAll } from "./generate-table-fixtures.mts";
 
@@ -96,13 +97,9 @@ class FixtureResult {
   }
 }
 
-/* ─────────────── 只读"推荐"启发式（不修改产品代码） ─────────────── */
-function isRecommendedHeuristic(name: string, headers: string[]): boolean {
-  const n = name.toLowerCase();
-  if (n.includes("notes") || n.includes("note") || n.includes("overview") || n.includes("说明") || n.includes("汇总") || n.includes("封面"))
-    return false;
-  return countEffectiveColumns(headers) >= 2 && countEffectiveColumns(headers) <= 80;
-}
+/* ─────────────── T1-D1：推荐器（真实规则模块） ───────────────
+ * 角色/推荐/表头确认现由 lib/table/sheet-recommender 真实产出并硬断言，
+ * 旧「只读启发式比对」WARN 已移除（能力已落地，不再是 T1 缺失项）。 */
 
 /* ─────────────── 质量问题信号派生（从确定性链输出观测） ─────────────── */
 function detectQualitySignals(
@@ -111,6 +108,7 @@ function detectQualitySignals(
   cleanedRows: unknown[][],
   profile: TableProfileResult,
   issues: QualityIssue[],
+  dataset: EffectiveDataset,
 ): Record<string, { satisfied: boolean; detail: string }> {
   const out: Record<string, { satisfied: boolean; detail: string }> = {};
   // 预计算各列
@@ -205,10 +203,12 @@ function detectQualitySignals(
         break;
       }
       case "EMPTY_ROWS_SKIPPABLE": {
-        const rawRows = sheet.rows.length;
-        const cleaned = cleanedRows.length;
-        satisfied = cleaned < rawRows; // 空行被跳
-        detail = `原始数据行=${rawRows}，清洗后=${cleaned}`;
+        // T1-C：直接校验 cleaner 实际产出的结构化质量信号（空行已被排除到 excludedRows）
+        const q = dataset.qualityIssues?.find((x: DetectedQualityIssue) => x.code === "EMPTY_ROWS_SKIPPABLE");
+        satisfied = !!q && (q.affectedRows ?? 0) >= iss.minimumAffectedRows;
+        detail = q
+          ? q.message
+          : `cleaner 未排除任何空行（原始数据行=${sheet.rows.length}，有效行=${cleanedRows.length}）`;
         break;
       }
       case "DUPLICATE_COLUMN_NAME": {
@@ -218,15 +218,13 @@ function detectQualitySignals(
         break;
       }
       case "MIXED_DATE_FORMAT": {
-        const i = colIndex(norm(iss.field));
-        let cnt = 0;
-        if (i >= 0)
-          for (const r of sheet.rows) {
-            const v = r[i];
-            if (typeof v === "number" && v > 30000 && v < 100000) cnt++; // Excel 序列号区间
-          }
-        satisfied = cnt >= iss.minimumAffectedRows;
-        detail = `疑似序列号单元格=${cnt}（要求≥${iss.minimumAffectedRows}）`;
+        // T1-C：校验 detectTableQualityIssues 在 RAW 值中检测到的混合日期格式信号
+        const q = dataset.qualityIssues?.find(
+          (x: DetectedQualityIssue) =>
+            x.code === "MIXED_DATE_FORMAT" && (x.columnName === iss.field || x.fieldId === iss.field),
+        );
+        satisfied = !!q && (q.affectedRows ?? 0) >= iss.minimumAffectedRows;
+        detail = q ? q.message : `列「${iss.field}」未检测到混合日期格式（ISO 与序列号并存）`;
         break;
       }
       case "MIXED_CURRENCY_FORMAT": {
@@ -242,9 +240,12 @@ function detectQualitySignals(
         break;
       }
       case "GHOST_COLUMNS_PRESENT": {
-        const rawCols = sheet.headers.length;
-        satisfied = rawCols > 50; // 证明存在虚高列
-        detail = `原始表头宽度=${rawCols}`;
+        // T1-C：校验 cleaner 实际排除的幽灵/占位列（RAW !ref 宽由 parser 已裁，残留 column_N 占位列由 T1-C 排除）
+        const q = dataset.qualityIssues?.find((x: DetectedQualityIssue) => x.code === "GHOST_COLUMNS_PRESENT");
+        satisfied = !!q && (q.affectedColumns ?? 0) >= iss.minimumAffectedRows;
+        detail = q
+          ? `${q.message}（ignoredColumnCount=${q.affectedColumns ?? 0}）`
+          : `原始表头宽度=${sheet.headers.length}；cleaner 未排除任何幽灵列`;
         break;
       }
       case "HEADER_NOT_FIRST_ROW": {
@@ -331,18 +332,7 @@ async function validateFixture(
     !merged,
     merged ? `存在被合并的同结构组（长度>1）` : "无同结构组被合并",
   );
-  for (const sc of contract.expectedSheets) {
-    const sheet = parsed.sheets.find((s) => s.name === sc.name);
-    if (!sheet) continue;
-    const rec = isRecommendedHeuristic(sheet.name, sheet.headers);
-    res.add(
-      "expected",
-      `推荐状态[${sc.name}]`,
-      "warn",
-      rec === sc.recommended,
-      `启发式推荐=${rec} / 金标 recommended=${sc.recommended}（只读启发式，能力缺失属 T1）`,
-    );
-  }
+  /* T1-D1：原「推荐状态」只读启发式 WARN 已迁移至逐 Sheet 循环内的 recommendSheet 硬断言（见下文 recommender 层） */
 
   /* 5) 逐 Sheet：cleaner → EffectiveDataset → profiler（T1-A：Sheet 作用域断言） */
   // 5.0) 实际存在但契约未声明的 sheet → 告警（不阻断 HARD）
@@ -420,6 +410,35 @@ async function validateFixture(
 
     // profiler（消费 EffectiveDataset，边界一致）
     const profile = profileEffectiveDataset(ds);
+
+    // T1-D1：基于真实推荐器的角色/推荐/表头确认硬断言（替换旧只读启发式 WARN）
+    const rec = recommendSheet(buildSheetRecommendationInput(sheet, ds, profile));
+    res.add(
+      "recommender",
+      `推荐标记[${sc.name}]`,
+      "hard",
+      rec.recommended === sc.recommended,
+      `recommendSheet.recommended=${rec.recommended} / 金标 recommended=${sc.recommended}`,
+    );
+    if (sc.headerConfirmationRequired !== undefined) {
+      res.add(
+        "recommender",
+        `表头确认要求[${sc.name}]`,
+        "hard",
+        rec.requiresHeaderConfirmation === sc.headerConfirmationRequired,
+        `requiresHeaderConfirmation=${rec.requiresHeaderConfirmation} / 金标=${sc.headerConfirmationRequired}`,
+      );
+    }
+    if (sc.expectedRole !== undefined) {
+      res.add(
+        "recommender",
+        `角色分类[${sc.name}]`,
+        "hard",
+        rec.role === sc.expectedRole,
+        `role=${rec.role} / 金标=${sc.expectedRole}（score=${rec.score}, conf=${rec.confidence}）`,
+      );
+    }
+
     res.profileColumns = profile.columns.length;
     const profColsOk =
       Math.abs(profile.columns.length - sc.expectedEffectiveColumns) <= tol.effectiveColumns;
@@ -468,6 +487,19 @@ async function validateFixture(
         typeOk,
         `实际 ${actualType} / 期望 ${col.expectedType}`,
       );
+
+      // T1-B：报告推断置信度与理由（warn 级，不新增 HARD 失败；低置信度明确标记供 T2 确认界面）
+      if (found.inference) {
+        const inf = found.inference;
+        const confOk = inf.confidence >= INFERENCE_THRESHOLDS.CONFIDENCE_MEDIUM;
+        res.add(
+          "profiler",
+          `推断置信度[${col.displayName}]`,
+          "warn",
+          confOk,
+          `类型=${inf.inferredType} 置信度=${inf.confidence} | 理由: ${inf.reasons.join("; ")}`,
+        );
+      }
     }
 
     // 质量问题信号（Sheet 作用域）
@@ -477,7 +509,32 @@ async function validateFixture(
       ds.rows,
       profile,
       sc.expectedQualityIssues,
+      ds,
     );
+
+    // T1-C 防回归：重复订单号不得触发「去重」缩减有效行数（ORD-1001 出现 2 次属质量问题，非无效行）
+    if (contract.fixtureId === "orders-basic") {
+      const orderIdx = ds.headers.findIndex((h) => normalizeName(h) === "订单号");
+      let extraDupRows = 0;
+      if (orderIdx >= 0) {
+        const seen = new Map<string, number>();
+        for (const r of ds.rows) {
+          const v = r[orderIdx];
+          if (v == null || String(v).trim() === "") continue;
+          const k = String(v).trim();
+          seen.set(k, (seen.get(k) || 0) + 1);
+        }
+        for (const c of seen.values()) if (c > 1) extraDupRows += c - 1;
+      }
+      const rowsRetained = ds.effectiveRowCount === sc.expectedEffectiveRows;
+      res.add(
+        "cleaner",
+        "重复订单号不触发去重缩减行数",
+        "hard",
+        rowsRetained && extraDupRows === 1,
+        `有效行=${ds.effectiveRowCount}（期望 ${sc.expectedEffectiveRows}）；重复订单号额外 ${extraDupRows} 行（ORD-1001 ×2 应保留为质量问题）`,
+      );
+    }
     Object.assign(res.qualitySignals, signals);
     for (const iss of sc.expectedQualityIssues) {
       const sig = signals[iss.code];
@@ -503,6 +560,8 @@ function buildReport(results: FixtureResult[]) {
   let total = 0;
   let passed = 0;
   let failed = 0;
+  let failedHard = 0;
+  let failedWarn = 0;
   let skipped = 0;
   const byLayer: Record<string, { pass: number; fail: number }> = {};
   for (const r of results) {
@@ -519,10 +578,12 @@ function buildReport(results: FixtureResult[]) {
       } else {
         failed++;
         byLayer[a.layer].fail++;
+        if (a.severity === "hard") failedHard++;
+        else if (a.severity === "warn") failedWarn++;
       }
     }
   }
-  return { total, passed, failed, skipped, byLayer };
+  return { total, passed, failed, failedHard, failedWarn, skipped, byLayer };
 }
 
 function failureBreakdown(results: FixtureResult[]) {
@@ -583,7 +644,8 @@ async function main() {
   md.push("");
   md.push(`- 断言总数：${summary.total}`);
   md.push(`- 通过：${summary.passed}`);
-  md.push(`- 失败（HARD）：${summary.failed}`);
+  md.push(`- 失败（HARD）：${summary.failedHard}`);
+  md.push(`- 失败（WARN，含低置信度/能力缺失）：${summary.failedWarn}`);
   md.push(`- 跳过（能力缺失）：${summary.skipped}`);
   md.push("");
   md.push("### 按层分类（parser / cleaner / profiler / expected / file-magic）");
@@ -639,14 +701,14 @@ async function main() {
 
   // 控制台
   console.log("\n=== 表格金标基线验证 ===");
-  console.log(`断言: ${summary.total} | 通过: ${summary.passed} | 失败(HARD): ${summary.failed} | 跳过: ${summary.skipped}`);
+  console.log(`断言: ${summary.total} | 通过: ${summary.passed} | 失败(HARD): ${summary.failedHard} | 失败(WARN): ${summary.failedWarn} | 跳过: ${summary.skipped}`);
   for (const r of results) {
     const status = r.failedHard === 0 ? "PASS" : `FAIL(${r.failedHard})`;
     console.log(`  [${status}] ${r.fixtureId}  (有效列 ${r.effectiveColumns} / 画像列 ${r.profileColumns})`);
   }
   console.log(`\n报告: ${join(artifactsDir(), "latest.md")}`);
 
-  if (summary.failed > 0) process.exit(1);
+  if (summary.failedHard > 0) process.exit(1);
 }
 
 /** 由失败项推导 T1 修复建议（按代码/层归类） */

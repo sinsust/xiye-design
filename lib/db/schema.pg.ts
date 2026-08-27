@@ -596,6 +596,11 @@ export type BrainRelationRow = typeof brainRelations.$inferSelect;
 export type BrainCurationLogRow = typeof brainCurationLog.$inferSelect;
 export type BrainTaskOutcomeRow = typeof brainTaskOutcomes.$inferSelect;
 export type BrainWeeklyReviewRow = typeof brainWeeklyReviews.$inferSelect;
+export type BrainLearningReviewRow = typeof brainLearningReviews.$inferSelect;
+export type BrainLearningReviewEventRow = typeof brainLearningReviewEvents.$inferSelect;
+export type BrainProactiveStateRow = typeof brainProactiveState.$inferSelect;
+export type BrainProactivePreferenceRow = typeof brainProactivePreferences.$inferSelect;
+export type BrainProactiveActionRow = typeof brainProactiveActions.$inferSelect;
 
 // —— P3-C：周报复盘（sqlite 镜像；按 (userId, weekKey) 幂等保存每周一版）——
 export const brainWeeklyReviews = pgTable(
@@ -617,5 +622,128 @@ export const brainWeeklyReviews = pgTable(
   (t) => ({
     userIdx: index("brain_weekly_reviews_user_id_idx").on(t.userId),
     weekUnique: uniqueIndex("brain_weekly_reviews_user_week_uidx").on(t.userId, t.weekKey),
+  })
+);
+
+// —— P4-B：学习笔记复习闭环（sqlite 镜像；独立于普通 SM-2 复习）——
+export const brainLearningReviews = pgTable(
+  "brain_learning_reviews",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    noteId: text("note_id")
+      .notNull()
+      .references(() => brainNotes.id, { onDelete: "cascade" }),
+    stage: integer("stage").notNull().default(0),
+    intervalDays: integer("interval_days").notNull(),
+    nextReviewAt: bigint("next_review_at", { mode: "number" }).notNull(),
+    lastReviewedAt: bigint("last_reviewed_at", { mode: "number" }),
+    reviewCount: integer("review_count").notNull().default(0),
+    status: text("status").notNull().default("active"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_learning_reviews_user_id_idx").on(t.userId),
+    userNoteIdx: index("brain_learning_reviews_user_note_idx").on(t.userId, t.noteId),
+    userNextIdx: index("brain_learning_reviews_user_next_idx").on(t.userId, t.nextReviewAt),
+  })
+);
+
+// —— P4-B：学习复习历史（sqlite 镜像；可追溯每次复习动作）——
+export const brainLearningReviewEvents = pgTable(
+  "brain_learning_review_events",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    reviewId: text("review_id")
+      .notNull()
+      .references(() => brainLearningReviews.id, { onDelete: "cascade" }),
+    noteId: text("note_id")
+      .notNull()
+      .references(() => brainNotes.id, { onDelete: "cascade" }),
+    reviewedAt: bigint("reviewed_at", { mode: "number" }).notNull(),
+    action: text("action").notNull(),
+    stageBefore: integer("stage_before").notNull(),
+    stageAfter: integer("stage_after").notNull(),
+    nextReviewAt: bigint("next_review_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_learning_review_events_user_id_idx").on(t.userId),
+    reviewIdx: index("brain_learning_review_events_review_id_idx").on(t.reviewId),
+  })
+);
+
+// —— P4-C：主动风险简报（sqlite 镜像）——
+export const brainProactiveState = pgTable(
+  "brain_proactive_state",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    briefKey: text("brief_key").notNull(),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(),
+    severity: text("severity").notNull().default("medium"),
+    score: doublePrecision("score").notNull().default(0),
+    reasonsJson: text("reasons_json").notNull().default("[]"),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    projectId: text("project_id"),
+    link: text("link").notNull(),
+    primaryActionJson: text("primary_action_json").notNull().default("{}"),
+    actionStatus: text("action_status"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userCreatedIdx: index("brain_proactive_state_user_created_idx").on(t.userId, t.createdAt),
+    userBriefKey: index("brain_proactive_state_user_brief_key_idx").on(t.userId, t.briefKey),
+  })
+);
+
+export const brainProactivePreferences = pgTable(
+  "brain_proactive_preferences",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    scope: text("scope").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    projectId: text("project_id"),
+    weekKey: text("week_key").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userScopeIdx: index("brain_proactive_preferences_user_scope_idx").on(t.userId, t.type, t.weekKey),
+  })
+);
+
+export const brainProactiveActions = pgTable(
+  "brain_proactive_actions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    briefId: text("brief_id"),
+    action: text("action").notNull(),
+    scope: text("scope").notNull(),
+    briefType: text("brief_type").notNull(),
+    targetType: text("target_type").notNull(),
+    targetId: text("target_id"),
+    projectId: text("project_id"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_proactive_actions_user_idx").on(t.userId),
   })
 );

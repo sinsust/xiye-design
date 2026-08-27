@@ -47,6 +47,9 @@ const eslintConfig = defineConfig([
     "genius/**",
     "wexo/**",
     "outstand/**",
+    // esbuild 打包产物（npm run validate:* 生成）：第三方依赖被内联后触发 no-this-alias 等
+    // 规则误报，且产物非手写源码，不应被 lint。源 .mts 仍正常扫描。
+    "scripts/.tmp-*.mjs",
   ]),
 ]);
 

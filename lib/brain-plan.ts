@@ -18,6 +18,7 @@ import {
   getBrainInboxItemsByPlanId,
   updateBrainInboxItem,
   listBrainProjects,
+  insertBrainProject,
   listBrainProcessingPlans,
   type BrainProcessingPlan,
   type BrainPlanStatus,
@@ -106,8 +107,18 @@ export interface ProcessingEdits {
   tags?: string[];
   related?: string[];
   suggestedProjectId?: string | null;
+  // P5-A：按名称关联项目（确认时若不存在同名校则自动创建），与 suggestedProjectId 二选一优先
+  suggestedProjectName?: string | null;
   tasks?: ProcessingTask[];
   reminders?: ProcessingReminder[];
+}
+
+/** organize 阶段的预填（P5-A：来自产品流程的已确认结论），只影响计划建议，确认权仍在用户 */
+export interface OrganizePreset {
+  title?: string;
+  category?: string;
+  tags?: string[];
+  suggestedProjectName?: string | null;
 }
 
 export const PLAN_VERSION = 1 as const;
@@ -149,7 +160,14 @@ export function buildProcessingPlanBody(
   rawContent: string,
   o: OrganizedNote,
   duplicate: { id: string; title: string; score: number } | null,
+  preset?: OrganizePreset | null,
 ): ProcessingPlanBody {
+  // P5-A：预填优先（来自产品流程的已确认结论），未被预填的仍走 AI 识别
+  const title = (preset?.title ?? "").trim() || o.title || cap(rawContent.split("\n")[0], 30);
+  const category = (preset?.category ?? "").trim() || o.category || "随手记";
+  const tags = Array.isArray(preset?.tags) && preset.tags.length ? preset.tags : (o.tags ?? []);
+  const suggestedProjectName =
+    (preset?.suggestedProjectName ?? "").trim() || null;
   const suggestedTasks: ProcessingTask[] = (o.actionItems ?? []).map((a) => ({
     title: cap(a.text, 40),
     owner: cap(a.owner ?? "", 12),
@@ -176,11 +194,11 @@ export function buildProcessingPlanBody(
     version: PLAN_VERSION,
     rawContent,
     inputType: o.type,
-    title: o.title || cap(rawContent.split("\n")[0], 30),
-    category: o.category || "随手记",
+    title,
+    category,
     summary: o.summary || cap(rawContent.replace(/\n+/g, " "), 60),
     body: o.rewritten || rawContent,
-    tags: o.tags ?? [],
+    tags,
     related: o.related ?? [],
     entities: extractEntities(o),
     note: {
@@ -204,7 +222,7 @@ export function buildProcessingPlanBody(
     suggestedTasks,
     suggestedReminders,
     suggestedProjectId: null,
-    suggestedProjectName: null,
+    suggestedProjectName,
     confidence: hasAiShape ? 0.85 : 0.55,
     reasons,
     evidence: evidenceSnippets(rawContent),
@@ -217,7 +235,7 @@ export function buildProcessingPlanBody(
  */
 export async function organizeToPlan(
   userId: string,
-  input: { rawContent: string; source?: string },
+  input: { rawContent: string; source?: string; preset?: OrganizePreset | null },
 ): Promise<{
   plan: BrainProcessingPlan | null;
   body: ProcessingPlanBody | null;
@@ -227,7 +245,16 @@ export async function organizeToPlan(
   const existing = await listBrainNotes(userId);
   const organized = await organizeNote(rawContent, existing);
   const duplicate = findDuplicateNote(rawContent, existing);
-  const body = buildProcessingPlanBody(rawContent, organized, duplicate);
+  // P5-A：预填项目名 → 尽量解析为已有项目 id 预选中；未找到时保留名称待确认创建
+  const body = buildProcessingPlanBody(rawContent, organized, duplicate, input?.preset ?? null);
+  const presetName = (input?.preset?.suggestedProjectName ?? "").trim();
+  if (presetName && !body.suggestedProjectId) {
+    const proj = (await listBrainProjects(userId)).find((p) => p.name === presetName);
+    if (proj) {
+      body.suggestedProjectId = proj.id;
+      body.suggestedProjectName = proj.name;
+    }
+  }
   const plan = await insertBrainProcessingPlan(userId, {
     rawContent,
     inputType: body.inputType,
@@ -361,6 +388,7 @@ function applyEdits(body: ProcessingPlanBody, edits?: ProcessingEdits | null): P
     tags: Array.isArray(edits.tags) ? edits.tags : body.tags,
     related: Array.isArray(edits.related) ? edits.related : body.related,
     suggestedProjectId: edits.suggestedProjectId !== undefined ? edits.suggestedProjectId || null : body.suggestedProjectId,
+    suggestedProjectName: edits.suggestedProjectName !== undefined ? edits.suggestedProjectName || null : body.suggestedProjectName,
     suggestedTasks: Array.isArray(edits.tasks) ? edits.tasks : body.suggestedTasks,
     suggestedReminders: Array.isArray(edits.reminders) ? edits.reminders : body.suggestedReminders,
   };
@@ -377,14 +405,24 @@ export interface ApplyResult {
   plan: BrainProcessingPlan | null;
 }
 
-/** 校验项目归属，防止跨用户关联。 */
+/** 校验项目归属，防止跨用户关联。P5-A：未命中 id 时，若给出项目名则按名查找，不存在则自动创建后关联。 */
 async function resolveProject(
   userId: string,
   projectId: string | null,
+  projectName: string | null,
 ): Promise<{ id: string | null; name: string | null }> {
-  if (!projectId) return { id: null, name: null };
+  if (projectId) {
+    const projects = await listBrainProjects(userId);
+    const hit = projects.find((p) => p.id === projectId);
+    return hit ? { id: hit.id, name: hit.name } : { id: null, name: null };
+  }
+  const name = (projectName ?? "").trim();
+  if (!name) return { id: null, name: null };
   const projects = await listBrainProjects(userId);
-  return projects.some((p) => p.id === projectId) ? { id: projectId, name: projects.find((p) => p.id === projectId)?.name ?? null } : { id: null, name: null };
+  const existing = projects.find((p) => p.name === name);
+  if (existing) return { id: existing.id, name: existing.name };
+  const created = await insertBrainProject(userId, { name, status: "active", priority: "medium" });
+  return created ? { id: created.id, name: created.name } : { id: null, name: null };
 }
 
 /**
@@ -427,7 +465,7 @@ export async function applyProcessingPlan(
   let createdTaskIds: string[] = [];
   let createdStrategyIds: string[] = [];
   let createdReminderIds: string[] = [];
-  const { id: projectId } = await resolveProject(userId, final.suggestedProjectId);
+  const { id: projectId } = await resolveProject(userId, final.suggestedProjectId, final.suggestedProjectName);
 
   const fail = async (error: string, reason: string) => {
       // 回滚本次已写入的对象（任务/策略/复习随笔记级联删除；独立提醒单独删）

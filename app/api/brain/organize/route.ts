@@ -22,6 +22,22 @@ export async function POST(req: NextRequest) {
         ? body.source.trim().slice(0, 40)
         : "workbench";
 
+    // P5-A：产品流程结论沉淀 — 预填建议（标题/分类/标签/关联项目名），确认权仍在用户
+    const preset =
+      body?.preset && typeof body.preset === "object"
+        ? {
+            title: typeof body.preset.title === "string" ? body.preset.title.trim() : "",
+            category: typeof body.preset.category === "string" ? body.preset.category.trim() : "",
+            tags: Array.isArray(body.preset.tags)
+              ? body.preset.tags.filter((t: unknown) => typeof t === "string").map((t: string) => t.trim()).filter(Boolean).slice(0, 8)
+              : [],
+            suggestedProjectName:
+              typeof body.preset.suggestedProjectName === "string"
+                ? body.preset.suggestedProjectName.trim()
+                : "",
+          }
+        : undefined;
+
     // 收件箱入口：以条目原文生成计划，并推进收件箱状态机
     if (inboxId) {
       const r = await organizeInboxToPlan(user.sub, inboxId, { source });
@@ -36,7 +52,11 @@ export async function POST(req: NextRequest) {
 
     if (!content) return NextResponse.json({ error: "content_required" }, { status: 400 });
 
-    const { plan, body: planBody, duplicate } = await organizeToPlan(user.sub, { rawContent: content, source });
+    const { plan, body: planBody, duplicate } = await organizeToPlan(user.sub, {
+      rawContent: content,
+      source,
+      preset,
+    });
     if (!plan) return NextResponse.json({ error: "plan_create_failed" }, { status: 500 });
     return NextResponse.json({ plan, body: planBody, duplicate });
   } catch (err) {

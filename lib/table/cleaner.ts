@@ -6,6 +6,7 @@
  */
 
 import type { EffectiveDataset, ExcludedColumn, ExcludedRow, FieldType, SheetInfo } from "./types";
+import { detectTableQualityIssues } from "./quality";
 
 /* ─────────────── 单元常量 ─────────────── */
 
@@ -50,6 +51,13 @@ export function cleanCellValue(value: unknown, inferredType?: FieldType): unknow
   // ② 空值标准化（"0" 保留）
   if (s === "0" || s === "0.0" || s === "0.00") return 0;
   if (NULL_LIKE_PATTERNS.test(s)) return null;
+
+  // ②.5 H7/H8 修复：前导零数字码（SKU/门店编码/固话等）与超长纯数字串（身份证/大整数等）
+  // 保留为 text，避免 "001"→1 改坏编码、或 >2^53 整数被 Number() 静默丢精度。
+  // 注意：仅匹配「纯数字串」，带小数点的正常小数（如 0.5、123.45）不在此列，照常解析。
+  if (/^0\d+$/.test(s) || /^\d{16,}$/.test(s)) {
+    return s;
+  }
 
   // ③ 数字解析
   if (
@@ -267,56 +275,263 @@ export function detectHeaderRow(rows: unknown[][]): number {
   return best;
 }
 
-/* ─────────────── 字段类型推断 ─────────────── */
+/* ─────────────── 字段类型推断（T1-B 增强） ─────────────── */
 
 /**
- * 字段类型推断（按优先级）：boolean → date → number → percentage → currency → string(category|text)
- * @param values 同一列的样本（已清洗或原始都可）
+ * 推断阈值集中配置（T1-B）：所有魔法数字集中此处，不散落在函数内部，便于测试与调参。
  */
-export function inferColumnType(values: unknown[]): FieldType {
-  const nonNull = values.filter((v) => {
-    if (v === null || v === undefined) return false;
-    const s = String(v).trim();
-    return s !== "" && !NULL_LIKE_PATTERNS.test(s);
-  });
-  if (nonNull.length === 0) return "text";
+export const INFERENCE_THRESHOLDS = {
+  /** 布尔形态值比例阈值（≥ 则判定 boolean） */
+  BOOLEAN_RATIO: 0.8,
+  /** 日期可解析比例阈值（纯值形态，≥ 则高置信 date） */
+  DATE_PARSE_RATIO: 0.8,
+  /** 列名含日期语义词时的最低可解析比例（放宽，因为语义已强） */
+  DATE_NAME_MIN_RATIO: 0.5,
+  /** 数值可解析比例阈值（纯值形态，≥ 则进入数值分支） */
+  NUMERIC_RATIO: 0.8,
+  /** 列名含金额语义词时的最低可解析比例 */
+  CURRENCY_NAME_MIN_RATIO: 0.5,
+  /** 含百分号即判定 percentage 的比例阈值 */
+  PERCENTAGE_COL_RATIO: 0.5,
+  /** 分类判定：唯一率低于此值（且唯一数 < CATEGORY_MAX_UNIQUE）→ category */
+  CATEGORY_UNIQUE_RATIO: 0.1,
+  /** 分类判定：唯一数低于此值（且唯一率 < CATEGORY_UNIQUE_RATIO）→ category */
+  CATEGORY_MAX_UNIQUE: 50,
+  /** email 形态值比例阈值（≥ 则判定 email） */
+  EMAIL_PARSE_RATIO: 0.9,
+  /** 列名含 ID 语义词时，值符合 ID 格式的最小比例 */
+  ID_NAME_PATTERN_RATIO: 0.9,
+  /** 值驱动 ID 判定的唯一率阈值（≥ 且格式符合 → id，即使列名无语义词） */
+  ID_UNIQUENESS_RATIO: 0.95,
+  /** ID 判定的最小非空样本数（覆盖小表如 4 行 Products；与唯一率阈值共同防止偶发唯一） */
+  ID_MIN_NONNULL: 4,
+  /** 高置信度门槛（≥ 视为稳定推断） */
+  CONFIDENCE_HIGH: 0.85,
+  /** 中置信度门槛（< 视为低置信度，需 UI 明确提示） */
+  CONFIDENCE_MEDIUM: 0.6,
+} as const;
 
-  // 1. boolean
-  const boolCount = nonNull.filter((v) => BOOLEAN_REGEX.test(String(v).trim())).length;
-  if (boolCount / nonNull.length > 0.8) return "boolean";
+/** 中英文列名语义词表（集中维护、可扩展；用于类型推断的列名线索） */
+export const ID_NAME_HINTS = [
+  "订单号", "订单编号", "单号", "编号", "商品编码", "货号", "条码",
+  "code", "reference", "ref", "tracking", "跟踪号", "追踪号",
+];
+export const EMAIL_NAME_HINTS = ["邮箱", "电子邮件", "email", "e-mail", "mail"];
+export const CATEGORY_NAME_HINTS = [
+  "国家", "地区", "区域", "渠道", "物流渠道", "物流商", "状态", "退款状态", "商品状态", "物流状态",
+  "标签", "分类", "类别", "广告组", "平台", "店铺", "类型", "分组", "品类", "品牌", "部门",
+];
+export const DATE_NAME_HINTS = [
+  "日期", "时间", "下单日期", "发货日期", "签收日期", "注册日期",
+  "年", "月", "日", "date", "time", "created", "updated",
+];
+export const CURRENCY_NAME_HINTS = [
+  "金额", "销售额", "收入", "营收", "成本", "售价", "单价", "运费", "费用", "消耗",
+  "预算", "利润", "总额", "总价", "结算", "实付", "付款", "价格",
+];
 
-  // 2. date
-  const dateCount = nonNull.filter((v) => {
-    const s = String(v).trim();
-    if (!DATE_SURFACE_REGEX.test(s)) return false;
-    if (parseDateString(s) === null) return false;
-    return true;
-  }).length;
-  if (dateCount / nonNull.length > 0.8) return "date";
+/** 列名归一化（小写 + 去空格，用于语义词匹配） */
+function normalizeColName(name?: string): string {
+  return (name ?? "").toLowerCase().replace(/\s+/g, "");
+}
+function hasNameHint(name: string | undefined, hints: readonly string[]): boolean {
+  const n = normalizeColName(name);
+  return hints.some((h) => n.includes(h.toLowerCase()));
+}
 
-  // 3. number（含 percentage / currency / integer / float）
-  const numericValues: number[] = [];
+/** ID 形态：字母数字开头 + 字母数字/分隔符（含中英文斜杠）组合，且至少含一个非数字字符（排除纯数字误判为整数 id） */
+const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_\-／/.]*$/;
+/** 是否像 ID：满足 ID 形态且含有字母或分隔符（纯数字不算 id，避免与 integer 冲突） */
+function looksLikeId(s: string): boolean {
+  return ID_PATTERN.test(s) && /[A-Za-z_\-／/.]/.test(s);
+}
+/** email 形态（不可执行、纯正则；不读取或暴露完整邮箱内容到日志以外） */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * 字段类型推断（T1-B 增强）：列名语义 + 样本值形态 + 非空比例 + 唯一率 + 可解析比例 + 混合值比例
+ * → 推断类型、置信度、推断原因、样本统计。
+ *
+ * 不新增平行推断引擎：本函数是原 inferColumnType 的增强版，原签名通过 inferColumnType 兼容包装保留。
+ * 所有推断只消费传入的 values（cleanSheet 传入清洗前 sheet 有效行；profiler 传入 EffectiveDataset 有效行），
+ * 不回退读取原始未清洗数据。
+ *
+ * @param values 同一列的样本值（cleanSheet 传原始、profiler 传已清洗均安全：数值会先 String()）
+ * @param name   列名（可选；用于列名语义线索）
+ */
+export function inferColumnTypeDetailed(
+  values: unknown[],
+  name?: string,
+): import("./types").TypeInferenceResult {
+  const strs = values.map((v) => (v == null ? "" : String(v).trim()));
+  const nonNull = strs.filter((s) => s !== "" && !NULL_LIKE_PATTERNS.test(s));
+  const nonNullCount = nonNull.length;
+  const uniqueCount = new Set(nonNull).size;
+  const uniqueRatio = nonNullCount > 0 ? uniqueCount / nonNullCount : 0;
+
+  if (nonNullCount === 0) {
+    return {
+      inferredType: "text",
+      confidence: 0,
+      reasons: ["列无有效值（空列），回退文本"],
+      parseStats: { nonNullCount: 0, parseableCount: 0, uniqueCount: 0, uniqueRatio: 0, invalidCount: 0 },
+    };
+  }
+
+  // 值形态统计
+  const boolCount = nonNull.filter((s) => BOOLEAN_REGEX.test(s)).length;
+  const boolRatio = boolCount / nonNullCount;
+  const emailCount = nonNull.filter((s) => EMAIL_PATTERN.test(s)).length;
+  const emailRatio = emailCount / nonNullCount;
+  // H9：Excel 序列号（如 45320 → 2024-01-29）也计入可解析日期，避免纯序列号列被误判为整数。
+  // 序列号窗口限定为 plausible 日期范围（~1954–2091），过滤掉小整数计数/数量列（<20000 或 >70000）。
+  const EXCEL_SERIAL_MIN = 20000;
+  const EXCEL_SERIAL_MAX = 70000;
+  const isExcelSerial = (s: string) => {
+    const n = Number(s);
+    return Number.isInteger(n) && n >= EXCEL_SERIAL_MIN && n <= EXCEL_SERIAL_MAX && parseDateString(s) !== null;
+  };
+  const dateParseable =
+    nonNull.filter((s) => (DATE_SURFACE_REGEX.test(s) || isExcelSerial(s)) && parseDateString(s) !== null).length;
+  const dateRatio = dateParseable / nonNullCount;
+  const serialCount = nonNull.filter((s) => isExcelSerial(s)).length;
+  const idPatternCount = nonNull.filter((s) => looksLikeId(s)).length;
+  const idPatternRatio = idPatternCount / nonNullCount;
+
+  let numericCount = 0;
   let pctCount = 0;
   let currencyCount = 0;
-  for (const v of nonNull) {
-    const s = String(v).trim();
+  for (const s of nonNull) {
     if (/%$/.test(s)) pctCount++;
     if (CURRENCY_REGEX.test(s) || (CHINESE_UNIT.test(s) && /^\d/.test(s))) currencyCount++;
-    const n = parseNumericString(s);
-    if (n !== null) numericValues.push(n);
+    if (parseNumericString(s) !== null) numericCount++;
   }
-  if (numericValues.length / nonNull.length > 0.8) {
-    if (pctCount / nonNull.length > 0.5) return "percentage";
-    if (currencyCount / nonNull.length > 0.5) return "currency";
-    const intCount = numericValues.filter((n) => Number.isInteger(n)).length;
-    if (intCount / numericValues.length > 0.9) return "integer";
-    return "float";
+  const numericRatio = numericCount / nonNullCount;
+
+  const reasons: string[] = [];
+  let inferredType: FieldType = "text";
+  let confidence = 0.5;
+
+  // 1) email：强值信号（纯正则，不可执行）
+  if (emailRatio >= INFERENCE_THRESHOLDS.EMAIL_PARSE_RATIO) {
+    inferredType = "email";
+    confidence = 0.95;
+    reasons.push(
+      `值符合 email 形态比例 ${(emailRatio * 100).toFixed(0)}% ≥ 阈值 ${INFERENCE_THRESHOLDS.EMAIL_PARSE_RATIO * 100}%`,
+    );
+  }
+  // 2) date（先于 id：避免 ISO 日期串「2024-08-01」因含分隔符被误判为 id）
+  else if (
+    dateRatio >= INFERENCE_THRESHOLDS.DATE_PARSE_RATIO ||
+    (hasNameHint(name, DATE_NAME_HINTS) && dateRatio >= INFERENCE_THRESHOLDS.DATE_NAME_MIN_RATIO)
+  ) {
+    inferredType = "date";
+    const mixedFormat = dateRatio < 1; // 部分值无法按表层日期格式解析（如 Excel 序列号）→ 混合格式
+    confidence = mixedFormat ? 0.7 : 0.9;
+    reasons.push(`可解析为日期比例 ${(dateRatio * 100).toFixed(0)}%`);
+    if (mixedFormat) reasons.push("存在混合日期格式（部分值非标准日期串，低置信度标记）");
+    if (serialCount > 0) reasons.push("检测到 Excel 序列号日期（如 45320 → 2024-01-29），已归一化为日期");
+    if (hasNameHint(name, DATE_NAME_HINTS)) reasons.push("列名含日期语义词");
+  }
+  // 3) id：列名语义词 + 格式，或 值高唯一率 + 格式
+  else if (
+    (hasNameHint(name, ID_NAME_HINTS) &&
+      idPatternRatio >= INFERENCE_THRESHOLDS.ID_NAME_PATTERN_RATIO &&
+      nonNullCount >= INFERENCE_THRESHOLDS.ID_MIN_NONNULL) ||
+    (uniqueRatio >= INFERENCE_THRESHOLDS.ID_UNIQUENESS_RATIO &&
+      idPatternRatio >= INFERENCE_THRESHOLDS.ID_NAME_PATTERN_RATIO &&
+      nonNullCount >= INFERENCE_THRESHOLDS.ID_MIN_NONNULL)
+  ) {
+    inferredType = "id";
+    const byName = hasNameHint(name, ID_NAME_HINTS);
+    confidence = byName ? 0.92 : 0.85;
+    reasons.push(byName ? "列名含 ID 语义词（订单号/单号/SKU 等）" : `值唯一率 ${(uniqueRatio * 100).toFixed(0)}% ≥ 阈值 ${INFERENCE_THRESHOLDS.ID_UNIQUENESS_RATIO * 100}%`);
+    reasons.push(`唯一值 ${uniqueCount}/${nonNullCount}`);
+    reasons.push(`值符合 ID 格式(字母数字/分隔符)比例 ${(idPatternRatio * 100).toFixed(0)}%`);
+    if (byName && uniqueRatio < 1) reasons.push(`唯一率 ${(uniqueRatio * 100).toFixed(0)}%（含重复，仍按列名语义判定 id）`);
+  }
+  // 4) boolean
+  else if (boolRatio >= INFERENCE_THRESHOLDS.BOOLEAN_RATIO) {
+    inferredType = "boolean";
+    confidence = 0.9;
+    reasons.push(`布尔形态值比例 ${(boolRatio * 100).toFixed(0)}%`);
+  }
+  // 5) number / currency / percentage / integer / float
+  else if (
+    numericRatio >= INFERENCE_THRESHOLDS.NUMERIC_RATIO ||
+    (hasNameHint(name, CURRENCY_NAME_HINTS) && numericRatio >= INFERENCE_THRESHOLDS.CURRENCY_NAME_MIN_RATIO)
+  ) {
+    const isPct = pctCount / nonNullCount > INFERENCE_THRESHOLDS.PERCENTAGE_COL_RATIO;
+    const isCur = pctCount / nonNullCount <= INFERENCE_THRESHOLDS.PERCENTAGE_COL_RATIO &&
+      (currencyCount / nonNullCount > INFERENCE_THRESHOLDS.PERCENTAGE_COL_RATIO || hasNameHint(name, CURRENCY_NAME_HINTS));
+    if (isPct) {
+      inferredType = "percentage";
+      reasons.push("含百分号，判定为百分比");
+    } else if (isCur) {
+      inferredType = "currency";
+      confidence = hasNameHint(name, CURRENCY_NAME_HINTS) ? 0.95 : 0.9;
+      if (hasNameHint(name, CURRENCY_NAME_HINTS)) reasons.push("列名含金额/数值语义词");
+      reasons.push(`含货币符号或中文单位比例 ${(currencyCount / nonNullCount * 100).toFixed(0)}%`);
+    } else {
+      const intCount = nonNull.filter((s) => {
+        const num = parseNumericString(s);
+        return num !== null && Number.isInteger(num);
+      }).length;
+      inferredType = intCount / numericCount > 0.9 ? "integer" : "float";
+      reasons.push(`可解析为数值比例 ${(numericRatio * 100).toFixed(0)}%`);
+      reasons.push(`${inferredType === "integer" ? "全整数" : "含小数"}`);
+    }
+    if (!isPct && !isCur) confidence = 0.85;
+  }
+  // 6) category：列名语义词，或 低唯一率（值重复率高）
+  else if (
+    hasNameHint(name, CATEGORY_NAME_HINTS) ||
+    (uniqueRatio < INFERENCE_THRESHOLDS.CATEGORY_UNIQUE_RATIO && uniqueCount < INFERENCE_THRESHOLDS.CATEGORY_MAX_UNIQUE)
+  ) {
+    inferredType = "category";
+    const byName = hasNameHint(name, CATEGORY_NAME_HINTS);
+    confidence = byName ? 0.9 : 0.7;
+    if (byName) reasons.push("列名含分类语义词（国家/渠道/状态/标签/广告组等）");
+    else reasons.push(`唯一率 ${(uniqueRatio * 100).toFixed(0)}% < 阈值，且唯一数 ${uniqueCount} < ${INFERENCE_THRESHOLDS.CATEGORY_MAX_UNIQUE}，判定为分类维度`);
+  }
+  // 7) text 回退
+  else {
+    inferredType = "text";
+    confidence = 0.5;
+    reasons.push("未满足更具体类型（id/email/date/number/category）的阈值，回退为文本");
   }
 
-  // 4. string：category vs text（unique 占比 < 10% 且 unique 数 < 50 → category）
-  const unique = new Set(nonNull.map((v) => String(v).trim()));
-  if (unique.size / nonNull.length < 0.1 && unique.size < 50) return "category";
-  return "text";
+  // 推断类型的可解析计数
+  const parseableCount =
+    inferredType === "email" ? emailCount
+      : inferredType === "date" ? dateParseable
+        : inferredType === "id" ? idPatternCount
+          : inferredType === "boolean" ? boolCount
+            : (inferredType === "integer" || inferredType === "float" || inferredType === "percentage" || inferredType === "currency")
+              ? numericCount
+              : nonNullCount;
+  const invalidCount = nonNullCount - parseableCount;
+
+  return {
+    inferredType,
+    confidence: Number(confidence.toFixed(2)),
+    reasons,
+    parseStats: {
+      nonNullCount,
+      parseableCount,
+      uniqueCount,
+      uniqueRatio: Number(uniqueRatio.toFixed(3)),
+      invalidCount,
+    },
+  };
+}
+
+/**
+ * 字段类型推断（兼容包装，保持原签名）：返回推断出的 FieldType。
+ * 新代码请使用 inferColumnTypeDetailed 获取置信度与理由。
+ */
+export function inferColumnType(values: unknown[], name?: string): FieldType {
+  return inferColumnTypeDetailed(values, name).inferredType;
 }
 
 /* ─────────────── Sheet 整合 ─────────────── */
@@ -377,8 +592,8 @@ export function cleanSheet(
     }
   }
 
-  // 逐列推断类型
-  const columnTypes: FieldType[] = columns.map(inferColumnType);
+  // 逐列推断类型（T1-B：消费清洗前有效行 + 列名语义，保持 columnTypes: FieldType[] 兼容 EffectiveDataset）
+  const columnTypes: FieldType[] = columns.map((colVals, i) => inferColumnType(colVals, cleanedHeaders[i]));
 
   // 逐 cell 清洗（按列类型优先解析）
   const cleanedRows = dataRows.map((row) =>
@@ -394,13 +609,18 @@ export function cleanSheet(
  * 在 cleanSheet 之上产出 EffectiveDataset：parser / cleaner / profiler 之间
  * 唯一、可追踪的「有效数据集边界」。
  *
- * 设计铁律（T1-A）：
+ * 设计铁律（T1-A → T1-C 演化）：
  *  - 不复制整行：rows 直接复用 cleanSheet 产出的引用，避免双倍内存；
- *  - 仅「捕获并传递边界」：本阶段不新增空行/幽灵列裁剪算法（属 T1-B/T1-C），
- *    因此 excludedRows / excludedColumns 默认空；effectiveRowCount/ColumnCount
- *    与 cleanSheet 当前产出一致；
+ *  - 边界捕获与传递：T1-C 起在此处完成「有效行/列清理」并填充 excludedRows /
+ *    excludedColumns / qualityIssues（T1-A 阶段这些字段预留为空，现已落地）；
  *  - 下游 profiler 必须消费本结构（或经 profileEffectiveDataset 适配器），
  *    不得从 raw 重建而丢失边界信息。
+ *
+ * 行/列排除规则（T1-C，非破坏性、可追溯，禁止删除真实业务数据）：
+ *  - 排除行：结构性空行（全 null/空串/不可见空白/归一化空值词如 无/NA）。
+ *    重复业务记录、部分字段为空的真实记录、未签收/退款/缺成本等业务异常行一律保留。
+ *  - 排除列：无真实表头的 column_N 占位幽灵列（即使含稀疏值，因无业务语义）。
+ *    合法但全空的业务字段（有真实表头）保留，供用户未来补充。
  *
  * @param options.headerIdx 显式表头行（跳过 detectHeaderRow 重测）；不传则由 cleanSheet 内部重测。
  */
@@ -426,23 +646,89 @@ export function buildEffectiveDataset(
     0,
   );
 
+  // ───────── T1-C：有效行清理（结构性空行 / 格式残留行） ─────────
+  // dataRows（cleanSheet 的 cleanedRows）与 sheet.rows 在表头之下 1:1 对齐：
+  // cleanSheet 的 dataRows = allRows.slice(headerIdx+1)，而 allRows = [headers, ...sheet.rows]。
   const excludedRows: ExcludedRow[] = [];
+  const keptRowIdx: number[] = [];
+  cleaned.cleanedRows.forEach((row, i) => {
+    if (isStructurallyEmptyRow(row)) {
+      excludedRows.push({
+        rowIndex: i,
+        reason: "空行/格式残留行（全部单元格为空或不可见空白）",
+        preview: row.slice(0, 5).map((v) => (v == null ? null : String(v).slice(0, 24))),
+      });
+    } else {
+      keptRowIdx.push(i);
+    }
+  });
+  const effRows = keptRowIdx.map((i) => cleaned.cleanedRows[i]);
+
+  // ───────── T1-C：有效列清理（无真实表头的 column_N 占位幽灵列） ─────────
   const excludedColumns: ExcludedColumn[] = [];
+  const keptColIdx: number[] = [];
+  cleaned.cleanedHeaders.forEach((h, i) => {
+    const isPlaceholder = PLACEHOLDER_COLUMN_RE.test(String(h).trim());
+    if (isPlaceholder) {
+      // 计算该列在有效行中的非空值数（供审计；即使含稀疏值也排除，因无业务表头）
+      let nn = 0;
+      for (const r of effRows) {
+        const v = r[i];
+        if (v !== null && v !== undefined && String(v).trim() !== "") nn++;
+      }
+      excludedColumns.push({
+        columnIndex: i,
+        name: h,
+        reason: nn === 0 ? "幽灵列（无表头占位 column_N 且全空）" : "幽灵列（无表头占位 column_N）",
+        nonNullCount: nn,
+      });
+    } else {
+      keptColIdx.push(i);
+    }
+  });
+
+  // 重建有效 headers / rows / columns（只保留 kept 下标；幽灵列恒在末位，下标对齐保持）
+  const headers = keptColIdx.map((i) => cleaned.cleanedHeaders[i]);
+  const columns = keptColIdx.map((i) => cleaned.columnTypes[i]);
+  const rows = effRows.map((r) => keptColIdx.map((i) => r[i] ?? null));
+
   const warnings: string[] = [];
 
-  return {
+  const ds: EffectiveDataset = {
     sheetId: sheet.name,
     sheetName: sheet.name,
     detectedHeaderRow: headerIdx,
     rawRowCount,
     rawColumnCount,
-    effectiveRowCount: cleaned.cleanedRows.length,
-    effectiveColumnCount: cleaned.cleanedHeaders.length,
-    headers: cleaned.cleanedHeaders,
-    rows: cleaned.cleanedRows,
-    columns: cleaned.columnTypes,
+    effectiveRowCount: rows.length,
+    effectiveColumnCount: headers.length,
+    headers,
+    rows,
+    columns,
     excludedRows,
     excludedColumns,
     warnings,
   };
+
+  // T1-C：结构化质量信号（与清洗解耦，只检测报告，绝不自动改写业务值）
+  ds.qualityIssues = detectTableQualityIssues(sheet, ds);
+
+  return ds;
+}
+
+/** 列名是否为占位名（cleanSheet 对空表头兜底为 column_N） */
+const PLACEHOLDER_COLUMN_RE = /^column_\d+$/;
+
+/**
+ * 行是否为结构性空行：所有单元格为 null/undefined/空串/不可见空白，
+ * 或归一化空值词（无/NA/null/暂无 等）。仅用于排除无效行，真实业务行（含部分空字段）保留。
+ */
+function isStructurallyEmptyRow(row: unknown[]): boolean {
+  if (!row || row.length === 0) return true;
+  return row.every((v) => {
+    if (v === null || v === undefined) return true;
+    const s = String(v).trim();
+    if (s === "") return true;
+    return NULL_LIKE_PATTERNS.test(s);
+  });
 }

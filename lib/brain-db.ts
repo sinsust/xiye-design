@@ -1,8 +1,9 @@
 // 第二大脑（Second Brain）数据访问层：用户私有的个人知识笔记读写。
 // 与 knowledge-db（云端共享技能库）不同，这里按 userId 硬隔离，仅本人可见。
 
-import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainNotifications } from "@/lib/db";
+import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainNotifications } from "@/lib/db";
 import { eq, and, desc, asc, isNull, inArray, gt, gte, lt, lte, or } from "drizzle-orm";
+import { randomSuffix } from "./id";
 
 export type BrainSource = "text" | "file" | "clip" | "voice" | "ima";
 
@@ -64,6 +65,28 @@ export interface BrainNote {
   imaSyncedAt: string | null;
   // AI 整理完整结构化结果（OrganizedNote 的 JSON 字符串）；null 表示未整理
   struct: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// 轻量投影：列表/轮询仅需要元数据，剔除 content/struct/embedding/codeContent 等大字段，
+// 避免通知中心轮询把用户全部笔记全文 + AI JSON 一次性加载进内存（审计 H6）。
+export interface BrainNoteMeta {
+  id: string;
+  userId: string;
+  source: BrainSource;
+  title: string;
+  category: string;
+  summary: string;
+  tags: string[];
+  related: string[];
+  parentId: string | null;
+  version: number;
+  superseded: boolean;
+  isSnippet: boolean;
+  language: string | null;
+  imaDocId: string | null;
+  imaSyncedAt: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -165,6 +188,81 @@ export async function listBrainNotes(userId: string): Promise<BrainNote[]> {
   }
 }
 
+// 轻量投影：剔除 content/struct/embedding/codeContent 大字段，供通知中心轮询等只需元数据的场景。
+export async function listBrainNoteMetas(userId: string): Promise<BrainNoteMeta[]> {
+  try {
+    const rows = (await db
+      .select({
+        id: brainNotes.id,
+        userId: brainNotes.userId,
+        source: brainNotes.source,
+        title: brainNotes.title,
+        category: brainNotes.category,
+        summary: brainNotes.summary,
+        tags: brainNotes.tags,
+        related: brainNotes.related,
+        parentId: brainNotes.parentId,
+        version: brainNotes.version,
+        superseded: brainNotes.superseded,
+        isSnippet: brainNotes.isSnippet,
+        language: brainNotes.language,
+        imaDocId: brainNotes.imaDocId,
+        imaSyncedAt: brainNotes.imaSyncedAt,
+        createdAt: brainNotes.createdAt,
+        updatedAt: brainNotes.updatedAt,
+      })
+      .from(brainNotes)
+      .where(eq(brainNotes.userId, userId))
+      .orderBy(desc(brainNotes.createdAt))) as unknown as BrainRowMeta[];
+    return rows.map(toNoteMeta);
+  } catch (err) {
+    console.error("[brain-db] list metas failed:", err);
+    return [];
+  }
+}
+
+interface BrainRowMeta {
+  id: string;
+  userId: string;
+  source: string;
+  title: string | null;
+  category: string | null;
+  summary: string | null;
+  tags: string | null;
+  related: string | null;
+  parentId: string | null;
+  version: number | null;
+  superseded: number | null;
+  isSnippet: number | null;
+  language: string | null;
+  imaDocId: string | null;
+  imaSyncedAt: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+function toNoteMeta(r: BrainRowMeta): BrainNoteMeta {
+  return {
+    id: r.id,
+    userId: r.userId,
+    source: (r.source || "text") as BrainSource,
+    title: r.title ?? "",
+    category: r.category ?? "",
+    summary: r.summary ?? "",
+    tags: splitList(r.tags),
+    related: splitList(r.related),
+    parentId: r.parentId ?? null,
+    version: Number(r.version ?? 1),
+    superseded: (r.superseded ?? 0) === 1,
+    isSnippet: (r.isSnippet ?? 0) === 1,
+    language: r.language ?? null,
+    imaDocId: r.imaDocId ?? null,
+    imaSyncedAt: r.imaSyncedAt ?? null,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
 export async function getBrainNote(
   userId: string,
   id: string,
@@ -210,7 +308,7 @@ export async function insertBrainNote(
   row: NewBrainNote,
 ): Promise<BrainNote> {
   const now = Date.now();
-  const id = `bn-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bn-${now.toString(36)}-${randomSuffix()}`;
   await db.insert(brainNotes).values({
     id,
     userId,
@@ -370,11 +468,9 @@ export async function listBrainTasks(
   status?: BrainTaskStatus,
 ): Promise<BrainTask[]> {
   try {
-    let q = db
-      .select()
-      .from(brainTasks)
-      .where(and(eq(brainTasks.userId, userId), eq(brainTasks.archived, 0)));
-    if (status) q = q.where(eq(brainTasks.status, status));
+    const conds = [eq(brainTasks.userId, userId), eq(brainTasks.archived, 0)];
+    if (status) conds.push(eq(brainTasks.status, status));
+    const q = db.select().from(brainTasks).where(and(...conds));
     const rows = (await q.orderBy(desc(brainTasks.createdAt))) as TaskRow[];
     return rows.map(toTask);
   } catch (err) {
@@ -427,7 +523,7 @@ export async function insertBrainTasks(
   const now = Date.now();
   const inserted: BrainTask[] = [];
   for (const item of items) {
-    const id = `bt-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const id = `bt-${now.toString(36)}-${randomSuffix()}`;
     try {
       await db.insert(brainTasks).values({
         id,
@@ -664,7 +760,7 @@ export async function getBrainProject(userId: string, id: string): Promise<Brain
 
 export async function insertBrainProject(userId: string, input: NewBrainProject): Promise<BrainProject | null> {
   const now = Date.now();
-  const id = `bp-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bp-${now.toString(36)}-${randomSuffix()}`;
   try {
     await db.insert(brainProjects).values({
       id,
@@ -756,7 +852,7 @@ export async function insertBrainTaskTimeline(
   detail?: Record<string, unknown> | null,
 ): Promise<void> {
   try {
-    const id = `tt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const id = `tt-${Date.now().toString(36)}-${randomSuffix()}`;
     await db.insert(brainTaskTimeline).values({
       id,
       taskId,
@@ -771,12 +867,15 @@ export async function insertBrainTaskTimeline(
 
 export async function listBrainTaskTimeline(userId: string, taskId: string): Promise<BrainTaskTimelineItem[]> {
   try {
+    // H1 同源修复：校验任务归属，防止跨用户读取时间线（taskId 虽全局唯一，但请求者未必是属主）
+    const task = await getBrainTaskById(userId, taskId);
+    if (!task) return [];
     const rows = (await db
       .select()
       .from(brainTaskTimeline)
       .where(eq(brainTaskTimeline.taskId, taskId))) as (BrainTaskTimelineItem & { action: string })[];
     return rows
-      .filter((r) => r) // 任务已删除时行不存在，无需过滤 userId（taskId 全局唯一）
+      .filter((r) => r) // 任务已删除时行不存在
       .sort((a, b) => a.createdAt - b.createdAt);
   } catch (err) {
     console.error("[brain-db] list timeline failed:", err);
@@ -794,7 +893,7 @@ export interface BrainTaskComment {
 }
 
 export async function addBrainTaskComment(userId: string, taskId: string, content: string): Promise<BrainTaskComment | null> {
-  const id = `tc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `tc-${Date.now().toString(36)}-${randomSuffix()}`;
   try {
     // 校验任务属于该用户
     const task = await getBrainTaskById(userId, taskId);
@@ -810,6 +909,9 @@ export async function addBrainTaskComment(userId: string, taskId: string, conten
 
 export async function listBrainTaskComments(userId: string, taskId: string): Promise<BrainTaskComment[]> {
   try {
+    // H1 修复：先校验任务归属，防止跨用户读取评论（此前 WHERE 仅按 taskId，任意登录用户可遍历他人评论）
+    const task = await getBrainTaskById(userId, taskId);
+    if (!task) return [];
     const rows = (await db
       .select()
       .from(brainTaskComments)
@@ -976,7 +1078,7 @@ export async function insertBrainReview(
   row: NewBrainReview,
 ): Promise<BrainReview> {
   const now = Date.now();
-  const id = `br-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `br-${now.toString(36)}-${randomSuffix()}`;
   await db.insert(brainReviews).values({
     id,
     noteId: row.noteId,
@@ -1133,11 +1235,9 @@ export async function listBrainStrategies(
   status?: BrainStrategyStatus,
 ): Promise<BrainStrategy[]> {
   try {
-    let q = db
-      .select()
-      .from(brainStrategies)
-      .where(eq(brainStrategies.userId, userId));
-    if (status) q = q.where(eq(brainStrategies.status, status));
+    const conds = [eq(brainStrategies.userId, userId)];
+    if (status) conds.push(eq(brainStrategies.status, status));
+    const q = db.select().from(brainStrategies).where(and(...conds));
     const rows = (await q.orderBy(desc(brainStrategies.createdAt))) as StrategyRow[];
     return rows.map(toStrategy);
   } catch (err) {
@@ -1169,7 +1269,7 @@ export async function insertBrainStrategies(
   const now = Date.now();
   const inserted: BrainStrategy[] = [];
   for (const item of items) {
-    const id = `bs-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const id = `bs-${now.toString(36)}-${randomSuffix()}`;
     try {
       await db.insert(brainStrategies).values({
         id,
@@ -1250,7 +1350,7 @@ export async function insertBrainImaSyncLog(
   },
 ): Promise<void> {
   const now = Date.now();
-  const id = `bsl-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bsl-${now.toString(36)}-${randomSuffix()}`;
   try {
     await db.insert(brainImaSyncLog).values({
       id,
@@ -1341,6 +1441,17 @@ export async function markBrainNoteSuperseded(
       .update(brainNotes)
       .set({ superseded: 1, updatedAt: Date.now() })
       .where(and(eq(brainNotes.id, id), eq(brainNotes.userId, userId)));
+    // P4-B 归档策略：笔记被归档 → 暂停其学习复习（不再进入今日与通知；记录保留可恢复）
+    await db
+      .update(brainLearningReviews)
+      .set({ status: "paused", updatedAt: Date.now() })
+      .where(
+        and(
+          eq(brainLearningReviews.userId, userId),
+          eq(brainLearningReviews.noteId, id),
+          eq(brainLearningReviews.status, "active"),
+        ),
+      );
     return true;
   } catch (err) {
     console.error("[brain-db] mark superseded failed:", err);
@@ -1371,7 +1482,7 @@ export async function upgradeBrainNote(
   if (!old) return { note: null, invoked: false };
 
   const now = Date.now();
-  const newId = `bn-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const newId = `bn-${now.toString(36)}-${randomSuffix()}`;
   // 继承旧版的基础信息与归属：父版本指向旧版本身，版本号 = 旧版 + 1
   const inheritedParent = old.parentId ?? old.id;
   const newNote: NewBrainNote = {
@@ -1469,11 +1580,9 @@ export async function listBrainSnippets(
   language?: string,
 ): Promise<BrainNote[]> {
   try {
-    let q = db
-      .select()
-      .from(brainNotes)
-      .where(and(eq(brainNotes.userId, userId), eq(brainNotes.isSnippet, 1)));
-    if (language) q = q.where(eq(brainNotes.language, language));
+    const conds = [eq(brainNotes.userId, userId), eq(brainNotes.isSnippet, 1)];
+    if (language) conds.push(eq(brainNotes.language, language));
+    const q = db.select().from(brainNotes).where(and(...conds));
     const rows = (await q.orderBy(desc(brainNotes.createdAt))) as BrainRow[];
     return rows.map(toNote);
   } catch (err) {
@@ -1593,7 +1702,7 @@ export async function insertBrainInboxItems(
   const now = Date.now();
   const created: BrainInboxItem[] = [];
   for (const it of items) {
-    const id = `bi-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const id = `bi-${now.toString(36)}-${randomSuffix()}`;
     try {
       await db.insert(brainInboxItems).values({
         id,
@@ -1649,11 +1758,9 @@ export async function listBrainInboxItems(
   status?: BrainInboxStatus,
 ): Promise<BrainInboxItem[]> {
   try {
-    let q = db
-      .select()
-      .from(brainInboxItems)
-      .where(eq(brainInboxItems.userId, userId));
-    if (status) q = q.where(eq(brainInboxItems.status, status));
+    const conds = [eq(brainInboxItems.userId, userId)];
+    if (status) conds.push(eq(brainInboxItems.status, status));
+    const q = db.select().from(brainInboxItems).where(and(...conds));
     const rows = (await q.orderBy(desc(brainInboxItems.createdAt))) as InboxRow[];
     return rows.map(toInbox);
   } catch (err) {
@@ -1837,7 +1944,7 @@ export async function insertBrainProcessingPlan(
   },
 ): Promise<BrainProcessingPlan | null> {
   const now = Date.now();
-  const id = `bp-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bp-${now.toString(36)}-${randomSuffix()}`;
   try {
     await db.insert(brainProcessingPlans).values({
       id,
@@ -2001,7 +2108,7 @@ export async function insertBrainReminderItem(
   },
 ): Promise<BrainReminderItem | null> {
   const now = Date.now();
-  const id = `bri-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bri-${now.toString(36)}-${randomSuffix()}`;
   try {
     await db.insert(brainReminderItems).values({
       id,
@@ -2062,6 +2169,20 @@ export async function deleteBrainReminderItem(userId: string, id: string): Promi
     return true;
   } catch (err) {
     console.error("[brain-db] delete reminder item failed:", err);
+    return false;
+  }
+}
+
+/** H5 修复：标记单条提醒项为已完成（通知 done/ignore 时联动，避免 reminder_item 每 24h 复发）。 */
+export async function markBrainReminderItemDone(userId: string, id: string): Promise<boolean> {
+  try {
+    await db
+      .update(brainReminderItems)
+      .set({ done: 1 })
+      .where(and(eq(brainReminderItems.id, id), eq(brainReminderItems.userId, userId)));
+    return true;
+  } catch (err) {
+    console.error("[brain-db] mark reminder item done failed:", err);
     return false;
   }
 }
@@ -2199,7 +2320,7 @@ export async function insertBrainSimilarPair(
   pair: { noteIdA: string; noteIdB: string; score: number; method: string },
 ): Promise<BrainSimilarPair> {
   const [x, y] = pair.noteIdA < pair.noteIdB ? [pair.noteIdA, pair.noteIdB] : [pair.noteIdB, pair.noteIdA];
-  const id = `bsim-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bsim-${Date.now().toString(36)}-${randomSuffix()}`;
   try {
     await db.insert(brainSimilarPairs).values({
       id,
@@ -2325,7 +2446,7 @@ export async function insertBrainRelation(
     note?: string;
   },
 ): Promise<BrainRelation> {
-  const id = `brel-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `brel-${Date.now().toString(36)}-${randomSuffix()}`;
   const now = Date.now();
   try {
     await db.insert(brainRelations).values({
@@ -2398,7 +2519,7 @@ export async function insertBrainCurationLog(
     action: BrainCurationAction;
   },
 ): Promise<void> {
-  const id = `bcur-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bcur-${Date.now().toString(36)}-${randomSuffix()}`;
   const now = Date.now();
   try {
     await db.insert(brainCurationLog).values({
@@ -2574,7 +2695,7 @@ export async function insertTaskOutcome(
     .orderBy(desc(brainTaskOutcomes.createdAt))) as BrainTaskOutcome[];
   if (dup[0]) return dup[0];
 
-  const id = `bto-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bto-${now.toString(36)}-${randomSuffix()}`;
   try {
     await db.insert(brainTaskOutcomes).values({
       id,
@@ -2762,7 +2883,7 @@ export async function upsertBrainWeeklyReview(
         );
       return (await getBrainWeeklyReview(userId, input.weekKey))!;
     }
-    const id = `bwr-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const id = `bwr-${now.toString(36)}-${randomSuffix()}`;
     await db.insert(brainWeeklyReviews).values({
       id,
       userId,
@@ -2812,6 +2933,7 @@ export type BrainNotificationRefType =
   | "note"
   | "inbox"
   | "review"
+  | "learning_review"
   | "milestone"
   | "strategy"
   | "reminder_item"
@@ -2907,7 +3029,7 @@ export async function insertBrainNotification(
   input: NewBrainNotification,
 ): Promise<BrainNotification | null> {
   const now = Date.now();
-  const id = `bn-${now.toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  const id = `bn-${now.toString(36)}-${randomSuffix()}`;
   try {
     await db.insert(brainNotifications).values({
       id,

@@ -1,12 +1,13 @@
 // P4 站内通知中心 API。
 //  GET  → 扫描最新提醒并入队，返回活跃通知 + 未读计数 + 免打扰状态（中心始终完整可追溯）
-//  POST  → 通知动作（read / unread / defer / snooze / done / ignore），严格按 userId 隔离
+//  POST  → 通知动作（read / unread / defer / snooze / done / ignore）；{ action:"read", all:true } 全部已读
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import {
   getNotificationCenter,
   applyNotificationAction,
   applyNotificationBatch,
+  markAllNotificationsRead,
   type NotificationAction,
 } from "@/lib/brain-notification";
 
@@ -38,6 +39,12 @@ export async function POST(req: NextRequest) {
     }
     const days =
       typeof body.days === "number" && body.days > 0 ? Math.round(body.days) : 1;
+
+    // 全部已读：{ action:"read", all:true }
+    if (action === "read" && body.all === true) {
+      const updated = await markAllNotificationsRead(user.sub);
+      return NextResponse.json({ updated });
+    }
 
     // 批量：ids 数组
     if (Array.isArray(body.ids) && body.ids.length) {

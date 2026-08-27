@@ -7,6 +7,7 @@ import { LogIn, UserRound, LogOut, FolderOpen, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { AUTH_CHANGED_EVENT, AUTH_CACHE_KEY } from "@/lib/auth-events";
 import { fetchSession } from "@/lib/auth-session";
+import { clearPushSession } from "@/lib/browser-notification";
 
 interface MeUser {
   id: string;
@@ -62,6 +63,9 @@ export function AuthMenu() {
 
   async function doLogout() {
     // 乐观登出：先立即关下拉、清前端态、跳首页，避免等待远程清 cookie 造成“停留”
+    const uid = user?.id;
+    // 登出时清理该用户的浏览器通知会话去重记录，避免换账号后残留
+    if (uid) clearPushSession(uid);
     setUser(null);
     setOpen(false);
     try {
