@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, Clock, FileText, LoaderCircle, PencilLine, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, FileText, LoaderCircle, PencilLine, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChatStream } from "./chat-stream";
@@ -15,6 +15,57 @@ import {
   type AgentStatus,
 } from "./agent-common";
 import { useFlowStore, type AgentOutput } from "@/lib/store/flow-store";
+import {
+  acceptConceptPlan,
+  continueConceptWithAssumptions,
+  getConceptReadiness,
+} from "@/lib/flow-concept";
+import { ConceptBriefPanel } from "./concept-brief-panel";
+import { syncConcept } from "./concept-sync";
+import { BlueprintPanel } from "./blueprint-panel";
+import {
+  fetchBlueprint,
+  initBlueprint,
+  updateBlueprintPath,
+  resolveBlueprintItem,
+  confirmBlueprintItem,
+  rebuildBlueprintItem,
+  restoreBlueprintItem,
+  type BlueprintSyncResult,
+} from "./blueprint-sync";
+import { getBlueprintReadiness, conceptChangedSinceBlueprint } from "@/lib/flow-blueprint";
+import { JourneyPanel } from "./journey-panel";
+import {
+  initJourneyItem,
+  updateJourneyPath,
+  resolveJourneyItem,
+  answerJourneyItem,
+  confirmJourneyItem,
+  rebuildJourneyItem,
+  restoreJourneyItem,
+  type JourneySyncResult,
+} from "./journey-sync";
+import {
+  getJourneyReadiness,
+  blueprintChangedSinceJourney,
+  type JourneyAcceptance,
+} from "@/lib/flow-journey";
+import { ScreenMapPanel } from "./screen-map-panel";
+import {
+  initScreenMapItem,
+  updateScreenMapPath,
+  resolveScreenMapItem,
+  answerScreenMapItem,
+  confirmScreenMapItem,
+  rebuildScreenMapItem,
+  restoreScreenMapItem,
+  type ScreenMapSyncResult,
+} from "./screen-map-sync";
+import {
+  canInitScreenMap,
+  screenMapChangedSince,
+  type ScreenMapAcceptance,
+} from "@/lib/flow-screen-map";
 import { TECH_STACKS } from "@/data/tech-stacks";
 import { VISUAL_STYLES } from "@/data/visual-styles";
 import { type DiscoverMessage, type ProductBrief } from "@/lib/ai-discover";
@@ -469,9 +520,345 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   const productBrief = useFlowStore((s) => s.productBrief);
   const setPanelOutput = useFlowStore((s) => s.setPanelOutput);
   const rounds = messages.filter((m) => m.role === "user").length;
-  // 轻量门槛：产品愿景或描述已生成才允许进入搭建，避免空 PRD 直接进 build
-  const canAdvance = Boolean(productBrief?.vision || productBrief?.description);
-  const canAdvanceOp = canAdvance && !conversationBlocked && !panelError;
+
+  // —— F1-A：产品创意 Brief + 完成度 ——
+  const conceptBrief = useFlowStore((s) => s.conceptBrief);
+  const setConceptBrief = useFlowStore((s) => s.setConceptBrief);
+  const savedProjectId = useFlowStore((s) => s.savedProjectId);
+  const readiness = getConceptReadiness(conceptBrief);
+  const [confirmForce, setConfirmForce] = useState(false);
+  const conceptSyncingRef = useRef(false);
+  const lastSyncedCountRef = useRef(0);
+
+  // 每轮对话结束后，把访谈收敛进产品创意 Brief（面板随之刷新；失败静默保留旧值）
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (messages.length === lastSyncedCountRef.current) return;
+    if (conceptSyncingRef.current) return;
+    conceptSyncingRef.current = true;
+    void (async () => {
+      try {
+        const pid =
+          savedProjectId ||
+          (typeof window !== "undefined"
+            ? (new URLSearchParams(window.location.search).get("pid") ?? "")
+            : "");
+        await syncConcept({
+          messages,
+          prev: useFlowStore.getState().conceptBrief,
+          projectId: pid,
+          setBrief: setConceptBrief,
+        });
+        lastSyncedCountRef.current = messages.length;
+      } finally {
+        conceptSyncingRef.current = false;
+      }
+    })();
+  }, [messages, savedProjectId, setConceptBrief]);
+  // —— F1-A 完成度门槛：初版方案就绪 + 用户表态（非字段填满）才允许进入方案落地 ——
+  const canAdvance = readiness.canProceed;
+  const hasConceptPlan = Boolean(conceptBrief?.planDraft && conceptBrief.planDraft.trim());
+  const conceptAccepted =
+    conceptBrief?.acceptance === "accepted" ||
+    conceptBrief?.acceptance === "continue_with_assumptions";
+
+  // —— F2-A：产品蓝图（F1-A 可继续后自动收敛，随访谈更新及重建）——
+  const blueprint = useFlowStore((s) => s.blueprint);
+  const setBlueprint = useFlowStore((s) => s.setBlueprint);
+  const blueprintReadiness = getBlueprintReadiness(blueprint);
+  const [bpBusy, setBpBusy] = useState(false);
+  const [bpError, setBpError] = useState<FlowAIError | null>(null);
+  // F1-A 决策变化 → 蓝图 stale（服务端也会在 GET 时归一）；局部编辑不会被静默覆盖
+  const bpStale = Boolean(blueprint && conceptBrief && (blueprint.stale || conceptChangedSinceBlueprint(conceptBrief, blueprint)));
+  // 记录「已为该概念版本尝试过蓝图同步」的版本号，避免每次渲染都重复 fetch/init
+  const bpAttemptedForRef = useRef<number | null>(null);
+
+  const applyBlueprint = (r: BlueprintSyncResult) => {
+    if (r.blueprint) setBlueprint(r.blueprint);
+    if (r.error) setBpError(r.error);
+    else setBpError(null);
+    return r.error == null;
+  };
+
+  // 有保存项目时，进入时应拉取持久化蓝图（刷新恢复）；F1-A 可继续且尚无蓝图 → 自动初始化首版
+  useEffect(() => {
+    if (!savedProjectId) return;
+    if (!conceptBrief) return;
+    if (blueprint) return;
+    const ver = conceptBrief.version;
+    if (bpAttemptedForRef.current === ver) return;
+    bpAttemptedForRef.current = ver;
+    let cancelled = false;
+    void (async () => {
+      if (canAdvance) {
+        const r = await initBlueprint(savedProjectId);
+        if (!cancelled) applyBlueprint(r);
+      } else {
+        const r = await fetchBlueprint(savedProjectId);
+        if (!cancelled) applyBlueprint(r);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProjectId, conceptBrief, blueprint, canAdvance]);
+
+  const handleBlueprintLocalEdit = useCallback(
+    (path: string, value: string) => {
+      if (!blueprint || !savedProjectId) return;
+      setBpBusy(true);
+      void updateBlueprintPath(savedProjectId, blueprint, path, value).then((r) => {
+        applyBlueprint(r);
+        setBpBusy(false);
+      });
+    },
+    [blueprint, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleBlueprintResolve = useCallback(
+    (decisionId: string, hint: string) => {
+      if (!blueprint || !savedProjectId) return;
+      setBpBusy(true);
+      void resolveBlueprintItem(savedProjectId, blueprint, decisionId, hint).then((r) => {
+        applyBlueprint(r);
+        setBpBusy(false);
+      });
+    },
+    [blueprint, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleBlueprintConfirm = useCallback(
+    (acceptance: "accepted" | "continue_with_assumptions") => {
+      if (!blueprint || !savedProjectId) return;
+      setBpBusy(true);
+      void confirmBlueprintItem(savedProjectId, blueprint, acceptance).then((r) => {
+        applyBlueprint(r);
+        setBpBusy(false);
+      });
+    },
+    [blueprint, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleBlueprintRebuild = useCallback(() => {
+    if (!blueprint || !savedProjectId) return;
+    setBpBusy(true);
+    void rebuildBlueprintItem(savedProjectId, blueprint).then((r) => {
+      applyBlueprint(r);
+      setBpBusy(false);
+    });
+  }, [blueprint, savedProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleBlueprintRestore = useCallback(() => {
+    if (!blueprint || !savedProjectId) return;
+    setBpBusy(true);
+    void restoreBlueprintItem(savedProjectId, blueprint).then((r) => {
+      applyBlueprint(r);
+      setBpBusy(false);
+    });
+  }, [blueprint, savedProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // —— F2-B：核心体验旅程（仅 Blueprint 已确认且未过期后自动收敛）——
+  const journey = useFlowStore((s) => s.journey);
+  const setJourney = useFlowStore((s) => s.setJourney);
+  const journeyReadiness = getJourneyReadiness(journey);
+  const [journeyBusy, setJourneyBusy] = useState(false);
+  const [journeyError, setJourneyError] = useState<FlowAIError | null>(null);
+  // Blueprint 版本/签名变化 → 旅程 stale（服务端 GET 也会归一）
+  const journeyStale = Boolean(journey && blueprint && blueprintChangedSinceJourney(blueprint, journey));
+  const journeyAttemptedForRef = useRef<number | null>(null);
+
+  const applyJourneySync = (r: JourneySyncResult) => {
+    if (r.journey) setJourney(r.journey);
+    if (r.error) setJourneyError(r.error);
+    else setJourneyError(null);
+    return r.error == null;
+  };
+
+  // 蓝图确认后：有保存项目时自动初始化旅程；无旅程则先拉取持久化版本（刷新恢复）
+  useEffect(() => {
+    if (!savedProjectId) return;
+    if (!blueprint) return;
+    if (blueprint.status !== "confirmed") return;
+    if (blueprint.stale) return;
+    if (journey) return;
+    const ver = blueprint.version;
+    if (journeyAttemptedForRef.current === ver) return;
+    journeyAttemptedForRef.current = ver;
+    let cancelled = false;
+    void (async () => {
+      // init_journey 幂等：新项目则生成首版，已存在则返回既有（刷新恢复）
+      const r = await initJourneyItem(savedProjectId);
+      if (!cancelled) applyJourneySync(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProjectId, blueprint, journey, canAdvance]);
+
+  const handleJourneyLocalEdit = useCallback(
+    (path: string, value: string) => {
+      if (!journey || !savedProjectId) return;
+      setJourneyBusy(true);
+      void updateJourneyPath(savedProjectId, journey, path, value).then((r) => {
+        applyJourneySync(r);
+        setJourneyBusy(false);
+      });
+    },
+    [journey, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleJourneyResolve = useCallback(
+    (decisionId: string, chosenHint: string) => {
+      if (!journey || !savedProjectId) return;
+      setJourneyBusy(true);
+      void resolveJourneyItem(savedProjectId, journey, decisionId, chosenHint).then((r) => {
+        applyJourneySync(r);
+        setJourneyBusy(false);
+      });
+    },
+    [journey, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleJourneyAnswer = useCallback(
+    (decisionId: string, answer: string) => {
+      if (!journey || !savedProjectId) return;
+      setJourneyBusy(true);
+      void answerJourneyItem(savedProjectId, journey, decisionId, answer).then((r) => {
+        applyJourneySync(r);
+        setJourneyBusy(false);
+      });
+    },
+    [journey, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleJourneyConfirm = useCallback(
+    (acceptance: JourneyAcceptance) => {
+      if (!journey || !savedProjectId) return;
+      setJourneyBusy(true);
+      void confirmJourneyItem(savedProjectId, journey, acceptance).then((r) => {
+        applyJourneySync(r);
+        setJourneyBusy(false);
+      });
+    },
+    [journey, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleJourneyRebuild = useCallback(() => {
+    if (!journey || !savedProjectId) return;
+    setJourneyBusy(true);
+    void rebuildJourneyItem(savedProjectId, journey).then((r) => {
+      applyJourneySync(r);
+      setJourneyBusy(false);
+    });
+  }, [journey, savedProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleJourneyRestore = useCallback(() => {
+    if (!journey || !savedProjectId) return;
+    setJourneyBusy(true);
+    void restoreJourneyItem(savedProjectId, journey).then((r) => {
+      applyJourneySync(r);
+      setJourneyBusy(false);
+    });
+  }, [journey, savedProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // —— F3-A：首版页面地图与信息架构（仅体验旅程已确认且未过期后自动生成）——
+  const screenMap = useFlowStore((s) => s.screenMap);
+  const setScreenMap = useFlowStore((s) => s.setScreenMap);
+  const [smBusy, setSmBusy] = useState(false);
+  const [smError, setSmError] = useState<FlowAIError | null>(null);
+  // Blueprint 或 Journey 版本/签名变化 → ScreenMap 出现更新（局部编辑不会被静默覆盖）
+  const smStale =
+    Boolean(screenMap?.version && screenMap?.version > 0) &&
+    (screenMap?.stale ||
+      Boolean(blueprint && journey && screenMapChangedSince(blueprint, journey, screenMap)));
+  // 供抽屉把承载的 Journey stepId 翻译成「第 N 步 · 目标」
+  const journeySteps = useMemo(
+    () => (journey?.steps ?? []).map((s) => ({ id: s.id, order: s.order, userGoal: s.userGoal })),
+    [journey],
+  );
+  const smAttemptedForRef = useRef<number | null>(null);
+
+  const applyScreenMapSync = (r: ScreenMapSyncResult) => {
+    if (r.screenMap) setScreenMap(r.screenMap);
+    if (r.error) setSmError(r.error);
+    else setSmError(null);
+    return r.error == null;
+  };
+
+  // 体验旅程确认且 Blueprint 未过期后：有保存项目时自动生成首版页面结构（init 幂等，刷新恢复既有版本）
+  useEffect(() => {
+    if (!savedProjectId) return;
+    if (!journey || !blueprint) return;
+    if (journey.status !== "confirmed" || journey.stale) return;
+    if (!canInitScreenMap(blueprint, journey)) return;
+    if (screenMap && screenMap.version > 0) return;
+    const ver = journey.version;
+    if (smAttemptedForRef.current === ver) return;
+    smAttemptedForRef.current = ver;
+    let cancelled = false;
+    void (async () => {
+      const r = await initScreenMapItem(savedProjectId, journey);
+      if (!cancelled) applyScreenMapSync(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProjectId, journey, blueprint, screenMap]);
+
+  const handleScreenMapLocalEdit = useCallback(
+    (path: string, value: string) => {
+      if (!screenMap || screenMap.version <= 0 || !savedProjectId || !journey) return;
+      setSmBusy(true);
+      void updateScreenMapPath(savedProjectId, screenMap, journey, path, value).then((r) => {
+        applyScreenMapSync(r);
+        setSmBusy(false);
+      });
+    },
+    [screenMap, savedProjectId, journey], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenMapResolve = useCallback(
+    (decisionId: string, chosenHint: string) => {
+      if (!screenMap || screenMap.version <= 0 || !savedProjectId || !journey) return;
+      setSmBusy(true);
+      void resolveScreenMapItem(savedProjectId, screenMap, journey, decisionId, chosenHint).then((r) => {
+        applyScreenMapSync(r);
+        setSmBusy(false);
+      });
+    },
+    [screenMap, savedProjectId, journey], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenMapAnswer = useCallback(
+    (decisionId: string, answer: string) => {
+      if (!screenMap || screenMap.version <= 0 || !savedProjectId || !journey) return;
+      setSmBusy(true);
+      void answerScreenMapItem(savedProjectId, screenMap, journey, decisionId, answer).then((r) => {
+        applyScreenMapSync(r);
+        setSmBusy(false);
+      });
+    },
+    [screenMap, savedProjectId, journey], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenMapConfirm = useCallback(
+    (acceptance: ScreenMapAcceptance) => {
+      if (!screenMap || screenMap.version <= 0 || !savedProjectId || !journey) return;
+      setSmBusy(true);
+      void confirmScreenMapItem(savedProjectId, screenMap, journey, acceptance).then((r) => {
+        applyScreenMapSync(r);
+        setSmBusy(false);
+      });
+    },
+    [screenMap, savedProjectId, journey], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenMapRebuild = useCallback(() => {
+    if (!screenMap || screenMap.version <= 0 || !savedProjectId || !journey) return;
+    setSmBusy(true);
+    void rebuildScreenMapItem(savedProjectId, screenMap, journey).then((r) => {
+      applyScreenMapSync(r);
+      setSmBusy(false);
+    });
+  }, [screenMap, savedProjectId, journey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleScreenMapRestore = useCallback(() => {
+    if (!screenMap || screenMap.version <= 0 || !savedProjectId || !journey) return;
+    setSmBusy(true);
+    void restoreScreenMapItem(savedProjectId, screenMap, journey).then((r) => {
+      applyScreenMapSync(r);
+      setSmBusy(false);
+    });
+  }, [screenMap, savedProjectId, journey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 镜像最新会话，供异步会诊完成后判断「用户是否已重置」，避免迟到结果污染
   const messagesRef = useRef(messages);
@@ -600,8 +987,63 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden max-xl:grid-rows-2 xl:grid-cols-[1fr_440px]">
-        {/* 左列：真实对话流（独立滚动） */}
+      {/* F1-A：产品创意 Brief 工作区（整行，随对话自动生长） */}
+      <ConceptBriefPanel
+        brief={conceptBrief}
+        readiness={readiness}
+        onConfirm={(b) => setConceptBrief(b)}
+        onChanged={setConceptBrief}
+      />
+      {/* F2-A：产品蓝图（创意确认后自动收敛；状态条 + 抽屉，默认不占对话主体） */}
+      <BlueprintPanel
+        blueprint={blueprint}
+        readiness={blueprintReadiness}
+        stale={bpStale}
+        busy={bpBusy}
+        error={bpError ? flowErrorUserMessage(bpError) : null}
+        onLocalEdit={handleBlueprintLocalEdit}
+        onResolve={handleBlueprintResolve}
+        onAccept={() => handleBlueprintConfirm("accepted")}
+        onContinueAssumptions={() => handleBlueprintConfirm("continue_with_assumptions")}
+        onRebuild={handleBlueprintRebuild}
+        onRestore={handleBlueprintRestore}
+      />
+      {/* F2-B：核心体验旅程（蓝图确认后自动收敛；状态条 + 抽屉，默认不占对话主体） */}
+      {(blueprint?.status === "confirmed" || (journey && journey.version > 0)) && (
+        <JourneyPanel
+          journey={journey}
+          readiness={journeyReadiness}
+          stale={journeyStale}
+          busy={journeyBusy}
+          error={journeyError ? flowErrorUserMessage(journeyError) : null}
+          onLocalEdit={handleJourneyLocalEdit}
+          onResolve={handleJourneyResolve}
+          onAnswer={handleJourneyAnswer}
+          onAccept={() => handleJourneyConfirm("accepted")}
+          onContinueAssumptions={() => handleJourneyConfirm("continue_with_assumptions")}
+          onRebuild={handleJourneyRebuild}
+          onRestore={handleJourneyRestore}
+        />
+      )}
+      {/* F3-A：首版页面地图与信息架构（体验旅程确认后自动生成；状态条 + 抽屉，默认不占对话主体） */}
+      {(journey?.status === "confirmed" || (screenMap && screenMap.version > 0)) && (
+        <ScreenMapPanel
+          screenMap={screenMap}
+          stale={smStale}
+          busy={smBusy}
+          error={smError ? flowErrorUserMessage(smError) : null}
+          journeySteps={journeySteps}
+          onLocalEdit={handleScreenMapLocalEdit}
+          onResolve={handleScreenMapResolve}
+          onAnswer={handleScreenMapAnswer}
+          onAccept={() => handleScreenMapConfirm("accepted")}
+          onContinueAssumptions={() => handleScreenMapConfirm("continue_with_assumptions")}
+          onRebuild={handleScreenMapRebuild}
+          onRestore={handleScreenMapRestore}
+        />
+      )}
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden max-xl:grid-rows-2 xl:grid-cols-[1fr_440px]">
+          {/* 左列：真实对话流（独立滚动） */}
         <div className="min-h-0 overflow-hidden xl:col-start-1">
           <ChatStream
             onConversationChange={({ messages: ms, blocked }) => {
@@ -700,14 +1142,59 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
             <span>已对话 {rounds} 轮</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {conversationBlocked || panelError ? (
+            {confirmForce ? (
+              hasConceptPlan && !conceptAccepted ? (
+                <>
+                  <span className="max-w-[300px] text-xs leading-snug text-amber-600">
+                    初版产品方案已就绪，但你还没对方案表态。接受当前方案或带着假设继续后，即可进入方案落地。
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => {
+                      if (conceptBrief) setConceptBrief(continueConceptWithAssumptions(conceptBrief));
+                      onAdvance();
+                    }}
+                  >
+                    带着假设继续
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => {
+                      if (conceptBrief) setConceptBrief(acceptConceptPlan(conceptBrief));
+                      onAdvance();
+                    }}
+                  >
+                    <CheckCircle2 className="size-3.5" /> 接受当前方案
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setConfirmForce(false)}>
+                    返回补充
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <span className="max-w-[360px] text-xs leading-snug text-amber-600">
+                    {readiness.reasons[0] ?? "初版产品方案还不成型，继续进入方案落地会影响可用起点。"}
+                  </span>
+                  <Button size="sm" className="gap-1.5" onClick={onAdvance}>
+                    带着待确认项继续
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setConfirmForce(false)}>
+                    返回补充
+                  </Button>
+                </>
+              )
+            ) : conversationBlocked || panelError ? (
               <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
                 <AlertTriangle className="size-3.5" />
                 本轮 AI 操作未完成，可重试或用「继续手动完善」解除阻塞。
               </span>
             ) : !canAdvance ? (
               <span className="text-xs text-muted-foreground">
-                先和专家聊清产品方向
+                {readiness.reasons[0] ?? "继续访谈，让方案长得更丰满。"}
               </span>
             ) : null}
             <Button
@@ -720,8 +1207,22 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
               <Sparkles className="size-3.5" />
               召集
             </Button>
-            <Button size="sm" onClick={onAdvance} disabled={!canAdvanceOp} title={!canAdvanceOp && canAdvance ? "需先完成或解除本轮 AI 操作" : undefined}>
-              下一步
+            <Button
+              size="sm"
+              onClick={() => {
+                if (canAdvance) onAdvance();
+                else setConfirmForce(true);
+              }}
+              disabled={!!(conversationBlocked || panelError) || messages.length === 0}
+              title={
+                conversationBlocked || panelError
+                  ? "需先完成或解除本轮 AI 操作"
+                  : canAdvance
+                    ? "产品创意已就绪，进入方案落地"
+                    : "初版方案还没就绪或尚未表态，可打开右侧抽屉查看并确认后进入方案落地"
+              }
+            >
+              {canAdvance ? "进入方案落地" : "下一步"}
             </Button>
           </div>
         </CardContent>

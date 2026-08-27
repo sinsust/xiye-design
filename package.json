@@ -30,7 +30,10 @@
     "validate:table-narrative": "esbuild scripts/validation-table-narrative.mts --bundle --platform=node --format=esm --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --external:xlsx --external:chardet --external:iconv-lite --external:zod --outfile=scripts/.tmp-valnarr.mjs && node scripts/.tmp-valnarr.mjs",
     "validate:p5a": "esbuild scripts/validation-p5a.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vp5a.mjs && node scripts/.tmp-vp5a.mjs",
     "validate:flow-f0a": "esbuild scripts/validation-flow-f0a-reliability.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vf0a.mjs && node scripts/.tmp-vf0a.mjs",
-    "validate:flow-f1a": "esbuild scripts/validation-flow-f1a-concept-brief.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vf1a.mjs && node scripts/.tmp-vf1a.mjs"
+    "validate:flow-f1a": "esbuild scripts/validation-flow-f1a-concept-brief.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vf1a.mjs && node scripts/.tmp-vf1a.mjs",
+    "validate:flow-f2a": "esbuild scripts/validation-flow-f2a.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vf2a.mjs && node scripts/.tmp-vf2a.mjs",
+    "validate:flow-f2b": "esbuild scripts/validation-flow-f2b.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vf2b.mjs && node scripts/.tmp-vf2b.mjs",
+    "validate:flow-f3a": "esbuild scripts/validation-flow-f3a.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vf3a.mjs && node scripts/.tmp-vf3a.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

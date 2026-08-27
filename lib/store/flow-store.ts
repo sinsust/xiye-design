@@ -3,6 +3,10 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { type VariantDimension } from "@/data/component-variants";
 import type { IntentNarrative } from "@/lib/ai-intent";
 import type { DiscoverMessage, ProductBrief } from "@/lib/ai-discover";
+import type { ProductConceptBrief } from "@/lib/flow-concept";
+import type { ProductBlueprint } from "@/lib/flow-blueprint";
+import type { ExperienceJourney } from "@/lib/flow-journey";
+import type { ScreenMap } from "@/lib/flow-screen-map";
 
 // 节流 localStorage 写入：高频状态变更（如对话 intentSession、PRD）合并后批量落盘，
 // 避免每次输入都同步全量 JSON.stringify 大对象阻塞主线程；离开页面时 flush 兜底。
@@ -191,6 +195,22 @@ export interface FlowState {
   // —— Step 1 探索式访谈缓存：消息 / brief / 完成状态 ——
   intentSession: IntentSession | null;
 
+  // —— F1-A 产品创意 Brief：从访谈收敛的产品定义卡片（目标用户/场景/问题/价值/核心能力）——
+  // 参与 readiness 完成度；随快照向后兼容落库、按 userId 隔离。
+  conceptBrief: ProductConceptBrief | null;
+
+  // —— F2-A 产品蓝图：从 F1-A 方案与决策自动收敛的可审阅首版蓝图 ——
+  // 状态机 draft/reviewing/confirmed；随快照落库、按 userId 隔离；F1-A 决策变化标记 stale。
+  blueprint: ProductBlueprint | null;
+
+  // —— F2-B 核心用户旅程：从已确认蓝图自动收敛的首条核心体验（后台可审阅、可追溯）——
+  // 状态机 draft/reviewing/confirmed（接受 / 带假设继续）；蓝图变化标记 stale，重建保留局部编辑。
+  journey: ExperienceJourney | null;
+
+  // —— F3-A 页面地图与信息架构：从已确认蓝图+核心体验收敛的首版页面结构（后台可审阅、可追溯）——
+  // 状态机 draft/reviewing/confirmed（接受 / 带假设继续）；蓝图或体验变化标记 stale，重建保留局部编辑。
+  screenMap: ScreenMap | null;
+
   // —— 多 Agent 会诊结果（collab → refine 贯通）——
   panelOutput: PanelOutput | null;
 
@@ -216,6 +236,10 @@ export interface FlowState {
   setProductBrief: (b: ProductBrief | null) => void;
   setIntentSession: (s: IntentSession | null) => void;
   clearIntentSession: () => void;
+  setConceptBrief: (b: ProductConceptBrief | null) => void;
+  setBlueprint: (b: ProductBlueprint | null) => void;
+  setJourney: (j: ExperienceJourney | null) => void;
+  setScreenMap: (m: ScreenMap | null) => void;
   setPanelOutput: (o: PanelOutput | null) => void;
   setDeliverArtifacts: (a: DeliverArtifacts | null) => void;
   savedProjectId: string | null;
@@ -254,6 +278,10 @@ export const useFlowStore = create<FlowState>()(
   intentNarrative: null,
   productBrief: null,
   intentSession: null,
+  conceptBrief: null,
+  blueprint: null,
+  journey: null,
+  screenMap: null,
   panelOutput: null,
   deliverArtifacts: null,
   savedProjectId: null,
@@ -362,6 +390,10 @@ export const useFlowStore = create<FlowState>()(
   setProductBrief: (b) => set({ productBrief: b }),
   setIntentSession: (s) => set({ intentSession: s }),
   clearIntentSession: () => set({ intentSession: null }),
+  setConceptBrief: (b) => set({ conceptBrief: b }),
+  setBlueprint: (b) => set({ blueprint: b }),
+  setJourney: (j) => set({ journey: j }),
+  setScreenMap: (m) => set({ screenMap: m }),
   setPanelOutput: (o) => set({ panelOutput: o }),
   setDeliverArtifacts: (a) => set({ deliverArtifacts: a }),
   setSavedProjectId: (id) => set({ savedProjectId: id }),
@@ -384,6 +416,10 @@ export const useFlowStore = create<FlowState>()(
       intentNarrative: s.intentNarrative,
       productBrief: s.productBrief,
       intentSession: s.intentSession,
+      conceptBrief: s.conceptBrief,
+      blueprint: s.blueprint,
+      journey: s.journey,
+      screenMap: s.screenMap,
       panelOutput: s.panelOutput,
       deliverArtifacts: s.deliverArtifacts,
       savedProjectId: s.savedProjectId,
@@ -428,6 +464,10 @@ export const useFlowStore = create<FlowState>()(
       intentNarrative: null,
       productBrief: null,
       intentSession: null,
+      conceptBrief: null,
+      blueprint: null,
+      journey: null,
+      screenMap: null,
       panelOutput: null,
       deliverArtifacts: null,
     }),
@@ -468,10 +508,14 @@ export const useFlowStore = create<FlowState>()(
         intentNarrative: state.intentNarrative,
         productBrief: state.productBrief,
         intentSession: state.intentSession,
+        conceptBrief: state.conceptBrief,
+        blueprint: state.blueprint,
+        journey: state.journey,
+        screenMap: state.screenMap,
         panelOutput: state.panelOutput,
         deliverArtifacts: state.deliverArtifacts,
         savedProjectId: state.savedProjectId,
       }),
-    },
+    }
   ),
 );

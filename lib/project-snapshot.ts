@@ -32,6 +32,8 @@ export function captureSnapshot(): ProjectSnapshot {
       pageBlueprint: f.pageBlueprint,
       builderReturnStep: f.builderReturnStep,
       intentNarrative: f.intentNarrative,
+      conceptBrief: f.conceptBrief,
+      blueprint: f.blueprint,
     },
     skeleton: {
       picks: s.picks,
