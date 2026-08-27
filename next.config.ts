@@ -11,6 +11,21 @@ const nextConfig: NextConfig = {
   // 本地开发仍可能静态解析到 better-sqlite3，显式声明为外部包，
   // 避免其原生绑定被打包进 server bundle（线上走 Supabase 时本就不会加载）。
   serverExternalPackages: ["better-sqlite3"],
+  // 文件追踪排除：brand-pack / static-site-handler 的宽泛 fs 扫描会把
+  // .git/.next 缓存等巨物带进函数 nft 追踪（单文件 >200MB），Vercel 在
+  // "Deploying outputs" 上传校验直接拒绝。这些目录运行期均不需要。
+  outputFileTracingExcludes: {
+    "*": [
+      "**/.git/**",
+      "**/.next/**",
+      "**/.next-*/**",
+      "**/.env*",
+      "**/build-*.log",
+      "**/pnpm-*.log",
+      "**/scripts/.tmp-*.mjs",
+      "**/scripts/.scratch-*.mjs",
+    ],
+  },
 };
 
 export default nextConfig;
