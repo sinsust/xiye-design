@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "next build --webpack",
+  "buildCommand": "next build --webpack && node -e \"require('fs').writeFileSync('.next/lock','')\"",
   "installCommand": "pnpm install --no-frozen-lockfile"
 }
