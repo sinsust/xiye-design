@@ -41,6 +41,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // .next-bak-* 本地构建备份（一次性运维产物，非源码），防 lint 误扫
+    ".next-bak-*/**",
+    ".next-old/**",
     // WorkBuddy 运行数据：浏览器 CDP profile（含扩展缓存 JS）、记忆/配置，非项目源码
     ".workbuddy/**",
     // 整站模板（第三方独立站点，含各自构建产物），非主应用源码

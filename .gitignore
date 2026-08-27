@@ -100,8 +100,14 @@ pnpm-workspace.yaml
 
 # 本地构建产物 / 一次性脚本 / 测试库（防误提交，2026-08-26）
 .next-old/
+.next-bak-*/
 build.log
 build.err.log
+# 一次性构建日志 / 调试 scratch（防误提交，2026-08-27）
+build-t*.log
+scripts/.build-*.log
+scripts/.scratch-*.mjs
+xiye-p3b-debug.db
 scripts/.tmp-*.mjs
 scripts/_fix-brain.mjs
 scripts/validation-*.mts
@@ -112,6 +118,8 @@ xiye-*-test.db-wal
 # 表格金标样本（T0 支线，2026-08-26）：生成的二进制与报告产物不入库
 data/table-fixtures/generated/
 artifacts/table-baseline/
+artifacts/table-narrative/
+artifacts/table-sheet-recommendation/
 # 但下列正式脚本必须入库（覆盖上面 scripts/validation-*.mts 的宽泛忽略）
 !scripts/generate-table-fixtures.mts
 !scripts/validation-table-baseline.mts

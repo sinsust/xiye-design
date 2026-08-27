@@ -39,6 +39,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;700&display=swap"
           rel="stylesheet"
         />
+        {/* 展示体 / UI 字体集（原先以 @import url(...) 放在 globals.css 顶端，
+            但其中的 `;`（如 ital@0;1、wght@400;500）会令 Tailwind v4 的 Lightning CSS
+            在冷构建解析 `@import` 时报 "Missed semicolon"，从而打破 Vercel/冷缓存构建；
+            迁移到 <link> 预加载即为官方推荐做法，且不阻塞首屏。 */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Audiowide&family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Hedvig+Letters+Serif:opsz@12..24&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Manrope:wght@400;500;600;700&family=Monda:wght@400;500;600;700&family=Outfit:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&family=Red+Hat+Display:wght@400;500;600;700&family=Rethink+Sans:wght@400;500;600;700&family=Tillana:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         {/* 主题初始化：hydration 前同步套 .dark + 主题预设，避免闪烁（FOUC）。
             读取 zustand persist 的 theme-preset-custom（{state:{activeStyleId,custom}}），
             去掉 aw- 前缀后写 data-theme-preset，使其命中预设 CSS；若有自定义覆盖则直接写 CSS 变量，
