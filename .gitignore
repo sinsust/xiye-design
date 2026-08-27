@@ -95,8 +95,6 @@ dev-server.log
 diag.mjs
 *.bak
 *.removed
-pnpm-lock.yaml
-pnpm-workspace.yaml
 
 # 本地构建产物 / 一次性脚本 / 测试库（防误提交，2026-08-26）
 .next-old/

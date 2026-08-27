@@ -1,0 +1,8 @@
+# pnpm 11 构建脚本许可（这些依赖需要运行 install 脚本才能工作：
+# better-sqlite3 原生模块 / esbuild·sharp·unrs-resolver 平台二进制 / protobufjs 生成代码）
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true
