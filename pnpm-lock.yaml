@@ -62,6 +62,9 @@ importers:
       gsap:
         specifier: ^3.15.0
         version: 3.15.0
+      iconv-lite:
+        specifier: 0.7.3
+        version: 0.7.3
       jose:
         specifier: ^6.2.10
         version: 6.2.10
