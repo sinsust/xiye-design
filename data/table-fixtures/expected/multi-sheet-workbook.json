@@ -1,0 +1,66 @@
+{
+  "fixtureId": "multi-sheet-workbook",
+  "purpose": "多 Sheet 工作簿：Orders 与 Products 字段不同，验证不被静默合并；Overview/Notes 不应被推荐为核心分析 Sheet。",
+  "fileKind": "xlsx",
+  "tolerance": { "effectiveRows": 0, "effectiveColumns": 0 },
+  "expectedSheets": [
+    {
+      "name": "Overview",
+      "recommended": false,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 3,
+      "expectedEffectiveColumns": 2,
+      "note": "汇总 KPI（指标/数值），非明细数据，不应作为核心分析 Sheet；无业务字段断言（仅结构）",
+      "expectedColumns": [],
+      "expectedQualityIssues": []
+    },
+    {
+      "name": "Orders",
+      "recommended": true,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 5,
+      "expectedEffectiveColumns": 4,
+      "note": "明细订单，应被推荐为核心分析 Sheet；字段独立声明，不与 Products 混用",
+      "expectedColumns": [
+        { "displayName": "订单号", "normalizedName": "订单号", "expectedType": "id", "required": true },
+        { "displayName": "日期", "normalizedName": "日期", "expectedType": "date", "required": true },
+        { "displayName": "SKU", "normalizedName": "sku", "expectedType": "text", "required": true },
+        { "displayName": "金额", "normalizedName": "金额", "expectedType": "currency", "required": true }
+      ],
+      "expectedQualityIssues": [
+        { "code": "SHEETS_NOT_SILENTLY_MERGED", "field": null, "minimumAffectedRows": 1, "note": "Orders 与 Products 字段不同，detectSheetStructure 不应静默合并" }
+      ]
+    },
+    {
+      "name": "Products",
+      "recommended": true,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 4,
+      "expectedEffectiveColumns": 4,
+      "note": "明细商品，应被推荐为核心分析 Sheet；字段独立声明，不与 Orders 混用",
+      "expectedColumns": [
+        { "displayName": "SKU", "normalizedName": "sku", "expectedType": "id", "required": true },
+        { "displayName": "名称", "normalizedName": "名称", "expectedType": "text", "required": true },
+        { "displayName": "库存", "normalizedName": "库存", "expectedType": "integer", "required": true },
+        { "displayName": "价格", "normalizedName": "价格", "expectedType": "currency", "required": true }
+      ],
+      "expectedQualityIssues": []
+    },
+    {
+      "name": "Notes",
+      "recommended": false,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 2,
+      "expectedEffectiveColumns": 2,
+      "note": "文本说明（说明/内容），非结构化数据，不应被推荐；无业务字段断言（仅结构）",
+      "expectedColumns": [],
+      "expectedQualityIssues": []
+    }
+  ],
+  "expectedWarnings": ["Overview/Notes 不应被推荐为核心分析 Sheet（recommended=false）"],
+  "analysisSmokeCases": [
+    { "name": "订单金额趋势", "chartType": "line", "fields": ["日期", "金额"] },
+    { "name": "SKU 库存", "chartType": "bar", "fields": ["SKU", "库存"] }
+  ],
+  "notes": "T1-A：字段与质量问题从 workbook 全局下沉到各 sheet 作用域。Orders 与 Products 字段不同，各自独立声明，避免跨 sheet 误断言。parser 应保留 4 个 sheet 且 detectSheetStructure 不合并 Orders/Products。当前无显式『推荐选择器』，recommended 为金标声明；验证脚本用只读启发式（非 Notes/Overview 命名 + 行数>1 + 列数 2..80）比对，未实现属 T1 范围。"
+}

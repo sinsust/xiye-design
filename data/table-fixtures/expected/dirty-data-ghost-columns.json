@@ -1,0 +1,48 @@
+{
+  "fixtureId": "dirty-data-ghost-columns",
+  "purpose": "脏数据 + 幽灵列：验证 ≥15 有效字段裁剪（!ref 模拟到 200 逻辑列）、空行跳过、重复列名、混合日期与金额格式。",
+  "fileKind": "xlsx",
+  "tolerance": { "effectiveRows": 0, "effectiveColumns": 0 },
+  "expectedSheets": [
+    {
+      "name": "DirtyData",
+      "recommended": true,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 6,
+      "expectedEffectiveColumns": 17,
+      "note": "有效字段 17（含重复列名『备注』×2）；原始 !ref 撑大到 200 逻辑列，必须被裁剪为 17，且不得因虚高列数误触字段数量上限。",
+      "expectedColumns": [
+        { "displayName": "序号", "normalizedName": "序号", "expectedType": "integer", "required": true },
+        { "displayName": "订单号", "normalizedName": "订单号", "expectedType": "id", "required": true },
+        { "displayName": "客户", "normalizedName": "客户", "expectedType": "text", "required": true },
+        { "displayName": "国家", "normalizedName": "国家", "expectedType": "category", "required": true },
+        { "displayName": "省", "normalizedName": "省", "expectedType": "text", "required": true },
+        { "displayName": "市", "normalizedName": "市", "expectedType": "text", "required": true },
+        { "displayName": "产品", "normalizedName": "产品", "expectedType": "text", "required": true },
+        { "displayName": "类别", "normalizedName": "类别", "expectedType": "category", "required": true },
+        { "displayName": "数量", "normalizedName": "数量", "expectedType": "integer", "required": true },
+        { "displayName": "单价", "normalizedName": "单价", "expectedType": "currency", "required": true },
+        { "displayName": "金额", "normalizedName": "金额", "expectedType": "currency", "required": true },
+        { "displayName": "下单日期", "normalizedName": "下单日期", "expectedType": "date", "required": true },
+        { "displayName": "发货日期", "normalizedName": "发货日期", "expectedType": "date", "required": true },
+        { "displayName": "物流商", "normalizedName": "物流商", "expectedType": "category", "required": true },
+        { "displayName": "状态", "normalizedName": "状态", "expectedType": "category", "required": true },
+        { "displayName": "备注", "normalizedName": "备注", "expectedType": "text", "required": true },
+        { "displayName": "备注_2", "normalizedName": "备注", "expectedType": "text", "required": true }
+      ],
+      "expectedQualityIssues": [
+        { "code": "GHOST_COLUMNS_PRESENT", "field": null, "minimumAffectedRows": 1, "note": "原始 !ref 到 200 列，含大量空列" },
+        { "code": "EMPTY_ROWS_SKIPPABLE", "field": null, "minimumAffectedRows": 1, "note": "存在 1 个全空行，应被跳过" },
+        { "code": "DUPLICATE_COLUMN_NAME", "field": "备注", "minimumAffectedRows": 1, "note": "『备注』列名出现 2 次" },
+        { "code": "MIXED_DATE_FORMAT", "field": "下单日期", "minimumAffectedRows": 2, "note": "下单日期混合 2024-08-01 与 Excel 序列号 45320/45324" },
+        { "code": "MIXED_CURRENCY_FORMAT", "field": "金额", "minimumAffectedRows": 1, "note": "金额混合 ¥100.00 与纯数字 1200" }
+      ]
+    }
+  ],
+  "expectedWarnings": ["幽灵列需裁剪至有效 17 列；当前实现可能未裁剪空列（column_N 垃圾列），导致 profile 列数虚高，属 T1 修复范围。"],
+  "analysisSmokeCases": [
+    { "name": "各省订单量", "chartType": "bar", "fields": ["省", "数量"] },
+    { "name": "物流商分布", "chartType": "pie", "fields": ["物流商"] }
+  ],
+  "notes": "关键验证点：parser 的 effectiveCols 应裁剪数据宽度至 17；但 cleaner/profile 当前可能未裁剪空列（column_N 垃圾列），profile.columns.length 会虚高到 ~200。expectedEffectiveColumns=17 为金标，profile 列数 != 17 即暴露 FIX-GHOST-COLUMNS（T1）。"
+}

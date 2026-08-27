@@ -1,0 +1,32 @@
+{
+  "fixtureId": "sku-inventory",
+  "purpose": "SKU 库存表：验证数值/文本混合列、缺失成本、低库存识别、商品状态分类。",
+  "fileKind": "csv",
+  "tolerance": { "effectiveRows": 0, "effectiveColumns": 0 },
+  "expectedSheets": [
+    {
+      "name": "Sheet1",
+      "recommended": true,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 10,
+      "expectedEffectiveColumns": 6,
+      "expectedColumns": [
+        { "displayName": "SKU", "normalizedName": "sku", "expectedType": "id", "required": true },
+        { "displayName": "商品名称", "normalizedName": "商品名称", "expectedType": "text", "required": true },
+        { "displayName": "库存", "normalizedName": "库存", "expectedType": "integer", "required": true },
+        { "displayName": "成本", "normalizedName": "成本", "expectedType": "currency", "required": true },
+        { "displayName": "售价", "normalizedName": "售价", "expectedType": "currency", "required": true },
+        { "displayName": "商品状态", "normalizedName": "商品状态", "expectedType": "category", "required": true }
+      ],
+      "expectedQualityIssues": [
+        { "code": "MISSING_COST", "field": "成本", "minimumAffectedRows": 1, "note": "1 行成本为空" },
+        { "code": "LOW_STOCK", "field": "库存", "minimumAffectedRows": 4, "note": "库存<10 的行：8/0/3/5 共 4 行" }
+      ]
+    }
+  ],
+  "expectedWarnings": ["成本列存在缺失值，可能影响毛利分析"],
+  "analysisSmokeCases": [
+    { "name": "低库存预警", "chartType": "bar", "fields": ["商品名称", "库存"] },
+    { "name": "售价分布", "chartType": "histogram", "fields": ["售价"] }
+  ]
+}

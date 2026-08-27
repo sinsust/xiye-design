@@ -1,0 +1,32 @@
+{
+  "fixtureId": "header-offset",
+  "purpose": "表头不在首行：前两行为说明文字，真实表头在第 3 行（index 2）。验证表头识别正确性，或标记需人工确认/低置信度。",
+  "fileKind": "xlsx",
+  "tolerance": { "effectiveRows": 0, "effectiveColumns": 0 },
+  "expectedSheets": [
+    {
+      "name": "Sheet1",
+      "recommended": true,
+      "expectedHeaderRow": 2,
+      "expectedEffectiveRows": 6,
+      "expectedEffectiveColumns": 4,
+      "headerConfirmationRequired": true,
+      "lowConfidenceAllowed": false,
+      "note": "前两行为说明文字（销售月度报表/数据来源），真实表头在第 3 行 index 2；需 detectHeaderRow 或人工确认识别为 index 2，而非把说明行当表头。",
+      "expectedColumns": [
+        { "displayName": "订单号", "normalizedName": "订单号", "expectedType": "id", "required": true },
+        { "displayName": "日期", "normalizedName": "日期", "expectedType": "date", "required": true },
+        { "displayName": "金额", "normalizedName": "金额", "expectedType": "currency", "required": true },
+        { "displayName": "地区", "normalizedName": "地区", "expectedType": "category", "required": true }
+      ],
+      "expectedQualityIssues": [
+        { "code": "HEADER_NOT_FIRST_ROW", "field": null, "minimumAffectedRows": 1, "note": "表头非首行，需确认表头偏移" }
+      ]
+    }
+  ],
+  "expectedWarnings": ["表头非首行，需确认表头偏移量"],
+  "analysisSmokeCases": [
+    { "name": "地区销售额", "chartType": "bar", "fields": ["地区", "金额"] }
+  ],
+  "notes": "现有 parser 直接取首行为 headers（会把第 1 行说明当表头）；cleaner.cleanSheet 内部的 detectHeaderRow 应重新识别到第 3 行。若未正确识别，则属 T1 修复范围（FIX-HEADER-OFFSET）。"
+}

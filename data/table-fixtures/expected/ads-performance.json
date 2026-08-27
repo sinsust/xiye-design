@@ -1,0 +1,32 @@
+{
+  "fixtureId": "ads-performance",
+  "purpose": "广告效果表：验证 CTR/CPA/ROAS 派生指标所需字段（曝光/点击/转化/消耗/收入）类型。",
+  "fileKind": "csv",
+  "tolerance": { "effectiveRows": 0, "effectiveColumns": 0 },
+  "expectedSheets": [
+    {
+      "name": "Sheet1",
+      "recommended": true,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 8,
+      "expectedEffectiveColumns": 7,
+      "expectedColumns": [
+        { "displayName": "日期", "normalizedName": "日期", "expectedType": "date", "required": true },
+        { "displayName": "广告组", "normalizedName": "广告组", "expectedType": "category", "required": true },
+        { "displayName": "消耗", "normalizedName": "消耗", "expectedType": "currency", "required": true },
+        { "displayName": "曝光", "normalizedName": "曝光", "expectedType": "integer", "required": true },
+        { "displayName": "点击", "normalizedName": "点击", "expectedType": "integer", "required": true },
+        { "displayName": "转化", "normalizedName": "转化", "expectedType": "integer", "required": true },
+        { "displayName": "收入", "normalizedName": "收入", "expectedType": "currency", "required": true }
+      ],
+      "expectedQualityIssues": [
+        { "code": "CAN_COMPUTE_CTR_CPA_ROAS", "field": null, "minimumAffectedRows": 8, "note": "全部行具备曝光/点击/转化/消耗/收入，可派生 CTR/CPA/ROAS" }
+      ]
+    }
+  ],
+  "expectedWarnings": [],
+  "analysisSmokeCases": [
+    { "name": "CTR 趋势", "chartType": "line", "fields": ["日期", "点击", "曝光"] },
+    { "name": "ROAS 对比", "chartType": "bar", "fields": ["广告组", "收入", "消耗"] }
+  ]
+}

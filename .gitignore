@@ -108,3 +108,10 @@ scripts/validation-*.mts
 xiye-*-test.db
 xiye-*-test.db-shm
 xiye-*-test.db-wal
+
+# 表格金标样本（T0 支线，2026-08-26）：生成的二进制与报告产物不入库
+data/table-fixtures/generated/
+artifacts/table-baseline/
+# 但下列正式脚本必须入库（覆盖上面 scripts/validation-*.mts 的宽泛忽略）
+!scripts/generate-table-fixtures.mts
+!scripts/validation-table-baseline.mts

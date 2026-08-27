@@ -50,6 +50,73 @@ export interface ParsedTable {
   mergedSheets?: SheetInfo;
 }
 
+/* ─────────────── 有效数据集边界（T1-A：cleaner → profiler 唯一事实源） ─────────────── */
+
+/**
+ * 被排除（裁剪）的行：记录原始行下标与原因，供下游（profiler / 审计）追溯边界，
+ * 避免下游从 raw 重建时丢失「哪些行被判定为无效」的信息。
+ */
+export interface ExcludedRow {
+  /** 在原始解析 rows（不含表头行）中的 0-based 下标 */
+  rowIndex: number;
+  /** 排除原因（如 "空行" / "说明行" / "全 NULL"） */
+  reason: string;
+}
+
+/**
+ * 被排除（裁剪）的列：记录原始列下标、清洗后列名与原因。
+ */
+export interface ExcludedColumn {
+  /** 在清洗后 headers 中的 0-based 下标 */
+  columnIndex: number;
+  /** 清洗后列名（可能带 _N 去重后缀） */
+  name: string;
+  /** 排除原因（如 "幽灵列（全空）" / "无表头"） */
+  reason: string;
+}
+
+/**
+ * EffectiveDataset：表头识别之后、已完成无效空行/无效空列裁剪、
+ * 但未对原始业务值做破坏性改写的数据集边界契约。
+ *
+ * 语义（T1-A 铁律）：
+ *  - 它是 parser / cleaner / profiler 之间唯一、可追踪的「有效数据集边界」；
+ *  - cleaner 必须产出它，profiler 必须消费它（或经由 profileEffectiveDataset 适配器），
+ *    不得从 raw 重建而丢失 excludedRows / excludedColumns 边界信息；
+ *  - rows 用引用（不复制整行），避免行数据双倍内存；
+ *  - 本阶段仅「捕获并传递边界」：若 cleaner 当前尚未实现空行/幽灵列裁剪，
+ *    excludedRows / excludedColumns 为空数组，effectiveRowCount/ColumnCount 仍等于
+ *    cleaner 当前产出的有效行/列数（裁剪算法本身属 T1-B/T1-C，不在本阶段改动）。
+ */
+export interface EffectiveDataset {
+  /** sheet 唯一标识（当前用 sheet 名） */
+  sheetId: string;
+  /** sheet 名称 */
+  sheetName: string;
+  /** 检测到的表头行（在 allRows = [parsedHeader, ...parsedRows] 坐标系下的 0-based 索引） */
+  detectedHeaderRow: number;
+  /** 裁前原始总行数（含表头行） */
+  rawRowCount: number;
+  /** 裁前原始最大列数 */
+  rawColumnCount: number;
+  /** 有效数据行数（不含表头、不含被排除行） */
+  effectiveRowCount: number;
+  /** 有效列数（不含被排除列） */
+  effectiveColumnCount: number;
+  /** 清洗后表头（已 trim、空名兜底 column_N、重复列名加 _N 后缀） */
+  headers: string[];
+  /** 清洗后数据行（按 headers 对齐；业务值已 normalize，但未破坏性改写） */
+  rows: unknown[][];
+  /** 每列推断类型（与 headers 对齐） */
+  columns: FieldType[];
+  /** 被排除的行（边界追溯；本阶段可能为空） */
+  excludedRows: ExcludedRow[];
+  /** 被排除的列（边界追溯；本阶段可能为空） */
+  excludedColumns: ExcludedColumn[];
+  /** 非阻断的边界警告（如幽灵列未裁剪等） */
+  warnings: string[];
+}
+
 /* ─────────────── 字段画像层 ─────────────── */
 
 /** 字段画像的公共基座（所有类型画像的共有字段） */

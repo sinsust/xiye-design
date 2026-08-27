@@ -1,0 +1,30 @@
+{
+  "fixtureId": "customers-mixed",
+  "purpose": "客户表（中英文姓名混合）：验证空邮箱、重复邮箱；邮箱均使用 example.test 不可投递域名，不含任何真实邮箱。",
+  "fileKind": "csv",
+  "tolerance": { "effectiveRows": 0, "effectiveColumns": 0 },
+  "expectedSheets": [
+    {
+      "name": "Sheet1",
+      "recommended": true,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 8,
+      "expectedEffectiveColumns": 4,
+      "expectedColumns": [
+        { "displayName": "姓名", "normalizedName": "姓名", "expectedType": "text", "required": true },
+        { "displayName": "邮箱", "normalizedName": "邮箱", "expectedType": "email", "required": true },
+        { "displayName": "标签", "normalizedName": "标签", "expectedType": "category", "required": true },
+        { "displayName": "注册日期", "normalizedName": "注册日期", "expectedType": "date", "required": true }
+      ],
+      "expectedQualityIssues": [
+        { "code": "EMPTY_EMAIL", "field": "邮箱", "minimumAffectedRows": 1, "note": "1 行邮箱为空" },
+        { "code": "DUPLICATE_EMAIL", "field": "邮箱", "minimumAffectedRows": 1, "note": "zhang.wei@example.test 出现 2 次" }
+      ]
+    }
+  ],
+  "expectedWarnings": ["邮箱均使用 example.test 不可投递域名，仅用于测试；不含真实邮箱/手机号"],
+  "analysisSmokeCases": [
+    { "name": "标签分布", "chartType": "pie", "fields": ["标签"] },
+    { "name": "月度注册趋势", "chartType": "line", "fields": ["注册日期"] }
+  ]
+}

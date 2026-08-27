@@ -5,7 +5,7 @@
  * 纯计算，错误信息明确抛出；覆盖第二段规格：全角→半角/千分位/中文单位/百分比/货币/括号负数/Excel 序列号/季度标记等。
  */
 
-import type { FieldType, SheetInfo } from "./types";
+import type { EffectiveDataset, ExcludedColumn, ExcludedRow, FieldType, SheetInfo } from "./types";
 
 /* ─────────────── 单元常量 ─────────────── */
 
@@ -386,4 +386,63 @@ export function cleanSheet(
   );
 
   return { cleanedHeaders, cleanedRows, columnTypes };
+}
+
+/* ─────────────── EffectiveDataset 边界（T1-A） ─────────────── */
+
+/**
+ * 在 cleanSheet 之上产出 EffectiveDataset：parser / cleaner / profiler 之间
+ * 唯一、可追踪的「有效数据集边界」。
+ *
+ * 设计铁律（T1-A）：
+ *  - 不复制整行：rows 直接复用 cleanSheet 产出的引用，避免双倍内存；
+ *  - 仅「捕获并传递边界」：本阶段不新增空行/幽灵列裁剪算法（属 T1-B/T1-C），
+ *    因此 excludedRows / excludedColumns 默认空；effectiveRowCount/ColumnCount
+ *    与 cleanSheet 当前产出一致；
+ *  - 下游 profiler 必须消费本结构（或经 profileEffectiveDataset 适配器），
+ *    不得从 raw 重建而丢失边界信息。
+ *
+ * @param options.headerIdx 显式表头行（跳过 detectHeaderRow 重测）；不传则由 cleanSheet 内部重测。
+ */
+export function buildEffectiveDataset(
+  sheet: SheetInfo,
+  options: { headerIdx?: number } = {},
+): EffectiveDataset {
+  // 复用 cleanSheet 已计算的表头行，避免重复打分导致边界不一致
+  const headerIdx =
+    options.headerIdx ??
+    detectHeaderRow([
+      ...(Array.isArray(sheet.headers) && sheet.headers.length > 0 ? [sheet.headers as unknown[]] : []),
+      ...sheet.rows,
+    ]);
+  const cleaned = cleanSheet(sheet, { headerIdx });
+
+  const hasParsedHeader = Array.isArray(sheet.headers) && sheet.headers.length > 0;
+  // 原始行数 = 解析表头(若有) + 数据行；原始列数 = 解析表头与各数据行的最大宽度
+  const rawRowCount = (hasParsedHeader ? 1 : 0) + sheet.rows.length;
+  const rawColumnCount = Math.max(
+    sheet.headers?.length ?? 0,
+    ...sheet.rows.map((r) => r.length),
+    0,
+  );
+
+  const excludedRows: ExcludedRow[] = [];
+  const excludedColumns: ExcludedColumn[] = [];
+  const warnings: string[] = [];
+
+  return {
+    sheetId: sheet.name,
+    sheetName: sheet.name,
+    detectedHeaderRow: headerIdx,
+    rawRowCount,
+    rawColumnCount,
+    effectiveRowCount: cleaned.cleanedRows.length,
+    effectiveColumnCount: cleaned.cleanedHeaders.length,
+    headers: cleaned.cleanedHeaders,
+    rows: cleaned.cleanedRows,
+    columns: cleaned.columnTypes,
+    excludedRows,
+    excludedColumns,
+    warnings,
+  };
 }

@@ -1,0 +1,33 @@
+{
+  "fixtureId": "logistics-delivery",
+  "purpose": "物流交付表：验证未签收（空签收日期）、发货/签收日期差分析、空费用识别。",
+  "fileKind": "csv",
+  "tolerance": { "effectiveRows": 0, "effectiveColumns": 0 },
+  "expectedSheets": [
+    {
+      "name": "Sheet1",
+      "recommended": true,
+      "expectedHeaderRow": 0,
+      "expectedEffectiveRows": 8,
+      "expectedEffectiveColumns": 6,
+      "expectedColumns": [
+        { "displayName": "物流渠道", "normalizedName": "物流渠道", "expectedType": "category", "required": true },
+        { "displayName": "国家", "normalizedName": "国家", "expectedType": "category", "required": true },
+        { "displayName": "发货日期", "normalizedName": "发货日期", "expectedType": "date", "required": true },
+        { "displayName": "签收日期", "normalizedName": "签收日期", "expectedType": "date", "required": true },
+        { "displayName": "费用", "normalizedName": "费用", "expectedType": "currency", "required": true },
+        { "displayName": "物流状态", "normalizedName": "物流状态", "expectedType": "category", "required": true }
+      ],
+      "expectedQualityIssues": [
+        { "code": "UNSIGNED_DELIVERY", "field": "签收日期", "minimumAffectedRows": 3, "note": "3 行签收日期为空（运输中）" },
+        { "code": "MISSING_FEE", "field": "费用", "minimumAffectedRows": 1, "note": "1 行费用为空" },
+        { "code": "DATE_GAP_ANALYZABLE", "field": "发货日期", "minimumAffectedRows": 5, "note": "5 行具备完整收发日期，可算时效" }
+      ]
+    }
+  ],
+  "expectedWarnings": [],
+  "analysisSmokeCases": [
+    { "name": "物流状态分布", "chartType": "pie", "fields": ["物流状态"] },
+    { "name": "各渠道平均时效", "chartType": "bar", "fields": ["物流渠道", "发货日期", "签收日期"] }
+  ]
+}

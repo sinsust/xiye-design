@@ -12,6 +12,7 @@ import type {
   ColumnRelation,
   DateProfile,
   DateGranularity,
+  EffectiveDataset,
   FieldType,
   NumericProfile,
   TableProfileResult,
@@ -729,5 +730,27 @@ export function profileTable(
     colCount,
     columns,
     relations,
+  };
+}
+
+/* ─────────────── EffectiveDataset 适配器（T1-A） ─────────────── */
+
+/**
+ * 从 cleaner 产出的 EffectiveDataset 生成画像，确保 profiler 的有效行/列数
+ * 与 cleaner 声明的边界（effectiveRowCount / effectiveColumnCount）严格一致，
+ * 不会从 raw 重建而丢失 excludedRows / excludedColumns 信息。
+ *
+ * 兼容性：原有的 profileTable(headers, rows, types, name) 签名保持不变，
+ * 真实产品 API（app/api/brain/table/upload/route.ts）继续走旧路径；
+ * 本适配器供确定性验证链与后续 T1-B/T1-C 使用。
+ */
+export function profileEffectiveDataset(ds: EffectiveDataset): TableProfileResult {
+  const profile = profileTable(ds.headers, ds.rows, ds.columns, ds.sheetName);
+  // 用 EffectiveDataset 边界覆盖（防止下游误用 rows.length 之外的口径）
+  return {
+    ...profile,
+    sheetName: ds.sheetName,
+    rowCount: ds.effectiveRowCount,
+    colCount: ds.effectiveColumnCount,
   };
 }
