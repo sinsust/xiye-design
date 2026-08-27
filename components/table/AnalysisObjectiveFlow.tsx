@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Loader2, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { AnalysisResultView } from "./AnalysisResultView";
+import { AnalysisNarrativePanel } from "./AnalysisNarrativePanel";
 import { detectRoles } from "@/lib/table/analysis-plan";
 import type {
   AnalysisObjective,
@@ -84,10 +85,13 @@ export function AnalysisObjectiveFlow({
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [planError, setPlanError] = useState("");
 
-  const [execResult, setExecResult] = useState<PlanExecutionResult | null>(null);
+  const [history, setHistory] = useState<Array<{ plan: AnalysisPlan; result: PlanExecutionResult }>>([]);
+  const [activeVersion, setActiveVersion] = useState(0);
   const [executing, setExecuting] = useState(false);
   const [execError, setExecError] = useState("");
   const [resultTab, setResultTab] = useState(0);
+  // T3-A：外部定位请求（[查看依据] → 打开对应图表 + 明细分组）
+  const [locate, setLocate] = useState<{ resultId: string; groupKey?: string; nonce: number } | null>(null);
 
   // 口径微调可选字段（依据已确认画像的角色）
   const timeFields = profile.columns.filter((c) => detectRoles(c.name, c.type).includes("time")).map((c) => c.name);
@@ -166,7 +170,7 @@ export function AnalysisObjectiveFlow({
     if (selected) void generatePlan(selected.objective, next);
   };
 
-  /* 执行计划 */
+  /* 执行计划（结果按 planId 留档历史，不覆盖旧版本） */
   const execute = async () => {
     if (!plan) return;
     setExecuting(true);
@@ -179,7 +183,11 @@ export function AnalysisObjectiveFlow({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.result?.error || data?.message || data?.error || "执行失败");
-      setExecResult(data.result);
+      const executed = ((data.plans as Array<{ plan: AnalysisPlan; result: PlanExecutionResult | null }>) ?? [])
+        .filter((p) => !!p.result)
+        .map((p) => ({ plan: p.plan, result: p.result as PlanExecutionResult }));
+      setHistory(executed);
+      setActiveVersion(Math.max(0, executed.length - 1));
       setResultTab(0);
       setStep("result");
     } catch (e) {
@@ -419,54 +427,107 @@ export function AnalysisObjectiveFlow({
         </div>
       )}
 
-      {/* 执行结果（复用 AnalysisResultView） */}
-      {step === "result" && execResult && (
-        <div className="flex flex-col">
-          <div className="mb-2 flex items-center gap-2">
-            <button onClick={() => setStep("preview")} className="flex items-center gap-1 text-[11px] text-muted-foreground transition hover:text-primary">
-              <ArrowLeft className="size-3" /> 查看分析口径
-            </button>
-            <button onClick={onBackToFields} className="flex items-center gap-1 text-[11px] text-muted-foreground transition hover:text-primary">
-              <RefreshCw className="size-3" /> 返回调整字段
-            </button>
-          </div>
-
-          {executing && <div className="py-8 text-center text-xs text-muted-foreground">正在执行分析…</div>}
-          {execError && !executing && (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              <span className="flex-1 break-all">{execError}</span>
-              <button className="text-amber-700 underline" onClick={() => void execute()}>
-                重试
+      {/* 执行结果（复用 AnalysisResultView + T2-B 证据链 / 版本历史 / 口径重算） */}
+      {step === "result" && history.length > 0 && (() => {
+        const current = history[Math.min(activeVersion, history.length - 1)];
+        const displayResult = current.result;
+        if (!displayResult) return null;
+        return (
+          <div className="flex flex-col">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <button onClick={onBackToFields} className="flex items-center gap-1 text-[11px] text-muted-foreground transition hover:text-primary">
+                <RefreshCw className="size-3" /> 返回调整字段
               </button>
-              <button className="text-amber-700 underline" onClick={onBackToFields}>
-                返回调整字段
-              </button>
-            </div>
-          )}
-
-          {!executing && execResult.status === "executed" && execResult.results.length > 0 && (
-            <>
-              {execResult.results.length > 1 && (
-                <div className="flex flex-wrap items-center gap-1 border-b border-border/40 pb-2">
-                  {execResult.results.map((r: AnalysisResult, i: number) => (
-                    <button
-                      key={i}
-                      onClick={() => setResultTab(i)}
-                      className={
-                        "rounded-full px-2.5 py-1 text-[11px] transition " +
-                        (resultTab === i ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")
-                      }
-                    >
-                      {r.title}
-                    </button>
-                  ))}
+              {history.length > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">计算版本</span>
+                  <select
+                    value={Math.min(activeVersion, history.length - 1)}
+                    onChange={(e) => setActiveVersion(Number(e.target.value))}
+                    className="rounded-md border border-border/70 bg-white px-2 py-1 text-[11px] text-foreground outline-none focus:border-primary/50"
+                  >
+                    {history.map((h, i) => (
+                      <option key={h.plan.id} value={i}>
+                        第 {i + 1} 次 · {h.plan.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
-              <AnalysisResultView result={execResult.results[Math.min(resultTab, execResult.results.length - 1)]} headers={headers} />
-            </>
-          )}
-        </div>
-      )}
+            </div>
+
+            {executing && <div className="py-8 text-center text-xs text-muted-foreground">正在执行分析…</div>}
+            {execError && !executing && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <span className="flex-1 break-all">{execError}</span>
+                <button className="text-amber-700 underline" onClick={() => void execute()}>
+                  重试
+                </button>
+                <button className="text-amber-700 underline" onClick={onBackToFields}>
+                  返回调整字段
+                </button>
+              </div>
+            )}
+
+            {!executing && displayResult.status === "executed" && displayResult.results.length > 0 && (
+              <>
+                {displayResult.results.length > 1 && (
+                  <div className="flex flex-wrap items-center gap-1 border-b border-border/40 pb-2">
+                    {displayResult.results.map((r: AnalysisResult, i: number) => (
+                      <button
+                        key={i}
+                        onClick={() => setResultTab(i)}
+                        className={
+                          "rounded-full px-2.5 py-1 text-[11px] transition " +
+                          (resultTab === i ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")
+                        }
+                      >
+                        {r.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {(() => {
+                  const r = displayResult.results[Math.min(resultTab, displayResult.results.length - 1)];
+                  const dd = displayResult.evidence.drilldowns.find((d) => d.title === r.title);
+                  const currentResultId = dd?.resultId ?? "";
+                  return (
+                    <>
+                      <AnalysisResultView
+                        result={r}
+                        headers={headers}
+                        evidence={displayResult.evidence}
+                        effectiveRows={displayResult.effectiveRows}
+                        groupField={r.dimension.fields[0]}
+                        resultId={currentResultId}
+                        canAdjustCaliber
+                        onAdjustCaliber={() => {
+                          setExecError("");
+                          setStep("preview");
+                        }}
+                        locateRequest={locate && locate.resultId === currentResultId ? locate : undefined}
+                      />
+                      {currentResultId && (
+                        <AnalysisNarrativePanel
+                          key={currentResultId}
+                          tableId={tableId}
+                          planId={displayResult.planId}
+                          resultId={currentResultId}
+                          onLocate={(targetResultId, groupKey) => {
+                            const idx = displayResult.evidence.drilldowns.findIndex((d) => d.resultId === targetResultId);
+                            setResultTab(idx < 0 ? 0 : idx);
+                            setLocate({ resultId: targetResultId, groupKey, nonce: Date.now() });
+                          }}
+                        />
+                      )}
+                    </>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

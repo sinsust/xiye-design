@@ -191,11 +191,79 @@ export interface PlanExecutionResult {
   objective: AnalysisObjective;
   status: "executed" | "failed";
   results: AnalysisResult[];
+  /** T2-B：证据链（数据来源 / 字段 / 过滤 / 公式 / 质量提示 / 下钻），全程业务语言可溯源 */
+  evidence: AnalysisEvidence;
+  /** T2-B：过滤后的有效行（供前端下钻到明细 / 分组），上限 2000 行 */
+  effectiveRows: unknown[][];
+  /** T2-B：effectiveRows 是否被截断（原始有效行超过上限） */
+  effectiveTruncated: boolean;
   appliedFilters: AppliedFilter[];
   actualSampleSize: number;
   usedFields: string[];
   caliberSummary: string;
   error?: string;
+}
+
+/* ─────────────── T2-B：AnalysisEvidence 证据链 ─────────────── */
+
+export type EvidenceFieldRole = "dimension" | "measure" | "filter" | "derived";
+
+export interface EvidenceUsedField {
+  /** 内部列标识（UI 不展示） */
+  columnId: string;
+  displayName: string;
+  type: FieldType;
+  role: EvidenceFieldRole;
+}
+
+export interface EvidenceAppliedFilter {
+  /** 业务语言标签，如「排除已退款订单」 */
+  label: string;
+  reason: string;
+  /** 该过滤排除的行数 */
+  affectedRows?: number;
+}
+
+export interface EvidenceFormula {
+  label: string;
+  expression: string;
+  aggregation: string;
+}
+
+export interface EvidenceCalculation {
+  summary: string;
+  formulas: EvidenceFormula[];
+}
+
+export type QualityCaveatLevel = "attention" | "advisory";
+
+export interface QualityCaveat {
+  level: QualityCaveatLevel;
+  message: string;
+  affectedFieldIds?: string[];
+}
+
+export interface DrilldownInfo {
+  resultId: string;
+  title: string;
+  available: boolean;
+  rowCount: number;
+}
+
+/** 一份分析结果的完整证据链（T2-B）：让确定性引擎的结果可被信任、被复查、被溯源 */
+export interface AnalysisEvidence {
+  planId: string;
+  tableId: string;
+  sheetId: string;
+  confirmationVersion: number;
+  actualSampleSize: number;
+  excludedRowCount: number;
+  excludedColumnCount: number;
+  usedFields: EvidenceUsedField[];
+  appliedFilters: EvidenceAppliedFilter[];
+  calculation: EvidenceCalculation;
+  qualityCaveats: QualityCaveat[];
+  drilldowns: DrilldownInfo[];
 }
 
 export interface PlanDataset {
@@ -1050,8 +1118,26 @@ function materializeDerived(dc: DerivedColumn, headers: string[], rows: unknown[
 /**
  * 执行分析计划（确定性、纯 JS、无 LLM）。
  * 复用 executeDimension；执行前校验字段存在性 / 类型；失败返回结构化原因。
+ * 同时构建 T2-B 证据链（AnalysisEvidence）与下钻明细行（effectiveRows）。
  */
-export function executeAnalysisPlan(plan: AnalysisPlan, dataset: PlanDataset): PlanExecutionResult {
+export interface PlanQualityContext {
+  /** 字段名 → 推断置信度（来自 profile） */
+  confidenceByName?: Record<string, number>;
+  /** 字段名 → 用户是否覆盖类型（来自 confirmation.columnOverrides） */
+  overrideByName?: Record<string, boolean>;
+}
+
+const EVIDENCE_ROW_CAP = 2000;
+
+function aggLabel(a: PlanAggregation): string {
+  return { sum: "求和", mean: "均值", count: "计数", count_distinct: "去重计数", min: "最小", max: "最大" }[a] ?? a;
+}
+
+export function executeAnalysisPlan(
+  plan: AnalysisPlan,
+  dataset: PlanDataset,
+  qualityContext?: PlanQualityContext,
+): PlanExecutionResult {
   const allFields = [
     ...plan.dimensions.map((d) => d.field),
     ...plan.measures.map((m) => m.field),
@@ -1063,24 +1149,31 @@ export function executeAnalysisPlan(plan: AnalysisPlan, dataset: PlanDataset): P
   );
   const missingFields = allFields.filter((f) => !dataset.headers.includes(f) && !derivedNames.has(f));
   if (missingFields.length > 0) {
-    return {
+    const failedResult: PlanExecutionResult = {
       planId: plan.id,
       objective: plan.objective,
       status: "failed",
       results: [],
+      evidence: emptyEvidence(plan, dataset),
+      effectiveRows: [],
+      effectiveTruncated: false,
       appliedFilters: [],
       actualSampleSize: 0,
       usedFields: [],
       caliberSummary: "",
       error: `字段不存在: ${missingFields.join(", ")}`,
     };
+    return failedResult;
   }
 
-  // 应用过滤（在 confirmed dataset 上）
+  // 应用过滤（在 confirmed dataset 上），并记录每个过滤排除的行数
+  const preFilterCount = dataset.rows.length;
   let rows = dataset.rows;
   const applied: AppliedFilter[] = [];
+  const filterExcluded: number[] = [];
   for (const flt of plan.filters) {
     const idx = dataset.headers.indexOf(flt.field);
+    const prev = rows.length;
     let matched = 0;
     rows = rows.filter((r) => {
       const keep = applyFilter(r[idx], flt);
@@ -1088,9 +1181,15 @@ export function executeAnalysisPlan(plan: AnalysisPlan, dataset: PlanDataset): P
       return keep;
     });
     applied.push({ field: flt.field, operator: flt.operator, value: flt.value, matchedRows: matched });
+    filterExcluded.push(prev - rows.length);
   }
 
+  // 下钻明细 = 过滤后的有效行（全部列），上限截断
+  const effectiveTruncated = rows.length > EVIDENCE_ROW_CAP;
+  const effectiveRows = rows.slice(0, EVIDENCE_ROW_CAP);
+
   const results: AnalysisResult[] = [];
+  const derivedNonNull: Record<string, number> = {}; // outputId → 派生列非空计数
   for (const out of plan.outputs) {
     let h = dataset.headers.slice();
     let rr = rows.map((r) => r.slice());
@@ -1098,6 +1197,7 @@ export function executeAnalysisPlan(plan: AnalysisPlan, dataset: PlanDataset): P
     if (out.derivedColumns?.length) {
       for (const dc of out.derivedColumns) {
         const col = materializeDerived(dc, h, rr);
+        derivedNonNull[out.id] = (derivedNonNull[out.id] ?? 0) + col.filter((v) => v !== null).length;
         h = [...h, dc.name];
         rr = rr.map((row, i) => [...row, col[i]]);
         t = [...t, dc.expression === "rate" ? "percentage" : "float"];
@@ -1125,15 +1225,198 @@ export function executeAnalysisPlan(plan: AnalysisPlan, dataset: PlanDataset): P
   );
 
   const caliber = [plan.description, ...plan.assumptions, ...plan.filters.map((f) => f.reason)].join("；");
+  const evidence = buildEvidence(plan, dataset, {
+    effectiveRows,
+    excludedRowCount: preFilterCount - rows.length,
+    filterExcluded,
+    derivedNonNull,
+    qualityContext,
+    results,
+  });
 
   return {
     planId: plan.id,
     objective: plan.objective,
     status: "executed",
     results,
+    evidence,
+    effectiveRows,
+    effectiveTruncated,
     appliedFilters: applied,
     actualSampleSize: rows.length,
     usedFields,
     caliberSummary: caliber,
   };
+}
+
+/** 过滤失败时的最小证据（仍给出来源与版本，便于前端展示「无法分析」） */
+function emptyEvidence(plan: AnalysisPlan, dataset: PlanDataset): AnalysisEvidence {
+  return {
+    planId: plan.id,
+    tableId: plan.tableId,
+    sheetId: plan.sheetId,
+    confirmationVersion: plan.confirmationVersion,
+    actualSampleSize: 0,
+    excludedRowCount: 0,
+    excludedColumnCount: dataset.headers.length,
+    usedFields: [],
+    appliedFilters: [],
+    calculation: { summary: plan.description, formulas: [] },
+    qualityCaveats: [{ level: "attention", message: "分析计划存在缺失字段，无法执行计算。" }],
+    drilldowns: [],
+  };
+}
+
+interface BuildEvidenceCtx {
+  effectiveRows: unknown[][];
+  excludedRowCount: number;
+  filterExcluded: number[];
+  derivedNonNull: Record<string, number>;
+  qualityContext?: PlanQualityContext;
+  results: AnalysisResult[];
+}
+
+/** 由 plan + 执行上下文构建证据链（T2-B） */
+function buildEvidence(plan: AnalysisPlan, dataset: PlanDataset, ctx: BuildEvidenceCtx): AnalysisEvidence {
+  const usedFieldSet = new Set<string>();
+  const usedFields: EvidenceUsedField[] = [];
+
+  // 派生列信息（名称 → 执行期类型）：派生列同时出现在 plan.measures 与 outputs.derivedColumns，
+  // 优先以「derived」角色入证据，且类型按表达式推断（percentage/float），不从 dataset 兜底
+  const derivedInfo = new Map<string, FieldType>();
+  plan.outputs.forEach((o) =>
+    (o.derivedColumns ?? []).forEach((dc) => derivedInfo.set(dc.name, dc.expression === "rate" ? "percentage" : "float")),
+  );
+
+  const pushField = (name: string, role: EvidenceFieldRole, explicitType?: FieldType) => {
+    if (usedFieldSet.has(name)) return;
+    usedFieldSet.add(name);
+    const idx = dataset.headers.indexOf(name);
+    const type = explicitType ?? (idx >= 0 ? dataset.columnTypes[idx] : "text");
+    usedFields.push({ columnId: idx >= 0 ? `col-${idx}` : `derived-${name}`, displayName: name, type, role });
+  };
+  plan.dimensions.forEach((d) => pushField(d.field, "dimension"));
+  plan.measures.forEach((m) => {
+    const derivedType = derivedInfo.get(m.field);
+    pushField(m.field, derivedType ? "derived" : "measure", derivedType);
+  });
+  plan.filters.forEach((f) => pushField(f.field, "filter"));
+  plan.outputs.forEach((o) =>
+    (o.derivedColumns ?? []).forEach((dc) => pushField(dc.name, "derived", derivedInfo.get(dc.name))),
+  );
+
+  const excludedColumnCount = Math.max(0, dataset.headers.length - usedFieldSet.size);
+
+  const appliedFilters: EvidenceAppliedFilter[] = plan.filters.map((f, i) => ({
+    label: filterLabel(f),
+    reason: f.reason,
+    affectedRows: ctx.filterExcluded[i] ?? 0,
+  }));
+
+  const formulas: EvidenceFormula[] = plan.measures.map((m) => ({
+    label: `${m.displayName}（${aggLabel(m.aggregation)}）`,
+    expression: m.formula ?? `${m.aggregation}(${m.field})`,
+    aggregation: m.aggregation,
+  }));
+
+  // 下钻：每个输出是否可下钻（有数据点 + 有有效行）；行数为有效行总数
+  const drilldowns: DrilldownInfo[] = plan.outputs.map((out, i) => {
+    const exec = ctx.results[i]?.execution;
+    const hasData = Array.isArray(exec?.data) && (exec!.data as unknown[]).length > 0;
+    return {
+      resultId: out.id,
+      title: out.label,
+      available: hasData && ctx.effectiveRows.length > 0,
+      rowCount: ctx.effectiveRows.length,
+    };
+  });
+
+  // 质量提示：数据不足 / 空包 / 除零 / 不适用 / 未用列 / 过滤 0 排除 / 低置信覆盖
+  const caveats: QualityCaveat[] = [];
+  if (ctx.effectiveRows.length === 0) {
+    caveats.push({ level: "attention", message: "没有满足过滤条件的有效数据，无法得出结论。" });
+  }
+  plan.outputs.forEach((out, i) => {
+    const exec = ctx.results[i]?.execution;
+    const hasData = Array.isArray(exec?.data) && (exec!.data as unknown[]).length > 0;
+    if (!hasData) {
+      caveats.push({
+        level: "attention",
+        message: `「${out.label}」无有效数据，无法得出结论（该字段可能为空或已被全部过滤）。`,
+        affectedFieldIds: out.analysisDimension.fields.map((f) => `col-${dataset.headers.indexOf(f)}`),
+      });
+    }
+    if (out.derivedColumns?.length && (ctx.derivedNonNull[out.id] ?? 0) === 0) {
+      caveats.push({
+        level: "advisory",
+        message: `「${out.label}」的分母缺失或为 0，无法计算有效比率，相关计算已跳过。`,
+      });
+    }
+  });
+  plan.filters.forEach((f, i) => {
+    if ((ctx.filterExcluded[i] ?? 0) === 0) {
+      caveats.push({
+        level: "advisory",
+        message: `过滤条件「${f.reason || f.field}」未排除任何行（数据中可能没有对应取值）。`,
+      });
+    }
+  });
+  if (excludedColumnCount > 0) {
+    const unused = dataset.headers.filter((h) => !usedFieldSet.has(h)).slice(0, 2);
+    caveats.push({
+      level: "advisory",
+      message: `本次分析未使用 ${excludedColumnCount} 个字段${unused.length ? `（如 ${unused.join("、")}）` : ""}，如需纳入请在字段确认中调整。`,
+    });
+  }
+  if (ctx.qualityContext) {
+    for (const f of [...plan.dimensions, ...plan.measures]) {
+      const conf = ctx.qualityContext.confidenceByName?.[f.field];
+      const overridden = ctx.qualityContext.overrideByName?.[f.field];
+      const idx = dataset.headers.indexOf(f.field);
+      if (overridden && conf !== undefined && conf < PLAN_LOW_CONF_THRESHOLD) {
+        caveats.push({
+          level: "advisory",
+          message: `「${f.field}」由你确认覆盖了低置信类型（原推断置信度 ${(conf * 100).toFixed(0)}%），数值准确性需留意。`,
+          affectedFieldIds: [idx >= 0 ? `col-${idx}` : `derived-${f.field}`],
+        });
+      } else if (!overridden && conf !== undefined && conf < PLAN_LOW_CONF_THRESHOLD) {
+        caveats.push({
+          level: "advisory",
+          message: `「${f.field}」类型识别置信度较低（${(conf * 100).toFixed(0)}%），分组口径可能受影响。`,
+          affectedFieldIds: [idx >= 0 ? `col-${idx}` : `derived-${f.field}`],
+        });
+      }
+    }
+  }
+
+  return {
+    planId: plan.id,
+    tableId: plan.tableId,
+    sheetId: plan.sheetId,
+    confirmationVersion: plan.confirmationVersion,
+    actualSampleSize: ctx.effectiveRows.length,
+    excludedRowCount: ctx.excludedRowCount,
+    excludedColumnCount,
+    usedFields,
+    appliedFilters,
+    calculation: { summary: [plan.description, ...plan.assumptions].join("；"), formulas },
+    qualityCaveats: caveats,
+    drilldowns,
+  };
+}
+
+function filterLabel(f: PlanFilter): string {
+  const v = f.value === null || f.value === undefined ? "" : String(f.value);
+  switch (f.operator) {
+    case "neq":
+      return `${f.reason || `${f.field} ≠ ${v}`}`;
+    case "eq":
+      return `${f.reason || `${f.field} = ${v}`}`;
+    case "not_null":
+      return `${f.reason || `仅保留「${f.field}」非空`}`;
+    case "is_null":
+      return `${f.reason || `仅保留「${f.field}」为空`}`;
+    default:
+      return f.reason || `${f.field} ${f.operator} ${v}`;
+  }
 }

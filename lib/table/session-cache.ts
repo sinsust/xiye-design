@@ -13,7 +13,8 @@
 
 import { randomUUID } from "crypto";
 import type { SheetInfo, TableConfirmation } from "./types";
-import type { AnalysisPlan } from "./analysis-plan";
+import type { AnalysisPlan, PlanExecutionResult } from "./analysis-plan";
+import type { AnalysisNarrative } from "./narrative";
 
 /** 缓存条目 */
 interface CacheEntry {
@@ -29,8 +30,16 @@ interface CacheEntry {
   rawSheet?: SheetInfo;
   /** 用户会话级确认状态（T1-D2） */
   confirmation?: TableConfirmation;
-  /** 当前生成的分析计划（T2-A；随确认版本失效，不落库） */
-  plan?: AnalysisPlan;
+  /** 已生成的分析计划历史（T2-B；key = planId，随确认版本失效，不落库） */
+  plans?: Record<string, AnalysisPlan>;
+  /** 各计划对应的执行结果历史（T2-B；key = planId） */
+  results?: Record<string, PlanExecutionResult>;
+  /** 计划生成顺序（T2-B；用于版本排序与取最新） */
+  planOrder?: string[];
+  /** 最新计划 id（T2-B） */
+  latestPlanId?: string;
+  /** LLM 受控解读缓存（T3-A；key = planId:resultId，随确认版本失效） */
+  narratives?: Record<string, AnalysisNarrative>;
   /** 创建时间戳 */
   createdAt: number;
 }
@@ -135,9 +144,9 @@ export function deleteTableCache(id: string): void {
   store.delete(id);
 }
 
-/* ─────────────── AnalysisPlan 存储（T2-A） ─────────────── */
+/* ─────────────── AnalysisPlan 存储（T2-A / T2-B 历史版本化） ─────────────── */
 
-/** 写入分析计划（随 tableId + userId + TTL 隔离；非本人 / 过期 / 不存在 → false） */
+/** 写入分析计划（按 planId 追加进历史；随 tableId + userId + TTL 隔离） */
 export function saveTablePlan(id: string, userId: string, plan: AnalysisPlan): boolean {
   const entry = store.get(id);
   if (!entry) return false;
@@ -146,11 +155,16 @@ export function saveTablePlan(id: string, userId: string, plan: AnalysisPlan): b
     return false;
   }
   if (entry.userId !== userId) return false;
-  entry.plan = plan;
+  entry.plans = entry.plans ?? {};
+  entry.results = entry.results ?? {};
+  entry.planOrder = entry.planOrder ?? [];
+  entry.plans[plan.id] = plan;
+  if (!entry.planOrder.includes(plan.id)) entry.planOrder.push(plan.id);
+  entry.latestPlanId = plan.id;
   return true;
 }
 
-/** 读取分析计划；非本人 / 过期 / 不存在 → null */
+/** 读取最新分析计划；非本人 / 过期 / 不存在 → null */
 export function getTablePlan(id: string, userId: string): AnalysisPlan | null {
   const entry = store.get(id);
   if (!entry) return null;
@@ -159,10 +173,70 @@ export function getTablePlan(id: string, userId: string): AnalysisPlan | null {
     return null;
   }
   if (entry.userId !== userId) return null;
-  return entry.plan ?? null;
+  if (!entry.latestPlanId) return null;
+  return entry.plans?.[entry.latestPlanId] ?? null;
 }
 
-/** 清除分析计划（字段 / Sheet / 表头变更时使旧计划失效；非本人 / 过期 / 不存在 → false） */
+/** 按 planId 读取指定历史计划；非本人 / 过期 / 不存在 → null */
+export function getTablePlanById(id: string, userId: string, planId: string): AnalysisPlan | null {
+  const entry = store.get(id);
+  if (!entry) return null;
+  if (Date.now() - entry.createdAt > TTL_MS) {
+    store.delete(id);
+    return null;
+  }
+  if (entry.userId !== userId) return null;
+  return entry.plans?.[planId] ?? null;
+}
+
+/** 列出计划 + 结果历史（按生成顺序，含执行结果；供 T2-B 版本切换） */
+export function listTablePlans(
+  id: string,
+  userId: string,
+): Array<{ plan: AnalysisPlan; result: PlanExecutionResult | null }> {
+  const entry = store.get(id);
+  if (!entry) return [];
+  if (Date.now() - entry.createdAt > TTL_MS) {
+    store.delete(id);
+    return [];
+  }
+  if (entry.userId !== userId) return [];
+  const order = entry.planOrder ?? [];
+  return order
+    .map((pid) => ({
+      plan: entry.plans?.[pid],
+      result: entry.results?.[pid] ?? null,
+    }))
+    .filter((x): x is { plan: AnalysisPlan; result: PlanExecutionResult | null } => !!x.plan);
+}
+
+/** 写入某计划的执行结果（按 planId 历史存储） */
+export function saveTableResult(id: string, userId: string, planId: string, result: PlanExecutionResult): boolean {
+  const entry = store.get(id);
+  if (!entry) return false;
+  if (Date.now() - entry.createdAt > TTL_MS) {
+    store.delete(id);
+    return false;
+  }
+  if (entry.userId !== userId) return false;
+  entry.results = entry.results ?? {};
+  entry.results[planId] = result;
+  return true;
+}
+
+/** 读取某计划的执行结果；非本人 / 过期 / 不存在 → null */
+export function getTableResult(id: string, userId: string, planId: string): PlanExecutionResult | null {
+  const entry = store.get(id);
+  if (!entry) return null;
+  if (Date.now() - entry.createdAt > TTL_MS) {
+    store.delete(id);
+    return null;
+  }
+  if (entry.userId !== userId) return null;
+  return entry.results?.[planId] ?? null;
+}
+
+/** 清除全部分析计划与结果历史（字段 / Sheet / 表头变更时使旧计划失效） */
 export function clearTablePlan(id: string, userId: string): boolean {
   const entry = store.get(id);
   if (!entry) return false;
@@ -171,8 +245,40 @@ export function clearTablePlan(id: string, userId: string): boolean {
     return false;
   }
   if (entry.userId !== userId) return false;
-  entry.plan = undefined;
+  entry.plans = undefined;
+  entry.results = undefined;
+  entry.planOrder = undefined;
+  entry.latestPlanId = undefined;
+  entry.narratives = undefined;
   return true;
+}
+
+/* ─────────────── LLM 受控解读存储（T3-A） ─────────────── */
+
+/** 写入解读（key = planId:resultId；仅 ready 状态入库；随 tableId + userId + TTL 隔离） */
+export function saveTableNarrative(id: string, userId: string, narrative: AnalysisNarrative): boolean {
+  const entry = store.get(id);
+  if (!entry) return false;
+  if (Date.now() - entry.createdAt > TTL_MS) {
+    store.delete(id);
+    return false;
+  }
+  if (entry.userId !== userId) return false;
+  entry.narratives = entry.narratives ?? {};
+  entry.narratives[`${narrative.planId}:${narrative.resultId}`] = narrative;
+  return true;
+}
+
+/** 读取解读；非本人 / 过期 / 不存在 → null */
+export function getTableNarrative(id: string, userId: string, planId: string, resultId: string): AnalysisNarrative | null {
+  const entry = store.get(id);
+  if (!entry) return null;
+  if (Date.now() - entry.createdAt > TTL_MS) {
+    store.delete(id);
+    return null;
+  }
+  if (entry.userId !== userId) return null;
+  return entry.narratives?.[`${planId}:${resultId}`] ?? null;
 }
 
 /** 惰性清理过期条目 */
