@@ -1,0 +1,565 @@
+{
+  "summary": {
+    "total": 67,
+    "passed": 67,
+    "failed": 0,
+    "failedHard": 0,
+    "failedWarn": 0,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "fixtureId": "ads-performance",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "customers-mixed",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "dirty-data-ghost-columns",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[DirtyData]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[DirtyData]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[DirtyData]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "header-offset",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "recommender",
+          "name": "需确认表头[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "requires=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "理由可解释[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "含关键词"
+        },
+        {
+          "layer": "flow",
+          "name": "需经表头确认[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=confirm_header"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "logistics-delivery",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "multi-sheet-workbook",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Overview]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=false"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Overview]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=summary"
+        },
+        {
+          "layer": "flow",
+          "name": "需经表头确认[Overview]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=confirm_header"
+        },
+        {
+          "layer": "flow",
+          "name": "风险提示标签[Overview]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "tag=不建议作为主分析表（汇总表）"
+        },
+        {
+          "layer": "flow",
+          "name": "仍可手动选择[Overview]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "analyzable=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Orders]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Orders]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[Orders]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        },
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Products]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Products]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[Products]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        },
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Notes]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=false"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Notes]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=notes"
+        },
+        {
+          "layer": "flow",
+          "name": "需经表头确认[Notes]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=confirm_header"
+        },
+        {
+          "layer": "flow",
+          "name": "风险提示标签[Notes]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "tag=不建议作为主分析表（备注表）"
+        },
+        {
+          "layer": "flow",
+          "name": "仍可手动选择[Notes]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "analyzable=true"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "orders-basic",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "sku-inventory",
+      "assertions": [
+        {
+          "layer": "recommender",
+          "name": "推荐标记[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "recommender",
+          "name": "角色[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "默认可进入画像[Sheet1]",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "header-offset-confirm-row3",
+      "assertions": [
+        {
+          "layer": "flow",
+          "name": "未确认→必须确认表头",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=confirm_header"
+        },
+        {
+          "layer": "flow",
+          "name": "默认需确认表头=true",
+          "severity": "hard",
+          "pass": true,
+          "detail": "requires=true"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后检测表头行=2",
+          "severity": "hard",
+          "pass": true,
+          "detail": "detectedHeaderRow=2"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后表头正确",
+          "severity": "hard",
+          "pass": true,
+          "detail": "headers=[\"订单号\",\"日期\",\"金额\",\"地区\"]"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后有效行数=6",
+          "severity": "hard",
+          "pass": true,
+          "detail": "effectiveRowCount=6"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后有效列数=4",
+          "severity": "hard",
+          "pass": true,
+          "detail": "effectiveColumnCount=4"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后画像列数=4",
+          "severity": "hard",
+          "pass": true,
+          "detail": "cols=4"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后首列名为订单号",
+          "severity": "hard",
+          "pass": true,
+          "detail": "col0=订单号"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后角色=primary_data",
+          "severity": "hard",
+          "pass": true,
+          "detail": "role=primary_data"
+        },
+        {
+          "layer": "flow",
+          "name": "确认后仍被推荐",
+          "severity": "hard",
+          "pass": true,
+          "detail": "recommended=true"
+        },
+        {
+          "layer": "flow",
+          "name": "改表头后画像重生成(不同于错误表头)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "wrongCols=[\"销售月度报表（2024年8月）\"] vs confirmedCols=[\"订单号\",\"日期\",\"金额\",\"地区\"]"
+        },
+        {
+          "layer": "flow",
+          "name": "表头候选含第3行",
+          "severity": "hard",
+          "pass": true,
+          "detail": "candidates=2,3,4,5,6,7,8"
+        },
+        {
+          "layer": "flow",
+          "name": "第3行候选列名正确",
+          "severity": "hard",
+          "pass": true,
+          "detail": "names=[\"订单号\",\"日期\",\"金额\",\"地区\"]"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "multi-sheet-no-merge",
+      "assertions": [
+        {
+          "layer": "flow",
+          "name": "不自动合并(N→N)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "输入 4 → 产出 4"
+        },
+        {
+          "layer": "flow",
+          "name": "sheetId 一一对应",
+          "severity": "hard",
+          "pass": true,
+          "detail": "every rec maps to a sheet"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "session-isolation",
+      "assertions": [
+        {
+          "layer": "isolation",
+          "name": "本人可读缓存",
+          "severity": "hard",
+          "pass": true,
+          "detail": "u1 命中"
+        },
+        {
+          "layer": "isolation",
+          "name": "他人不可读缓存",
+          "severity": "hard",
+          "pass": true,
+          "detail": "u2 返回 null"
+        },
+        {
+          "layer": "isolation",
+          "name": "本人写入确认态",
+          "severity": "hard",
+          "pass": true,
+          "detail": "save=true"
+        },
+        {
+          "layer": "isolation",
+          "name": "本人可读确认态",
+          "severity": "hard",
+          "pass": true,
+          "detail": "confirmation 非空"
+        },
+        {
+          "layer": "isolation",
+          "name": "他人不可读确认态",
+          "severity": "hard",
+          "pass": true,
+          "detail": "u2 返回 null"
+        },
+        {
+          "layer": "isolation",
+          "name": "未知 tableId→null(恢复重传)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "未知 id 返回 null"
+        },
+        {
+          "layer": "isolation",
+          "name": "未知 tableId 原始Sheet→null",
+          "severity": "hard",
+          "pass": true,
+          "detail": "未知 id 返回 null"
+        },
+        {
+          "layer": "isolation",
+          "name": "无 rawSheet 时 getRawSheet→null",
+          "severity": "hard",
+          "pass": true,
+          "detail": "未存 rawSheet 返回 null"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "switch-invalidation-rule",
+      "assertions": [
+        {
+          "layer": "flow",
+          "name": "选 Orders→profile",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=profile"
+        },
+        {
+          "layer": "flow",
+          "name": "切到 Notes→confirm_header(旧分析结果应清除)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "phase=confirm_header"
+        },
+        {
+          "layer": "flow",
+          "name": "角色文案映射-主数据",
+          "severity": "hard",
+          "pass": true,
+          "detail": "label=主数据"
+        },
+        {
+          "layer": "flow",
+          "name": "角色文案映射-备注",
+          "severity": "hard",
+          "pass": true,
+          "detail": "label=备注"
+        },
+        {
+          "layer": "flow",
+          "name": "字段类型摘要非空",
+          "severity": "hard",
+          "pass": true,
+          "detail": "summary=日期 ×1 · 数值/金额 ×1 · 编号 ×1"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    }
+  ]
+}

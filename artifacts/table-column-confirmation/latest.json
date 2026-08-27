@@ -1,0 +1,320 @@
+{
+  "summary": {
+    "total": 36,
+    "passed": 36,
+    "failed": 0,
+    "failedHard": 0,
+    "failedWarn": 0,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "fixtureId": "orders-basic-direct-confirmable",
+      "assertions": [
+        {
+          "layer": "profile",
+          "name": "高置信字段存在",
+          "severity": "hard",
+          "pass": true,
+          "detail": "高置信字段数=6"
+        },
+        {
+          "layer": "flow",
+          "name": "高置信订单表可直接确认(不阻断)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "blocked=false reasons=0"
+        },
+        {
+          "layer": "flow",
+          "name": "低置信字段不含未确认关键字段",
+          "severity": "hard",
+          "pass": true,
+          "detail": "低置信=1 低置信关键=0"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "low-confidence-text-fallback",
+      "assertions": [
+        {
+          "layer": "profile",
+          "name": "低置信字段被识别(置信<0.6)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "低置信数=2"
+        },
+        {
+          "layer": "profile",
+          "name": "唯一型低置信字段=关键字段",
+          "severity": "hard",
+          "pass": true,
+          "detail": "备注列唯一"
+        },
+        {
+          "layer": "flow",
+          "name": "未确认时唯一低置信关键字段阻断主按钮",
+          "severity": "hard",
+          "pass": true,
+          "detail": "blocked=true"
+        },
+        {
+          "layer": "flow",
+          "name": "提供覆盖后解除阻断",
+          "severity": "hard",
+          "pass": true,
+          "detail": "blocked=false"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "override-reprofile",
+      "assertions": [
+        {
+          "layer": "reprofile",
+          "name": "覆盖类型被采用",
+          "severity": "hard",
+          "pass": true,
+          "detail": "type=category"
+        },
+        {
+          "layer": "reprofile",
+          "name": "展示名重命名生效",
+          "severity": "hard",
+          "pass": true,
+          "detail": "name=水果名"
+        },
+        {
+          "layer": "reprofile",
+          "name": "originalName 保留溯源",
+          "severity": "hard",
+          "pass": true,
+          "detail": "originalName=名称"
+        },
+        {
+          "layer": "reprofile",
+          "name": "未覆盖列类型不变",
+          "severity": "hard",
+          "pass": true,
+          "detail": "代码列type=id"
+        },
+        {
+          "layer": "reprofile",
+          "name": "确认列集合过滤生效",
+          "severity": "hard",
+          "pass": true,
+          "detail": "headers=[\"名称\"]"
+        },
+        {
+          "layer": "reprofile",
+          "name": "过滤后 originalName 仍溯源",
+          "severity": "hard",
+          "pass": true,
+          "detail": "originalName=名称"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "override-validation",
+      "assertions": [
+        {
+          "layer": "validation",
+          "name": "越界列下标→invalid_column",
+          "severity": "hard",
+          "pass": true,
+          "detail": "errorCode=invalid_column"
+        },
+        {
+          "layer": "validation",
+          "name": "非法类型→invalid_override",
+          "severity": "hard",
+          "pass": true,
+          "detail": "errorCode=invalid_override"
+        },
+        {
+          "layer": "validation",
+          "name": "空展示名→invalid_override",
+          "severity": "hard",
+          "pass": true,
+          "detail": "errorCode=invalid_override"
+        },
+        {
+          "layer": "validation",
+          "name": "含非法字符展示名→invalid_override",
+          "severity": "hard",
+          "pass": true,
+          "detail": "errorCode=invalid_override"
+        },
+        {
+          "layer": "validation",
+          "name": "越界确认列→invalid_column",
+          "severity": "hard",
+          "pass": true,
+          "detail": "errorCode=invalid_column"
+        },
+        {
+          "layer": "validation",
+          "name": "合法覆盖项通过",
+          "severity": "hard",
+          "pass": true,
+          "detail": "ok=true"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "session-isolation-override",
+      "assertions": [
+        {
+          "layer": "isolation",
+          "name": "本人可读缓存",
+          "severity": "hard",
+          "pass": true,
+          "detail": "u1 命中"
+        },
+        {
+          "layer": "isolation",
+          "name": "他人不可读缓存",
+          "severity": "hard",
+          "pass": true,
+          "detail": "u2 返回 null"
+        },
+        {
+          "layer": "isolation",
+          "name": "覆盖后缓存更新成功",
+          "severity": "hard",
+          "pass": true,
+          "detail": "update=true"
+        },
+        {
+          "layer": "isolation",
+          "name": "下游读取采用覆盖类型",
+          "severity": "hard",
+          "pass": true,
+          "detail": "下游columnTypes=[\"id\",\"category\"]"
+        },
+        {
+          "layer": "isolation",
+          "name": "下游表头随覆盖更新",
+          "severity": "hard",
+          "pass": true,
+          "detail": "下游headers=[\"代码\",\"名称\"]"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "override-clears-downstream",
+      "assertions": [
+        {
+          "layer": "downstream",
+          "name": "覆盖刷新画像类型",
+          "severity": "hard",
+          "pass": true,
+          "detail": "before=[\"integer\",\"text\",\"text\"] after=[\"category\",\"text\"]"
+        },
+        {
+          "layer": "downstream",
+          "name": "列过滤生效(C被排除)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "headers=[\"A\",\"B\"]"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "quality-frontendization",
+      "assertions": [
+        {
+          "layer": "quality",
+          "name": "高置信画像无低置信关键字段",
+          "severity": "hard",
+          "pass": true,
+          "detail": "低置信关键=0"
+        },
+        {
+          "layer": "quality",
+          "name": "空行/幽灵列不阻断",
+          "severity": "hard",
+          "pass": true,
+          "detail": "blocked=false"
+        },
+        {
+          "layer": "quality",
+          "name": "EMPTY_ROWS→auto_handled 分组",
+          "severity": "hard",
+          "pass": true,
+          "detail": "group=auto_handled"
+        },
+        {
+          "layer": "quality",
+          "name": "GHOST_COLUMNS→auto_handled 分组",
+          "severity": "hard",
+          "pass": true,
+          "detail": "group=auto_handled"
+        },
+        {
+          "layer": "quality",
+          "name": "MIXED_DATE_FORMAT→attention 分组",
+          "severity": "hard",
+          "pass": true,
+          "detail": "group=attention"
+        },
+        {
+          "layer": "quality",
+          "name": "混合日期不阻断",
+          "severity": "hard",
+          "pass": true,
+          "detail": "blocked=false"
+        },
+        {
+          "layer": "quality",
+          "name": "分组归类正确",
+          "severity": "hard",
+          "pass": true,
+          "detail": "auto=2 att=1 adv=0"
+        },
+        {
+          "layer": "quality",
+          "name": "覆盖不改写原始行值",
+          "severity": "hard",
+          "pass": true,
+          "detail": "orig=[\"2024-01-01\",\"2024-02-01\",\"2024-03-01\",\"2024-01-29\",\"2024-04-01\"] new=[\"2024-01-01\",\"2024-02-01\",\"2024-03-01\",\"2024-01-29\",\"2024-04-01\"]"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    },
+    {
+      "fixtureId": "session-expiry-recovery",
+      "assertions": [
+        {
+          "layer": "recovery",
+          "name": "未知 tableId→缓存null(重传)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "未知 id 返回 null"
+        },
+        {
+          "layer": "recovery",
+          "name": "未知 tableId→rawSheet null(重传)",
+          "severity": "hard",
+          "pass": true,
+          "detail": "未知 id 返回 null"
+        }
+      ],
+      "failedHard": 0,
+      "failedWarn": 0
+    }
+  ]
+}

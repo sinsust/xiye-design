@@ -7,6 +7,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { FileSpreadsheet, Loader2, UploadCloud, X } from "lucide-react";
+import type { HeaderCandidate, SheetRecommendation } from "@/lib/table/types";
 
 const ACCEPT = ".xlsx,.xls,.csv,.tsv,.json";
 const MAX_MB = 100;
@@ -30,6 +31,21 @@ export interface UploadResult {
     columnTypes: string[];
     profile: unknown;
     tableId: string;
+    /** T1-D1：Sheet 推荐结果（角色 / 推荐标记 / 需确认表头 / 理由） */
+    recommendation?: SheetRecommendation;
+    /** T1-D2：可选表头候选（供确认面板切换预览） */
+    headerCandidates?: HeaderCandidate[];
+    /** 以下字段由服务端返回，供确认流展示与重新画像（均可选，向后兼容） */
+    detectedHeaderRow?: number;
+    effectiveRowCount?: number;
+    effectiveColumnCount?: number;
+    excludedRows?: unknown[];
+    excludedColumns?: unknown[];
+    qualityIssues?: unknown[];
+    /** T1-D3：字段级覆盖（展示名 / 类型），由 confirm-columns 回写，向后兼容可选 */
+    columnOverrides?: Record<number, { displayName?: string; type?: string }>;
+    /** T1-D3：用户确认纳入分析的列下标集合（undefined=全部） */
+    confirmedColumns?: number[];
   }>;
 }
 

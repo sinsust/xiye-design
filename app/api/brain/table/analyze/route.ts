@@ -11,10 +11,26 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { getSessionUser } from "@/lib/auth";
 import { executeDimension, buildRecommendPrompt, buildFallbackDimensions } from "@/lib/table/analysis";
 import { chatLLMJsonRouted } from "@/lib/table/llm";
-import { getTableCache } from "@/lib/table/session-cache";
+import { profileTable } from "@/lib/table/profiler";
+import {
+  generatePlan,
+  listObjectives,
+  executeAnalysisPlan,
+  type AnalysisObjective,
+  type PlanOptions,
+  type AnalysisPlan,
+} from "@/lib/table/analysis-plan";
+import {
+  getTableCache,
+  getTableConfirmation,
+  saveTablePlan,
+  getTablePlan,
+  clearTablePlan,
+} from "@/lib/table/session-cache";
 import type {
   AnalysisDimension,
   AnalysisExecutionResult,
@@ -35,6 +51,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const profile = body?.profile as TableProfileResult | undefined;
     const tableId: string = typeof body?.tableId === "string" ? body.tableId : "";
+
+    // T2-A：分析计划生命周期（生成 / 获取 / 确认并执行）。向后兼容：无 action 时走原 LLM 推荐 / 执行逻辑。
+    const action: string = typeof body?.action === "string" ? body.action : "";
+    if (action === "list_objectives" || action === "generate_plan" || action === "execute_plan" || action === "get_plan") {
+      return await handlePlanAction(action, body, user);
+    }
 
     // 优先用 tableId 取服务端缓存（避免回传大 rows）
     let headers: string[] = Array.isArray(body?.headers) ? body.headers : [];
@@ -230,4 +252,123 @@ ${block}
     if (item?.name && item.text) map[item.name] = item.text.trim();
   }
   return { map, route };
+}
+
+/* ─────────────── T2-A：分析计划生命周期 ───────────────
+ * 确定性、无 LLM：generate/list 由纯规则模块产出 AnalysisPlan；
+ * execute 复用 lib/table/analysis.ts 的 executeDimension。
+ * 全程受 tableId + userId + TTL 隔离，且执行时校验确认版本一致性。
+ */
+
+async function handlePlanAction(action: string, body: Record<string, unknown>, user: { sub: string }) {
+  const tableId: string = typeof body?.tableId === "string" ? body.tableId : "";
+  if (!tableId) {
+    return NextResponse.json({ error: "table_id_required", message: "缺少表格标识" }, { status: 400 });
+  }
+
+  // 取已确认的有效数据集 + 确认状态（过期 / 非本人 / 不存在 → 410）
+  const cached = getTableCache(tableId, user.sub);
+  if (!cached) {
+    return NextResponse.json(
+      { error: "table_expired", message: "表格数据已失效（页面停留过久或服务重启导致），请重新上传后再分析" },
+      { status: 410 },
+    );
+  }
+  const confirmation = getTableConfirmation(tableId, user.sub);
+  if (!confirmation) {
+    return NextResponse.json(
+      { error: "confirmation_required", message: "请先完成字段确认再生成分析计划" },
+      { status: 400 },
+    );
+  }
+
+  const { headers, rows, columnTypes } = cached;
+  // 服务端基于 confirmed dataset 重新画像（权威，不信任前端传入 profile）
+  const sheetName = profileSheetName();
+  const profile = profileTable(headers, rows, columnTypes as FieldType[], sheetName);
+  const sheetId = profile.sheetName;
+  const headerRow = confirmation.headerRowBySheet[sheetId] ?? 0;
+
+  const common = {
+    tableId,
+    profile,
+    headers,
+    rows,
+    columnTypes: columnTypes as FieldType[],
+    sheetId,
+    headerRow,
+    confirmationVersion: confirmation.version,
+    confirmedColumns: confirmation.confirmedColumns,
+    columnOverrides: confirmation.columnOverrides,
+  };
+
+  /* list_objectives：列出 5 个业务方向的可用性与元信息 */
+  if (action === "list_objectives") {
+    const objectives = listObjectives(common);
+    return NextResponse.json({ objectives });
+  }
+
+  /* generate_plan：生成单个目标的计划（draft），存入 session-cache */
+  if (action === "generate_plan") {
+    const objective = body?.objective as AnalysisObjective;
+    const options = (body?.options as PlanOptions) ?? undefined;
+    if (!objective || !["revenue_overview", "product_performance", "logistics_cost", "advertising_performance", "customer_overview", "custom"].includes(objective)) {
+      return NextResponse.json({ error: "invalid_objective", message: "不支持的分析目标" }, { status: 400 });
+    }
+    const res = generatePlan({ ...common, objective, options });
+    if (!res.ok) {
+      return NextResponse.json(
+        { ok: false, error: "plan_unavailable", missingReasons: res.missingReasons, missingFieldTypes: res.missingFieldTypes, suggestions: res.suggestions },
+        { status: 400 },
+      );
+    }
+    const plan: AnalysisPlan = { ...res.plan, id: randomUUID().replace(/-/g, "").slice(0, 16) };
+    saveTablePlan(tableId, user.sub, plan);
+    return NextResponse.json({ ok: true, plan });
+  }
+
+  /* get_plan：取回已生成的计划（校验确认版本，防止旧计划复用） */
+  if (action === "get_plan") {
+    const plan = getTablePlan(tableId, user.sub);
+    if (!plan) {
+      return NextResponse.json({ error: "plan_expired", message: "分析计划已失效，请重新选择分析方向" }, { status: 410 });
+    }
+    if (plan.confirmationVersion !== confirmation.version) {
+      clearTablePlan(tableId, user.sub);
+      return NextResponse.json({ error: "plan_invalid", message: "分析计划已失效（字段 / 表头已变更），请重新选择分析方向" }, { status: 409 });
+    }
+    return NextResponse.json({ plan });
+  }
+
+  /* execute_plan：确认并执行计划（确定性执行，无 LLM 解读） */
+  if (action === "execute_plan") {
+    const planId: string = typeof body?.planId === "string" ? body.planId : "";
+    const plan = getTablePlan(tableId, user.sub);
+    if (!plan || plan.id !== planId) {
+      return NextResponse.json({ error: "plan_expired", message: "分析计划已失效，请重新选择分析方向" }, { status: 410 });
+    }
+    if (plan.confirmationVersion !== confirmation.version) {
+      clearTablePlan(tableId, user.sub);
+      return NextResponse.json({ error: "plan_invalid", message: "分析计划已失效（字段 / 表头已变更），请重新选择分析方向" }, { status: 409 });
+    }
+    if (plan.tableId !== tableId) {
+      return NextResponse.json({ error: "unauthorized", message: "计划与当前表格不匹配" }, { status: 401 });
+    }
+    const result = executeAnalysisPlan(plan, { headers, rows, columnTypes: columnTypes as FieldType[] });
+    if (result.status === "failed") {
+      const failed: AnalysisPlan = { ...plan, status: "failed" };
+      saveTablePlan(tableId, user.sub, failed);
+      return NextResponse.json({ error: "execute_failed", result }, { status: 422 });
+    }
+    const executed: AnalysisPlan = { ...plan, status: "executed" };
+    saveTablePlan(tableId, user.sub, executed);
+    return NextResponse.json({ result });
+  }
+
+  return NextResponse.json({ error: "unknown_action", message: "未知操作" }, { status: 400 });
+}
+
+/** 从 confirmed dataset 推断 sheet 名（无原始 sheet 元信息时回退 Sheet1） */
+function profileSheetName(): string {
+  return "Sheet1";
 }

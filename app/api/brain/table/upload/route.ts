@@ -20,13 +20,20 @@ import { parseFile, detectSheetStructure } from "@/lib/table/parser";
 import { buildEffectiveDataset } from "@/lib/table/cleaner";
 import { profileEffectiveDataset } from "@/lib/table/profiler";
 import { cacheTable } from "@/lib/table/session-cache";
+import {
+  recommendSheets,
+  buildSheetRecommendationInput,
+  listHeaderCandidates,
+} from "@/lib/table/sheet-recommender";
 import type {
   EffectiveDataset,
   ExcludedColumn,
   ExcludedRow,
   FieldType,
+  HeaderCandidate,
   QualityIssue,
   SheetInfo,
+  SheetRecommendation,
   TableProfileResult,
 } from "@/lib/table/types";
 
@@ -83,23 +90,18 @@ export async function POST(req: NextRequest) {
     const buildEffective = (sheet: SheetInfo): EffectiveDataset => buildEffectiveDataset(sheet);
 
     // ④ 画像 + 缓存：同结构合并组 / 独立 sheet 分别处理
-    const results: Array<{
-      sheetName: string;
-      headers: string[];
-      rows: unknown[][];
-      columnTypes: FieldType[];
+    type PerResult = {
+      name: string;
+      ds: EffectiveDataset;
+      rawSheet: SheetInfo;
       profile: TableProfileResult;
       tableId: string;
-      detectedHeaderRow: number;
-      effectiveRowCount: number;
-      effectiveColumnCount: number;
-      excludedRows: ExcludedRow[];
-      excludedColumns: ExcludedColumn[];
-      qualityIssues: QualityIssue[];
-    }> = [];
+      finalRows: unknown[][];
+    };
+    const perResult: PerResult[] = [];
     const truncated: string[] = [];
 
-    const analyzeDataset = (name: string, ds: EffectiveDataset) => {
+    const analyzeDataset = (name: string, ds: EffectiveDataset, rawSheet: SheetInfo) => {
       // 闸门 3：单元格总量 → 超出行数截断（仅影响画像/缓存规模，不丢业务行语义）
       const cellLimit = Math.max(1, Math.floor(MAX_CELLS / Math.max(ds.effectiveColumnCount, 1)));
       let finalRows = ds.rows;
@@ -113,36 +115,56 @@ export async function POST(req: NextRequest) {
         rows: finalRows,
         effectiveRowCount: finalRows.length,
       });
-      // 服务端缓存有效（裁剪后）数据，供 analyze 使用（绑定归属用户防串读）
-      const tableId = cacheTable(user.sub, ds.headers, finalRows, ds.columns);
-      results.push({
-        sheetName: name,
-        headers: ds.headers,
-        rows: finalRows.slice(0, PREVIEW_ROWS), // 响应只给预览
-        columnTypes: ds.columns,
-        profile,
-        tableId,
-        detectedHeaderRow: ds.detectedHeaderRow,
-        effectiveRowCount: finalRows.length,
-        effectiveColumnCount: ds.effectiveColumnCount,
-        excludedRows: ds.excludedRows ?? [],
-        excludedColumns: ds.excludedColumns ?? [],
-        qualityIssues: ds.qualityIssues ?? [],
-      });
+      // 服务端缓存有效（裁剪后）数据，供 analyze 使用（绑定归属用户防串读）；
+      // 同时缓存 rawSheet，供用户确认表头后重新构建 EffectiveDataset（T1-D2）。
+      const tableId = cacheTable(user.sub, ds.headers, finalRows, ds.columns, rawSheet);
+      perResult.push({ name, ds, rawSheet, profile, tableId, finalRows });
     };
 
     for (const group of structure.sameStructureGroups) {
       const merged = mergeSheets(group);
-      analyzeDataset(merged.name, buildEffectiveDataset(merged, { headerIdx: 0 }));
+      analyzeDataset(merged.name, buildEffectiveDataset(merged, { headerIdx: 0 }), merged);
     }
     for (const sheet of structure.differentSheets) {
       const raw = parsed.sheets.find((s) => s.name === sheet.name);
       if (!raw) continue;
-      analyzeDataset(sheet.name, buildEffective(raw));
+      analyzeDataset(sheet.name, buildEffective(raw), raw);
     }
-    if (results.length === 0 && parsed.sheets.length > 0) {
-      analyzeDataset(parsed.sheets[0].name, buildEffective(parsed.sheets[0]));
+    if (perResult.length === 0 && parsed.sheets.length > 0) {
+      analyzeDataset(parsed.sheets[0].name, buildEffective(parsed.sheets[0]), parsed.sheets[0]);
     }
+
+    // ⑤ T1-D1： Sheet 推荐（稳定排序、绝不合并）+ 表头候选预览（供 T1-D2 确认面板切换）
+    const recs: SheetRecommendation[] =
+      perResult.length > 0
+        ? recommendSheets(
+            perResult.map((p) => buildSheetRecommendationInput(p.rawSheet, p.ds, p.profile)),
+          )
+        : [];
+    const cands: HeaderCandidate[][] = perResult.map((p) => listHeaderCandidates(p.rawSheet));
+
+    const toResultPayload = (
+      p: PerResult,
+      rec: SheetRecommendation | undefined,
+      cand: HeaderCandidate[],
+    ) => ({
+      sheetName: p.name,
+      headers: p.ds.headers,
+      rows: p.finalRows.slice(0, PREVIEW_ROWS), // 响应只给预览
+      columnTypes: p.ds.columns,
+      profile: p.profile,
+      tableId: p.tableId,
+      detectedHeaderRow: p.ds.detectedHeaderRow,
+      effectiveRowCount: p.finalRows.length,
+      effectiveColumnCount: p.ds.effectiveColumnCount,
+      excludedRows: p.ds.excludedRows ?? [],
+      excludedColumns: p.ds.excludedColumns ?? [],
+      qualityIssues: p.ds.qualityIssues ?? [],
+      recommendation: rec,
+      headerCandidates: cand,
+    });
+
+    const results = perResult.map((p, i) => toResultPayload(p, recs[i], cands[i]));
 
     return NextResponse.json({
       parsedInfo: parsed,

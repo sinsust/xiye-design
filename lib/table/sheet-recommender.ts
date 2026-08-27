@@ -18,6 +18,7 @@
 import type {
   EffectiveDataset,
   FieldType,
+  HeaderCandidate,
   SheetHeaderAssessment,
   SheetInfo,
   SheetRecommendation,
@@ -235,7 +236,7 @@ export function buildHeadRows(
 }
 
 /** 单个候选行的「表头样貌」得分（0~1） */
-function scoreHeaderCandidate(
+export function scoreHeaderCandidate(
   row: unknown[],
   next: unknown[] | undefined,
   maxWidth: number,
@@ -329,6 +330,37 @@ export function assessSheetHeader(
     ambiguous,
     headerRowIsFirstRow: detectedHeaderRow === 0,
   };
+}
+
+/**
+ * 预计算可选表头候选（T1-D2 前端确认面板用）：仅扫描前若干行（与 assessSheetHeader 同一窗口），
+ * 不依赖 LLM、不落库。返回按表头样貌得分降序的候选列表（最多 maxCandidates 个），
+ * 供用户在确认面板点击切换、静态预览「以某行作为表头时长什么样」。
+ */
+export function listHeaderCandidates(
+  sheet: SheetInfo,
+  maxCandidates = 8,
+  maxRows: number = SHEET_RECOMMENDER_THRESHOLDS.HEAD_ROWS,
+): HeaderCandidate[] {
+  const headRows = buildHeadRows(sheet, maxRows);
+  const maxWidth = Math.max(1, ...headRows.map((r) => (Array.isArray(r) ? r.length : 0)));
+  const candidates: HeaderCandidate[] = [];
+  for (let i = 0; i < headRows.length; i++) {
+    const row = Array.isArray(headRows[i]) ? headRows[i] : [];
+    const nonBlank = row.filter((c) => !isBlankCell(c)).length;
+    if (nonBlank < 2) continue; // 过于稀疏，不像表头
+    const score = scoreHeaderCandidate(row, headRows[i + 1], maxWidth);
+    candidates.push({
+      rowIndex: i,
+      headerNames: row.slice(0, 8).map((c) => (c == null ? "" : String(c))),
+      sampleRows: (headRows.slice(i + 1, i + 1 + 10) as unknown[][]).map((r) =>
+        Array.isArray(r) ? r.slice(0, 8) : [],
+      ),
+      score: round(clamp(score, 0, 1)),
+    });
+  }
+  candidates.sort((a, b) => b.score - a.score || a.rowIndex - b.rowIndex);
+  return candidates.slice(0, maxCandidates);
 }
 
 /* ─────────────── 字段与结构统计摘要 ─────────────── */

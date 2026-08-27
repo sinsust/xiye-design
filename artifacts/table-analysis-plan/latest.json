@@ -1,0 +1,251 @@
+{
+  "rows": [
+    {
+      "layer": "L1-revenue",
+      "name": "生成 revenue_overview 计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=3"
+    },
+    {
+      "layer": "L1-revenue",
+      "name": "计划含「按国家销售额」聚合",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "国家,销售额"
+    },
+    {
+      "layer": "L1-revenue",
+      "name": "执行成功",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "results=3"
+    },
+    {
+      "layer": "L1-revenue",
+      "name": "国家销售额聚合数值正确",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "got=[[\"US\",\"5709.5\"],[\"CN\",\"3499.5\"],[\"DE\",\"3200.0\"],[\"UK\",\"1050.0\"],[\"JP\",\"990.0\"]]"
+    },
+    {
+      "layer": "L1-revenue",
+      "name": "实际样本量=数据行数",
+      "severity": "WARN",
+      "pass": true,
+      "detail": "sample=11/11"
+    },
+    {
+      "layer": "L2-product",
+      "name": "生成 product_performance 计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=3"
+    },
+    {
+      "layer": "L2-product",
+      "name": "含 SKU Top 排名输出",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=prod_top,prod_stock,prod_status"
+    },
+    {
+      "layer": "L2-product",
+      "name": "执行成功",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "results=3"
+    },
+    {
+      "layer": "L3-logistics",
+      "name": "生成 logistics_cost 计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=3"
+    },
+    {
+      "layer": "L3-logistics",
+      "name": "含费用或时效维度",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=各物流渠道费用合计 / 各物流渠道平均签收时效 / 物流状态分布"
+    },
+    {
+      "layer": "L3-logistics",
+      "name": "执行成功",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "results=3"
+    },
+    {
+      "layer": "L3-logistics",
+      "name": "时效均值计算合理(≥0)",
+      "severity": "WARN",
+      "pass": true,
+      "detail": "[[\"FedEx\",\"4.5\"],[\"DHL\",\"4.0\"],[\"UPS\",\"3.0\"],[\"SF\",\"0.0\"],[\"EMS\",\"0.0\"]]"
+    },
+    {
+      "layer": "L4-ads",
+      "name": "生成 advertising_performance 计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=5"
+    },
+    {
+      "layer": "L4-ads",
+      "name": "含派生指标(CTR/CVR/ROI)",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=ads_spend,ads_ctr,ads_cvr,ads_roi,ads_trend"
+    },
+    {
+      "layer": "L4-ads",
+      "name": "执行成功",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "results=5"
+    },
+    {
+      "layer": "L4-ads",
+      "name": "CTR 百分比在 0~100",
+      "severity": "WARN",
+      "pass": true,
+      "detail": "[[\"品牌词\",\"4.2\"],[\"通用词\",\"3.2\"],[\"竞品词\",\"2.2\"]]"
+    },
+    {
+      "layer": "L5-customer",
+      "name": "生成 customer_overview 计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=3"
+    },
+    {
+      "layer": "L5-customer",
+      "name": "含标签分布与新增趋势",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "outputs=cust_tag,cust_trend,cust_detail"
+    },
+    {
+      "layer": "L5-customer",
+      "name": "执行成功",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "results=3"
+    },
+    {
+      "layer": "L6-missing",
+      "name": "纯文本表不生成营收假计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "缺少金额 / 数值类指标字段（如 销售额、金额、营收）;缺少分组维度字段（如 国家 / 地区 / 品类 / 订单号）"
+    },
+    {
+      "layer": "L6-missing",
+      "name": "纯文本表不生成商品假计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "缺少商品 / SKU 标识字段（如 SKU、商品编码、商品名）;缺少价格 / 成本 / 库存类数值字段（如 售价、成本、库存）"
+    },
+    {
+      "layer": "L6-missing",
+      "name": "list_objectives 正确标注不可用",
+      "severity": "WARN",
+      "pass": true,
+      "detail": "available=0"
+    },
+    {
+      "layer": "L7-lowconf",
+      "name": "低置信未确认金额不可作为指标",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "缺少金额 / 数值类指标字段（如 销售额、金额、营收）"
+    },
+    {
+      "layer": "L7-lowconf",
+      "name": "用户确认类型后字段可用",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "layer": "L8-confirmed",
+      "name": "生成计划(已排除退款列)",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "layer": "L8-confirmed",
+      "name": "计划字段全部在 confirmed 集合内",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "fields=国家,下单日期,销售额"
+    },
+    {
+      "layer": "L8-confirmed",
+      "name": "计划未引用被排除的退款状态列",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "refs checked"
+    },
+    {
+      "layer": "L9-invalid",
+      "name": "计划已存入缓存",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "store checked"
+    },
+    {
+      "layer": "L9-invalid",
+      "name": "重确认后旧计划失效",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "cleared checked"
+    },
+    {
+      "layer": "L10-crossuser",
+      "name": "用户B无法读取用户A的表",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "隔离ok"
+    },
+    {
+      "layer": "L10-crossuser",
+      "name": "用户B无法读取用户A的计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "隔离ok"
+    },
+    {
+      "layer": "L11-expiry",
+      "name": "过期后表缓存不可读",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "expired cache checked"
+    },
+    {
+      "layer": "L11-expiry",
+      "name": "过期后计划不可读",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "expired plan checked"
+    },
+    {
+      "layer": "L11-expiry",
+      "name": "重新上传后可重建计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "recovery ok"
+    },
+    {
+      "layer": "L12-offline",
+      "name": "generate+execute 纯函数离线完成",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ran offline (no fetch/LLM)"
+    }
+  ],
+  "hardFails": 0,
+  "warns": 0
+}

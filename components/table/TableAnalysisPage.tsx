@@ -7,19 +7,23 @@
  */
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Download, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { TableUploader, type UploadResult } from "./TableUploader";
 import { SheetSelector } from "./SheetSelector";
+import { HeaderConfirmationPanel } from "./HeaderConfirmationPanel";
 import { ColumnProfilePanel } from "./ColumnProfilePanel";
+import { ColumnConfirmationPanel } from "./ColumnConfirmationPanel";
+import { AnalysisObjectiveFlow } from "./AnalysisObjectiveFlow";
 import { AnalysisRecommender } from "./AnalysisRecommender";
 import { AnalysisResultView } from "./AnalysisResultView";
 import { LLMRouteBadge, readForceRoute, writeLLMRoute } from "@/components/LLMRouteBadge";
-import type { AnalysisDimension, AnalysisResult } from "@/lib/table/types";
+import { nextPhaseAfterSelect } from "@/lib/table/confirmation-flow";
+import type { AnalysisDimension, AnalysisResult, FieldType, QualityIssue } from "@/lib/table/types";
 
-type Phase = "upload" | "sheetSelect" | "profile" | "recommend" | "result";
+type Phase = "upload" | "sheetSelect" | "confirm_header" | "profile" | "confirm_columns" | "objectives" | "recommend" | "result";
 
-const STEPS = ["上传", "选择数据", "字段画像", "分析建议", "分析结果"] as const;
-const PHASES: Phase[] = ["upload", "sheetSelect", "profile", "recommend", "result"];
+const STEPS = ["上传", "选择数据", "确认表头", "字段画像", "字段确认", "分析方向", "分析建议", "分析结果"] as const;
+const PHASES: Phase[] = ["upload", "sheetSelect", "confirm_header", "profile", "confirm_columns", "objectives", "recommend", "result"];
 
 export function TableAnalysisPage() {
   const [phase, setPhase] = useState<Phase>("upload");
@@ -31,8 +35,24 @@ export function TableAnalysisPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
+  // T1-D2 确认态：记录已确认进入分析的 Sheet 与表头行（均为 session 生命周期）
+  const [confirmedIndex, setConfirmedIndex] = useState<number | null>(null);
+  const [confirmedHeaderRow, setConfirmedHeaderRow] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
+  // T1-D3 字段确认态：标记已通过 confirm-columns 完成字段确认
+  const [columnConfirmed, setColumnConfirmed] = useState(false);
 
   const active = uploadData?.results[activeIndex];
+
+  /** 清除下游临时分析状态（分析推荐 / 已执行结果 / 图表），避免用旧字段/旧行列分析新表头 */
+  const resetDownstream = () => {
+    setResults([]);
+    setResultTab(0);
+    setSelectedField(null);
+    setAnalyzing(false);
+    setExporting(false);
+  };
 
   const runAnalysis = async (dimensions: AnalysisDimension[], userQuery: string) => {
     if (!uploadData || !active) return;
@@ -122,7 +142,11 @@ export function TableAnalysisPage() {
               onClick={() => {
                 setPhase("upload");
                 setUploadData(null);
+                setActiveIndex(0);
+                setConfirmedIndex(null);
+                setConfirmedHeaderRow(null);
                 setResults([]);
+                setConfirmError("");
                 setError("");
               }}
               className="flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground"
@@ -170,6 +194,49 @@ export function TableAnalysisPage() {
         </div>
       )}
 
+      {/* 已确认状态横幅（清晰展示当前数据表与表头，并提供更换/修改入口） */}
+      {confirmedIndex !== null && confirmedHeaderRow !== null && phase !== "upload" && phase !== "sheetSelect" && phase !== "confirm_header" && uploadData && (
+        <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-emerald-50/60 px-5 py-2 text-xs">
+          <div className="flex min-w-0 items-center gap-2 text-emerald-800">
+            <Check className="size-3.5 shrink-0" />
+            <span className="truncate">
+              当前数据表：<span className="font-medium">{uploadData.results[confirmedIndex]?.sheetName}</span>
+              {" · "}表头：第 {confirmedHeaderRow + 1} 行
+            </span>
+            {columnConfirmed && (
+              <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] text-primary">字段已确认</span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => {
+                // 更换 Sheet：清除确认态与下游，回到选择
+                setConfirmedIndex(null);
+                setConfirmedHeaderRow(null);
+                setColumnConfirmed(false);
+                resetDownstream();
+                setPhase("sheetSelect");
+              }}
+              className="flex items-center gap-1 rounded-md border border-border/70 px-2 py-1 text-[11px] text-muted-foreground transition hover:text-foreground"
+            >
+              <RefreshCw className="size-3" />
+              更换 Sheet
+            </button>
+            <button
+              onClick={() => {
+                // 修改表头：清除下游结果，重新打开确认面板（保留当前 Sheet 选择）
+                setColumnConfirmed(false);
+                resetDownstream();
+                setPhase("confirm_header");
+              }}
+              className="flex items-center gap-1 rounded-md border border-border/70 px-2 py-1 text-[11px] text-muted-foreground transition hover:text-foreground"
+            >
+              修改表头
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 阶段内容 */}
       <div className="flex-1">
         {phase === "upload" && (
@@ -187,12 +254,87 @@ export function TableAnalysisPage() {
           <SheetSelector
             data={uploadData}
             onConfirm={(index) => {
+              const rec = uploadData.results[index]?.recommendation;
               setActiveIndex(index);
               setSelectedField(null);
-              setPhase("profile");
+              resetDownstream();
+              setConfirmedIndex(null);
+              setConfirmedHeaderRow(null);
+              // 推荐且主数据且无需确认表头 → 直接进入画像；其余 → 先确认表头
+              if (nextPhaseAfterSelect(rec) === "profile") {
+                setConfirmedIndex(index);
+                setConfirmedHeaderRow(rec?.header.detectedHeaderRow ?? 0);
+                setPhase("profile");
+              } else {
+                setPhase("confirm_header");
+              }
             }}
           />
         )}
+
+        {phase === "confirm_header" && uploadData && (() => {
+          const result = uploadData.results[activeIndex];
+          const rec = result?.recommendation;
+          if (!result || !rec) return null;
+          return (
+            <HeaderConfirmationPanel
+              sheetName={result.sheetName ?? ""}
+              recommendation={rec}
+              candidates={result.headerCandidates ?? []}
+            loading={confirming}
+            error={confirmError}
+            onBack={() => {
+              setConfirmError("");
+              setPhase("sheetSelect");
+            }}
+            onConfirm={async (rowIndex) => {
+              const current = uploadData.results[activeIndex];
+              if (!current?.tableId) return;
+              setConfirming(true);
+              setConfirmError("");
+              try {
+                const res = await fetch("/api/brain/table/confirm", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ tableId: current.tableId, headerRow: rowIndex }),
+                });
+                const data = await res.json().catch(() => null);
+                if (!res.ok) {
+                  throw new Error(data?.message || data?.error || "表头确认失败");
+                }
+                // 用服务端重新生成的 dataset 覆盖当前结果（不沿用错误表头缓存）
+                setUploadData((prev) => {
+                  if (!prev) return prev;
+                  const next = prev.results.slice();
+                  next[activeIndex] = {
+                    ...next[activeIndex],
+                    headers: data.headers,
+                    rows: data.rows,
+                    columnTypes: data.columnTypes,
+                    profile: data.profile,
+                    recommendation: data.recommendation,
+                    headerCandidates: data.headerCandidates,
+                    effectiveRowCount: data.effectiveRowCount,
+                    effectiveColumnCount: data.effectiveColumnCount,
+                    excludedRows: data.excludedRows,
+                    excludedColumns: data.excludedColumns,
+                    qualityIssues: data.qualityIssues,
+                  };
+                  return { ...prev, results: next };
+                });
+                setConfirmedIndex(activeIndex);
+                setConfirmedHeaderRow(rowIndex);
+                resetDownstream();
+                setPhase("profile");
+              } catch (e) {
+                setConfirmError((e as Error).message);
+              } finally {
+                setConfirming(false);
+              }
+            }}
+          />
+          );
+        })()}
 
         {phase === "profile" && active && (
           <>
@@ -206,7 +348,8 @@ export function TableAnalysisPage() {
               <button
                 onClick={() => {
                   setSelectedField(null);
-                  setPhase("recommend");
+                  resetDownstream();
+                  setPhase("confirm_columns");
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/85 px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/20 transition-all duration-200 hover:shadow-lg active:scale-[0.98]"
               >
@@ -218,15 +361,67 @@ export function TableAnalysisPage() {
           </>
         )}
 
+        {phase === "confirm_columns" && active && (
+          <ColumnConfirmationPanel
+            tableId={active.tableId}
+            sheetName={active.sheetName ?? ""}
+            profile={active.profile as Parameters<typeof ColumnConfirmationPanel>[0]["profile"]}
+            headers={active.headers ?? []}
+            columnTypes={(active.columnTypes ?? []) as FieldType[]}
+            confirmedHeaderRow={confirmedHeaderRow ?? undefined}
+            qualityIssues={(active.qualityIssues ?? []) as QualityIssue[]}
+            onBack={() => {
+              setColumnConfirmed(false);
+              resetDownstream();
+              setPhase("confirm_header");
+            }}
+            onConfirmed={(res) => {
+              // 服务端已基于覆盖重画像；更新本地结果并进入分析建议
+              setUploadData((prev) => {
+                if (!prev) return prev;
+                const next = prev.results.slice();
+                next[activeIndex] = {
+                  ...next[activeIndex],
+                  headers: res.headers,
+                  columnTypes: res.columnTypes,
+                  profile: res.profile,
+                };
+                return { ...prev, results: next };
+              });
+              setColumnConfirmed(true);
+              resetDownstream();
+              setPhase("objectives");
+            }}
+          />
+        )}
+
+        {phase === "objectives" && active && (
+          <AnalysisObjectiveFlow
+            tableId={active.tableId}
+            sheetName={active.sheetName ?? ""}
+            profile={active.profile as Parameters<typeof AnalysisObjectiveFlow>[0]["profile"]}
+            headers={active.headers ?? []}
+            onBackToFields={() => {
+              setColumnConfirmed(false);
+              resetDownstream();
+              setPhase("confirm_columns");
+            }}
+            onUseAI={() => {
+              resetDownstream();
+              setPhase("recommend");
+            }}
+          />
+        )}
+
         {phase === "recommend" && active && (
           <>
             <div className="flex items-center gap-1.5 px-5 pt-3 text-[11px] text-muted-foreground">
               <button
-                onClick={() => setPhase("profile")}
+                onClick={() => setPhase("confirm_columns")}
                 className="flex items-center gap-1 transition hover:text-primary"
               >
                 <ArrowLeft className="size-3" />
-                返回字段画像
+                返回字段确认
               </button>
             </div>
             <AnalysisRecommender

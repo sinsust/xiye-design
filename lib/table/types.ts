@@ -257,6 +257,62 @@ export interface SheetRecommendationMetrics {
  *  - 输入仅为单个 Sheet 的解析/清洗/画像摘要（含前若干行预览用于表头候选评估）；
  *  - reasons 必须可解释（含表头位置说明），且不承载单元格原文。
  */
+/**
+ * 表头候选（T1-D2 前端确认用）：由 recommender 在上传时预计算，
+ * 供用户在确认面板中点击切换、静态预览，不经过 LLM / 不落库。
+ *
+ * 坐标系与 cleaner / recommender 一致：rowIndex 为 allRows =
+ * [parser 表头行(若有), ...数据行] 的 0-based 下标，可直接传给 buildEffectiveDataset({ headerIdx })。
+ */
+export interface HeaderCandidate {
+  /** 候选表头行下标（0 起；与 detectedHeaderRow / header 评估一致） */
+  rowIndex: number;
+  /** 该候选行作为表头时的列名（截断前 8 列，避免大宽表预览过宽） */
+  headerNames: string[];
+  /** 该候选行之后、前若干行数据预览（前 8 列 × 前 10 行） */
+  sampleRows: unknown[][];
+  /** 表头样貌得分 0~1（用于默认高亮与排序；非权威判定，仅辅助展示） */
+  score: number;
+}
+
+/**
+ * 字段级覆盖（T1-D3）：用户对单个字段的可编辑项。
+ * 仅允许修改展示名、数据类型、是否作为分析候选列——
+ * 不允许编辑单元格、删除真实记录、去重、修改原值、创建计算列。
+ * 全部为可选；未提供的字段沿用系统推断结果。
+ */
+export interface ColumnOverride {
+  /** 展示名（重命名表头，仅影响分析列名，不修改原始数据） */
+  displayName?: string;
+  /** 用户确认的数据类型（覆盖系统推断，最高优先级用于下游分析与 LLM 上下文） */
+  type?: FieldType;
+}
+
+/**
+ * 用户会话级确认状态（T1-D2）：仅存在于 table session 缓存生命周期，
+ * 不持久化、不落库、不构成用户长期数据。
+ */
+export interface TableConfirmation {
+  /** 用户选择的 Sheet（v1 限制为单表；结构保留数组以备未来多表分别分析） */
+  selectedSheetIds: string[];
+  /** 每个 Sheet 确认的表头行（allRows 坐标系 0-based），key 为 sheetId */
+  headerRowBySheet: Record<string, number>;
+  /** 确认时间戳（ms） */
+  confirmedAt: number;
+  /** 结构版本（便于未来兼容演进） */
+  version: number;
+  /**
+   * 字段级覆盖映射（T1-D3）：key 为 EffectiveDataset 列下标（0 起）。
+   * 向后兼容——旧确认记录无此字段时视为空覆盖。
+   */
+  columnOverrides?: Record<number, ColumnOverride>;
+  /**
+   * 用户已确认纳入分析的列下标集合（T1-D3）。
+   * 缺省（undefined）表示全部列均参与分析；空数组表示用户明确排除所有列。
+   */
+  confirmedColumns?: number[];
+}
+
 export interface SheetRecommendation {
   /** 与 EffectiveDataset.sheetId 一致 */
   sheetId: string;
