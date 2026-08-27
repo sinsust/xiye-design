@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { FileText, LoaderCircle, Sparkles } from "lucide-react";
+import { AlertTriangle, Clock, FileText, LoaderCircle, PencilLine, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChatStream } from "./chat-stream";
@@ -18,6 +18,13 @@ import { useFlowStore, type AgentOutput } from "@/lib/store/flow-store";
 import { TECH_STACKS } from "@/data/tech-stacks";
 import { VISUAL_STYLES } from "@/data/visual-styles";
 import { type DiscoverMessage, type ProductBrief } from "@/lib/ai-discover";
+import {
+  extractFlowError,
+  flowError,
+  flowErrorUserMessage,
+  newRequestId,
+  type FlowAIError,
+} from "@/lib/flow-ai-types";
 
 /* ------------------------------------------------------------------ */
 /* 状态推导：基于对话深度 + 会诊结果，给出合理的专家状态 */
@@ -455,11 +462,16 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   const [messages, setMessages] = useState<DiscoverMessage[]>([]);
   const [panelAgents, setPanelAgents] = useState<Record<AgentId, AgentState> | undefined>();
   const [needsConsult, setNeedsConsult] = useState(false);
+  // F0-A：主对话流是否被失败的 AI 操作阻塞（驱动下一步按钮的说明而非静默禁用）
+  const [conversationBlocked, setConversationBlocked] = useState(false);
+  // F0-A：会诊自身的失败错误；主失败时专家面板不得伪装「已完成」
+  const [panelError, setPanelError] = useState<FlowAIError | null>(null);
   const productBrief = useFlowStore((s) => s.productBrief);
   const setPanelOutput = useFlowStore((s) => s.setPanelOutput);
   const rounds = messages.filter((m) => m.role === "user").length;
   // 轻量门槛：产品愿景或描述已生成才允许进入搭建，避免空 PRD 直接进 build
   const canAdvance = Boolean(productBrief?.vision || productBrief?.description);
+  const canAdvanceOp = canAdvance && !conversationBlocked && !panelError;
 
   // 镜像最新会话，供异步会诊完成后判断「用户是否已重置」，避免迟到结果污染
   const messagesRef = useRef(messages);
@@ -470,11 +482,28 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   const agents = deriveAgentStates(messages, productBrief, consulting, panelAgents);
   const { displayAgents, bubbles } = usePanelStagger(consulting, messages.length, agents);
 
+  // 记录「最近一次成功会诊覆盖到的消息数」：新一轮访谈未会诊前，旧会诊结果视为「上一轮建议」
+  const lastConsultedRef = useRef(0);
+  const panelIsStale = Boolean(panelAgents) && !consulting && messages.length > lastConsultedRef.current;
+
+  // 主调用失败时，专家面板不得伪装「已完成」：把 done 降级为 95% 产出中
+  const agentsForRender = useMemo(() => {
+    if (!panelError) return displayAgents;
+    return (Object.keys(displayAgents) as AgentId[]).reduce((acc, id) => {
+      const a = displayAgents[id];
+      const st: AgentStatus = a.status === "done" ? "producing" : a.status;
+      acc[id] = st === a.status ? a : { ...a, status: st, progress: Math.min(a.progress, 95) };
+      return acc;
+    }, {} as Record<AgentId, AgentState>);
+  }, [displayAgents, panelError]);
+
   const handleSummon = useCallback(async () => {
     if (messages.length === 0) return;
     // 会诊一开始就记录本轮已覆盖的消息数，避免同一次内容的重复自动会诊（生成好就是生成好）
     lastConsultedRef.current = messages.length;
     setConsulting(true);
+    setPanelError(null);
+    const operationId = newRequestId("op");
     try {
       const res = await fetch("/api/ai/panel", {
         method: "POST",
@@ -483,51 +512,66 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
           brief: productBrief,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
           agents: personaPayload(),
+          operationId,
         }),
       });
-      if (res.ok) {
-        const data = (await res.json()) as {
-          agents?: { id: AgentId; status: AgentStatus; progress: number; summary: string; details?: unknown }[];
-        };
-        if (Array.isArray(data.agents)) {
-          // 用户已在会诊期间重置会话：丢弃迟到结果，不写入
-          if (messagesRef.current.length === 0) return;
-          const next: Record<AgentId, AgentState> = {
-            moderator: { status: "standby", progress: 0, summary: "", details: [] },
-            pm: { status: "standby", progress: 0, summary: "", details: [] },
-            architect: { status: "standby", progress: 0, summary: "", details: [] },
-            designer: { status: "standby", progress: 0, summary: "", details: [] },
-            guard: { status: "standby", progress: 0, summary: "", details: [] },
-          };
-          for (const a of data.agents) {
-            if (a.id in next)
-              next[a.id] = {
-                status: a.status,
-                progress: a.progress,
-                summary: a.summary,
-                details: Array.isArray(a.details) ? a.details.filter((d) => typeof d === "string" && d.trim()) : [],
-              };
-          }
-          setPanelAgents(next);
-          // 写入 store，供 refine 方案完善阶段跨阶段复用
-          setPanelOutput(
-            (Object.keys(next) as AgentId[]).reduce((acc, id) => {
-              const s = next[id];
-              acc[id] = { status: s.status, progress: s.progress, summary: s.summary, details: s.details ?? [] };
-              return acc;
-            }, {} as Record<string, AgentOutput>),
-          );
-        }
+      let data: Record<string, unknown> | null = null;
+      try {
+        data = (await res.json()) as Record<string, unknown>;
+      } catch {
+        data = null;
       }
+      const flowErr = extractFlowError(data);
+      const agentsArr = data?.agents;
+      const validAgents = Array.isArray(agentsArr) && agentsArr.length > 0;
+      if (!res.ok || flowErr || !validAgents) {
+        // 主失败：专家面板不伪装「已完成」，保留历史建议并标记为上一轮
+        setPanelAgents((prev) => prev); // 保留但下面的 panelIsStale 会标注为上一轮
+        setPanelError(
+          flowErr ??
+            flowError(flowErr || !res.ok ? "provider_unavailable" : "invalid_response", {
+              operation: "panel",
+              phase: "collab",
+            }),
+        );
+        return;
+      }
+      // 用户已在会诊期间重置会话：丢弃迟到结果，不写入
+      if (messagesRef.current.length === 0) return;
+      const next: Record<AgentId, AgentState> = {
+        moderator: { status: "standby", progress: 0, summary: "", details: [] },
+        pm: { status: "standby", progress: 0, summary: "", details: [] },
+        architect: { status: "standby", progress: 0, summary: "", details: [] },
+        designer: { status: "standby", progress: 0, summary: "", details: [] },
+        guard: { status: "standby", progress: 0, summary: "", details: [] },
+      };
+      for (const a of agentsArr as { id: AgentId; status: AgentStatus; progress: number; summary: string; details?: unknown }[]) {
+        if (a.id in next)
+          next[a.id] = {
+            status: a.status,
+            progress: a.progress,
+            summary: a.summary,
+            details: Array.isArray(a.details) ? a.details.filter((d) => typeof d === "string" && d.trim()) : [],
+          };
+      }
+      lastConsultedRef.current = messages.length;
+      setPanelAgents(next);
+      setPanelError(null);
+      // 写入 store，供 refine 方案完善阶段跨阶段复用
+      setPanelOutput(
+        (Object.keys(next) as AgentId[]).reduce((acc, id) => {
+          const s = next[id];
+          acc[id] = { status: s.status, progress: s.progress, summary: s.summary, details: s.details ?? [] };
+          return acc;
+        }, {} as Record<string, AgentOutput>),
+      );
     } catch {
-      // 网络异常：保留当前状态，不中断
+      setPanelAgents((prev) => prev);
+      setPanelError(flowError("provider_unavailable", { operation: "panel", phase: "collab" }));
     } finally {
       setConsulting(false);
     }
   }, [messages, productBrief, setPanelOutput]);
-
-  // 记录已会诊到的消息数：会诊期间的新消息会在会诊结束后再补触发
-  const lastConsultedRef = useRef(0);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -535,6 +579,8 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
       setPanelOutput(null);
       lastConsultedRef.current = 0;
       setNeedsConsult(false);
+      setConversationBlocked(false);
+      setPanelError(null);
       return;
     }
     if (messages.length > lastConsultedRef.current) setNeedsConsult(true);
@@ -558,9 +604,14 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
         {/* 左列：真实对话流（独立滚动） */}
         <div className="min-h-0 overflow-hidden xl:col-start-1">
           <ChatStream
-            onConversationChange={({ messages: ms }) => setMessages(ms)}
+            onConversationChange={({ messages: ms, blocked }) => {
+              setMessages(ms);
+              setConversationBlocked(Boolean(blocked));
+            }}
             onSummon={handleSummon}
             consulting={consulting}
+            onManualProceed={() => setConversationBlocked(false)}
+            onViewCurrentPlan={() => setActiveRole("moderator")}
           />
         </div>
 
@@ -573,12 +624,38 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
             </div>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-3">
-            <ExpertStrip agents={displayAgents} active={activeRole} onSelect={setActiveRole} bubbles={bubbles} />
+            {panelError && (
+              <div className="rounded-2xl border border-destructive/30 bg-card px-4 py-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-destructive">本轮专家协作暂未完成</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      你的输入已保存，可以稍后继续。{flowErrorUserMessage(panelError)}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => void handleSummon()} disabled={consulting}>
+                    <PencilLine className="size-3.5" /> 重试本轮
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setPanelError(null)}>
+                    继续手动完善
+                  </Button>
+                </div>
+              </div>
+            )}
+            {panelIsStale && !panelError && (
+              <div className="flex items-center gap-1.5 rounded-xl border border-dashed border-border bg-background px-3 py-1.5 text-[11px] text-muted-foreground">
+                <Clock className="size-3.5" /> 以下为上一轮建议，当前仍在等待新一轮会诊。
+              </div>
+            )}
+            <ExpertStrip agents={agentsForRender} active={activeRole} onSelect={setActiveRole} bubbles={bubbles} />
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
               {activeRole === "moderator" ? (
                 <>
                   {AGENT_ROLES.map((r) => (
-                    <ExpertSection key={r} role={r} agent={agents[r]} />
+                    <ExpertSection key={r} role={r} agent={agentsForRender[r]} />
                   ))}
                   {(agents.moderator.details?.length ?? 0) > 0 && (
                     <div className="rounded-2xl border border-primary/40 bg-card px-4 py-3">
@@ -595,7 +672,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
                   )}
                 </>
               ) : (
-                <ExpertSection role={activeRole} agent={agents[activeRole]} />
+                <ExpertSection role={activeRole} agent={agentsForRender[activeRole]} />
               )}
             </div>
           </CardContent>
@@ -623,11 +700,16 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
             <span>已对话 {rounds} 轮</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {!canAdvance && (
+            {conversationBlocked || panelError ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
+                <AlertTriangle className="size-3.5" />
+                本轮 AI 操作未完成，可重试或用「继续手动完善」解除阻塞。
+              </span>
+            ) : !canAdvance ? (
               <span className="text-xs text-muted-foreground">
                 先和专家聊清产品方向
               </span>
-            )}
+            ) : null}
             <Button
               size="sm"
               variant="outline"
@@ -638,7 +720,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
               <Sparkles className="size-3.5" />
               召集
             </Button>
-            <Button size="sm" onClick={onAdvance} disabled={!canAdvance}>
+            <Button size="sm" onClick={onAdvance} disabled={!canAdvanceOp} title={!canAdvanceOp && canAdvance ? "需先完成或解除本轮 AI 操作" : undefined}>
               下一步
             </Button>
           </div>

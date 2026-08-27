@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, GitBranch, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, GitBranch, Loader2, PencilLine, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowStore } from "@/lib/store/flow-store";
 import { personaPayload } from "../agents-store";
@@ -16,6 +16,13 @@ import {
   type DiscoverMessage,
   type ProductBrief,
 } from "@/lib/ai-discover";
+import {
+  extractFlowError,
+  flowError,
+  flowErrorUserMessage,
+  newRequestId,
+  type FlowAIError,
+} from "@/lib/flow-ai-types";
 
 const SAMPLES = [
   "AI 周报助手：自动汇总 PR 与故障风险",
@@ -33,24 +40,35 @@ export function ChatStream({
   onConversationChange,
   onSummon,
   consulting,
+  onManualProceed,
+  onViewCurrentPlan,
 }: {
-  /** 通知父栏对话进展（消息数 / 思考态 / 消息列表），用于会诊按钮可用性与自动会诊 */
+  /** 通知父栏对话进展（消息数 / 思考态 / 消息列表 / 是否被失败的 AI 操作阻塞），用于会诊按钮可用性与自动会诊 */
   onConversationChange: (s: {
     messageCount: number;
     thinking: boolean;
     messages: DiscoverMessage[];
+    blocked?: boolean;
   }) => void;
   onSummon: () => void;
   consulting: boolean;
+  /** F0-A 失败态动作：继续手动完善（解除 AI 阻塞） / 查看当前方案 */
+  onManualProceed?: () => void;
+  onViewCurrentPlan?: () => void;
 }) {
   const [phase, setPhase] = useState<"input" | "chat">("input");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<DiscoverMessage[]>([]);
   const [brief, setBrief] = useState<ProductBrief | null>(null);
   const [thinking, setThinking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // F0-A：当前操作的统一错误（含 requestId）；失败态据此渲染而非伪造 assistant
+  const [opError, setOpError] = useState<FlowAIError | null>(null);
+  const [cancelled, setCancelled] = useState(false);
   const startedRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // F0-A：幂等 operationId（同一操作重试复用）+ 可取消的 AbortController
+  const opIdRef = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const intentSession = useFlowStore((s) => s.intentSession);
   const setIntentSession = useFlowStore((s) => s.setIntentSession);
@@ -104,7 +122,7 @@ export function ChatStream({
       const first: DiscoverMessage = { role: "user", content: intent };
       setMessages([first]);
       setBrief(null);
-      void callApi([first], null);
+      void runDiscover([first], null, "new");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
@@ -135,8 +153,8 @@ export function ChatStream({
 
   // 同步对话进展给父栏（会诊按钮可用性 / 自动会诊判断）
   useEffect(() => {
-    onConversationChange({ messageCount: messages.length, thinking, messages });
-  }, [messages, thinking, onConversationChange]);
+    onConversationChange({ messageCount: messages.length, thinking, messages, blocked: Boolean(opError) });
+  }, [messages, thinking, onConversationChange, opError]);
 
   // 会话缓存持久化（复用 intentSession 字段）
   useEffect(() => {
@@ -162,12 +180,26 @@ export function ChatStream({
     });
   }, [brief]);
 
-  const callApi = async (
+  // F0-A 保存优先：发起 AI 请求前，先把最新输入/阶段写入可恢复本地草稿（zustand persist→localStorage）
+  const saveNow = (next: DiscoverMessage[], bf: ProductBrief | null) => {
+    setIntentSession({ messages: next, brief: bf, done: false, updatedAt: Date.now() });
+  };
+
+  // F0-A 核心：discover 调用。mode=new 生成新 operationId 并新建可取消 signal；
+  // mode=retry 复用同一 operationId（幂等：不重复写用户消息），仅换新的 signal。
+  const runDiscover = async (
     next: DiscoverMessage[],
     currentBrief: ProductBrief | null,
+    mode: "new" | "retry",
   ) => {
+    if (mode === "new") opIdRef.current = newRequestId("op");
+    abortRef.current = new AbortController();
+    const operationId = opIdRef.current;
+    const signal = abortRef.current.signal;
     setThinking(true);
-    setError(null);
+    setOpError(null);
+    setCancelled(false);
+    saveNow(next, currentBrief);
     try {
       const res = await fetch("/api/ai/discover", {
         method: "POST",
@@ -176,27 +208,60 @@ export function ChatStream({
           messages: next,
           brief: currentBrief,
           agents: personaPayload(),
+          operationId,
         }),
+        signal,
       });
-      const data = (await res.json()) as {
-        reply?: string;
-        branches?: Branch[];
-        brief?: ProductBrief;
-        error?: string;
-      };
+      let data: Record<string, unknown> | null = null;
+      try {
+        data = (await res.json()) as Record<string, unknown>;
+      } catch {
+        data = null;
+      }
+      const flowErr = extractFlowError(data);
+      const reply = typeof data?.reply === "string" ? data.reply.trim() : "";
+      const replied = reply !== "";
+      if (flowErr || !replied) {
+        // 失败/空响应：不伪造 assistant，保留用户输入，转统一失败态
+        setOpError(
+          flowErr ??
+            flowError(!res.ok ? "provider_unavailable" : "invalid_response", {
+              operation: "discover",
+              phase: "dialog",
+            }),
+        );
+        return;
+      }
+      const payload = data as { reply: string; branches?: Branch[]; brief?: ProductBrief | null };
       const assistant: DiscoverMessage = {
         role: "assistant",
-        content: data.reply ?? "（AI 未返回内容）",
-        branches: data.branches,
+        content: reply,
+        branches: Array.isArray(payload.branches) ? payload.branches : undefined,
       };
       setMessages([...next, assistant]);
-      setBrief(data.brief ?? currentBrief);
-    } catch {
-      setError("AI 调用失败，请重试或用文字继续补充。");
+      const bf = payload.brief;
+      setBrief(bf ?? currentBrief);
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") {
+        // 用户取消：停止 loading，不给成功也不给失败
+        setCancelled(true);
+        setOpError(null);
+        return;
+      }
+      setOpError(flowError("provider_unavailable", { operation: "discover", phase: "dialog" }));
     } finally {
       setThinking(false);
     }
   };
+
+  // F0-A：重试本轮 —— 复用同一 operationId，只重发失败的操作
+  const retryLast = () => {
+    if (thinking) return;
+    void runDiscover(messages, brief, "retry");
+  };
+
+  // F0-A：切走/卸载时取消在途请求，避免迟到结果污染
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const startFromInput = (text: string) => {
     const t = text.trim();
@@ -206,7 +271,7 @@ export function ChatStream({
     const first: DiscoverMessage = { role: "user", content: t };
     setMessages([first]);
     setBrief(null);
-    void callApi([first], null);
+    void runDiscover([first], null, "new");
   };
 
   const chooseBranch = (b: Branch) => {
@@ -217,7 +282,7 @@ export function ChatStream({
     };
     const next = [...messages, userMsg];
     setMessages(next);
-    void callApi(next, brief);
+    void runDiscover(next, brief, "new");
   };
 
   const sendText = () => {
@@ -226,15 +291,19 @@ export function ChatStream({
     const next = [...messages, { role: "user", content: t } as DiscoverMessage];
     setMessages(next);
     setInput("");
-    void callApi(next, brief);
+    void runDiscover(next, brief, "new");
   };
 
   const reset = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    opIdRef.current = "";
     setPhase("input");
     setInput("");
     setMessages([]);
     setBrief(null);
-    setError(null);
+    setOpError(null);
+    setCancelled(false);
     startedRef.current = false;
     clearIntentSession();
     setProductBrief(null);
@@ -358,17 +427,57 @@ export function ChatStream({
           </div>
         )}
 
-        {error && (
-          <div className="flex flex-col items-center gap-2 py-2">
-            <p className="text-center text-xs text-destructive">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void callApi(messages, brief)}
-              disabled={thinking}
-            >
-              <RotateCcw className="size-3.5" /> 重试
-            </Button>
+        {cancelled && !opError && (
+          <div className="flex justify-start">
+            <div className="rounded-2xl rounded-bl-sm border border-border bg-card px-3.5 py-2.5 text-xs text-muted-foreground">
+              本轮已取消。你的输入已保存，可以继续，不会重复生成。
+            </div>
+          </div>
+        )}
+
+        {opError && (
+          <div className="flex justify-start">
+            <div className="w-full max-w-[92%] rounded-2xl rounded-bl-sm border border-destructive/30 bg-card px-4 py-3.5">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-destructive">本轮专家协作暂未完成</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    你的输入已保存，可以稍后继续。
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground/80">
+                    {flowErrorUserMessage(opError)}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={retryLast}
+                  disabled={thinking}
+                  className="gap-1.5"
+                >
+                  <RotateCcw className="size-3.5" /> 重试本轮
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setOpError(null);
+                    setCancelled(false);
+                    onManualProceed?.();
+                  }}
+                  className="gap-1.5"
+                >
+                  <PencilLine className="size-3.5" /> 继续手动完善
+                </Button>
+                {onViewCurrentPlan && (
+                  <Button size="sm" variant="ghost" onClick={onViewCurrentPlan}>
+                    查看当前方案
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

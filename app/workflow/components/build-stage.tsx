@@ -28,6 +28,7 @@ import {
   Trash2,
   X,
   Loader2,
+  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -721,6 +722,12 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
               ? ` · 基于 ${productBrief.pages.length} 个 AI 推荐页面`
               : ` · 来自 ${SKELETON_PAGES.length} 个通用页面骨架`}
           </span>
+          {copyState === "error" && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
+              <AlertTriangle className="size-3.5" />
+              全站文案改写失败，已保留原文案，可重试。
+            </span>
+          )}
           <div className="flex items-center gap-2">
             <Button
               size="icon"

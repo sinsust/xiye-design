@@ -24,7 +24,9 @@
     "generate:table-fixtures": "esbuild scripts/generate-table-fixtures.mts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.tmp-gentf.mjs && node scripts/.tmp-gentf.mjs",
     "validate:table-baseline": "esbuild scripts/validation-table-baseline.mts --bundle --platform=node --format=esm --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --external:xlsx --external:chardet --external:iconv-lite --external:zod --outfile=scripts/.tmp-valtf.mjs && node scripts/.tmp-valtf.mjs",
     "validate:table-sheet-recommendation": "esbuild scripts/validation-table-sheet-recommendation.mts --bundle --platform=node --format=esm --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --external:xlsx --external:chardet --external:iconv-lite --external:zod --outfile=scripts/.tmp-valrec.mjs && node scripts/.tmp-valrec.mjs",
-    "validate:p5a": "esbuild scripts/validation-p5a.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vp5a.mjs && node scripts/.tmp-vp5a.mjs"
+    "validate:table-confirmation-flow": "esbuild scripts/validation-table-confirmation-flow.mts --bundle --platform=node --format=esm --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --external:xlsx --external:chardet --external:iconv-lite --external:zod --outfile=scripts/.tmp-valconf.mjs && node scripts/.tmp-valconf.mjs",
+    "validate:p5a": "esbuild scripts/validation-p5a.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vp5a.mjs && node scripts/.tmp-vp5a.mjs",
+    "validate:flow-f0a": "esbuild scripts/validation-flow-f0a-reliability.mts --bundle --platform=node --format=esm --packages=external --resolve-extensions=.mts,.ts,.tsx,.js,.jsx,.json --outfile=scripts/.tmp-vf0a.mjs && node scripts/.tmp-vf0a.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -24,6 +24,12 @@ import { TECH_STACKS } from "@/data/tech-stacks";
 import { matchVisualStyles, extractPrimaryColor } from "@/lib/visual-match";
 import type { ProductBrief } from "@/lib/ai-discover";
 import type { IntentNarrative } from "@/lib/ai-intent";
+import {
+  extractFlowError,
+  flowError,
+  flowErrorUserMessage,
+  type FlowAIError,
+} from "@/lib/flow-ai-types";
 
 type ViewId = "all" | "pm" | "designer" | "architect" | "guard";
 
@@ -106,12 +112,15 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
     }, {} as Record<AgentId, AgentPanelState>);
   });
   const [consulting, setConsulting] = useState(false);
+  // F0-A：会诊失败错误（主调用失败时专家不伪装已完成）
+  const [panelError, setPanelError] = useState<FlowAIError | null>(null);
 
   const techName = TECH_STACKS.find((t) => t.id === techStackId)?.name ?? (techStackId ?? "未选择");
   const styleName = VISUAL_STYLES.find((v) => v.id === visualStyleId)?.name ?? (visualStyleId ?? "未选择");
 
   const runPanel = useCallback(async () => {
     setConsulting(true);
+    setPanelError(null);
     try {
       const res = await fetch("/api/ai/panel", {
         method: "POST",
@@ -125,15 +134,31 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
             .join("\n"),
         }),
       });
-      if (!res.ok) throw new Error("会诊失败");
-      const data = (await res.json()) as {
-        agents?: { id: AgentId; status: string; progress: number; summary: string; details?: string[] }[];
-      };
+      let data: Record<string, unknown> | null = null;
+      try {
+        data = (await res.json()) as Record<string, unknown>;
+      } catch {
+        data = null;
+      }
+      const flowErr = extractFlowError(data);
+      const agentsArr = data?.agents;
+      const valid = Array.isArray(agentsArr) && agentsArr.length > 0;
+      if (!res.ok || flowErr || !valid) {
+        setPanelError(
+          flowErr ??
+            flowError(!res.ok ? "provider_unavailable" : "invalid_response", {
+              operation: "panel",
+              phase: "refine",
+            }),
+        );
+        return;
+      }
       const next: Record<AgentId, AgentPanelState> = { ...DEFAULT_PANEL };
-      for (const a of data.agents ?? []) {
+      for (const a of agentsArr as { id: AgentId; status: string; progress: number; summary: string; details?: string[] }[]) {
         next[a.id] = { status: a.status as AgentStatus, progress: a.progress, summary: a.summary, details: a.details ?? [] };
       }
       setPanelAgents(next);
+      setPanelError(null);
       setPanelOutput(
         (Object.keys(next) as AgentId[]).reduce((acc, id) => {
           const s = next[id];
@@ -141,6 +166,8 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
           return acc;
         }, {} as Record<string, AgentOutput>),
       );
+    } catch {
+      setPanelError(flowError("provider_unavailable", { operation: "panel", phase: "refine" }));
     } finally {
       setConsulting(false);
     }
@@ -162,14 +189,22 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
     return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
   }, [completeness]);
 
-  // 会诊期间：全部视图专家卡显示正在思考
+  // 会诊期间：全部视图专家卡显示正在思考；失败时：不伪装「已完成」
   const displayAgents = useMemo<Record<AgentId, AgentPanelState>>(() => {
+    if (panelError) {
+      return (Object.keys(panelAgents) as AgentId[]).reduce((acc, id) => {
+        const s = panelAgents[id];
+        const st = s.status === "done" ? ("producing" as AgentStatus) : s.status;
+        acc[id] = st === s.status ? s : { ...s, status: st, progress: Math.min(s.progress, 95) };
+        return acc;
+      }, {} as Record<AgentId, AgentPanelState>);
+    }
     if (!consulting) return panelAgents;
     return (Object.keys(panelAgents) as AgentId[]).reduce((acc, id) => {
       acc[id] = { ...panelAgents[id], status: "thinking" };
       return acc;
     }, {} as Record<AgentId, AgentPanelState>);
-  }, [consulting, panelAgents]);
+  }, [consulting, panelAgents, panelError]);
 
   // 进入引导：缺口驱动的待完善项（缺什么 → 去哪调）
   const needs = useMemo(() => {
@@ -258,6 +293,29 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
       {/* 进入引导：缺口驱动，告诉用户从哪开始调 */}
       <GuideBar needs={needs} onGoto={(v) => setActiveView(v)} />
 
+      {/* F0-A：会诊失败态 */}
+      {panelError && (
+        <div className="shrink-0 rounded-xl border border-destructive/30 bg-card px-4 py-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-destructive">本轮专家协作暂未完成</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                你的选择与既有方案已保留，可以稍后继续。{flowErrorUserMessage(panelError)}
+              </p>
+            </div>
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => void runPanel()} disabled={consulting}>
+              <RefreshCw className="size-3.5" /> 重试本轮
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setPanelError(null)}>
+              继续手动完善
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* 内容区：单栏工作区，独立滚动 */}
       <div className="min-h-0 flex-1 overflow-y-auto">{renderView()}</div>
 
@@ -272,6 +330,12 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
             )}
           </div>
           <div className="flex items-center gap-2">
+            {panelError && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
+                <AlertTriangle className="size-3.5" />
+                本轮会诊未完成，可重试或继续手动完善后进入下一步。
+              </span>
+            )}
             <Button variant="outline" size="sm" className="gap-2" onClick={onBack}>
               返回
             </Button>
@@ -283,7 +347,9 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
               title={
                 overallProgress < 80
                   ? `还有 ${needs.length} 项待完善，完善度达 80% 后可进入页面搭建`
-                  : undefined
+                  : panelError
+                    ? "存在未完成的会诊，但你已可手动确认后继续进入页面搭建"
+                    : undefined
               }
             >
               下一步
