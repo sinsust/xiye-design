@@ -104,9 +104,18 @@ build.log
 build.err.log
 # 一次性构建日志 / 调试 scratch（防误提交，2026-08-27）
 build-t*.log
+build-*.log
+build.log
+build.err.log
+dev-*.log
+prod-test.log
+vercel-build.log
+install.log
 pnpm-*.log
 scripts/.build-*.log
 scripts/.scratch-*.mjs
+scripts/.migrate-*.json
+scripts/.tmp-*.mjs
 xiye-p3b-debug.db
 scripts/.tmp-*.mjs
 scripts/_fix-brain.mjs
@@ -123,3 +132,5 @@ artifacts/table-sheet-recommendation/
 # 但下列正式脚本必须入库（覆盖上面 scripts/validation-*.mts 的宽泛忽略）
 !scripts/generate-table-fixtures.mts
 !scripts/validation-table-baseline.mts
+
+.vercel

@@ -244,6 +244,188 @@
       "severity": "HARD",
       "pass": true,
       "detail": "ran offline (no fetch/LLM)"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "生成带退款排除的计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "执行成功且带证据链",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "status=executed"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "actualSampleSize=有效行数",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "sample=8/8"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "excludedRowCount=退款排除行数",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "excluded=3/3"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "excludedColumnCount=未用列数",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "excludedCols=3/3"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "appliedFilters 含退款排除且影响行数正确",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "[{\"label\":\"排除已退款订单（仅统计有效交易）\",\"reason\":\"排除已退款订单（仅统计有效交易）\",\"affectedRows\":3}]"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "usedFields 角色含 dimension/measure/filter",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "dimension,dimension,measure,filter"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "rev_by_group 可下钻且行数=有效行",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "[{\"resultId\":\"rev_by_group\",\"title\":\"按国家的销售额\",\"available\":true,\"rowCount\":8},{\"resultId\":\"rev_trend\",\"title\":\"销售额时间趋势\",\"available\":true,\"rowCount\":8},{\"resultId\":\"rev_refund\",\"title\":\"退款状态分布\",\"available\":true,\"rowCount\":8}]"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "calculation 含计算公式",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "formulas=1"
+    },
+    {
+      "layer": "L13-evidence",
+      "name": "溯源字段(planId/版本)齐全",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "planId= ver=1"
+    },
+    {
+      "layer": "L14-derived",
+      "name": "生成广告计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "layer": "L14-derived",
+      "name": "派生指标以 derived 角色入证据",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "derived=点击率(%),转化率(%),ROI"
+    },
+    {
+      "layer": "L14-derived",
+      "name": "点击率派生列为 percentage 类型",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "percentage"
+    },
+    {
+      "layer": "L16-empty",
+      "name": "生成营收计划(全退款样本)",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "layer": "L16-empty",
+      "name": "过滤后 0 行时实际样本=0",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "sample=0"
+    },
+    {
+      "layer": "L16-empty",
+      "name": "给出 attention「无法得出结论」提示",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "[\"没有满足过滤条件的有效数据，无法得出结论。\",\"「按国家的销售额」无有效数据，无法得出结论（该字段可能为空或已被全部过滤）。\",\"「退款状态分布」无有效数据，无法得出结论（该字段可能为空或已被全部过滤）。\",\"本次分析未使用 1 个字段（如 订单号），如需纳入请在字段确认中调整。\"]"
+    },
+    {
+      "layer": "L16-empty",
+      "name": "全部下钻不可用",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "[{\"resultId\":\"rev_by_group\",\"title\":\"按国家的销售额\",\"available\":false,\"rowCount\":0},{\"resultId\":\"rev_refund\",\"title\":\"退款状态分布\",\"available\":false,\"rowCount\":0}]"
+    },
+    {
+      "layer": "L17-quality",
+      "name": "覆盖低置信后可生成计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "layer": "L17-quality",
+      "name": "低置信覆盖字段给出 advisory 提示",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "[\"没有满足过滤条件的有效数据，无法得出结论。\",\"「按国家的金额」无有效数据，无法得出结论（该字段可能为空或已被全部过滤）。\",\"「金额」由你确认覆盖了低置信类型（原推断置信度 30%），数值准确性需留意。\"]"
+    },
+    {
+      "layer": "L18-version",
+      "name": "生成 v1 计划",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "layer": "L18-version",
+      "name": "历史含 2 个版本且顺序正确",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "count=2"
+    },
+    {
+      "layer": "L18-version",
+      "name": "getTablePlan 返回最新版本",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "latest checked"
+    },
+    {
+      "layer": "L18-version",
+      "name": "新旧结果均可按 planId 回溯",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "result history checked"
+    },
+    {
+      "layer": "L18-version",
+      "name": "新版本样本量随口径变化",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "v1=11 v2=8"
+    },
+    {
+      "layer": "L18-version",
+      "name": "旧结果未被新版本覆盖",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "overwrite guarded"
+    },
+    {
+      "layer": "L18-version",
+      "name": "重确认清空全部版本历史",
+      "severity": "HARD",
+      "pass": true,
+      "detail": "cleared all"
     }
   ],
   "hardFails": 0,
