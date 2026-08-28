@@ -7,7 +7,7 @@
 //  - 所有阈值 / 权重 / 每日上限集中配置在此，不散落在 API 或前端；
 //  - 不修改 ProcessingPlan / 任务 / 项目 / 提醒 / 学习复习的数据语义；
 //  - 严格按 userId 隔离。
-import { and, eq, gte, lte, ne } from "drizzle-orm";
+import { and, eq, gte, lte, ne, or, isNull } from "drizzle-orm";
 import { db, brainProactiveState, brainProactivePreferences, brainProactiveActions } from "@/lib/db";
 import {
   listBrainTasks,
@@ -474,8 +474,10 @@ async function listRecentBriefKeys(userId: string, now: number): Promise<Set<str
       and(
         eq(brainProactiveState.userId, userId),
         gte(brainProactiveState.createdAt, now - PROACTIVE_DEDUP_WINDOW_MS),
-        // H4 修复：被用户标记为「明天提醒」的简报不应在 24h 窗口内被去重，应次日重新出现
-        ne(brainProactiveState.actionStatus, "tomorrow"),
+        // H4 修复：被用户标记为「明天提醒」的简报不在 24h 窗口内去重，应次日重新出现；
+        // 但 actionStatus 为 NULL（已投递、从未操作）的简报必须保留在去重集内，
+        // 否则 `actionStatus <> 'tomorrow'` 对 NULL 不成立会导致窗口内被重复投递。
+        or(isNull(brainProactiveState.actionStatus), ne(brainProactiveState.actionStatus, "tomorrow")),
       ),
     )) as { briefKey: string }[];
   return new Set(rows.map((r) => r.briefKey));

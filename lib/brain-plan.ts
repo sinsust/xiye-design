@@ -56,6 +56,13 @@ export interface ProcessingReminder {
   dueDate: string | null;
 }
 
+/** 改写正文时的分隔/保留原文标记：保证 AI 精简改写不丢原文，可在笔记内回溯 */
+const ORIGIN_DIVIDER = "--- 原始记录（改写保留，防信息丢失）---";
+function withOriginal(primary: string, original: string | null | undefined): string {
+  if (!original || original === primary) return primary;
+  return `${primary}\n\n${ORIGIN_DIVIDER}\n${original}`;
+}
+
 /** 建议知识/笔记的结构化正文承载（对应 OrganizedNote 的可序列化部分） */
 export interface ProcessingNoteBody {
   isMeeting: boolean;
@@ -197,7 +204,7 @@ export function buildProcessingPlanBody(
     title,
     category,
     summary: o.summary || cap(rawContent.replace(/\n+/g, " "), 60),
-    body: o.rewritten || rawContent,
+    body: withOriginal(o.rewritten || rawContent, o.rewritten ? rawContent : null),
     tags,
     related: o.related ?? [],
     entities: extractEntities(o),
