@@ -12,12 +12,16 @@ const nextConfig: NextConfig = {
   // 避免其原生绑定被打包进 server bundle（线上走 Supabase 时本就不会加载）。
   serverExternalPackages: ["better-sqlite3"],
   // 文件追踪排除：brand-pack / static-site-handler 的宽泛 fs 扫描会把
-  // .git/.next 缓存等巨物带进函数 nft 追踪（单文件 >200MB），Vercel 在
-  // "Deploying outputs" 上传校验直接拒绝。这些目录运行期均不需要。
+  // .git / .next/cache（本机实测 1.6G）等巨物带进函数 nft 追踪（单文件 >200MB），
+  // Vercel 在 "Deploying outputs" 上传校验直接拒绝。
+  // ⚠️ 坑：禁止写 `**/.next/**` 整目录排除——`.next/server/webpack-runtime.js`
+  // 是 Next 运行时入口 middleware.js 的必需依赖，整排除会让线上 MODULE_NOT_FOUND。
+  // 只排除构建缓存/临时产物（cache / dev），保留 .next/server 与 .next/static。
   outputFileTracingExcludes: {
     "*": [
       "**/.git/**",
-      "**/.next/**",
+      "**/.next/cache/**",
+      "**/.next/dev/**",
       "**/.next-*/**",
       "**/.env*",
       "**/build-*.log",
