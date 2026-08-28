@@ -305,12 +305,22 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
               </p>
             </div>
           </div>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => void runPanel()} disabled={consulting}>
-              <RefreshCw className="size-3.5" /> 重试本轮
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <Button
+              size="icon"
+              onClick={() => void runPanel()}
+              disabled={consulting}
+              title="重试本轮"
+            >
+              <RefreshCw className="size-4" />
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setPanelError(null)}>
-              继续手动完善
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setPanelError(null)}
+              title="继续手动完善"
+            >
+              <ArrowRight className="size-4" />
             </Button>
           </div>
         </div>
@@ -321,23 +331,26 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
 
       {/* 底部操作条 */}
       <div className="shrink-0 rounded-2xl bg-muted/30 px-4 py-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Layout className="size-4 shrink-0" />
             <span className="whitespace-nowrap">方案完善度 {overallProgress}%</span>
             {overallProgress >= 80 && (
               <span className="whitespace-nowrap text-emerald-600">已达到可搭建水平</span>
             )}
-          </div>
-          <div className="flex items-center gap-2">
             {panelError && (
-              <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
-                <AlertTriangle className="size-3.5" />
-                本轮会诊未完成，可重试或继续手动完善后进入下一步。
+              <span
+                className="inline-flex items-center gap-1.5 text-xs text-amber-600"
+                title="本轮会诊未完成，可重试或继续手动完善后进入下一步"
+              >
+                <AlertTriangle className="size-3.5 shrink-0" />
+                待完成
               </span>
             )}
-            <Button variant="outline" size="sm" className="gap-2" onClick={onBack}>
-              返回
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onBack}>
+              上一步
             </Button>
             <Button
               size="sm"
@@ -384,7 +397,7 @@ function GuideBar({
             onClick={() => onGoto(n.view)}
             className="rounded-full border border-amber-600/30 bg-background px-2.5 py-0.5 text-[11px] text-amber-700 transition hover:bg-amber-500/10"
           >
-            {n.label} → 去调整
+            {n.label}
           </button>
         ))}
       </div>
@@ -393,9 +406,7 @@ function GuideBar({
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-xl bg-primary/5 px-3 py-2">
       <CheckCircle2 className="size-4 shrink-0 text-primary" />
-      <span className="text-xs text-muted-foreground">
-        方案初稿已就绪。点任意专家进去微调——特别是视觉风格与技术栈，换成你的偏好完全正常。
-      </span>
+      <span className="text-xs text-muted-foreground">方案初稿已就绪，点专家可微调</span>
     </div>
   );
 }
@@ -424,7 +435,7 @@ function AllView({
     <div className="space-y-4 p-4">
       {!WORK_AGENTS.some((a) => (panelAgents[a.id]?.progress ?? 0) > 0) && (
         <p className="rounded-xl border border-border/40 bg-background/60 px-3 py-2 text-xs text-muted-foreground">
-          四位专家尚未产出：点下方「重新会诊」一键唤醒，或进入某位专家查看职责与缺口。
+          四位专家尚未产出，可重新会诊或进入专家查看
         </p>
       )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -491,7 +502,7 @@ function AllView({
           </ul>
         ) : (
           <p className="mt-2 text-xs text-muted-foreground">
-            暂无风险提示，可重新会诊让规划师-丽颖再审视一遍。
+            暂无风险提示
           </p>
         )}
         {overallProgress < 100 && (
@@ -503,9 +514,14 @@ function AllView({
         )}
       </div>
 
-      <Button size="sm" variant="outline" className="gap-2" onClick={onConsult} disabled={consulting}>
+      <Button
+        size="icon"
+        variant="outline"
+        onClick={onConsult}
+        disabled={consulting}
+        title={consulting ? "专家会诊中…" : "重新会诊"}
+      >
         {consulting ? <LoaderCircle className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-        {consulting ? "专家会诊中…" : "重新会诊"}
       </Button>
     </div>
   );
@@ -737,6 +753,12 @@ function VisualView({
   onApplyPrimary: (hex: string) => void;
 }) {
   const applied = specPrimary !== null && appliedPrimary?.toLowerCase() === specPrimary;
+  // 选中项排第一、AI 对话推荐其次，其余垫后——避免用户为找当前风格往下滑
+  const sortedStyles = [...VISUAL_STYLES].sort((a, b) => {
+    const rank = (s: (typeof VISUAL_STYLES)[number]) =>
+      s.id === styleId ? 0 : recommendedIds.includes(s.id) ? 1 : 2;
+    return rank(a) - rank(b);
+  });
   return (
     <div className="space-y-4 p-4">
       <div>
@@ -775,8 +797,21 @@ function VisualView({
           )}
         </div>
       )}
+      {panelAgents.designer?.details?.length ? (
+        <div className="rounded-xl bg-muted/30 p-3">
+          <p className="text-sm font-medium">视觉专家-冰冰 会诊建议</p>
+          <ul className="mt-2 space-y-1.5">
+            {panelAgents.designer.details.map((d, i) => (
+              <li key={i} className="flex gap-2 text-xs leading-snug text-muted-foreground">
+                <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-        {VISUAL_STYLES.map((s) => {
+        {sortedStyles.map((s) => {
           const active = s.id === styleId;
           const recommended = !active && recommendedIds.includes(s.id);
           return (
@@ -811,19 +846,6 @@ function VisualView({
           );
         })}
       </div>
-      {panelAgents.designer?.details?.length ? (
-        <div className="rounded-xl bg-muted/30 p-3">
-          <p className="text-sm font-medium">视觉专家-冰冰 会诊建议</p>
-          <ul className="mt-2 space-y-1.5">
-            {panelAgents.designer.details.map((d, i) => (
-              <li key={i} className="flex gap-2 text-xs leading-snug text-muted-foreground">
-                <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
-                <span>{d}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -849,6 +871,12 @@ function TechView({
   onPick: (id: string) => void;
   panelAgents: Record<AgentId, AgentPanelState>;
 }) {
+  // 选中技术栈排第一，避免用户为找当前选择往下滑
+  const sortedStacks = [...TECH_STACKS].sort((a, b) => {
+    const ra = a.id === stackId ? 0 : 1;
+    const rb = b.id === stackId ? 0 : 1;
+    return ra - rb;
+  });
   return (
     <div className="space-y-4 p-4">
       <div>
@@ -857,8 +885,21 @@ function TechView({
           架构专家-热巴 给出了推荐，但你可以换——点选即切换，会带入页面搭建与交付工程包。
         </p>
       </div>
+      {panelAgents.architect?.details?.length ? (
+        <div className="rounded-xl bg-muted/30 p-3">
+          <p className="text-sm font-medium">架构专家-热巴 会诊建议</p>
+          <ul className="mt-2 space-y-1.5">
+            {panelAgents.architect.details.map((d, i) => (
+              <li key={i} className="flex gap-2 text-xs leading-snug text-muted-foreground">
+                <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {TECH_STACKS.map((t) => {
+        {sortedStacks.map((t) => {
           const active = t.id === stackId;
           return (
             <button
@@ -892,19 +933,6 @@ function TechView({
           );
         })}
       </div>
-      {panelAgents.architect?.details?.length ? (
-        <div className="rounded-xl bg-muted/30 p-3">
-          <p className="text-sm font-medium">架构专家-热巴 会诊建议</p>
-          <ul className="mt-2 space-y-1.5">
-            {panelAgents.architect.details.map((d, i) => (
-              <li key={i} className="flex gap-2 text-xs leading-snug text-muted-foreground">
-                <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary" />
-                <span>{d}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </div>
   );
 }

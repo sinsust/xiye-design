@@ -17,6 +17,7 @@ import {
   LayoutTemplate,
   Loader2,
   LoaderCircle,
+  RefreshCw,
   Rocket,
   Save,
   ShieldCheck,
@@ -229,7 +230,10 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
         if (!me.ok || cancelled) return;
         const store = useFlowStore.getState();
         const snap = store.captureFlowSnapshot();
-        const name = store.projectInfo?.projectName || "未命名项目";
+        const name =
+        store.productBrief?.name ||
+        store.projectInfo?.projectName ||
+        "未命名项目";
         const res = await fetch("/api/projects", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -255,7 +259,10 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
     try {
       const store = useFlowStore.getState();
       const snap = store.captureFlowSnapshot();
-      const name = store.projectInfo?.projectName || "未命名项目";
+      const name =
+        store.productBrief?.name ||
+        store.projectInfo?.projectName ||
+        "未命名项目";
       const existing = store.savedProjectId;
       let res = existing
         ? await fetch(`/api/projects/${existing}`, {
@@ -322,52 +329,55 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      {/* AI 开工向导：醒目、独立，讲清「下载→解压→AI打开→贴提示词」的用法与分步节奏 */}
-      <div className="shrink-0 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-3">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="flex size-5 items-center justify-center rounded bg-primary text-[11px] font-bold text-white">AI</span>
-              <p className="text-sm font-semibold text-foreground">拿到工程包，用 AI 开始开发</p>
+      {/* AI 开工向导：单行紧凑，讲清「下载→解压→AI打开→贴提示词」 */}
+      <div className="shrink-0 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="flex size-5 items-center justify-center rounded bg-primary text-[10px] font-bold text-white">AI</span>
+              <p className="text-xs font-semibold text-foreground">拿到工程包，用 AI 开始开发</p>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-              {["下载 .zip", "解压到本地", "用 AI 工具打开项目", "粘贴下方提示词（含分步节奏）"].map((step, i) => (
-                <span key={step} className="flex items-center gap-1.5">
-                  <span className="flex size-4 items-center justify-center rounded-full bg-muted font-mono text-[10px] text-foreground">{i + 1}</span>
-                  {step}
-                  {i < 3 && <span className="text-border">→</span>}
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-muted-foreground">
+              {[
+                "下载 .zip",
+                "解压到本地",
+                "AI 打开项目",
+                "粘贴提示词",
+              ].map((step, i) => (
+                <span key={step} className="flex items-center gap-1">
+                  <span className="flex size-4 items-center justify-center rounded-full bg-muted font-mono text-[9px] text-foreground">{i + 1}</span>
+                  <span>{step}</span>
+                  {i < 3 && <span className="text-border">/</span>}
                 </span>
               ))}
             </div>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-              提示词按 <span className="font-medium text-primary">Phase 0 → 1 → 2</span> 分步推进，AI 每完成一个阶段会停下输出完成清单并等你确认，不易遗漏。
-            </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button
               size="sm"
               variant="default"
-              className="h-9 gap-2 font-semibold"
+              className="h-8 gap-1.5 text-xs font-semibold"
               onClick={copyPrompt}
               disabled={!project}
+              title="按 Phase 0→1→2 分步推进，每阶段输出完成清单并等你确认"
             >
-              {copiedPrompt ? <Check className="size-4" /> : <Sparkles className="size-4" />}
-              {copiedPrompt ? "已复制，去粘贴" : "复制 AI 开工提示词"}
+              {copiedPrompt ? <Check className="size-3.5" /> : <Sparkles className="size-3.5" />}
+              {copiedPrompt ? "已复制" : "复制提示词"}
             </Button>
             <Button
               size="sm"
               variant="outline"
-              className="h-9 gap-2"
+              className="h-8 gap-1.5 text-xs"
               onClick={() => setPromptOpen((o) => !o)}
               disabled={!project}
             >
-              {promptOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-              {promptOpen ? "收起提示词" : "预览提示词"}
+              {promptOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+              {promptOpen ? "收起" : "预览"}
             </Button>
           </div>
         </div>
         {promptOpen && project && (
-          <div className="mt-3 overflow-hidden rounded-xl border border-border/60 bg-card/80">
+          <div className="mt-2 overflow-hidden rounded-lg border border-border/60 bg-card/80">
             <div className="flex items-center justify-between border-b border-border/40 px-3 py-1.5">
               <p className="text-[11px] text-muted-foreground">
                 AI_PROMPT · 与交付包 <code className="rounded bg-muted/60 px-1 font-mono text-[10px]">docs/AI_PROMPT.md</code> 一致
@@ -458,7 +468,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
               <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
                 <Rocket className="size-8 opacity-40" />
                 <p>尚未生成交付产物</p>
-                <p className="text-xs">点击右下「生成全部产物」开始聚合真实工程包</p>
+                <p className="text-xs">点右下角按钮生成工程包</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -554,41 +564,41 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Rocket className="size-4" />
-            <span>交付工作台 · 真实工程包（含可运行底座 + 文档 + 配置）</span>
+            <span>交付工作台</span>
             {genState === "done" && <span className="text-emerald-600">已全部就绪</span>}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-2" onClick={onBack}>
-              返回
+              上一步
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="gap-2"
-              onClick={downloadZip}
-              disabled={!project}
+              className="px-2"
+              onClick={generateAll}
+              disabled={!hasData || genState === "generating"}
+              title="重新生成全部产物"
             >
-              <FolderDown className="size-4" />
-              全部下载
+              {genState === "generating" ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : genState === "done" ? (
+                <RefreshCw className="size-4" />
+              ) : (
+                <Rocket className="size-4" />
+              )}
             </Button>
             <Button size="sm" className="gap-2" onClick={saveProject} disabled={saving}>
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
               {saveMsg ?? "保存"}
             </Button>
-            <Button size="sm" className="gap-2" onClick={generateAll} disabled={!hasData || genState === "generating"}>
-              {genState === "generating" ? (
-                <>
-                  <LoaderCircle className="size-4 animate-spin" /> 生成中…
-                </>
-              ) : genState === "done" ? (
-                <>
-                  <CheckCircle2 className="size-4" /> 重新生成
-                </>
-              ) : (
-                <>
-                  <Rocket className="size-4" /> 生成全部
-                </>
-              )}
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={downloadZip}
+              disabled={!project}
+            >
+              <Download className="size-4" />
+              全部下载
             </Button>
           </div>
         </div>

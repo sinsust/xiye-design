@@ -10,7 +10,7 @@ interface LeaveDialogProps {
   onSave: () => void;
   onDiscard: () => void;
   onCancel: () => void;
-  projectName: string;
+  projectName?: string | null;
   stageLabel: string;
   historyCount: number;
   roundCount: number;
@@ -50,28 +50,27 @@ export function LeaveDialog({
       >
         <h2 className="text-base font-medium text-foreground">要离开吗？</h2>
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          进度将保存到「<span className="font-medium text-foreground">{projectName}</span>
-          」，下次可在「{stageLabel}」继续。
+          {projectName ? (
+            <>
+              进度将保存到「<span className="font-medium text-foreground">{projectName}</span>
+              」，下次可在「{stageLabel}」继续。
+            </>
+          ) : (
+            <>进度将保存，下次可在「{stageLabel}」继续。</>
+          )}
         </p>
 
         {!saving && !saveFailed && (
-          <div className="mt-3 rounded-xl border border-border/70 bg-background/60 p-3">
-            <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">将保存：</p>
-            <ul className="space-y-1 text-xs text-foreground">
-              {roundCount > 0 && (
-                <li>{roundCount} 轮对话</li>
-              )}
-              {hasBrief && (
-                <li>产品定义</li>
-              )}
-              {pageCount > 0 && (
-                <li>{pageCount} 个页面</li>
-              )}
-              {roundCount === 0 && !hasBrief && pageCount === 0 && (
-                <li>当前进度</li>
-              )}
-            </ul>
-          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            将保存：
+            {[
+              roundCount > 0 ? `${roundCount} 轮对话` : null,
+              hasBrief ? "产品定义" : null,
+              pageCount > 0 ? `${pageCount} 个页面` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "当前进度"}
+          </p>
         )}
 
         {saving && (

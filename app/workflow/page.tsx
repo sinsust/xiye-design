@@ -29,6 +29,7 @@ import { BuildStage } from "./components/build-stage";
 import { DeliverStage } from "./components/deliver-stage";
 import { LeaveDialog } from "./components/leave-dialog";
 import { useFlowStore } from "@/lib/store/flow-store";
+import { coerceConceptBrief } from "@/lib/flow-concept";
 import { useAgentsStore } from "./agents-store";
 
 /** 点击导航到这些顶层区域时才触发保存守卫（离开 flow） */
@@ -85,6 +86,9 @@ export default function FlowV2Page() {
             : d.project?.data;
         if (!snapSrc || cancelled) return;
         const st = snapSrc.flow && !snapSrc.skeleton ? snapSrc.flow : snapSrc;
+        // 结构补齐：旧版本草稿的 conceptBrief 可能缺 decisions/openCriticalQuestions，
+        // 恢复时补齐，避免 CollabStage 渲染期 getConceptReadiness 读取 .length 崩溃。
+        if (st.conceptBrief) st.conceptBrief = coerceConceptBrief(st.conceptBrief);
         useFlowStore.setState(st);
         useFlowStore.getState().setSavedProjectId(pid);
         // 旧 currentStep 1..4 → 新 4 阶段（1 协同 / 2 搭建 / 3 完善 / 4 交付）
@@ -122,7 +126,9 @@ export default function FlowV2Page() {
   // 是否存在有效流程草稿（决定是否需要守卫/能否保存）
   const productBrief = useFlowStore((s) => s.productBrief);
   const pageBlueprint = useFlowStore((s) => s.pageBlueprint);
-  const projectName = useFlowStore((s) => s.projectInfo?.projectName);
+  const projectName = useFlowStore(
+    (s) => s.productBrief?.name ?? s.projectInfo?.projectName,
+  );
   const hasDraft = Boolean(
     projectName || pageBlueprint?.length || productBrief?.description || productBrief?.vision,
   );
@@ -171,9 +177,9 @@ export default function FlowV2Page() {
   // 离开弹窗摘要数据
   const stageLabel = STEP_DEFS[active]?.label ?? "产品创意";
   const dialogRounds = useFlowStore((s) =>
-    s.intentSession?.messages.filter((m) => m.role === "user").length ?? 0,
+    s.intentSession?.messages?.filter((m) => m.role === "user").length ?? 0,
   );
-  const dialogHistory = useFlowStore((s) => s.intentSession?.messages.length ?? 0);
+  const dialogHistory = useFlowStore((s) => s.intentSession?.messages?.length ?? 0);
   const dialogPages = useFlowStore((s) => s.pageBlueprint.length);
   const hasBrief = Boolean(productBrief?.description || productBrief?.vision);
 
@@ -209,8 +215,8 @@ export default function FlowV2Page() {
       const snap = store.captureFlowSnapshot();
       const brief = store.productBrief;
       const name =
-        store.projectInfo?.projectName ||
         brief?.name ||
+        store.projectInfo?.projectName ||
         brief?.vision?.slice(0, 40) ||
         "未命名项目";
       const existing = store.savedProjectId;
@@ -332,6 +338,8 @@ export default function FlowV2Page() {
       if (STAY_PREFIXES.some((p) => path === p || path.startsWith(p + "/"))) return;
       if (!GUARD_PREFIXES.some((p) => path === p || path.startsWith(p + "/"))) return;
       if (!hasDraft) return;
+      const recentlySaved = lastSavedAt && Date.now() - lastSavedAt < 5000;
+      if (recentlySaved) return;
       e.preventDefault();
       e.stopPropagation();
       setSaveFailed(false);
@@ -358,14 +366,17 @@ export default function FlowV2Page() {
     <div className="flex h-[calc(100dvh-7.5rem)] min-h-0 flex-col gap-2">
       <div className="flex shrink-0 items-center gap-2">
         <div className="flex min-w-0 shrink-0 items-center gap-2">
-          <p
-            className="max-w-[150px] truncate text-xs font-semibold text-foreground"
-            title={projectName || "未命名产品"}
-          >
-            {projectName || "未命名产品"}
-          </p>
-          <span className="shrink-0 text-xs text-muted-foreground">{stageLabel}</span>
-          <span className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+          {projectName ? (
+            <>
+              <p
+                className="max-w-[150px] truncate text-xs font-semibold text-foreground"
+                title={projectName}
+              >
+                {projectName}
+              </p>
+              <span className="hidden h-4 w-px shrink-0 bg-border sm:block" />
+            </>
+          ) : null}
           {saving ? (
             <span className="shrink-0 text-xs text-muted-foreground">保存中…</span>
           ) : lastSavedAt ? (
@@ -382,15 +393,15 @@ export default function FlowV2Page() {
           <StepBar active={active} done={done} onJump={goTo} />
         </div>
         <Button
-          size="sm"
+          size="icon"
           variant="outline"
-          className="shrink-0 gap-1.5"
+          className="shrink-0"
           disabled={sedimenting || !hasSediment}
           onClick={() => void sedimentToBrain()}
           title="把已确认的产品定位 / 目标用户 / 关键功能决策等沉淀到第二大脑"
+          aria-label="沉淀到第二大脑"
         >
           <Brain className="size-4" />
-          {sedimenting ? "整理中…" : "沉淀到第二大脑"}
         </Button>
         <Button
           size="icon"
@@ -417,7 +428,7 @@ export default function FlowV2Page() {
         onSave={onLeaveSave}
         onDiscard={onLeaveDiscard}
         onCancel={() => setLeaveTarget(null)}
-        projectName={projectName || "未命名产品"}
+        projectName={projectName}
         stageLabel={stageLabel}
         historyCount={dialogHistory}
         roundCount={dialogRounds}

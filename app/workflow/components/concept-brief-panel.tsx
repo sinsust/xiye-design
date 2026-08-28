@@ -21,8 +21,8 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useFlowStore } from "@/lib/store/flow-store";
 import {
   type ConceptFieldKey,
   type ConceptReadiness,
@@ -54,70 +54,56 @@ interface ConceptBriefPanelProps {
 
 export function ConceptBriefPanel({ brief, readiness, onConfirm, onChanged }: ConceptBriefPanelProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // 蓝图是否尚未形成（F1 初始态）：抽屉底部据此给出低干扰提示
+  const blueprint = useFlowStore((s) => s.blueprint);
+  const blueprintPending = !(blueprint && blueprint.version > 0);
 
-  const decisionCount = brief?.decisions.length ?? 0;
+  const decisionCount = brief?.decisions?.length ?? 0;
   const hasPlan = Boolean(brief?.planDraft && brief.planDraft.trim());
   const currentTopic = brief?.currentTopic?.trim();
   const statusText = hasPlan
     ? `已形成 ${decisionCount} 条关键决策 · 初版方案已就绪 · ${currentTopic ? `正在讨论「${currentTopic}」` : "随时可按需修订"}`
     : `已形成 ${decisionCount} 条关键决策 · ${currentTopic ? `正在讨论「${currentTopic}」` : "在对话里把想法聊丰满，方案会随每轮访谈长出来"}`;
 
+  // F1 紧凑状态条：替代原独立大卡，仅保留一行摘要 + 完成度 + PRD 入口，
+  // 把首屏高度还给对话与智囊团。完整 Brief 仍在抽屉里（不遮挡对话）。
   return (
     <>
-      <Card className="shrink-0 rounded-2xl border-border/70 shadow-sm">
-        <CardContent className="px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            {/* 左：过程状态 */}
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Sparkles className="size-4" />
-              </span>
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  {brief?.status === "confirmed" ? "产品创意已确认" : "产品创意"}
-                  {brief?.status === "confirmed" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
-                      <CheckCircle2 className="size-3" /> v{brief.frozenVersion ?? brief.version}
-                    </span>
-                  ) : null}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground" title={statusText}>
-                  {statusText}
-                </p>
-              </div>
-            </div>
-
-            {/* 右：完成度 + 抽屉入口 */}
-            <div className="flex shrink-0 items-center gap-3">
-              <div className="hidden items-center gap-2 sm:flex">
-                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${readiness.readiness}%` }}
-                  />
-                </div>
-                <span className="text-xs tabular-nums text-muted-foreground">{readiness.readiness}%</span>
-              </div>
-              <Button
-                size="sm"
-                variant={hasPlan ? "default" : "outline"}
-                className="gap-1.5"
-                disabled={!brief}
-                onClick={() => setDrawerOpen(true)}
-              >
-                <FileText className="size-3.5" />
-                查看当前 PRD / 产品初稿
-              </Button>
-            </div>
+      <div className="flex shrink-0 items-center gap-2.5 rounded-xl border border-border/70 bg-card px-3 py-1 shadow-sm">
+        <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          <Sparkles className="size-3.5" />
+        </span>
+        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={statusText}>
+          {statusText}
+        </p>
+        <div className="hidden items-center gap-1.5 sm:flex shrink-0">
+          <div className="h-1.5 w-14 overflow-hidden rounded-full bg-muted" aria-hidden>
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${readiness.readiness}%` }}
+            />
           </div>
-        </CardContent>
-      </Card>
+          <span className="text-[11px] tabular-nums text-muted-foreground">{readiness.readiness}%</span>
+        </div>
+        <Button
+          size="sm"
+          variant={hasPlan ? "default" : "outline"}
+          className="shrink-0 gap-1.5"
+          disabled={!brief}
+          aria-label="查看当前 PRD / 产品初稿"
+          onClick={() => setDrawerOpen(true)}
+        >
+          <FileText className="size-3.5" />
+          查看 PRD / 产品初稿
+        </Button>
+      </div>
 
       {/* PRD 抽屉：完整 Brief 默认不占据主工作区 */}
       {drawerOpen && brief && (
         <ConceptDraftDrawer
           brief={brief}
           readiness={readiness}
+          blueprintPending={blueprintPending}
           onClose={() => setDrawerOpen(false)}
           onChanged={onChanged}
           onConfirm={onConfirm}
@@ -130,15 +116,17 @@ export function ConceptBriefPanel({ brief, readiness, onConfirm, onChanged }: Co
 /* ------------------------------------------------------------------ */
 /* PRD 抽屉：自动沉淀内容 + 局部修改 + 方案表态                          */
 
-function ConceptDraftDrawer({
+export function ConceptDraftDrawer({
   brief,
   readiness,
+  blueprintPending = false,
   onClose,
   onChanged,
   onConfirm,
 }: {
   brief: ProductConceptBrief;
   readiness: ConceptReadiness;
+  blueprintPending?: boolean;
   onClose: () => void;
   onChanged: (b: ProductConceptBrief | null) => void;
   onConfirm: (b: ProductConceptBrief) => void;
@@ -449,6 +437,11 @@ function ConceptDraftDrawer({
 
         {/* 底部：完成度 + 表态 + 确认 */}
         <footer className="border-t border-border/70 px-4 py-3">
+          {blueprintPending && (
+            <p className="mb-2 text-[11px] leading-snug text-muted-foreground/80">
+              确认创意后将自动形成产品蓝图。
+            </p>
+          )}
           {readiness.reasons.length > 0 && (
             <p className="mb-2 text-[11px] leading-snug text-muted-foreground">{readiness.reasons.join(" ")}</p>
           )}

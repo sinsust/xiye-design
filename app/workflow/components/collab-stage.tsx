@@ -1,7 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Clock, FileText, LoaderCircle, PencilLine, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  FileText,
+  FlaskConical,
+  LoaderCircle,
+  PencilLine,
+  Undo2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChatStream } from "./chat-stream";
@@ -20,9 +30,8 @@ import {
   continueConceptWithAssumptions,
   getConceptReadiness,
 } from "@/lib/flow-concept";
-import { ConceptBriefPanel } from "./concept-brief-panel";
+import { ConceptBlueprintBar } from "./concept-blueprint-bar";
 import { syncConcept } from "./concept-sync";
-import { BlueprintPanel } from "./blueprint-panel";
 import {
   fetchBlueprint,
   initBlueprint,
@@ -66,6 +75,39 @@ import {
   screenMapChangedSince,
   type ScreenMapAcceptance,
 } from "@/lib/flow-screen-map";
+import {
+  canInitScreenSpec,
+  screenSpecChangedSince,
+  type ScreenSpecAcceptance,
+} from "@/lib/flow-screen-spec";
+import {
+  initScreenSpecItem,
+  fetchScreenSpec,
+  updateScreenSpecPath,
+  deferScreenSpecItem,
+  answerScreenSpecItem,
+  confirmScreenSpecItem,
+  rebuildScreenSpecItem,
+  restoreScreenSpecItem,
+  type ScreenSpecSyncResult,
+} from "./screen-spec-sync";
+import { ScreenSpecPanel } from "./screen-spec-panel";
+import {
+  initPrototypeItem,
+  fetchPrototype,
+  updatePrototypePath,
+  addPrototypeFeedbackItem,
+  confirmPrototypeItem,
+  rebuildPrototypeItem,
+  restorePrototypeItem,
+  type PrototypeSyncResult,
+} from "./prototype-sync";
+import {
+  getPrototypeReadiness,
+  type PrototypeReadiness,
+  type PrototypeAcceptance,
+} from "@/lib/flow-prototype";
+import { PrototypePanel, type PrototypeFeedbackInput } from "./prototype-panel";
 import { TECH_STACKS } from "@/data/tech-stacks";
 import { VISUAL_STYLES } from "@/data/visual-styles";
 import { type DiscoverMessage, type ProductBrief } from "@/lib/ai-discover";
@@ -355,7 +397,7 @@ function DetailsBlock({
 }
 
 const DETAILS_META: Record<AgentId, { title: string; tone: "default" | "risk" }> = {
-  pm: { title: "产品侧建议", tone: "default" },
+  pm: { title: "产品设计方案", tone: "default" },
   designer: { title: "设计要点", tone: "default" },
   architect: { title: "选型理由与风险", tone: "default" },
   guard: { title: "开发边界规范", tone: "default" },
@@ -860,6 +902,244 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
     });
   }, [screenMap, savedProjectId, journey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // —— F3-B：逐界面信息架构与交互契约（ScreenSpec）——仅在页面结构已确认且未过期后接入 ——
+  const screenSpec = useFlowStore((s) => s.screenSpec);
+  const setScreenSpec = useFlowStore((s) => s.setScreenSpec);
+  const [ssBusy, setSsBusy] = useState(false);
+  const [ssError, setSsError] = useState<FlowAIError | null>(null);
+  // Blueprint / Journey / ScreenMap 任一版本或签名变化 → ScreenSpec stale（局部编辑不会被静默覆盖）
+  const ssStale =
+    Boolean(screenSpec?.version && screenSpec?.version > 0) &&
+    (screenSpec?.stale ||
+      Boolean(blueprint && journey && screenMap && screenSpecChangedSince(blueprint, journey, screenMap, screenSpec)));
+  const ssGate =
+    canInitScreenSpec(blueprint, journey, screenMap) ||
+    Boolean(screenSpec && screenSpec.version > 0);
+  const ssAttemptedForRef = useRef<number | null>(null);
+
+  const applyScreenSpecSync = (r: ScreenSpecSyncResult) => {
+    if (r.screenSpec) setScreenSpec(r.screenSpec);
+    if (r.error) setSsError(r.error);
+    else setSsError(null);
+    return r.error == null;
+  };
+
+  // 页面结构确认且未过期后：有保存项目时自动生成首版界面规格（init 幂等，刷新恢复既有版本）
+  useEffect(() => {
+    if (!savedProjectId) return;
+    if (!screenMap || screenMap.version <= 0) return;
+    if (!canInitScreenSpec(blueprint, journey, screenMap)) return;
+    if (screenSpec && screenSpec.version > 0) return;
+    const ver = screenMap.version;
+    if (ssAttemptedForRef.current === ver) return;
+    ssAttemptedForRef.current = ver;
+    let cancelled = false;
+    void (async () => {
+      const r = await initScreenSpecItem(savedProjectId, screenMap);
+      if (!cancelled) applyScreenSpecSync(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProjectId, screenMap, screenSpec, blueprint, journey]);
+
+  // 刷新 / 进入时恢复已持久化的界面规格（不重复初始化）
+  useEffect(() => {
+    if (!savedProjectId) return;
+    if (screenSpec && screenSpec.version > 0) return;
+    if (!screenMap || screenMap.version <= 0) return;
+    let cancelled = false;
+    void (async () => {
+      const r = await fetchScreenSpec(savedProjectId, screenMap);
+      if (!cancelled) applyScreenSpecSync(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProjectId, screenMap, screenSpec]);
+
+  const handleScreenSpecLocalEdit = useCallback(
+    (path: string, value: string) => {
+      if (!screenSpec || screenSpec.version <= 0 || !savedProjectId || !screenMap) return;
+      setSsBusy(true);
+      void updateScreenSpecPath(savedProjectId, screenSpec, screenMap, path, value).then((r) => {
+        applyScreenSpecSync(r);
+        setSsBusy(false);
+      });
+    },
+    [screenSpec, savedProjectId, screenMap], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenSpecResolve = useCallback(
+    (decisionId: string, chosenHint: string) => {
+      if (!screenSpec || screenSpec.version <= 0 || !savedProjectId || !screenMap) return;
+      setSsBusy(true);
+      void deferScreenSpecItem(savedProjectId, screenSpec, screenMap, decisionId, chosenHint).then((r) => {
+        applyScreenSpecSync(r);
+        setSsBusy(false);
+      });
+    },
+    [screenSpec, savedProjectId, screenMap], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenSpecAnswer = useCallback(
+    (decisionId: string, answer: string) => {
+      if (!screenSpec || screenSpec.version <= 0 || !savedProjectId || !screenMap) return;
+      setSsBusy(true);
+      void answerScreenSpecItem(savedProjectId, screenSpec, screenMap, decisionId, answer).then((r) => {
+        applyScreenSpecSync(r);
+        setSsBusy(false);
+      });
+    },
+    [screenSpec, savedProjectId, screenMap], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenSpecConfirm = useCallback(
+    (acceptance: ScreenSpecAcceptance) => {
+      if (!screenSpec || screenSpec.version <= 0 || !savedProjectId || !screenMap) return;
+      setSsBusy(true);
+      void confirmScreenSpecItem(savedProjectId, screenSpec, screenMap, acceptance).then((r) => {
+        applyScreenSpecSync(r);
+        setSsBusy(false);
+      });
+    },
+    [screenSpec, savedProjectId, screenMap], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handleScreenSpecRebuild = useCallback(() => {
+    if (!screenSpec || screenSpec.version <= 0 || !savedProjectId || !screenMap) return;
+    setSsBusy(true);
+    void rebuildScreenSpecItem(savedProjectId, screenSpec, screenMap).then((r) => {
+      applyScreenSpecSync(r);
+      setSsBusy(false);
+    });
+  }, [screenSpec, savedProjectId, screenMap]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleScreenSpecRestore = useCallback(() => {
+    if (!screenSpec || screenSpec.version <= 0 || !savedProjectId || !screenMap) return;
+    setSsBusy(true);
+    void restoreScreenSpecItem(savedProjectId, screenSpec, screenMap).then((r) => {
+      applyScreenSpecSync(r);
+      setSsBusy(false);
+    });
+  }, [screenSpec, savedProjectId, screenMap]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // —— F3-C：可点击原型（仅 ScreenSpec 已 confirmed 且未过期后收敛）——
+  const prototype = useFlowStore((s) => s.prototype);
+  const setPrototype = useFlowStore((s) => s.setPrototype);
+  const [protoBusy, setProtoBusy] = useState(false);
+  const [protoError, setProtoError] = useState<FlowAIError | null>(null);
+  const [prototypeReadiness, setPrototypeReadiness] = useState<PrototypeReadiness>(() =>
+    getPrototypeReadiness(null, null, null, null),
+  );
+  // ScreenSpec 本身或上游任一来源过期 → 原型 stale（服务端 GET/重建也会归一）
+  const protoStale = Boolean(
+    prototype && prototype.version > 0 && (prototype.stale || Boolean(screenSpec?.stale)),
+  );
+  // 面板门控：界面规格已确认（生成入口），或已存在一版原型（审阅/恢复入口）
+  const protoGate =
+    Boolean(screenSpec && screenSpec.version > 0 && screenSpec.status === "confirmed") ||
+    Boolean(prototype && prototype.version > 0);
+  const protoAttemptedForRef = useRef<number | null>(null);
+
+  const applyPrototypeSync = (r: PrototypeSyncResult) => {
+    if (r.prototype) setPrototype(r.prototype);
+    if (r.readiness) setPrototypeReadiness(r.readiness);
+    if (r.error) setProtoError(r.error);
+    else setProtoError(null);
+    return r.error == null;
+  };
+
+  // 界面规格已确认且未过期：有保存项目时自动生成首版原型（init 幂等，刷新恢复既有版本）
+  useEffect(() => {
+    if (!savedProjectId) return;
+    if (!screenSpec || screenSpec.version <= 0) return;
+    if (screenSpec.status !== "confirmed" || screenSpec.stale) return;
+    if (prototype && prototype.version > 0) return;
+    const ver = screenSpec.version;
+    if (protoAttemptedForRef.current === ver) return;
+    protoAttemptedForRef.current = ver;
+    let cancelled = false;
+    void (async () => {
+      const r = await initPrototypeItem(savedProjectId, prototype);
+      if (!cancelled) applyPrototypeSync(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProjectId, screenSpec, prototype]);
+
+  // 尚未就绪（例如刷新恢复已存在的原型，或界面规格待确认）时拉取持久化原型而非重复初始化
+  useEffect(() => {
+    if (!savedProjectId) return;
+    if (prototype && prototype.version > 0) return;
+    const confirmedAndFresh = Boolean(
+      screenSpec && screenSpec.version > 0 && screenSpec.status === "confirmed" && !screenSpec.stale,
+    );
+    if (confirmedAndFresh) return; // 由 init 走 get-or-create，避免重复请求
+    let cancelled = false;
+    void (async () => {
+      const r = await fetchPrototype(savedProjectId);
+      if (!cancelled) applyPrototypeSync(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProjectId, screenSpec, prototype]);
+
+  const handlePrototypeLocalEdit = useCallback(
+    (path: string, value: string) => {
+      if (!prototype || prototype.version <= 0 || !savedProjectId) return;
+      setProtoBusy(true);
+      void updatePrototypePath(savedProjectId, prototype, path, value).then((r) => {
+        applyPrototypeSync(r);
+        setProtoBusy(false);
+      });
+    },
+    [prototype, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handlePrototypeFeedback = useCallback(
+    (fb: PrototypeFeedbackInput | PrototypeFeedbackInput[]) => {
+      if (!prototype || prototype.version <= 0 || !savedProjectId) return;
+      const items = Array.isArray(fb) ? fb : [fb];
+      setProtoBusy(true);
+      let done = 0;
+      items.forEach((item) => {
+        void addPrototypeFeedbackItem(savedProjectId, prototype, item).then((r) => {
+          applyPrototypeSync(r);
+          if (++done === items.length) setProtoBusy(false);
+        });
+      });
+    },
+    [prototype, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handlePrototypeConfirm = useCallback(
+    (acceptance: PrototypeAcceptance) => {
+      if (!prototype || prototype.version <= 0 || !savedProjectId) return;
+      setProtoBusy(true);
+      void confirmPrototypeItem(savedProjectId, prototype, acceptance).then((r) => {
+        applyPrototypeSync(r);
+        setProtoBusy(false);
+      });
+    },
+    [prototype, savedProjectId], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const handlePrototypeRebuild = useCallback(() => {
+    if (!prototype || prototype.version <= 0 || !savedProjectId) return;
+    setProtoBusy(true);
+    void rebuildPrototypeItem(savedProjectId, prototype).then((r) => {
+      applyPrototypeSync(r);
+      setProtoBusy(false);
+    });
+  }, [prototype, savedProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handlePrototypeRestore = useCallback(() => {
+    if (!prototype || prototype.version <= 0 || !savedProjectId) return;
+    setProtoBusy(true);
+    void restorePrototypeItem(savedProjectId, prototype).then((r) => {
+      applyPrototypeSync(r);
+      setProtoBusy(false);
+    });
+  }, [prototype, savedProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 镜像最新会话，供异步会诊完成后判断「用户是否已重置」，避免迟到结果污染
   const messagesRef = useRef(messages);
   useEffect(() => {
@@ -987,26 +1267,23 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      {/* F1-A：产品创意 Brief 工作区（整行，随对话自动生长） */}
-      <ConceptBriefPanel
+      {/* F1-A + F2-A 合并状态条：产品创意 PRD 决策 + 产品蓝图，一行展示 */}
+      <ConceptBlueprintBar
         brief={conceptBrief}
         readiness={readiness}
         onConfirm={(b) => setConceptBrief(b)}
         onChanged={setConceptBrief}
-      />
-      {/* F2-A：产品蓝图（创意确认后自动收敛；状态条 + 抽屉，默认不占对话主体） */}
-      <BlueprintPanel
         blueprint={blueprint}
-        readiness={blueprintReadiness}
-        stale={bpStale}
-        busy={bpBusy}
-        error={bpError ? flowErrorUserMessage(bpError) : null}
-        onLocalEdit={handleBlueprintLocalEdit}
-        onResolve={handleBlueprintResolve}
-        onAccept={() => handleBlueprintConfirm("accepted")}
-        onContinueAssumptions={() => handleBlueprintConfirm("continue_with_assumptions")}
-        onRebuild={handleBlueprintRebuild}
-        onRestore={handleBlueprintRestore}
+        blueprintReadiness={blueprintReadiness}
+        bpStale={bpStale}
+        bpBusy={bpBusy}
+        bpError={bpError ? flowErrorUserMessage(bpError) : null}
+        onBlueprintLocalEdit={handleBlueprintLocalEdit}
+        onBlueprintResolve={handleBlueprintResolve}
+        onBlueprintAccept={() => handleBlueprintConfirm("accepted")}
+        onBlueprintContinue={() => handleBlueprintConfirm("continue_with_assumptions")}
+        onBlueprintRebuild={handleBlueprintRebuild}
+        onBlueprintRestore={handleBlueprintRestore}
       />
       {/* F2-B：核心体验旅程（蓝图确认后自动收敛；状态条 + 抽屉，默认不占对话主体） */}
       {(blueprint?.status === "confirmed" || (journey && journey.version > 0)) && (
@@ -1040,6 +1317,38 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
           onContinueAssumptions={() => handleScreenMapConfirm("continue_with_assumptions")}
           onRebuild={handleScreenMapRebuild}
           onRestore={handleScreenMapRestore}
+        />
+      )}
+      {/* F3-B：逐界面信息架构与交互契约（界面规格，仅在页面结构已确认且未过期后接入） */}
+      {ssGate && (
+        <ScreenSpecPanel
+          screenSpec={screenSpec}
+          stale={ssStale}
+          busy={ssBusy}
+          error={ssError ? flowErrorUserMessage(ssError) : null}
+          onLocalEdit={handleScreenSpecLocalEdit}
+          onResolve={handleScreenSpecResolve}
+          onAnswer={handleScreenSpecAnswer}
+          onAccept={() => handleScreenSpecConfirm("accepted")}
+          onContinueAssumptions={() => handleScreenSpecConfirm("continue_with_assumptions")}
+          onRebuild={handleScreenSpecRebuild}
+          onRestore={handleScreenSpecRestore}
+        />
+      )}
+      {/* F3-C：可点击原型（界面规格确认且未过期后自动收敛；内嵌原型试玩器供走查与验收反馈） */}
+      {protoGate && (
+        <PrototypePanel
+          prototype={prototype}
+          readiness={prototypeReadiness}
+          stale={protoStale}
+          busy={protoBusy}
+          error={protoError ? flowErrorUserMessage(protoError) : null}
+          onLocalEdit={handlePrototypeLocalEdit}
+          onAccept={() => handlePrototypeConfirm("accepted")}
+          onContinueAssumptions={() => handlePrototypeConfirm("continue_with_assumptions")}
+          onRebuild={handlePrototypeRebuild}
+          onRestore={handlePrototypeRestore}
+          onFeedback={handlePrototypeFeedback}
         />
       )}
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-hidden max-xl:grid-rows-2 xl:grid-cols-[1fr_440px]">
@@ -1077,12 +1386,22 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
                     </p>
                   </div>
                 </div>
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => void handleSummon()} disabled={consulting}>
-                    <PencilLine className="size-3.5" /> 重试本轮
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <Button
+                    size="icon"
+                    onClick={() => void handleSummon()}
+                    disabled={consulting}
+                    title="重试本轮"
+                  >
+                    <PencilLine className="size-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setPanelError(null)}>
-                    继续手动完善
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setPanelError(null)}
+                    title="继续手动完善"
+                  >
+                    <ArrowRight className="size-4" />
                   </Button>
                 </div>
               </div>
@@ -1141,74 +1460,61 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
             <span className="hidden h-4 w-px bg-border sm:block" />
             <span>已对话 {rounds} 轮</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {confirmForce ? (
-              hasConceptPlan && !conceptAccepted ? (
-                <>
-                  <span className="max-w-[300px] text-xs leading-snug text-amber-600">
-                    初版产品方案已就绪，但你还没对方案表态。接受当前方案或带着假设继续后，即可进入方案落地。
-                  </span>
+          <div className="flex items-center gap-2">
+            {conversationBlocked || panelError ? (
+              <span
+                className="inline-flex items-center gap-1.5 text-xs text-amber-600"
+                title="本轮 AI 操作未完成，可重试或用「继续手动完善」解除阻塞"
+              >
+                <AlertTriangle className="size-3.5 shrink-0" />
+                待完成
+              </span>
+            ) : null}
+            {confirmForce && (
+              <>
+                {hasConceptPlan && !conceptAccepted && (
                   <Button
-                    size="sm"
+                    size="icon"
                     variant="outline"
-                    className="gap-1.5"
-                    onClick={() => {
-                      if (conceptBrief) setConceptBrief(continueConceptWithAssumptions(conceptBrief));
-                      onAdvance();
-                    }}
-                  >
-                    带着假设继续
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
+                    title="接受当前方案并进入方案落地"
                     onClick={() => {
                       if (conceptBrief) setConceptBrief(acceptConceptPlan(conceptBrief));
                       onAdvance();
                     }}
                   >
-                    <CheckCircle2 className="size-3.5" /> 接受当前方案
+                    <CheckCircle2 className="size-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setConfirmForce(false)}>
-                    返回补充
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className="max-w-[360px] text-xs leading-snug text-amber-600">
-                    {readiness.reasons[0] ?? "初版产品方案还不成型，继续进入方案落地会影响可用起点。"}
-                  </span>
-                  <Button size="sm" className="gap-1.5" onClick={onAdvance}>
-                    带着待确认项继续
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setConfirmForce(false)}>
-                    返回补充
-                  </Button>
-                </>
-              )
-            ) : conversationBlocked || panelError ? (
-              <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
-                <AlertTriangle className="size-3.5" />
-                本轮 AI 操作未完成，可重试或用「继续手动完善」解除阻塞。
-              </span>
-            ) : !canAdvance ? (
-              <span className="text-xs text-muted-foreground">
-                {readiness.reasons[0] ?? "继续访谈，让方案长得更丰满。"}
-              </span>
-            ) : null}
+                )}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  title={
+                    hasConceptPlan && !conceptAccepted
+                      ? "带着假设继续"
+                      : (readiness.reasons[0] ?? "带着待确认项继续")
+                  }
+                  onClick={() => {
+                    if (hasConceptPlan && !conceptAccepted && conceptBrief) {
+                      setConceptBrief(continueConceptWithAssumptions(conceptBrief));
+                    }
+                    onAdvance();
+                  }}
+                >
+                  <FlaskConical className="size-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  title="返回补充"
+                  onClick={() => setConfirmForce(false)}
+                >
+                  <Undo2 className="size-4" />
+                </Button>
+              </>
+            )}
             <Button
               size="sm"
-              variant="outline"
               className="gap-1.5"
-              onClick={() => void handleSummon()}
-              disabled={consulting || messages.length === 0}
-            >
-              <Sparkles className="size-3.5" />
-              召集
-            </Button>
-            <Button
-              size="sm"
               onClick={() => {
                 if (canAdvance) onAdvance();
                 else setConfirmForce(true);
@@ -1218,11 +1524,12 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
                 conversationBlocked || panelError
                   ? "需先完成或解除本轮 AI 操作"
                   : canAdvance
-                    ? "产品创意已就绪，进入方案落地"
-                    : "初版方案还没就绪或尚未表态，可打开右侧抽屉查看并确认后进入方案落地"
+                    ? "进入方案落地"
+                    : readiness.reasons[0] ?? "继续访谈，让方案长得更丰满"
               }
             >
-              {canAdvance ? "进入方案落地" : "下一步"}
+              下一步
+              <ArrowRight className="size-3.5" />
             </Button>
           </div>
         </CardContent>

@@ -1,7 +1,16 @@
 "use client";
 
 import { memo, useEffect, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, ArrowRight, GitBranch, Loader2, PencilLine, RotateCcw, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  FileText,
+  GitBranch,
+  Loader2,
+  PencilLine,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowStore } from "@/lib/store/flow-store";
 import { personaPayload } from "../agents-store";
@@ -97,21 +106,27 @@ export function ChatStream({
   // 首页 ?intent= / ?reset= 引导：清旧状态 + 用意图自动发起首条对话（替代老 /flow 的 Step0Intent）。
   // 防重复扣费：参数消费后立即 replaceState 清理，刷新不再重放；
   // 若缓存会话的首条用户消息与 intent 相同，则直接续用缓存，不重置、不重发（下方「恢复缓存会话」effect 接管）。
+  // 注意：React Strict Mode 开发期会把本组件卸载再重挂载，而上面 replaceState 已清掉 URL 的 intent；
+  // 因此 intent 在「清 URL 之前」先从缓存会话里兜底取回（cached.messages[0]），保证重挂载也能种下首条消息。
   useEffect(() => {
     if (!hydrated) return;
     const params = new URLSearchParams(window.location.search);
-    const intent = params.get("intent")?.trim();
+    const urlIntent = params.get("intent")?.trim();
     const reset = params.get("reset") === "1";
+    const cached = useFlowStore.getState().intentSession;
+    // 重挂载兜底：URL 的 intent 已被首次挂载清掉时，从已落库的缓存首条用户消息取回
+    const intent = urlIntent || (cached?.messages?.[0]?.role === "user" ? cached.messages[0].content : null);
     if (!intent && !reset) return;
 
-    const cached = useFlowStore.getState().intentSession;
     const firstUserMsg = cached?.messages.find((m) => m.role === "user");
     const canResume = Boolean(intent) && !reset && Boolean(cached && cached.messages.length > 0 && firstUserMsg?.content === intent);
 
-    // 消费 URL 参数（与 ?pid= 的 replaceState 清理一致），避免刷新重放重复调 AI
-    params.delete("intent");
-    params.delete("reset");
-    history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    // 消费 URL 参数（避免刷新重放重复调 AI）；仅当 URL 上确有该参数时才清理
+    if (urlIntent || reset) {
+      params.delete("intent");
+      params.delete("reset");
+      history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    }
 
     if (canResume) return;
     useFlowStore.getState().resetAll(1);
@@ -122,6 +137,8 @@ export function ChatStream({
       const first: DiscoverMessage = { role: "user", content: intent };
       setMessages([first]);
       setBrief(null);
+      // 同时落到 store，使 Strict Mode 重挂载时「恢复缓存会话」effect 能接力渲染首条消息
+      useFlowStore.getState().setIntentSession({ messages: [first], brief: null, done: false, updatedAt: Date.now() });
       void runDiscover([first], null, "new");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,7 +147,7 @@ export function ChatStream({
   // 恢复缓存会话（与老 /flow 共享同一 intentSession，可无缝接力）
   useEffect(() => {
     if (!hydrated || startedRef.current) return;
-    const cached = intentSession?.messages.length ? intentSession : null;
+    const cached = intentSession?.messages?.length ? intentSession : null;
     if (cached) {
       startedRef.current = true;
       setPhase("chat");
@@ -138,6 +155,10 @@ export function ChatStream({
       setBrief(cached.brief);
       setProductBrief(cached.brief);
       setIntentNarrative(cached.brief ? briefToNarrative(cached.brief) : null);
+      // Strict Mode 重挂载后，若缓存只有用户首条、AI 回复尚未落库（首轮请求在卸载前未返回），补发一次取回回复
+      const msgs = cached.messages;
+      const last = msgs[msgs.length - 1];
+      if (last?.role === "user") void runDiscover(msgs, cached.brief, "new");
     }
   }, [hydrated, intentSession, setProductBrief, setIntentNarrative]);
 
@@ -450,30 +471,30 @@ export function ChatStream({
                   </p>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  onClick={retryLast}
-                  disabled={thinking}
-                  className="gap-1.5"
-                >
-                  <RotateCcw className="size-3.5" /> 重试本轮
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button size="icon" onClick={retryLast} disabled={thinking} title="重试本轮">
+                  <RotateCcw className="size-4" />
                 </Button>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="outline"
                   onClick={() => {
                     setOpError(null);
                     setCancelled(false);
                     onManualProceed?.();
                   }}
-                  className="gap-1.5"
+                  title="继续手动完善"
                 >
-                  <PencilLine className="size-3.5" /> 继续手动完善
+                  <PencilLine className="size-4" />
                 </Button>
                 {onViewCurrentPlan && (
-                  <Button size="sm" variant="ghost" onClick={onViewCurrentPlan}>
-                    查看当前方案
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={onViewCurrentPlan}
+                    title="查看当前方案"
+                  >
+                    <FileText className="size-4" />
                   </Button>
                 )}
               </div>
@@ -516,8 +537,14 @@ function StreamHeader({ onReset }: { onReset: (() => void) | null }) {
       <span className="text-sm font-semibold text-foreground">老鸨子</span>
       <span className="text-xs text-muted-foreground">多轮访谈，把想法做丰满</span>
       {onReset && (
-        <Button variant="ghost" size="sm" className="ml-auto" onClick={onReset}>
-          <RotateCcw className="size-3.5" /> 重置
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto"
+          onClick={onReset}
+          title="重置对话"
+        >
+          <RotateCcw className="size-4" />
         </Button>
       )}
     </div>

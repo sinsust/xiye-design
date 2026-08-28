@@ -81,14 +81,15 @@ function pickSkeletonPage(productPage: ProductPage): SkeletonPage {
     [["登录", "注册", "auth", "signin", "signup"], "auth"],
     [["定价", "价格", "套餐", "pricing"], "pricing"],
     [["博客", "文章", "资讯", "blog"], "blog"],
-    [["联系", "留言", "contact"], "contact"],
+    [["联系", "留言", "contact", "客服", "咨询入口"], "contact"],
     [["反馈", "建议", "feedback"], "feedback"],
     [["关于", "团队", "公司", "about"], "about"],
-    [["文档", "帮助", "指南", "docs"], "docs"],
+    [["文档", "帮助", "指南", "docs", "报告", "report", "report", "说明"], "docs"],
     [["后台", "管理", "统计", "数据", "dashboard", "仪表板", "分析", "趋势"], "dashboard"],
-    [["作品", "案例", "portfolio"], "portfolio"],
-    [["商品", "产品", "product", "详情"], "product"],
-    [["聊天", "ai", "助手", "bot", "咨询", "智能"], "ai-chat"],
+    [["作品", "案例", "portfolio", "画廊", "gallery", "展示", "showcase"], "portfolio"],
+    [["商品", "产品", "product", "详情", "交易", "订单", "order", "deal", "担保", "商城"], "product"],
+    [["聊天", "ai", "助手", "bot", "智能", "对话"], "ai-chat"],
+    [["预约", "booking", "book", "鉴定", "appraisal", "评估", "评估", "物流", "logistics", "同城", "附近", "匹配", "信用", "纠纷", "dispute", "售后", "申诉"], "misc"],
     [["首页", "主页", "home", "落地", "欢迎"], "home"],
   ];
   for (const [needles, id] of rules) {
@@ -292,6 +293,23 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
   const currentPage = currentBuildPage?.skeleton ?? null;
   const pageSlug = currentBuildPage?.skeleton.id ?? "";
 
+  // 新用户进 build-stage：当前页若还没搭过任何区块，自动预填推荐区块，
+  // 让中栏一进来就有可点、可预览的真实内容（解决「点不了 / 看不了预览」空状态）。
+  const scaffoldedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!pageSlug || !currentPage) return;
+    if (scaffoldedRef.current.has(pageSlug)) return;
+    scaffoldedRef.current.add(pageSlug);
+    if (pageBlueprint.some((e) => e.pageSlug === pageSlug)) return;
+    for (const comp of currentPage.components) {
+      addBlueprintComponent({
+        pageSlug,
+        componentId: comp.id,
+        variantId: comp.variants[0]?.id ?? null,
+      });
+    }
+  }, [pageSlug, currentPage, pageBlueprint, addBlueprintComponent]);
+
   // 蓝图子集：当前页的真实区块 = pageBlueprint 中属于该页的条目（加过/选过才在）
   const pageBlocks = useMemo(
     () => pageBlueprint.filter((e) => e.pageSlug === pageSlug),
@@ -389,6 +407,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
           const Icon = PAGE_ICON[sk.id] ?? LayoutGrid;
           const picked = blockCountByPage[sk.id] ?? 0;
           const open = activePageId === buildPage.id;
+          const isProduct = buildPage.source === "product";
           return (
             <div key={buildPage.id} className="mb-1">
               <button
@@ -410,41 +429,50 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
               >
                 <Icon className="size-4 shrink-0" />
                 <span className="min-w-0 flex-1 truncate">{buildPage.name}</span>
-                <span className="shrink-0 text-[10px] text-muted-foreground">{picked}/{sk.components.length}</span>
-                {open ? (
-                  <ChevronDown className="size-3.5 shrink-0" />
+                {isProduct ? (
+                  <span className="shrink-0 text-[10px] text-primary/70">业务页</span>
                 ) : (
-                  <ChevronRight className="size-3.5 shrink-0" />
+                  <span className="shrink-0 text-[10px] text-muted-foreground">{picked}/{sk.components.length}</span>
                 )}
+                {!isProduct && (open ? <ChevronDown className="size-3.5 shrink-0" /> : <ChevronRight className="size-3.5 shrink-0" />)}
               </button>
-              {open && (
-                <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border/30 pl-2">
-                  {sk.components.map((comp) => {
-                    const vId = selected[sk.id]?.[comp.id];
-                    const isActive = activeComp === comp.id;
-                    return (
-                      <button
-                        key={comp.id}
-                        onClick={() => {
-                          setActivePageId(buildPage.id);
-                          setActiveComp(comp.id);
-                        }}
-                        className={[
-                          "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-[12px] transition",
-                          isActive ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted",
-                        ].join(" ")}
-                      >
-                        <span
+              {/* 业务页：只显示该页真实业务描述，不展开通用骨架组件（避免「官网感」名实不符）；点击即进中栏预览 */}
+              {isProduct ? (
+                buildPage.description ? (
+                  <p className="ml-6 mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground/70">
+                    {buildPage.description}
+                  </p>
+                ) : null
+              ) : (
+                open && (
+                  <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border/30 pl-2">
+                    {sk.components.map((comp) => {
+                      const vId = selected[sk.id]?.[comp.id];
+                      const isActive = activeComp === comp.id;
+                      return (
+                        <button
+                          key={comp.id}
+                          onClick={() => {
+                            setActivePageId(buildPage.id);
+                            setActiveComp(comp.id);
+                          }}
                           className={[
-                            "size-1.5 shrink-0 rounded-full",
-                            vId ? "bg-emerald-500" : "bg-muted-foreground/40",
+                            "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-[12px] transition",
+                            isActive ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted",
                           ].join(" ")}
-                        />
-                        <span className="min-w-0 flex-1 truncate">{resolveText(comp.name)}</span>
-                        </button>
-                      );
-                    })}
-                </div>
+                        >
+                          <span
+                            className={[
+                              "size-1.5 shrink-0 rounded-full",
+                              vId ? "bg-emerald-500" : "bg-muted-foreground/40",
+                            ].join(" ")}
+                          />
+                          <span className="min-w-0 flex-1 truncate">{resolveText(comp.name)}</span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                )
               )}
             </div>
           );
@@ -600,17 +628,15 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
-                    {/* 选中的区块：预览就地展开在该卡片正下方，无需滚回顶部 */}
-                    {isActive && (
-                      <div className="border-t border-border/60 p-3">
-                        <LiveVariantPreview
-                          componentId={comp.id}
-                          variantId={vId}
-                          variantName={variant?.name ?? null}
-                          previewStyle={visualStyle ?? VISUAL_STYLES[0] ?? null}
-                        />
-                      </div>
-                    )}
+                    {/* 每个区块就地展示其变体预览，进页面即可看真实效果、可点进右栏改变体 */}
+                    <div className="border-t border-border/60 p-3">
+                      <LiveVariantPreview
+                        componentId={comp.id}
+                        variantId={vId}
+                        variantName={variant?.name ?? null}
+                        previewStyle={visualStyle ?? VISUAL_STYLES[0] ?? null}
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -723,9 +749,12 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
               : ` · 来自 ${SKELETON_PAGES.length} 个通用页面骨架`}
           </span>
           {copyState === "error" && (
-            <span className="inline-flex items-center gap-1.5 text-xs text-amber-600">
-              <AlertTriangle className="size-3.5" />
-              全站文案改写失败，已保留原文案，可重试。
+            <span
+              className="inline-flex items-center gap-1.5 text-xs text-amber-600"
+              title="全站文案改写失败，已保留原文案，可重试"
+            >
+              <AlertTriangle className="size-3.5 shrink-0" />
+              改写失败
             </span>
           )}
           <div className="flex items-center gap-2">

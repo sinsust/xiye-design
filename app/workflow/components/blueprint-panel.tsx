@@ -9,7 +9,7 @@
 //   每项带证据徽标（已确认✓ / 假设 / 待确认）与来源；支持局部操作（接受 / 修改 / 暂缓标为假设）。
 // - 底部页脚：接受当前蓝图 / 带着假设进入下一步 / 返回继续讨论（沿用 F0-A 保存与失败恢复）。
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   AlertTriangle,
@@ -63,11 +63,12 @@ export function BlueprintPanel({
 }: BlueprintPanelProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const hasBp = Boolean(blueprint && blueprint.version > 0);
-  const headline = !hasBp
-    ? "产品蓝图将在创意确认后自动生成"
-    : stale
-      ? `F1-A 有了新决策，需按最新讨论重建蓝图（当前 v${blueprint!.version}）`
-      : `蓝图已形成 ${readiness.consensusCount} 项共识 · 仍有 ${readiness.unresolvedCount} 项关键选择`;
+  // F1 初始（蓝图尚未初始化）不渲染占位大卡：蓝图仅作为阶段 2 进度节点存在，
+  // 避免抢占首屏高度。蓝图形成后（version>0）本面板才出现。
+  if (!hasBp) return null;
+  const headline = stale
+    ? `F1-A 有了新决策，需按最新讨论重建蓝图（当前 v${blueprint!.version}）`
+    : `蓝图已形成 ${readiness.consensusCount} 项共识 · 仍有 ${readiness.unresolvedCount} 项关键选择`;
 
   return (
     <>
@@ -240,7 +241,7 @@ function EditableRow({
 /* ------------------------------------------------------------------ */
 /* 完整蓝图抽屉                                                         */
 
-function BlueprintDrawer({
+export function BlueprintDrawer({
   blueprint,
   readiness,
   stale,
@@ -304,9 +305,15 @@ function BlueprintDrawer({
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground">F1-A 有了新的关键决策，蓝图已过期</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">重新生成会保留你的手动修改，冲突位置将标为待确认。</p>
-                <Button size="sm" variant="outline" className="mt-2 gap-1.5" onClick={onRebuild} disabled={busy}>
-                  <RotateCcw className="size-3.5" /> 重新生成蓝图
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={onRebuild}
+                  disabled={busy}
+                  title="重新生成蓝图（保留手动修改，冲突位置标为待确认）"
+                >
+                  <RotateCcw className="size-4" />
                 </Button>
               </div>
             </div>
