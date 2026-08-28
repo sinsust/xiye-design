@@ -57,7 +57,13 @@ export async function POST(req: NextRequest) {
       source,
       preset,
     });
-    if (!plan) return NextResponse.json({ error: "plan_create_failed" }, { status: 500 });
+    if (!plan) {
+      // 计划持久化失败（罕见）：仍回传已算出的真实 body，供前端「直接保存/重新生成」降级，不丢 AI 摘要。
+      return NextResponse.json(
+        { error: "plan_create_failed", body: planBody, duplicate },
+        { status: 500 },
+      );
+    }
     return NextResponse.json({ plan, body: planBody, duplicate });
   } catch (err) {
     console.error("brain organize failed:", err);

@@ -56,6 +56,21 @@ const ROLE_LABEL: Record<string, string> = {
   derived: "派生",
 };
 
+/** 图表类型 → 大白话（确定性脚手架，帮非技术用户读懂「这张图在比什么」） */
+const CHART_PHRASE: Record<string, string> = {
+  line: "随时间变化的走势",
+  bar: "各分类之间的高低对比",
+  pie: "各部分占整体的比例",
+  scatter: "两个变量的关联分布",
+  histogram: "数值的整体分布形态",
+  boxplot: "数值的分布范围与离群",
+  heatmap: "热度 / 密度的分布",
+  table: "明细数据行",
+  topn: "排名最靠前的项目",
+  mom: "相邻时间段的环比变化",
+  groupbar: "按分组对比数值高低",
+};
+
 function caveatStyle(level: QualityCaveatLevel): string {
   return level === "attention"
     ? "border-amber-200 bg-amber-50 text-amber-800"
@@ -219,6 +234,16 @@ export function AnalysisResultView({
           <div className="mt-2 rounded-xl border border-primary/15 bg-gradient-to-br from-primary/8 to-transparent px-3.5 py-2.5 text-[12px] leading-relaxed text-foreground/90">
             {result.interpretation}
           </div>
+        )}
+        {/* 确定性脚手架：无论 AI 解读是否晦涩，都先用大白话讲「这张图在比什么」 */}
+        {result.dimension?.fields?.length > 0 && (
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[11px] text-muted-foreground">
+            怎么看这张图：
+            <span className="text-foreground/85">
+              用 {result.dimension.fields.map((f) => `「${f}」`).join("、")} 看 {CHART_PHRASE[chartType] ?? "整体分布"}
+              {result.dimension.insight ? `；想回答：${result.dimension.insight}` : ""}
+            </span>
+          </p>
         )}
       </div>
 

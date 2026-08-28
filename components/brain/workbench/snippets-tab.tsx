@@ -64,7 +64,7 @@ export function SnippetsTab({
 
       {snippetFiltered.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-          没有代码片段。在「整理笔记」里粘贴一段代码，AI 会自动识别并分类保存。
+          没有代码片段。在「记一笔」里粘贴一段代码，AI 会自动识别并分类保存。
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

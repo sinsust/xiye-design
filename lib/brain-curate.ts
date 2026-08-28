@@ -97,7 +97,7 @@ function noteText(n: BrainNote): string {
 const SEMANTIC_THRESHOLD = 0.42;
 const KEYWORD_THRESHOLD = 0.42;
 
-export async function scanSimilarNotes(userId: string): Promise<{ added: number; total: number }> {
+export async function scanSimilarNotes(userId: string, noteId?: string): Promise<{ added: number; total: number }> {
   const notes = (await listBrainNotes(userId)).filter((n) => !n.superseded);
   const withVec = notes.map((n) => ({ n, v: parseEmbedding(n) }));
   // 复用既有决策，避免重复插入同一对
@@ -113,6 +113,8 @@ export async function scanSimilarNotes(userId: string): Promise<{ added: number;
     for (let j = i + 1; j < notes.length; j++) {
       const A = notes[i];
       const B = notes[j];
+      // 给定 noteId 时只重算与该笔记相关的配对，避免单卡「重新扫描」触发全库 O(N²)
+      if (noteId && A.id !== noteId && B.id !== noteId) continue;
       const key = pairKey(A.id, B.id);
       if (decidedKeys.has(key)) continue;
       if (await findBrainSimilarPair(userId, A.id, B.id)) continue; // suggested 已存在则跳过
@@ -202,7 +204,7 @@ export const RELATION_TYPE_LABEL: Record<BrainRelationType, string> = {
 };
 
 /** 由真实数据推导关系建议：note→task(产生任务) / task|note→project(属于项目) / note→note(与…相似)。 */
-export async function proposeRelations(userId: string): Promise<{ added: number }> {
+export async function proposeRelations(userId: string, noteId?: string): Promise<{ added: number }> {
   const notes = (await listBrainNotes(userId)).filter((n) => !n.superseded);
   const noteIds = new Set(notes.map((n) => n.id));
   const tasks = await listBrainTasks(userId);
@@ -229,12 +231,14 @@ export async function proposeRelations(userId: string): Promise<{ added: number 
 
   // note → task：产生任务
   for (const t of tasks) {
+    if (noteId && t.noteId !== noteId) continue;
     if (!noteIds.has(t.noteId)) continue;
     await add("produces_task", t.noteId, "note", t.id, "task", `该笔记生成了任务「${t.title}」`);
   }
 
   // task → project：属于项目（也顺带 note → project）
   for (const t of tasks) {
+    if (noteId && t.noteId !== noteId) continue;
     if (!t.projectId || !noteIds.has(t.noteId)) continue;
     await add("belongs_to_project", t.noteId, "note", t.projectId, "project", "该笔记关联到项目");
     await add("belongs_to_project", t.id, "task", t.projectId, "project", "该任务所属项目");
@@ -243,6 +247,7 @@ export async function proposeRelations(userId: string): Promise<{ added: number 
   // note → note：与…相似（由已标记相关的相似对生成）
   const similar = (await listBrainSimilarPairs(userId)).filter((p) => p.status === "related");
   for (const p of similar) {
+    if (noteId && p.noteIdA !== noteId && p.noteIdB !== noteId) continue;
     await add("similar_to", p.noteIdA, "note", p.noteIdB, "note", "用户已将其标记为相关");
   }
 

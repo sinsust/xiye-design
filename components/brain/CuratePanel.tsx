@@ -92,7 +92,7 @@ export function CuratePanel({
     fetch("/api/brain/curate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "scan" }),
+      body: JSON.stringify({ action: "scan", noteId }),
     })
       .then((r) => r.json())
       .then((d) => {

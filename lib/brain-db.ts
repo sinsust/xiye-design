@@ -1957,11 +1957,39 @@ export async function insertBrainProcessingPlan(
       createdAt: now,
       updatedAt: now,
     });
-    return getBrainProcessingPlan(userId, id);
   } catch (err) {
     console.error("[brain-db] insert plan failed:", err);
     return null;
   }
+  // 读回（best-effort）：插入已成功，读回失败/为空不再把成功插入误判为 null，
+  // 也避免调用方重试造成重复 plan。据此返回一个带 id 的最小对象。
+  try {
+    const p = await getBrainProcessingPlan(userId, id);
+    if (p) return p;
+  } catch (err) {
+    console.error("[brain-db] readback plan failed:", err);
+  }
+  return {
+    id,
+    userId,
+    rawContent: input.rawContent,
+    inputType: input.inputType ?? null,
+    planJson: input.planJson,
+    editsJson: null,
+    status: "pending_confirmation",
+    source: input.source || "workbench",
+    noteId: null,
+    taskIds: [],
+    strategyIds: [],
+    reminderIds: [],
+    projectId: null,
+    failureReason: null,
+    recovery: null,
+    createdAt: now,
+    applyAt: null,
+    updatedAt: now,
+    archivedAt: null,
+  };
 }
 
 export async function getBrainProcessingPlan(

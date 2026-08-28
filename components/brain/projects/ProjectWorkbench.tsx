@@ -584,17 +584,20 @@ export function ProjectWorkbench({ projectId, onOpenTask, onBack, onChanged, onV
             <div className="mb-2 text-xs font-semibold text-foreground">详情入口</div>
             <div className="flex flex-wrap gap-2">
               <DetailLink label="任务列表" value={data!.linkedItems.tasks} onClick={() => { if (data!.linkedItems.tasks) { if (onViewTasks) { onViewTasks(); return; } const t = data!.nextActions.find((x) => x.targetType === "task") ?? null; if (t && t.targetId && onOpenTask) onOpenTask(t.targetId); } }} />
-              <span className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
+              <span
+                className="inline-flex cursor-default items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"
+                title="项目笔记在「笔记」视图查看"
+              >
                 <Layers className="size-3.5" /> 笔记 {data!.linkedItems.notes}
-                <ChevronRight className="size-3" />
               </span>
-              <span className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
+              <span
+                className="inline-flex cursor-default items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground"
+                title="提醒在「提醒中心」查看"
+              >
                 <Bell className="size-3.5" /> 提醒 {data!.linkedItems.reminders}
-                <ChevronRight className="size-3" />
               </span>
-              <span className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border/60 px-3 py-1.5 text-xs text-muted-foreground">
+              <span className="inline-flex cursor-default items-center gap-1 rounded-lg border border-dashed border-border/60 px-3 py-1.5 text-xs text-muted-foreground">
                 看板 / 甘特图可经顶部导航进入
-                <ChevronRight className="size-3" />
               </span>
             </div>
           </div>

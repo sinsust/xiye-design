@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Inbox, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { ChevronDown, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import type { TodayBrief, TodayPriorityItem } from "@/lib/brain-priority";
 import { TodayPriorityList } from "./today-priority-list";
 import { PendingPlanList } from "./pending-plan-list";
@@ -26,6 +26,8 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
   const [brief, setBrief] = useState<TodayBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // 次要关注（复习 / 快到期 / 项目风险 / 恢复草稿）默认折起，收敛首页堆叠
+  const [showMore, setShowMore] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -117,39 +119,35 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
           <ProactiveBriefList />
           <TodayPriorityList items={brief.priorities} onAction={handleAction} />
           <PendingPlanList plans={brief.pendingPlans} onConfirm={props.onConfirmPlan} />
-          <LearningReviewList onOpenNote={props.onOpenNote} />
-          {(brief.dueSoon.length > 0 || brief.headline.overdueTasks > 0) && (
-            <DueSoonList items={brief.dueSoon} onOpenTask={props.onOpenTask} />
-          )}
-          <ProjectRiskList risks={brief.projectRisks} onOpenProject={props.onOpenProject} />
-
-          {brief.inbox.length > 0 && (
-            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Inbox className="size-4 text-primary" />
-                待处理收件箱
-                <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
-                  {brief.inbox.length}
-                </span>
-              </h2>
-              <ul className="mt-3 space-y-1.5">
-                {brief.inbox.map((i) => (
-                  <li key={i.id} className="flex items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-[13px] text-foreground">
-                    <span className="min-w-0 flex-1 truncate">{i.title}</span>
-                    <span className="shrink-0 text-[11px] text-muted-foreground">{new Date(i.createdAt).toLocaleDateString("zh-CN")}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-2 text-right">
-                <button onClick={props.onProcessInbox} className="text-xs font-medium text-primary transition hover:opacity-80">
-                  处理收件箱 →
-                </button>
-              </div>
-            </div>
-          )}
 
           <QuickCapture busy={props.quickBusy} onOrganize={props.onQuickOrganize} />
-          <RecoveryManager />
+
+          {/* 次要关注：复习 / 快到期 / 项目风险 / 恢复草稿（默认折起，避免与概览/提醒中心/工作台多处重复平铺） */}
+          <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+            <button
+              type="button"
+              onClick={() => setShowMore((v) => !v)}
+              className="flex w-full items-center gap-2 px-5 py-3.5 text-left transition hover:bg-muted/30"
+              aria-expanded={showMore}
+            >
+              <Sparkles className="size-4 shrink-0 text-primary" />
+              <span className="text-sm font-semibold text-foreground">更多今日关注</span>
+              <span className="truncate text-[10px] text-muted-foreground">复习 · 快到期 · 项目风险 · 恢复草稿</span>
+              <ChevronDown
+                className={"ml-auto size-4 shrink-0 text-muted-foreground transition-transform " + (showMore ? "" : "-rotate-90")}
+              />
+            </button>
+            {showMore && (
+              <div className="space-y-4 p-5 pt-1">
+                <LearningReviewList onOpenNote={props.onOpenNote} />
+                {(brief.dueSoon.length > 0 || brief.headline.overdueTasks > 0) && (
+                  <DueSoonList items={brief.dueSoon} onOpenTask={props.onOpenTask} />
+                )}
+                <ProjectRiskList risks={brief.projectRisks} onOpenProject={props.onOpenProject} />
+                <RecoveryManager />
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

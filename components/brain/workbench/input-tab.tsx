@@ -59,7 +59,7 @@ export function InputTab({
         </Button>
         <Button
           size="sm"
-          onClick={organize}
+          onClick={() => organize()}
           disabled={!text.trim() || organizing}
           className="bg-gradient-to-r from-primary to-primary/80 shadow-md shadow-primary/25"
         >

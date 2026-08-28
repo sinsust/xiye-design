@@ -225,7 +225,11 @@ export function InboxDrawer({
       const res = await fetch("/api/brain/inbox/batch-process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: items.map((i) => ({ id: i.id, action })) }),
+        body: JSON.stringify({
+          items: items
+            .filter((i) => i.status === "pending" || i.status === "processing" || i.status === "pending_confirmation" || i.status === "failed")
+            .map((i) => ({ id: i.id, action })),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "批量处理失败");
@@ -547,7 +551,7 @@ export function InboxDrawer({
         </div>
 
         {/* 底部批量操作 */}
-        {items.length > 0 && (
+        {actionableCount > 0 && (
           <div className="flex items-center justify-between gap-2 border-t border-border/70 bg-white px-5 py-3">
             <span className="text-xs text-muted-foreground">{actionableCount} 条待处理</span>
             <div className="flex gap-2">

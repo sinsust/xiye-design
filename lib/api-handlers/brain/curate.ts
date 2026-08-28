@@ -21,17 +21,18 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/brain/curate  body: { action: "scan" }
-//   扫描相似 + 推导关系建议（触发式整理，供前端「重新整理」/后台刷新使用）。
+// POST /api/brain/curate  body: { action: "scan", noteId?: string }
+//   扫描相似 + 推导关系建议（触发式整理；带 noteId 时只重算该笔记相关，避免单卡触全库 O(N²)）。
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const body = await req.json().catch(() => null);
     const action = body?.action;
+    const noteId = typeof body?.noteId === "string" && body.noteId ? body.noteId : undefined;
     if (action === "scan") {
-      const similar = await scanSimilarNotes(user.sub as string);
-      const relations = await proposeRelations(user.sub as string);
+      const similar = await scanSimilarNotes(user.sub as string, noteId);
+      const relations = await proposeRelations(user.sub as string, noteId);
       return NextResponse.json({
         ok: true,
         similar,

@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  Activity,
   Brain,
   CalendarClock,
   Check,
   ClipboardList,
   GraduationCap,
   Loader2,
+  Network,
   RotateCcw,
   Tags,
   X,
@@ -165,7 +167,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
             </div>
             <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
               <div className="text-xl font-semibold leading-none text-foreground">{thickness.avgDepth}</div>
-              <div className="mt-1.5 text-[11px] leading-tight text-muted-foreground">平均版本深度<br/>×{thickness.allNoteIds} 版本</div>
+              <div className="mt-1.5 text-[11px] leading-tight text-muted-foreground">平均每篇<br/>版本迭代次数</div>
             </div>
           </div>
         </div>
@@ -174,7 +176,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
         <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Brain className="size-3.5" />
+              <Activity className="size-3.5" />
             </span>
             最近大脑活跃
           </h2>
@@ -384,7 +386,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
           <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
               <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Brain className="size-3.5" />
+                <Network className="size-3.5" />
               </span>
               知识图谱
             </div>

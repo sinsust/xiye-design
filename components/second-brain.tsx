@@ -259,8 +259,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   // 策略管理
   const [strategies, setStrategies] = useState<BrainStrategy[]>([]);
   const [expandedStrategy, setExpandedStrategy] = useState<string | null>(null);
-  // 看板策略筛选："all" 全部，"group" 按策略分组展示
-  const [strategyFilter, setStrategyFilter] = useState<"all" | "group" | string>("all");
+  // 看板策略过滤："all" 全部；特定策略 id 时仅看该策略（对所有分组生效）
+  const [strategyFilter, setStrategyFilter] = useState<"all" | string>("all");
   const loadStrategies = useCallback(async () => {
     try {
       const data = await cachedGetJson<{ strategies?: BrainStrategy[] }>("/api/brain/strategies");
@@ -290,8 +290,27 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     loadSnippets();
   }, [loadSnippets]);
   const snippetFiltered = useMemo(() => {
+    // 语言归一：把别名/方言映射到过滤用主语言（js/typescript/ts→javascript，bash/zsh/sh→shell，py→python 等）
+    const langHome: Record<string, string> = {
+      javascript: "javascript", js: "javascript", node: "javascript",
+      typescript: "javascript", ts: "javascript",
+      python: "python", py: "python",
+      sql: "sql", postgresql: "sql", mysql: "sql",
+      shell: "shell", bash: "shell", sh: "shell", zsh: "shell", powershell: "shell", batch: "shell",
+    };
+    const KNOWN = new Set(["python", "javascript", "sql", "shell"]);
+    const home = (language: string | null) => {
+      const k = (language || "").toLowerCase().replace(/^\./, "");
+      return langHome[k] ?? k;
+    };
     let arr = snippets;
-    if (snippetLang !== "全部") arr = arr.filter((s) => s.language?.toLowerCase() === snippetLang.toLowerCase());
+    if (snippetLang !== "全部") {
+      arr = arr.filter((s) =>
+        snippetLang === "其他"
+          ? !KNOWN.has(home(s.language))
+          : home(s.language) === snippetLang.toLowerCase(),
+      );
+    }
     if (snippetQuery.trim()) {
       const q = snippetQuery.trim().toLowerCase();
       arr = arr.filter(
@@ -520,9 +539,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     }
     setConfirmDeleteStrategy(null);
   }, [loadTasks]);
-  // 看板过滤后的任务：全部 / 指定策略 / 分组视图单独渲染
+  // 看板过滤后的任务：全部 / 指定策略（对所有分组生效）
   const boardTasks = useMemo(() => {
-    if (strategyFilter === "all" || strategyFilter === "group") return tasks;
+    if (strategyFilter === "all") return tasks;
     return tasks.filter((t) => t.strategyId === strategyFilter);
   }, [tasks, strategyFilter]);
   // 按策略分组：strategyId → 任务（供「按策略分组」视图）
@@ -593,6 +612,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   // —— P0 统一信息加工确认闭环 ——
   // 当前待确认处理计划 id（organize → 确认写入的路上）
   const [wPlanId, setWPlanId] = useState<string | null>(null);
+  // true = 无持久化计划（AI 整理的计划落库失败），进入「直接保存」逃生通道
+  const [wNoPlan, setWNoPlan] = useState(false);
   // 关联项目选择（确认时绑定到任务/审计）
   const [wProjectId, setWProjectId] = useState<string>("");
   // P5-A：按名称预填关联项目（产品流程沉淀；尚不存在的项目名，确认时自动创建）
@@ -649,7 +670,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [listFilter, setListFilter] = useState("全部");
   // 列表来源过滤（全部 / 手动 / ima）
   const [sourceFilter, setSourceFilter] = useState<"all" | "manual" | "ima">("all");
-  // 大脑工作台 Tab（整理笔记 / 向我提问 / 任务看板）
+  // 大脑工作台二级 Tab（记一笔 / 任务看板）
   const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets" | "projects" | "table">("input");
   // 最近活跃流是否全部展开
   const [activityShowAll, setActivityShowAll] = useState(false);
@@ -659,7 +680,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [inboxPending, setInboxPending] = useState(0);
   // —— 第十阶段：任务详情抽屉 + 看板多维分组 + 项目 ——
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
-  const [kanbanGroup, setKanbanGroup] = useState<"status" | "project" | "milestone" | "assignee">("status");
+  const [kanbanGroup, setKanbanGroup] = useState<"status" | "project" | "milestone" | "assignee" | "strategy">("status");
   const [kanbanView, setKanbanView] = useState<"board" | "gantt">("board");
   const [projects, setProjects] = useState<{ id: string; name: string; color: string }[]>([]);
   // —— 第十一阶段：每日助理点项目卡片 → 跳转项目详情 ——
@@ -684,7 +705,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     window.addEventListener("brain:dashboard-refresh", h);
     return () => window.removeEventListener("brain:dashboard-refresh", h);
   }, []);
-  // 顶部视图切换：切到工作台时找到对应二级 Tab，否则回整理笔记
+  // 顶部视图切换：切到工作台时找到对应二级 Tab，否则回记一笔
   const gotoTop = (v: "dashboard" | "workbench", tab?: typeof workTab) => {
     if (v === "workbench" && tab) setWorkTab(tab);
     setTopView(v);
@@ -804,16 +825,51 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         body: JSON.stringify({ content: t, source: "workbench" }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error);
+      // 计划落库失败但 AI 已算出真实建议（接口 500 带 body）：填真实建议并进入「直接保存」模式，
+      // 避免只得到一段纯节选的假兜底。请求失败且无 body 时走 catch。
+      if (!res.ok && !data?.body) throw new Error(data?.error || "organize_failed");
       // 近似重复检测：与已有笔记高度相似时提示更新
       setDupWarning(data?.duplicate ?? null);
       // 持久化的待确认处理计划：AI 阶段只用它承载建议，确认后才统一写入
-      const planId = data?.plan?.id;
-      setWPlanId(planId ?? null);
-      fillFromPlanBody(data.body);
-      if (!planId) throw new Error("no_plan");
+      const planId = data?.plan?.id ?? null;
+      setWPlanId(planId);
+      setWNoPlan(planId == null);
+      if (data?.body && typeof data.body === "object") {
+        fillFromPlanBody(data.body);
+      } else if (planId == null) {
+        // 万一路径上既无 plan 也无 body：若用默认草稿打开，仍可「直接保存」原文，不困住用户
+        fillDraft({
+          title: t.split("\n")[0].slice(0, 30),
+          category: "随手记",
+          summary: t.slice(0, 120),
+          tags: [],
+          related: [],
+          relatedReason: "",
+          actionItems: [],
+          strategies: [],
+          decisions: [],
+          attendees: [],
+          metrics: [],
+          problemDomains: [],
+          openQuestions: [],
+          strategy: [],
+          type: "jotting",
+          source: "",
+          keyPoints: [],
+          insights: [],
+          isMeeting: false,
+          isSnippet: false,
+          language: "",
+          codeContent: "",
+          rewritten: "",
+        });
+        // 整理失败可见反馈：标记顶部兜底提示
+        setOrganizeError(true);
+        setDupWarning(null);
+      }
     } catch {
       setWPlanId(null);
+      setWNoPlan(true);
       fillDraft({
         title: t.split("\n")[0].slice(0, 30),
         category: "随手记",
@@ -943,6 +999,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       if (!res.ok || !data?.body) throw new Error(data?.error);
       setRaw(data.body.rawContent ?? data.plan?.rawContent ?? "");
       setWPlanId(data.plan?.id ?? id);
+      setWNoPlan(false);
       setDupWarning(null);
       fillFromPlanBody(data.body);
       refreshPendingPlans();
@@ -987,42 +1044,132 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** 组织工作台当前表单 → 提交给统一写入服务的 edits（与 /api/brain/plans 一致） */
+  const buildEdits = () => ({
+    title: wTitle,
+    category: wCategory,
+    summary: wSummary,
+    body: wContent?.trim() || raw,
+    tags: wTags,
+    related: wRelated,
+    suggestedProjectId: wProjectId || null,
+    suggestedProjectName: wPendingProjectName || null,
+    tasks: wActionItems
+      .filter((a) => a.text.trim())
+      .map((a) => ({
+        title: a.text,
+        owner: a.owner ?? "",
+        dueDate: a.dueDate ?? null,
+        priority: a.priority ?? "medium",
+        strategyIndex: a.strategyIndex,
+        makeReminder: !!a.makeReminder,
+      })),
+  });
+
+  /** 逃生通道用：把「无 plan」时仍捕获的结构化字段合成 AI body，供直接落库复用统一写入逻辑 */
+  const buildDirectPlanBody = () => ({
+    title: wTitle,
+    category: wCategory,
+    summary: wSummary,
+    body: wContent?.trim() || raw,
+    suggestedTasks: wActionItems
+      .filter((a) => a.text.trim())
+      .map((a) => ({
+        title: a.text,
+        owner: a.owner ?? "",
+        dueDate: a.dueDate ?? null,
+        priority: a.priority ?? "medium",
+        strategyIndex: a.strategyIndex,
+        makeReminder: !!a.makeReminder,
+      })),
+    suggestedReminders: [],
+    note: {
+      source: wSource,
+      isSnippet: wSnippet,
+      language: wLanguage,
+      codeContent: wCode,
+      strategies: wStrategies,
+      decisions: wDecisions,
+      attendees: wAttendees,
+      metrics: wMetrics,
+      problemDomains: wProblemDomains,
+      openQuestions: wOpenQuestions,
+      relatedReason: wRelatedReason,
+      keyPoints: wKeyPoints,
+      insights: wInsights,
+    },
+  });
+
+  /** 保存成功后的公共收尾：重置各草稿态、刷新板块、跳转详情 */
+  const finalizeSavedNote = (note: BrainNote) => {
+    setNotes((prev) => [note, ...prev]);
+    setText("");
+    setRaw("");
+    setDupWarning(null);
+    setWPlanId(null);
+    setWNoPlan(false);
+    setWProjectId("");
+    setWPendingProjectName("");
+    setWActionItems([]);
+    setWStrategies([]);
+    setWDecisions([]);
+    setWSnippet(false);
+    setWLanguage("");
+    setWCode("");
+    setWContent("");
+    setWAttendees([]);
+    setWMetrics([]);
+    setWProblemDomains([]);
+    setWOpenQuestions([]);
+    setWStrategy([]);
+    setWType("jotting");
+    setWSource("");
+    setWKeyPoints([]);
+    setWInsights([]);
+    setWStruct(null);
+    setWorkspaceOpen(false);
+    refreshPendingPlans();
+    loadTasks();
+    loadStrategies();
+    loadSnippets();
+    // 写入完成 → 跳转到该笔记详情
+    setExpanded(note.id);
+  };
+
   /** 采纳并入库（统一写入服务） */
   const saveDraft = async () => {
-    // 确认写入必须基于一条持久化的待确认计划（统一写入服务）
-    if (!raw || !wPlanId || saving) {
-      if (!wPlanId) setApplyError("缺少待确认计划，请先点击「帮我整理」重新生成");
+    // 确认写入必须基于一条持久化的待确认计划（统一写入服务）；无 plan 时走「直接保存」逃生通道，绝不死胡同
+    if (!raw || saving) {
+      if (!raw) setApplyError("内容为空，无法保存");
+      return;
+    }
+    if (!wPlanId && !wNoPlan) {
+      setApplyError("暂时无法保存，请点击「重新生成」重试");
       return;
     }
     setSaving(true);
     setApplyError(null);
     try {
+      if (!wPlanId && wNoPlan) {
+        // 逃生通道：计划落库失败时直接保存一条笔记（复用统一写入，不产生 plan 记录）
+        const res = await fetch("/api/brain/organize-save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ raw, body: buildDirectPlanBody(), edits: buildEdits() }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data?.ok || !data?.note) {
+          // 失败：不误显示"已保存"，保留可编辑草稿，允许重试
+          setApplyError(data?.reason || data?.error || "保存失败，请重试");
+          return;
+        }
+        finalizeSavedNote(data.note as BrainNote);
+        return;
+      }
       const res = await fetch("/api/brain/plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId: wPlanId,
-          edits: {
-            title: wTitle,
-            category: wCategory,
-            summary: wSummary,
-            body: wContent?.trim() || raw,
-            tags: wTags,
-            related: wRelated,
-            suggestedProjectId: wProjectId || null,
-            suggestedProjectName: wPendingProjectName || null,
-            tasks: wActionItems
-              .filter((a) => a.text.trim())
-              .map((a) => ({
-                title: a.text,
-                owner: a.owner ?? "",
-                dueDate: a.dueDate ?? null,
-                priority: a.priority ?? "medium",
-                strategyIndex: a.strategyIndex,
-                makeReminder: !!a.makeReminder,
-              })),
-          },
-        }),
+        body: JSON.stringify({ planId: wPlanId, edits: buildEdits() }),
       });
       const data = await res.json();
       if (!res.ok || !data?.ok || !data?.note) {
@@ -1030,38 +1177,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         setApplyError(data?.reason || data?.error || "保存失败，请重试");
         return;
       }
-      const note = data.note as BrainNote;
-      setNotes((prev) => [note, ...prev]);
-      setText("");
-      setRaw("");
-      setDupWarning(null);
-      setWPlanId(null);
-      setWProjectId("");
-      setWPendingProjectName("");
-      setWActionItems([]);
-      setWStrategies([]);
-      setWDecisions([]);
-      setWSnippet(false);
-      setWLanguage("");
-      setWCode("");
-      setWContent("");
-      setWAttendees([]);
-      setWMetrics([]);
-      setWProblemDomains([]);
-      setWOpenQuestions([]);
-      setWStrategy([]);
-      setWType("jotting");
-      setWSource("");
-      setWKeyPoints([]);
-      setWInsights([]);
-      setWStruct(null);
-      setWorkspaceOpen(false);
-      refreshPendingPlans();
-      loadTasks();
-      loadStrategies();
-      loadSnippets();
-      // 写入完成 → 跳转到该笔记详情
-      setExpanded(note.id);
+      finalizeSavedNote(data.note as BrainNote);
     } catch {
       setApplyError("保存中断，请重试（不会误判为已保存）");
     } finally {
@@ -1289,6 +1405,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           // new_issue 结果 → 调起既有 StructPreview 确认待确认处理计划
           setDetailTaskId(null);
           setWPlanId(planId);
+          setWNoPlan(false);
           fillFromPlanBody(planBody);
         }}
       />
@@ -1646,7 +1763,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               <div className="px-5 pb-5 pt-3">
                 {filteredNotes.length === 0 ? (
                   <div className="py-10 text-center text-sm text-muted-foreground">
-                    {listFilter !== "全部" ? "这个分类还没有笔记。" : "还没有笔记，先在「整理笔记」里扔一段进来。"}
+                    {listFilter !== "全部" ? "这个分类还没有笔记。" : "还没有笔记，先在「记一笔」里扔一段进来。"}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-2">
@@ -1745,7 +1862,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             {/* 整理失败提示 */}
             {organizeError && (
               <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
-                AI 整理失败，已用基础整理兜底 —— 可点左下「重新生成」重试。
+                AI 整理未能保存为待确认计划 —— 你的改动仍在，可直接「采纳并入库」保存，或点左下「重新生成」重试。
               </div>
             )}
 
@@ -1908,14 +2025,14 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     </div>
                   </div>
 
-                  {/* 摘要 / 行动点 */}
+                  {/* 摘要（行动点在下方「行动项」区块单独编辑，此处仅概要） */}
                   <div>
-                    <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">摘要 / 行动点</label>
+                    <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">摘要</label>
                     <textarea
                       value={wSummary}
                       onChange={(ev) => setWSummary(ev.target.value)}
                       className={inputCls + " mt-1.5 min-h-24 resize-y leading-relaxed"}
-                      placeholder="结构化要点，建议一行一个关键点…"
+                      placeholder="一句话概括这条记录的核心要点（行动点请在下方「行动项」中编辑）…"
                     />
                   </div>
 
@@ -2032,7 +2149,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     取消
                   </Button>
                 </div>
-                <Button size="sm" onClick={saveDraft} disabled={saving || !wTitle.trim() || !wPlanId}>
+                <Button size="sm" onClick={saveDraft} disabled={saving || !wTitle.trim() || (!wPlanId && !wNoPlan)}>
                   {saving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                   {saving ? "入库中…" : "采纳并入库"}
                 </Button>

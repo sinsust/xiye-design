@@ -247,7 +247,7 @@ function NoteLine({ n, onOpenNote }: { n: ProvenanceOutputNote; onOpenNote?: (id
   const inner = (
     <>
       <FileText className="size-3 shrink-0" />
-      <span className="truncate">📝 {n.title}</span>
+      <span className="truncate">{n.title}</span>
     </>
   );
   return onOpenNote ? (

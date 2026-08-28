@@ -157,7 +157,7 @@ export function LearningPlanPanel({
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             <span>
-              第 <span className="font-medium text-foreground">{review.reviewCount}</span> 次复习
+              第 <span className="font-medium text-foreground">{review.reviewCount + 1}</span> 次复习
             </span>
             <span>
               阶段 <span className="font-medium text-foreground">{STAGE_LABEL[review.stage] ?? review.stage}</span>

@@ -35,7 +35,7 @@ export function StrategiesTab({
     <div className="mt-3">
       {strategies.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-dashed border-border/60 px-4 py-8 text-center text-sm text-muted-foreground">
-          还没有策略。在「整理笔记」里投入一份会议纪要，AI 会自动拆解出长期策略与任务。
+          还没有策略。在「记一笔」里投入一份会议纪要，AI 会自动拆解出长期策略与任务。
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3">
