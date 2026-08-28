@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
       "**/scripts/.scratch-*.mjs",
     ],
   },
+  // /auth/confirm 已并入 auth 组 catch-all（app/api/auth/[[...path]]，key "confirm"）。
+  // 邮件里已发出的 Supabase 回跳链接仍指向 /auth/confirm，用 rewrites 保 URL 兼容
+  //（Next 层，dev/prod 均生效，不新增 Serverless Function）。
+  async rewrites() {
+    return [{ source: "/auth/confirm", destination: "/api/auth/confirm" }];
+  },
 };
 
 export default nextConfig;
