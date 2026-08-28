@@ -13,7 +13,7 @@
  *  - 严重度统一为 warning（质量问题提示，非阻断）；下游可据 affectedRows/Columns 决定处置。
  */
 
-import type { EffectiveDataset, QualityIssue, SheetInfo } from "./types";
+import type { EffectiveDataset, QualityIssue, QualityIssueField, SheetInfo } from "./types";
 
 /** Excel 序列号形态：4~5 位整数（或带小数），落在合理日期序列号区间 */
 const EXCEL_SERIAL_RE = /^(\d{4,5})(\.\d+)?$/;
@@ -83,7 +83,10 @@ export function detectTableQualityIssues(sheet: SheetInfo, ds: EffectiveDataset)
 
   /* 3) 混合日期格式：仅在 RAW 值中可观测（cleaner 会把序列号规范为 ISO，清洗后即不可见）。
    *    遍历 effective 中推断为 date 的列，比对 RAW sheet 值：ISO 串与 Excel 序列号并存 → 混合。
-   *    注意：列裁剪只移除尾部占位列（column_N 在末位），故 ds 列下标 i 与 sheet 列下标 i 对齐。 */
+   *    注意：列裁剪只移除尾部占位列（column_N 在末位），故 ds 列下标 i 与 sheet 列下标 i 对齐。
+   *    聚合：多列命中时合并为一条 issue（fields 列出全部列），避免 UI 生成内容雷同的重复卡片。 */
+  const mixedDateFields: QualityIssueField[] = [];
+  const mixedDateSamples: string[] = [];
   ds.columns.forEach((type, i) => {
     if (type !== "date") return;
     const colName = ds.headers[i];
@@ -120,18 +123,29 @@ export function detectTableQualityIssues(sheet: SheetInfo, ds: EffectiveDataset)
         serialCount > 0 ? `Excel序列号(≈${serialCount})` : null,
         otherNonIsoCount > 0 ? `其它非标准表达(≈${otherNonIsoCount})` : null,
       ].filter(Boolean) as string[];
-      issues.push({
-        code: "MIXED_DATE_FORMAT",
-        severity: "warning",
-        fieldId: colName,
-        columnName: colName,
-        message: `日期列「${colName}」混合多种表达：${mixedKinds.join(" + ")}`,
+      mixedDateFields.push({
+        name: colName,
         affectedRows: Math.max(serialCount, otherNonIsoCount),
-        samples: serialSamples.length > 0 ? serialSamples : undefined,
-        suggestedAction: "T1-D 或后续将序列号/非标准表达规范为 ISO；本阶段仅检测报告，不自动改写",
+        detail: mixedKinds.join(" + "),
       });
+      for (const s of serialSamples) {
+        if (mixedDateSamples.length < MAX_SAMPLES) mixedDateSamples.push(s);
+      }
     }
   });
+  if (mixedDateFields.length > 0) {
+    issues.push({
+      code: "MIXED_DATE_FORMAT",
+      severity: "warning",
+      columnName: mixedDateFields[0]!.name,
+      fields: mixedDateFields,
+      message: `${mixedDateFields.length} 个日期列混合多种表达：${mixedDateFields.map((f) => f.name).join("、")}`,
+      affectedColumns: mixedDateFields.length,
+      affectedRows: mixedDateFields.reduce((s, f) => s + (f.affectedRows ?? 0), 0),
+      samples: mixedDateSamples.length > 0 ? mixedDateSamples.slice(0, MAX_SAMPLES) : undefined,
+      suggestedAction: "T1-D 或后续将序列号/非标准表达规范为 ISO；本阶段仅检测报告，不自动改写",
+    });
+  }
 
   /* 4) 完全重复行：整行（全部列）内容一致的重复数据行，通常属数据录入/导出重复。
    *    纯函数、零副作用；仅检测报告，不自动去重（去重会改写业务行数，归后续阶段）。 */
@@ -165,7 +179,10 @@ export function detectTableQualityIssues(sheet: SheetInfo, ds: EffectiveDataset)
     }
   }
 
-  /* 5) 高缺失率列：某列空值比例过高（≥阈值），意味着该字段采集不完整或不该被分析消费。 */
+  /* 5) 高缺失率列：某列空值比例过高（≥阈值），意味着该字段采集不完整或不该被分析消费。
+   *    聚合：命中多列时合并为一条 issue（fields 按缺失率降序列出全部列），
+   *    避免 UI 出现「N 张内容完全相同的『部分字段缺失值较多』卡片」。 */
+  const highNullFields: QualityIssueField[] = [];
   if (ds.effectiveRowCount >= MIN_ROWS_FOR_NULL_RATIO) {
     ds.headers.forEach((h, i) => {
       const header = String(h ?? "").trim();
@@ -177,16 +194,27 @@ export function detectTableQualityIssues(sheet: SheetInfo, ds: EffectiveDataset)
       }
       const ratio = empty / ds.effectiveRowCount;
       if (ratio >= NULL_RATIO_THRESHOLD) {
-        issues.push({
-          code: "HIGH_NULL_RATIO",
-          severity: "warning",
-          fieldId: header,
-          columnName: header,
-          message: `列「${header}」空值比例过高（${Math.round(ratio * 100)}%，约 ${empty}/${ds.effectiveRowCount} 行缺失）`,
+        highNullFields.push({
+          name: header,
           affectedRows: empty,
-          suggestedAction: "确认该字段是否必要；若大部分行为空，建议排除该列或补全采集",
+          detail: `缺失 ${Math.round(ratio * 100)}%（${empty}/${ds.effectiveRowCount} 行）`,
         });
       }
+    });
+  }
+  if (highNullFields.length > 0) {
+    // 缺失率高的排前面（detail 形如「缺失 100%（11/11 行）」，按缺失行数降序即近似按缺失率降序）
+    highNullFields.sort((a, b) => (b.affectedRows ?? 0) - (a.affectedRows ?? 0));
+    const names = highNullFields.map((f) => f.name).join("、");
+    issues.push({
+      code: "HIGH_NULL_RATIO",
+      severity: "warning",
+      columnName: highNullFields[0]!.name,
+      fields: highNullFields,
+      message: `${highNullFields.length} 个字段缺失值较多：${names}`,
+      affectedColumns: highNullFields.length,
+      affectedRows: highNullFields.reduce((s, f) => s + (f.affectedRows ?? 0), 0),
+      suggestedAction: "确认这些字段是否必要；若大部分行为空，建议排除对应列或补全采集",
     });
   }
 
@@ -194,6 +222,7 @@ export function detectTableQualityIssues(sheet: SheetInfo, ds: EffectiveDataset)
    *    属于业务级数据质量问题（直接求和会严重失真），且不依赖领域语义即可检测。
    *    注：必须扫 RAW 值（sheet.rows）——cleaner 会把 "¥100" 归一为数字 100、剥掉符号，
    *        ds.rows 已无符号，故此处对齐列下标扫描原始行（跳过 detectedHeaderRow 表头行）。 */
+  const mixedCurrencyFields: QualityIssueField[] = [];
   {
     const rawStart = (ds.detectedHeaderRow ?? 0) + 1;
     ds.headers.forEach((h, i) => {
@@ -214,17 +243,25 @@ export function detectTableQualityIssues(sheet: SheetInfo, ds: EffectiveDataset)
         }
       }
       if (found.size >= 2 && currencyCells >= 2) {
-        issues.push({
-          code: "MIXED_CURRENCY",
-          severity: "warning",
-          fieldId: header,
-          columnName: header,
-          message: `金额列「${header}」混合多种货币符号（${[...found].join(" / ")}），口径不一致`,
+        mixedCurrencyFields.push({
+          name: header,
           affectedRows: currencyCells,
-          samples: [...found],
-          suggestedAction: "统一货币口径或拆分币种列；混合币种直接求和会严重失真",
+          detail: [...found].join(" / "),
         });
       }
+    });
+  }
+  if (mixedCurrencyFields.length > 0) {
+    issues.push({
+      code: "MIXED_CURRENCY",
+      severity: "warning",
+      columnName: mixedCurrencyFields[0]!.name,
+      fields: mixedCurrencyFields,
+      message: `${mixedCurrencyFields.length} 个金额列混用多种币种：${mixedCurrencyFields.map((f) => f.name).join("、")}`,
+      affectedColumns: mixedCurrencyFields.length,
+      affectedRows: mixedCurrencyFields.reduce((s, f) => s + (f.affectedRows ?? 0), 0),
+      samples: mixedCurrencyFields[0]!.detail ? [mixedCurrencyFields[0]!.detail!] : undefined,
+      suggestedAction: "统一货币口径或拆分币种列；混合币种直接求和会严重失真",
     });
   }
 

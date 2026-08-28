@@ -124,6 +124,16 @@ export type QualitySeverity = "info" | "warning" | "error";
  * 不承载完整业务记录；affectedRows / affectedColumns 给出影响面供下游（profiler / 分析推荐 /
  * 后续 LLM Context）消费。
  */
+/** 聚合型质量问题中的单个字段明细（同 code 多列合并时填充） */
+export interface QualityIssueField {
+  /** 列显示名 */
+  name: string;
+  /** 该字段的受影响行数（可选） */
+  affectedRows?: number;
+  /** 该字段的补充说明（可选，如缺失率、检测到的币种种类） */
+  detail?: string;
+}
+
 export interface QualityIssue {
   /** 问题代码（与 Expected Contract 的 expectedQualityIssues.code 对齐，便于断言） */
   code: string;
@@ -131,7 +141,7 @@ export interface QualityIssue {
   severity: QualitySeverity;
   /** 关联字段归一化 id（可选） */
   fieldId?: string;
-  /** 关联列显示名（可选） */
+  /** 关联列显示名（可选；聚合型问题取首个字段，完整列表见 fields） */
   columnName?: string;
   /** 人类可读描述 */
   message: string;
@@ -139,6 +149,12 @@ export interface QualityIssue {
   affectedRows?: number;
   /** 受影响列数（可选） */
   affectedColumns?: number;
+  /**
+   * 聚合型问题的字段明细列表。
+   * 同 code 的多列问题（如多个字段高缺失率）应合并为一条 issue 并在此列出全部字段，
+   * 避免逐列生成内容雷同的重复卡片（UI 侧按此列表一次性展示，不逐字段出卡）。
+   */
+  fields?: QualityIssueField[];
   /** 样本（严格截断，最多 5 项，不暴露不必要敏感值） */
   samples?: string[];
   /** 建议处置动作（可选） */

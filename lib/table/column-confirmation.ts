@@ -55,6 +55,9 @@ export const ALLOWED_OVERRIDE_TYPES: FieldType[] = FIELD_TYPE_VALUES;
 /** 单字段是否低置信（系统拿不准类型，默认回退为文本处理） */
 export function isLowConfidenceField(col: ColumnProfile): boolean {
   if (!col.inference) return false;
+  // 空列不是「类型拿不准」，而是「无数据可判」：不推给用户确认类型，
+  // 交由数据质量模块按「高缺失率」提示建议排除该列。
+  if (col.nonNullCount === 0) return false;
   return col.inference.confidence < LOW_CONFIDENCE_THRESHOLD;
 }
 
@@ -82,6 +85,8 @@ export interface QualityDisplayMeta {
   group: QualityGroup;
   /** 业务语言标题（不含工程术语） */
   title: string;
+  /** 聚合多字段时的标题模板（含 {n} 占位；未提供时回退为 title） */
+  titlePlural?: string;
   /** 系统当前如何处理 */
   currentHandling: string;
   /** 对分析的影响 */
@@ -117,6 +122,7 @@ export const QUALITY_META: Record<QualityIssue["code"], QualityDisplayMeta> = {
   MIXED_DATE_FORMAT: {
     group: "attention",
     title: "日期字段存在多种写法",
+    titlePlural: "{n} 个日期列存在多种写法",
     currentHandling: "系统按标准格式识别日期，但不会自动改写你原始数据中的写法。",
     analysisImpact: "序列号、中文日期等混用可能导致按时间维度的分析出现偏差。",
     actionLabel: "建议后续统一为 ISO 标准日期（如 2026-08-27）",
@@ -125,6 +131,7 @@ export const QUALITY_META: Record<QualityIssue["code"], QualityDisplayMeta> = {
   MIXED_CURRENCY: {
     group: "attention",
     title: "金额字段混用多种币种",
+    titlePlural: "{n} 个金额列混用多种币种",
     currentHandling: "系统仅识别币种符号，不会自动换算或改写原值。",
     analysisImpact: "混合币种直接求和会严重失真，金额类指标需谨慎解读。",
     actionLabel: "建议统一货币口径，或拆分为独立币种列",
@@ -141,6 +148,7 @@ export const QUALITY_META: Record<QualityIssue["code"], QualityDisplayMeta> = {
   HIGH_NULL_RATIO: {
     group: "advisory",
     title: "部分字段缺失值较多",
+    titlePlural: "{n} 个字段缺失值较多",
     currentHandling: "系统保留空值（不参与聚合计算）。",
     analysisImpact: "缺失过多时该字段不宜作为主要分析维度，结论代表性有限。",
     actionLabel: "建议补全数据，或从分析中排除该列",
@@ -148,9 +156,13 @@ export const QUALITY_META: Record<QualityIssue["code"], QualityDisplayMeta> = {
   },
 };
 
-/** 取单条质量问题的展示元数据（未知 code 兜底为 advisory） */
+/**
+ * 取单条质量问题的展示元数据（未知 code 兜底为 advisory）。
+ * 聚合型问题（issue.fields 含多列）时改用 titlePlural 模板，让标题直接反映字段数量，
+ * 避免 UI 出现「N 张标题与正文完全相同的卡片」。
+ */
 export function qualityMeta(issue: QualityIssue): QualityDisplayMeta {
-  return (
+  const base: QualityDisplayMeta =
     QUALITY_META[issue.code] ?? {
       group: "advisory",
       title: issue.message || "数据质量提示",
@@ -158,8 +170,12 @@ export function qualityMeta(issue: QualityIssue): QualityDisplayMeta {
       analysisImpact: "可能影响相关分析结论的代表性或准确性。",
       actionLabel: "建议结合业务判断是否需要处理",
       blocking: false,
-    }
-  );
+    };
+  const n = issue.fields?.length ?? 0;
+  if (n > 1 && base.titlePlural) {
+    return { ...base, title: base.titlePlural.replace("{n}", String(n)) };
+  }
+  return base;
 }
 
 /** 按分组归类质量问题（供 UI 三段式展示） */

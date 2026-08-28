@@ -57,9 +57,21 @@ export function DataQualityReview({
   headers?: string[];
   className?: string;
 }) {
-  // 隐藏「指向已排除列」的质量项（列名不在当前表头中）
+  // 隐藏「指向已排除列」的质量项（列名不在当前表头中）。
+  // 聚合型 issue 需逐字段过滤：只保留仍存在的字段，全被排除则整条不展示。
   const visible = headers
-    ? issues.filter((it) => !it.columnName || headers.includes(it.columnName))
+    ? issues
+        .map((it) => {
+          if (!it.columnName) return it;
+          if (headers.includes(it.columnName)) return it;
+          if (it.fields?.length) {
+            const kept = it.fields.filter((f) => headers.includes(f.name));
+            if (kept.length === 0) return null;
+            return { ...it, fields: kept, columnName: kept[0]!.name };
+          }
+          return null;
+        })
+        .filter((it): it is QualityIssue => it !== null)
     : issues;
 
   const grouped = groupQualityIssues(visible);
@@ -110,6 +122,22 @@ export function DataQualityReview({
                         </span>
                       )}
                     </div>
+                    {/* 聚合字段明细：一行 chip 列出全部字段，整组共用下方一段说明，
+                        不再「一个字段一张卡片 + 重复正文」 */}
+                    {it.fields && it.fields.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {it.fields.map((f, fi) => (
+                          <span
+                            key={`${f.name}-${fi}`}
+                            className="rounded bg-muted px-1.5 py-px text-[10px] text-foreground/80"
+                            title={f.detail ?? undefined}
+                          >
+                            {f.name}
+                            {f.detail ? ` ${f.detail}` : ""}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="mt-1.5 space-y-1 text-[11px] leading-relaxed text-muted-foreground">
                       <p>
                         <span className="text-muted-foreground/60">当前处理：</span>

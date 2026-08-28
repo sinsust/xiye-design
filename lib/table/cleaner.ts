@@ -26,6 +26,21 @@ const CURRENCY_REGEX = /[¥$€£￥]/;
 /** 中文大数单位 */
 const CHINESE_UNIT = /[万亿]$/;
 
+/* ─────────────── 强模式类型识别（证件 / 电话） ─────────────── */
+/* 目的：身份证 / 护照 / 手机号这类「强格式业务标识」，不依赖列名语义也能高置信识别，
+ *      避免它们被回退为 text 后判为低置信、再推给用户逐个确认（脏表导入的主要交互负担）。 */
+
+/** 中国大陆手机号：1[3-9] 开头 11 位；允许 +86 国际码与常见分隔符 */
+const CN_MOBILE_RE = /^(\+?86[-\s]?)?1[3-9]\d{9}$/;
+/** 电话（固话 / 带区号 / 分机）：形态宽松，仅在列名含电话语义词时启用，避免误伤长数字 ID */
+const PHONE_LIKE_RE = /^(\+?\d{1,3}[-\s]?)?(\(?\d{2,4}\)?[-\s]?)?\d{7,8}([-\s]?\d{1,5})?$/;
+/** 中国大陆身份证：18 位（末位可为 X/x）或 15 位旧版 —— 强模式，不依赖列名 */
+const CN_ID_CARD_RE = /^(\d{17}[\dXx]|\d{15})$/;
+/** 护照 / 通行证 / 军官证等：单个字母 + 7~12 位数字（如 E12345678）—— 强模式 */
+const PASSPORT_LIKE_RE = /^[A-Za-z]\d{7,12}$/;
+/** 证件号弱形态：8~18 位字母数字混合且同时含字母与数字 —— 仅在列名含证件语义词时启用 */
+const CERT_NO_LOOSE_RE = /^(?=[A-Za-z0-9]*[A-Za-z])(?=[A-Za-z0-9]*\d)[A-Za-z0-9]{8,18}$/;
+
 /* ─────────────── 单 cell 清洗 ─────────────── */
 
 /**
@@ -299,6 +314,12 @@ export const INFERENCE_THRESHOLDS = {
   CATEGORY_MAX_UNIQUE: 50,
   /** email 形态值比例阈值（≥ 则判定 email） */
   EMAIL_PARSE_RATIO: 0.9,
+  /** 手机号形态值比例阈值（≥ 则判定 phone，无需列名语义） */
+  PHONE_PARSE_RATIO: 0.9,
+  /** 列名含电话语义词时的最低可解析比例（放宽，因为语义已强） */
+  PHONE_NAME_MIN_RATIO: 0.5,
+  /** 强模式证件号（身份证 / 护照）值比例阈值（≥ 则判定 id，不要求高唯一率） */
+  CERT_PATTERN_RATIO: 0.9,
   /** 列名含 ID 语义词时，值符合 ID 格式的最小比例 */
   ID_NAME_PATTERN_RATIO: 0.9,
   /** 值驱动 ID 判定的唯一率阈值（≥ 且格式符合 → id，即使列名无语义词） */
@@ -315,8 +336,28 @@ export const INFERENCE_THRESHOLDS = {
 export const ID_NAME_HINTS = [
   "订单号", "订单编号", "单号", "编号", "商品编码", "货号", "条码",
   "code", "reference", "ref", "tracking", "跟踪号", "追踪号",
+  // 证件 / 卡号 / 账号类业务标识
+  "证件号", "证件编号", "证件", "身份证", "护照", "通行证", "驾驶证", "军官证", "海员证",
+  "居住证", "签证", "卡号", "会员号", "账号", "学号", "工号", "员工号",
+  "idcard", "passport", "certificate", "certno", "cardno", "license",
 ];
 export const EMAIL_NAME_HINTS = ["邮箱", "电子邮件", "email", "e-mail", "mail"];
+/** 电话语义词：命中后用宽松电话形态判定（PHONE_LIKE_RE） */
+export const PHONE_NAME_HINTS = [
+  "手机", "电话", "联系电话", "联系方式", "联系方式", "座机", "固话", "手机号", "移动电话",
+  "mobile", "phone", "tel", "contact", "cellphone",
+];
+/** 证件语义词：命中后启用宽松证件形态（CERT_NO_LOOSE_RE）判定为 id */
+export const CERT_NAME_HINTS = [
+  "证件号", "证件编号", "证件", "身份证", "护照", "通行证", "驾驶证", "军官证", "海员证",
+  "居住证", "签证", "idcard", "passport", "certificate", "certno",
+];
+/** 姓名 / 名称类语义词：命中即「确定是文本」而非「拿不准」，避免姓名字段被判低置信后阻断分析 */
+export const NAME_TEXT_HINTS = [
+  "姓名", "名字", "人名", "名称", "用户名", "客户名", "联系人", "收货人", "付款人", "经办人",
+  "昵称", "花名", "称呼", "旅客", "乘客", "员工姓名", "负责人",
+  "name", "username", "fullname", "firstname", "lastname", "nickname",
+];
 export const CATEGORY_NAME_HINTS = [
   "国家", "地区", "区域", "渠道", "物流渠道", "物流商", "状态", "退款状态", "商品状态", "物流状态",
   "标签", "分类", "类别", "广告组", "平台", "店铺", "类型", "分组", "品类", "品牌", "部门",
@@ -324,6 +365,10 @@ export const CATEGORY_NAME_HINTS = [
 export const DATE_NAME_HINTS = [
   "日期", "时间", "下单日期", "发货日期", "签收日期", "注册日期",
   "年", "月", "日", "date", "time", "created", "updated",
+  // 高频日期变体（出生 / 到期 / 生效 / 创建更新等）
+  "出生", "生日", "诞生", "到期", "截止", "生效", "失效", "过期", "届满",
+  "开始", "结束", "创建", "更新", "修改", "审核", "发布", "上架", "下架",
+  "birthday", "birth", "expire", "expiry", "deadline", "start", "end",
 ];
 export const CURRENCY_NAME_HINTS = [
   "金额", "销售额", "收入", "营收", "成本", "售价", "单价", "运费", "费用", "消耗",
@@ -373,7 +418,7 @@ export function inferColumnTypeDetailed(
     return {
       inferredType: "text",
       confidence: 0,
-      reasons: ["列无有效值（空列），回退文本"],
+      reasons: ["该列无任何有效值（空列），建议从分析中排除"],
       parseStats: { nonNullCount: 0, parseableCount: 0, uniqueCount: 0, uniqueRatio: 0, invalidCount: 0 },
     };
   }
@@ -398,6 +443,26 @@ export function inferColumnTypeDetailed(
   const idPatternCount = nonNull.filter((s) => looksLikeId(s)).length;
   const idPatternRatio = idPatternCount / nonNullCount;
 
+  // 电话 / 证件：强格式业务标识，独立于「唯一率」识别（脏表常缺值，唯一率不可靠）
+  const hasPhoneName = hasNameHint(name, PHONE_NAME_HINTS);
+  const hasCertName = hasNameHint(name, CERT_NAME_HINTS);
+  const mobileCount = nonNull.filter((s) => CN_MOBILE_RE.test(s)).length;
+  // 列名含电话语义词时才启用宽松形态（PHONE_LIKE_RE），避免长数字 ID 被误判为电话
+  const phoneLikeCount = hasPhoneName
+    ? nonNull.filter((s) => CN_MOBILE_RE.test(s) || PHONE_LIKE_RE.test(s)).length
+    : mobileCount;
+  const phoneRatio = phoneLikeCount / nonNullCount;
+  // 强模式证件（身份证 18 位 / 护照字母+数字）无条件启用；弱形态仅在列名含证件语义时启用
+  const certStrongCount = nonNull.filter(
+    (s) => CN_ID_CARD_RE.test(s) || PASSPORT_LIKE_RE.test(s),
+  ).length;
+  const certCount = hasCertName
+    ? nonNull.filter(
+        (s) => CN_ID_CARD_RE.test(s) || PASSPORT_LIKE_RE.test(s) || CERT_NO_LOOSE_RE.test(s),
+      ).length
+    : certStrongCount;
+  const certRatio = certCount / nonNullCount;
+
   let numericCount = 0;
   let pctCount = 0;
   let currencyCount = 0;
@@ -420,7 +485,22 @@ export function inferColumnTypeDetailed(
       `值符合 email 形态比例 ${(emailRatio * 100).toFixed(0)}% ≥ 阈值 ${INFERENCE_THRESHOLDS.EMAIL_PARSE_RATIO * 100}%`,
     );
   }
-  // 2) date（先于 id：避免 ISO 日期串「2024-08-01」因含分隔符被误判为 id）
+  // 2) phone（强值信号：手机号；须先于 number，避免 11 位手机号被当整数）
+  else if (
+    phoneRatio >= INFERENCE_THRESHOLDS.PHONE_PARSE_RATIO ||
+    (hasPhoneName && phoneRatio >= INFERENCE_THRESHOLDS.PHONE_NAME_MIN_RATIO)
+  ) {
+    inferredType = "phone";
+    const byMobile = mobileCount / nonNullCount >= INFERENCE_THRESHOLDS.PHONE_PARSE_RATIO;
+    confidence = byMobile ? 0.95 : 0.85;
+    reasons.push(
+      byMobile
+        ? "值为中国大陆手机号形态（1[3-9] 开头 11 位）"
+        : "列名含电话语义词，且值符合电话形态",
+    );
+    reasons.push(`值符合电话形态比例 ${(phoneRatio * 100).toFixed(0)}%`);
+  }
+  // 3) date（先于 id：避免 ISO 日期串「2024-08-01」因含分隔符被误判为 id）
   else if (
     dateRatio >= INFERENCE_THRESHOLDS.DATE_PARSE_RATIO ||
     (hasNameHint(name, DATE_NAME_HINTS) && dateRatio >= INFERENCE_THRESHOLDS.DATE_NAME_MIN_RATIO)
@@ -433,8 +513,9 @@ export function inferColumnTypeDetailed(
     if (serialCount > 0) reasons.push("检测到 Excel 序列号日期（如 45320 → 2024-01-29），已归一化为日期");
     if (hasNameHint(name, DATE_NAME_HINTS)) reasons.push("列名含日期语义词");
   }
-  // 3) id：列名语义词 + 格式，或 值高唯一率 + 格式
+  // 4) id：证件强模式 / 列名语义词 + 格式 / 值高唯一率 + 格式
   else if (
+    certRatio >= INFERENCE_THRESHOLDS.CERT_PATTERN_RATIO ||
     (hasNameHint(name, ID_NAME_HINTS) &&
       idPatternRatio >= INFERENCE_THRESHOLDS.ID_NAME_PATTERN_RATIO &&
       nonNullCount >= INFERENCE_THRESHOLDS.ID_MIN_NONNULL) ||
@@ -443,20 +524,33 @@ export function inferColumnTypeDetailed(
       nonNullCount >= INFERENCE_THRESHOLDS.ID_MIN_NONNULL)
   ) {
     inferredType = "id";
+    const byCert = certRatio >= INFERENCE_THRESHOLDS.CERT_PATTERN_RATIO;
     const byName = hasNameHint(name, ID_NAME_HINTS);
-    confidence = byName ? 0.92 : 0.85;
-    reasons.push(byName ? "列名含 ID 语义词（订单号/单号/SKU 等）" : `值唯一率 ${(uniqueRatio * 100).toFixed(0)}% ≥ 阈值 ${INFERENCE_THRESHOLDS.ID_UNIQUENESS_RATIO * 100}%`);
+    confidence = byCert ? 0.95 : byName ? 0.92 : 0.85;
+    if (byCert) {
+      reasons.push(`值符合证件号强格式（身份证 18 位 / 护照字母+数字）比例 ${(certRatio * 100).toFixed(0)}%，按证件标识处理`);
+    } else if (byName) {
+      reasons.push("列名含 ID 语义词（订单号/单号/证件号/卡号等）");
+    } else {
+      reasons.push(`值唯一率 ${(uniqueRatio * 100).toFixed(0)}% ≥ 阈值 ${INFERENCE_THRESHOLDS.ID_UNIQUENESS_RATIO * 100}%`);
+    }
     reasons.push(`唯一值 ${uniqueCount}/${nonNullCount}`);
-    reasons.push(`值符合 ID 格式(字母数字/分隔符)比例 ${(idPatternRatio * 100).toFixed(0)}%`);
-    if (byName && uniqueRatio < 1) reasons.push(`唯一率 ${(uniqueRatio * 100).toFixed(0)}%（含重复，仍按列名语义判定 id）`);
+    reasons.push(
+      byCert
+        ? `值符合证件格式比例 ${(certRatio * 100).toFixed(0)}%`
+        : `值符合 ID 格式(字母数字/分隔符)比例 ${(idPatternRatio * 100).toFixed(0)}%`,
+    );
+    if (byName && !byCert && uniqueRatio < 1) {
+      reasons.push(`唯一率 ${(uniqueRatio * 100).toFixed(0)}%（含重复，仍按列名语义判定 id）`);
+    }
   }
-  // 4) boolean
+  // 5) boolean
   else if (boolRatio >= INFERENCE_THRESHOLDS.BOOLEAN_RATIO) {
     inferredType = "boolean";
     confidence = 0.9;
     reasons.push(`布尔形态值比例 ${(boolRatio * 100).toFixed(0)}%`);
   }
-  // 5) number / currency / percentage / integer / float
+  // 6) number / currency / percentage / integer / float
   else if (
     numericRatio >= INFERENCE_THRESHOLDS.NUMERIC_RATIO ||
     (hasNameHint(name, CURRENCY_NAME_HINTS) && numericRatio >= INFERENCE_THRESHOLDS.CURRENCY_NAME_MIN_RATIO)
@@ -483,7 +577,7 @@ export function inferColumnTypeDetailed(
     }
     if (!isPct && !isCur) confidence = 0.85;
   }
-  // 6) category：列名语义词，或 低唯一率（值重复率高）
+  // 7) category：列名语义词，或 低唯一率（值重复率高）
   else if (
     hasNameHint(name, CATEGORY_NAME_HINTS) ||
     (uniqueRatio < INFERENCE_THRESHOLDS.CATEGORY_UNIQUE_RATIO && uniqueCount < INFERENCE_THRESHOLDS.CATEGORY_MAX_UNIQUE)
@@ -494,22 +588,30 @@ export function inferColumnTypeDetailed(
     if (byName) reasons.push("列名含分类语义词（国家/渠道/状态/标签/广告组等）");
     else reasons.push(`唯一率 ${(uniqueRatio * 100).toFixed(0)}% < 阈值，且唯一数 ${uniqueCount} < ${INFERENCE_THRESHOLDS.CATEGORY_MAX_UNIQUE}，判定为分类维度`);
   }
-  // 7) text 回退
+  // 8) 姓名 / 名称：确定是文本（不是「拿不准」），高置信，不推给用户确认
+  else if (hasNameHint(name, NAME_TEXT_HINTS)) {
+    inferredType = "text";
+    confidence = 0.9;
+    reasons.push("列名含姓名/名称语义词，确定按文本处理");
+  }
+  // 9) text 回退
   else {
     inferredType = "text";
     confidence = 0.5;
-    reasons.push("未满足更具体类型（id/email/date/number/category）的阈值，回退为文本");
+    reasons.push("未满足更具体类型（id/phone/email/date/number/category）的阈值，回退为文本");
   }
 
   // 推断类型的可解析计数
   const parseableCount =
     inferredType === "email" ? emailCount
-      : inferredType === "date" ? dateParseable
-        : inferredType === "id" ? idPatternCount
-          : inferredType === "boolean" ? boolCount
-            : (inferredType === "integer" || inferredType === "float" || inferredType === "percentage" || inferredType === "currency")
-              ? numericCount
-              : nonNullCount;
+      : inferredType === "phone" ? phoneLikeCount
+        : inferredType === "date" ? dateParseable
+          : inferredType === "id"
+            ? (certRatio >= INFERENCE_THRESHOLDS.CERT_PATTERN_RATIO ? certCount : idPatternCount)
+            : inferredType === "boolean" ? boolCount
+              : (inferredType === "integer" || inferredType === "float" || inferredType === "percentage" || inferredType === "currency")
+                ? numericCount
+                : nonNullCount;
   const invalidCount = nonNullCount - parseableCount;
 
   return {
