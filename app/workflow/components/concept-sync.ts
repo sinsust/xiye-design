@@ -10,6 +10,7 @@ import type { DiscoverMessage } from "@/lib/ai-discover";
 import {
   type ConceptBriefInputs,
   type ProductConceptBrief,
+  applyConceptRound,
   buildConceptHeuristic,
   emptyConceptBrief,
   getConceptReadiness,
@@ -40,7 +41,11 @@ export function buildConceptLocal(inputs: ConceptBriefInputs, prev: ProductConce
   const base = prev ?? emptyConceptBrief();
   const heuristic = buildConceptHeuristic(inputs, base);
   const merged = mergeConceptBrief(base, heuristic, inputs);
-  const next = { ...merged, version: prev ? prev.version + 1 : 1 };
+  // 把本地启发式推断出的方向/模式决策沉淀进 brief（与 LLM 路径的 applyConceptRound 对齐）
+  const withDecisions = heuristic.decisions?.length
+    ? applyConceptRound(merged, { decisions: heuristic.decisions })
+    : merged;
+  const next = { ...withDecisions, version: prev ? prev.version + 1 : 1 };
   return ensureQuestions(next);
 }
 

@@ -3,10 +3,12 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { type VariantDimension } from "@/data/component-variants";
 import type { IntentNarrative } from "@/lib/ai-intent";
 import type { DiscoverMessage, ProductBrief } from "@/lib/ai-discover";
-import type { ProductConceptBrief } from "@/lib/flow-concept";
+import { coerceConceptBrief, type ProductConceptBrief } from "@/lib/flow-concept";
 import type { ProductBlueprint } from "@/lib/flow-blueprint";
 import type { ExperienceJourney } from "@/lib/flow-journey";
 import type { ScreenMap } from "@/lib/flow-screen-map";
+import type { ScreenSpec } from "@/lib/flow-screen-spec";
+import type { PrototypeSpec } from "@/lib/flow-prototype";
 
 // 节流 localStorage 写入：高频状态变更（如对话 intentSession、PRD）合并后批量落盘，
 // 避免每次输入都同步全量 JSON.stringify 大对象阻塞主线程；离开页面时 flush 兜底。
@@ -211,6 +213,14 @@ export interface FlowState {
   // 状态机 draft/reviewing/confirmed（接受 / 带假设继续）；蓝图或体验变化标记 stale，重建保留局部编辑。
   screenMap: ScreenMap | null;
 
+  // —— F3-B 逐界面信息架构与交互契约：从已确认且未过期的 ScreenMap 收敛的界面规格（后台可审阅、可追溯）——
+  // 状态机 draft/reviewing/confirmed（接受 / 带假设继续）；页面结构/体验/蓝图任一变化标记 stale，重建保留局部编辑。
+  screenSpec: ScreenSpec | null;
+
+  // —— F3-C 可点击原型：从已确认且未过期的界面规格收敛的首版可试玩契约（后台可审阅、可追溯） ——
+  // 状态机 draft/reviewing/confirmed（接受 / 带假设继续）；四层来源任一变化标记 stale，重建保留 guardedPaths。
+  prototype: PrototypeSpec | null;
+
   // —— 多 Agent 会诊结果（collab → refine 贯通）——
   panelOutput: PanelOutput | null;
 
@@ -240,6 +250,8 @@ export interface FlowState {
   setBlueprint: (b: ProductBlueprint | null) => void;
   setJourney: (j: ExperienceJourney | null) => void;
   setScreenMap: (m: ScreenMap | null) => void;
+  setScreenSpec: (s: ScreenSpec | null) => void;
+  setPrototype: (p: PrototypeSpec | null) => void;
   setPanelOutput: (o: PanelOutput | null) => void;
   setDeliverArtifacts: (a: DeliverArtifacts | null) => void;
   savedProjectId: string | null;
@@ -282,6 +294,8 @@ export const useFlowStore = create<FlowState>()(
   blueprint: null,
   journey: null,
   screenMap: null,
+  screenSpec: null,
+  prototype: null,
   panelOutput: null,
   deliverArtifacts: null,
   savedProjectId: null,
@@ -394,6 +408,8 @@ export const useFlowStore = create<FlowState>()(
   setBlueprint: (b) => set({ blueprint: b }),
   setJourney: (j) => set({ journey: j }),
   setScreenMap: (m) => set({ screenMap: m }),
+  setScreenSpec: (s) => set({ screenSpec: s }),
+  setPrototype: (p) => set({ prototype: p }),
   setPanelOutput: (o) => set({ panelOutput: o }),
   setDeliverArtifacts: (a) => set({ deliverArtifacts: a }),
   setSavedProjectId: (id) => set({ savedProjectId: id }),
@@ -420,6 +436,8 @@ export const useFlowStore = create<FlowState>()(
       blueprint: s.blueprint,
       journey: s.journey,
       screenMap: s.screenMap,
+      screenSpec: s.screenSpec,
+      prototype: s.prototype,
       panelOutput: s.panelOutput,
       deliverArtifacts: s.deliverArtifacts,
       savedProjectId: s.savedProjectId,
@@ -468,6 +486,8 @@ export const useFlowStore = create<FlowState>()(
       blueprint: null,
       journey: null,
       screenMap: null,
+      screenSpec: null,
+      prototype: null,
       panelOutput: null,
       deliverArtifacts: null,
     }),
@@ -475,7 +495,7 @@ export const useFlowStore = create<FlowState>()(
     {
       name: "xiye-flow-design",
       storage: createJSONStorage(() => flowPersistStorage),
-      onRehydrateStorage: () => () => {
+      onRehydrateStorage: () => (state) => {
         // 安全迁移：历史版本曾把 apiKeys 明文持久化进 localStorage；现版本 partialize 已剔除。
         // 此处一次性清理旧残留，避免密钥继续滞留浏览器。
         try {
@@ -489,6 +509,12 @@ export const useFlowStore = create<FlowState>()(
           }
         } catch {
           /* noop */
+        }
+        // 结构补齐：旧版本草稿的 conceptBrief 可能缺 decisions/openCriticalQuestions，
+        // 恢复后补齐，避免消费侧（getConceptReadiness）读取 .length 崩溃。
+        const cb = state?.conceptBrief;
+        if (cb && (!Array.isArray(cb.decisions) || !Array.isArray(cb.openCriticalQuestions))) {
+          useFlowStore.setState({ conceptBrief: coerceConceptBrief(cb) });
         }
       },
       // 持久化：设计 token + Step 1 探索式访谈会话（避免每次进入都重新生成）。
@@ -512,6 +538,8 @@ export const useFlowStore = create<FlowState>()(
         blueprint: state.blueprint,
         journey: state.journey,
         screenMap: state.screenMap,
+        screenSpec: state.screenSpec,
+        prototype: state.prototype,
         panelOutput: state.panelOutput,
         deliverArtifacts: state.deliverArtifacts,
         savedProjectId: state.savedProjectId,

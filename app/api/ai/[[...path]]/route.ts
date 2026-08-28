@@ -12,6 +12,7 @@ import * as m6 from "@/lib/api-handlers/ai/name";
 import * as m7 from "@/lib/api-handlers/ai/panel";
 import * as m8 from "@/lib/api-handlers/ai/screen-map";
 import * as m9 from "@/lib/api-handlers/ai/screen-spec";
+import * as m10 from "@/lib/api-handlers/ai/prototype";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ const ROUTES: RouteDef[] = [
   { key: "panel", methods: { POST: m7.POST as HandlerFn } },
   { key: "screen-map", methods: { GET: m8.GET as HandlerFn, POST: m8.POST as HandlerFn, PUT: m8.PUT as HandlerFn } },
   { key: "screen-spec", methods: { GET: m9.GET as HandlerFn, POST: m9.POST as HandlerFn, PUT: m9.PUT as HandlerFn } },
+  { key: "prototype", methods: { GET: m10.GET as HandlerFn, POST: m10.POST as HandlerFn, PUT: m10.PUT as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

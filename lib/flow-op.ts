@@ -22,7 +22,12 @@ export type FlowOpType =
   | "update_screen_map"
   | "confirm_screen_map"
   | "rebuild_screen_map"
-  | "restore_screen_map";
+  | "restore_screen_map"
+  | "init_screen_spec"
+  | "update_screen_spec"
+  | "confirm_screen_spec"
+  | "rebuild_screen_spec"
+  | "restore_screen_spec";
 
 export interface FlowOpKeyInput {
   userId: string;

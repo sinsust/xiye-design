@@ -254,10 +254,10 @@ export function getConceptReadiness(brief: ProductConceptBrief | null | undefine
     };
   }
 
-  const decisions = brief.decisions.length;
+  const decisions = brief.decisions?.length ?? 0;
   const progress = Math.min(decisions / 3, 1); // 约 3 条关键决策即可撑起一个可用的初版方案
   const hasPlan = hasReadableConceptPlan(brief);
-  const criticals = brief.openCriticalQuestions.length;
+  const criticals = brief.openCriticalQuestions?.length ?? 0;
   const accepted = brief.acceptance === "accepted" || brief.acceptance === "continue_with_assumptions";
 
   let value = 0;
@@ -324,6 +324,20 @@ export function emptyConceptBrief(opts: { id?: string; projectId?: string } = {}
     evidenceRefs: {},
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+/**
+ * 把任意（可能来自旧版本持久化 / 草稿恢复的）部分对象补齐为完整的 ProductConceptBrief，
+ * 保证 decisions / openCriticalQuestions 等数组字段始终存在，避免消费侧读取 .length 崩溃。
+ */
+export function coerceConceptBrief(b: ProductConceptBrief | null | undefined): ProductConceptBrief | null {
+  if (!b) return null;
+  return {
+    ...emptyConceptBrief(),
+    ...b,
+    decisions: Array.isArray(b.decisions) ? b.decisions : [],
+    openCriticalQuestions: Array.isArray(b.openCriticalQuestions) ? b.openCriticalQuestions : [],
   };
 }
 
@@ -708,10 +722,33 @@ export function buildConceptHeuristic(inputs: ConceptBriefInputs, prev: ProductC
     productName: prev.productName || deriveConceptName(inputs.idea ?? ""),
     oneLiner: prev.oneLiner || deriveConceptOneLiner(inputs.idea ?? ""),
     coreCapabilities: prev.coreCapabilities,
+    decisions: [],
   };
-  // 方向选择 → 视为已确认的可落定结论，回填到「核心问题」的一句候选描述
-  if (!prev.problemStatement && inputs.directions?.length) {
-    out.problemStatement = `围绕已确认方向「${inputs.directions.join("、")}」解决……（待你补充具体痛点）`;
+  // 方向选择 → 视为已确认的可落定结论：回填核心问题 + 沉淀为关键决策
+  if (inputs.directions?.length) {
+    if (!prev.problemStatement) {
+      out.problemStatement = `围绕已确认方向「${inputs.directions.join("、")}」解决……（待你补充具体痛点）`;
+    }
+    const existing = new Set(prev.decisions.map((d) => d.title.toLowerCase()));
+    for (const dir of inputs.directions) {
+      const title = `确定方向：${dir}`;
+      if (!existing.has(title.toLowerCase())) {
+        out.decisions!.push({ title, detail: `用户在访谈中确认了该方向，将作为 MVP 边界与核心取舍的依据。` });
+      }
+    }
+  }
+  // 用户明确表达“类似 XX 平台/产品”时，沉淀一条竞品/模式参考决策（仅作引用，不编造）
+  const idea = inputs.idea ?? "";
+  const referenceMatch = idea.match(/类似\s*([「『“"]?[\u4e00-\u9fa5A-Za-z0-9·]{2,16}[」』”"]?)|跟?(.{2,16})流程类似|参考\s*([\u4e00-\u9fa5A-Za-z0-9·]{2,16})/);
+  if (referenceMatch) {
+    const target = referenceMatch[1] ?? referenceMatch[2] ?? referenceMatch[3] ?? "";
+    if (target) {
+      const title = `参考模式：${target.trim()}`;
+      const existing = new Set(prev.decisions.map((d) => d.title.toLowerCase()));
+      if (!existing.has(title.toLowerCase())) {
+        out.decisions!.push({ title, detail: "用户提到可参照该模式设计流程，后续需结合具体品类与平台规则细化。" });
+      }
+    }
   }
   return out;
 }
