@@ -15,135 +15,20 @@ import {
   AlertTriangle,
   CheckCircle2,
   CircleDashed,
-  FileHeart,
   FlaskConical,
   PencilLine,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
   Target,
   Users,
   X,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   type BlueprintReadiness,
   type ProductBlueprint,
   type BlueprintEvidence,
 } from "@/lib/flow-blueprint";
-
-interface BlueprintPanelProps {
-  blueprint: ProductBlueprint | null;
-  readiness: BlueprintReadiness;
-  /** F1-A 决策变化导致蓝图 stale（需重建） */
-  stale: boolean;
-  busy?: boolean;
-  error?: string | null;
-  onLocalEdit: (path: string, value: string) => void;
-  onResolve: (decisionId: string, hint: string) => void;
-  onAccept: () => void;
-  onContinueAssumptions: () => void;
-  onRebuild: () => void;
-  onRestore: () => void;
-}
-
-export function BlueprintPanel({
-  blueprint,
-  readiness,
-  stale,
-  busy,
-  error,
-  onLocalEdit,
-  onResolve,
-  onAccept,
-  onContinueAssumptions,
-  onRebuild,
-  onRestore,
-}: BlueprintPanelProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const hasBp = Boolean(blueprint && blueprint.version > 0);
-  // F1 初始（蓝图尚未初始化）不渲染占位大卡：蓝图仅作为阶段 2 进度节点存在，
-  // 避免抢占首屏高度。蓝图形成后（version>0）本面板才出现。
-  if (!hasBp) return null;
-  const headline = stale
-    ? `F1-A 有了新决策，需按最新讨论重建蓝图（当前 v${blueprint!.version}）`
-    : `蓝图已形成 ${readiness.consensusCount} 项共识 · 仍有 ${readiness.unresolvedCount} 项关键选择`;
-
-  return (
-    <>
-      <Card className="shrink-0 rounded-2xl border-border/70 shadow-sm">
-        <CardContent className="px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-indigo-500/10 text-indigo-600">
-                <FileHeart className="size-4" />
-              </span>
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  产品蓝图
-                  {blueprint?.status === "confirmed" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
-                      <ShieldCheck className="size-3" /> v{blueprint.version} 已确认
-                    </span>
-                  )}
-                  {stale && !busy && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
-                      <AlertTriangle className="size-3" /> 有更新待重建
-                    </span>
-                  )}
-                  {busy && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                      <Sparkles className="size-3 animate-pulse" /> 处理中…
-                    </span>
-                  )}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground" title={headline}>
-                  {headline}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-2">
-              {stale && !busy && (
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={onRebuild}>
-                  <RotateCcw className="size-3.5" /> 重新生成蓝图
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant={hasBp ? "default" : "outline"}
-                className="gap-1.5"
-                disabled={!hasBp}
-                onClick={() => setDrawerOpen(true)}
-              >
-                <FileHeart className="size-3.5" />
-                查看产品蓝图
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {drawerOpen && blueprint && (
-        <BlueprintDrawer
-          blueprint={blueprint}
-          readiness={readiness}
-          stale={stale}
-          busy={busy}
-          error={error}
-          onClose={() => setDrawerOpen(false)}
-          onLocalEdit={onLocalEdit}
-          onResolve={onResolve}
-          onAccept={onAccept}
-          onContinueAssumptions={onContinueAssumptions}
-          onRebuild={onRebuild}
-          onRestore={onRestore}
-        />
-      )}
-    </>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /* 证据徽标与来源                                                       */
