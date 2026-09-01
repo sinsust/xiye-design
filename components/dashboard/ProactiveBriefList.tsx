@@ -45,11 +45,17 @@ const BADGE_STYLE: Record<string, string> = {
   low: "bg-muted text-muted-foreground",
 };
 
-export function ProactiveBriefList() {
+export interface ProactiveBriefListProps {
+  /** plan 类型「处理」优先调用此回调，在工作台直接续写草稿；未传则回退到页面跳转 */
+  onConfirmPlan?: (planId: string) => void;
+}
+
+export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = {}) {
   const router = useRouter();
   const [items, setItems] = useState<ProactiveBriefItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [revealIgnore, setRevealIgnore] = useState<string | null>(null);
 
@@ -79,22 +85,42 @@ export function ProactiveBriefList() {
       scope?: "type" | "object" | "project",
       projectId?: string | null,
     ) => {
+      if (busyId) return;
       setBusyId(briefId);
       setRevealIgnore(null);
+      setActionError(null);
       try {
-        await fetch("/api/brain/active-brief", {
+        const res = await fetch("/api/brain/active-brief", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ briefId, action, scope, projectId }),
         });
-      } catch {
-        /* 失败留在原状，下一页刷新可见 */
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || !d.updated) {
+          throw new Error(d?.error || `操作失败 (${res.status})`);
+        }
+      } catch (e) {
+        setActionError(e instanceof Error ? e.message : "操作失败，请重试");
+        return; // 保留卡片，待用户重试
       } finally {
         setBusyId(null);
         await load(true);
       }
+      setActionError(null);
     },
-    [load],
+    [busyId, load],
+  );
+
+  const handlePrimary = useCallback(
+    (it: ProactiveBriefItem) => {
+      // plan 类型优先在工作台直接续写，避免整页跳转失败导致无反馈
+      if (it.primaryAction?.type === "confirm_plan" && onConfirmPlan) {
+        onConfirmPlan(it.targetId);
+        return;
+      }
+      router.push(it.link);
+    },
+    [onConfirmPlan, router],
   );
 
   // 无主动建议时：不渲染区域，避免空白大卡
@@ -129,8 +155,17 @@ export function ProactiveBriefList() {
       {error && (
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
           {error}
-          <button onClick={() => load()} className="ml-3 text-xs font-medium underline">
+          <button type="button" onClick={() => load()} className="ml-3 text-xs font-medium underline">
             重试
+          </button>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive">
+          <span>{actionError}</span>
+          <button type="button" onClick={() => setActionError(null)} className="ml-auto font-medium underline">
+            知道了
           </button>
         </div>
       )}
@@ -169,14 +204,17 @@ export function ProactiveBriefList() {
 
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <button
-              onClick={() => router.push(it.link)}
+              type="button"
+              onClick={() => handlePrimary(it)}
               disabled={busyId === it.id}
-              className="inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
             >
+              {busyId === it.id && <Loader2 className="size-3.5 animate-spin" />}
               {it.primaryAction.label || "立即处理"}
             </button>
 
             <button
+              type="button"
               onClick={() => runAction(it.id, "tomorrow", undefined, it.projectId)}
               disabled={busyId === it.id}
               title="明天提醒"
@@ -186,6 +224,7 @@ export function ProactiveBriefList() {
             </button>
 
             <button
+              type="button"
               onClick={() => runAction(it.id, "silence_week", undefined, it.projectId)}
               disabled={busyId === it.id}
               title="本周不再提示此类"
@@ -195,6 +234,7 @@ export function ProactiveBriefList() {
             </button>
 
             <button
+              type="button"
               onClick={() => setRevealIgnore(revealIgnore === it.id ? null : it.id)}
               disabled={busyId === it.id}
               className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-60"
@@ -207,12 +247,14 @@ export function ProactiveBriefList() {
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
               <span>忽略范围：</span>
               <button
+                type="button"
                 onClick={() => runAction(it.id, "ignore", "type", it.projectId)}
                 className="rounded-md bg-muted px-2 py-1 transition hover:bg-muted/70 hover:text-foreground"
               >
                 仅此类
               </button>
               <button
+                type="button"
                 onClick={() => runAction(it.id, "ignore", "object", it.projectId)}
                 className="rounded-md bg-muted px-2 py-1 transition hover:bg-muted/70 hover:text-foreground"
               >
@@ -220,6 +262,7 @@ export function ProactiveBriefList() {
               </button>
               {it.projectId && (
                 <button
+                  type="button"
                   onClick={() => runAction(it.id, "ignore", "project", it.projectId)}
                   className="rounded-md bg-muted px-2 py-1 transition hover:bg-muted/70 hover:text-foreground"
                 >

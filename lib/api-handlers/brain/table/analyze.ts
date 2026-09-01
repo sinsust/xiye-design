@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     let rows: unknown[][] = Array.isArray(body?.rows) ? body.rows : [];
     let columnTypes: FieldType[] = Array.isArray(body?.columnTypes) ? body.columnTypes : [];
     if (tableId) {
-      const cache = getTableCache(tableId, user.sub);
+      const cache = await getTableCache(tableId, user.sub);
       if (!cache) {
         return NextResponse.json(
           {
@@ -270,14 +270,14 @@ async function handlePlanAction(action: string, body: Record<string, unknown>, u
   }
 
   // 取已确认的有效数据集 + 确认状态（过期 / 非本人 / 不存在 → 410）
-  const cached = getTableCache(tableId, user.sub);
+  const cached = await getTableCache(tableId, user.sub);
   if (!cached) {
     return NextResponse.json(
       { error: "table_expired", message: "表格数据已失效（页面停留过久或服务重启导致），请重新上传后再分析" },
       { status: 410 },
     );
   }
-  const confirmation = getTableConfirmation(tableId, user.sub);
+  const confirmation = await getTableConfirmation(tableId, user.sub);
   if (!confirmation) {
     return NextResponse.json(
       { error: "confirmation_required", message: "请先完成字段确认再生成分析计划" },
@@ -339,19 +339,19 @@ async function handlePlanAction(action: string, body: Record<string, unknown>, u
       );
     }
     const plan: AnalysisPlan = { ...res.plan, id: randomUUID().replace(/-/g, "").slice(0, 16) };
-    saveTablePlan(tableId, user.sub, plan);
+    await saveTablePlan(tableId, user.sub, plan);
     return NextResponse.json({ ok: true, plan });
   }
 
   /* get_plan：取回计划（可指定 planId 取历史；校验确认版本，防止旧计划复用） */
   if (action === "get_plan") {
     const planId: string = typeof body?.planId === "string" && body.planId ? body.planId : "";
-    const plan = planId ? getTablePlanById(tableId, user.sub, planId) : getTablePlan(tableId, user.sub);
+    const plan = planId ? await getTablePlanById(tableId, user.sub, planId) : await getTablePlan(tableId, user.sub);
     if (!plan) {
       return NextResponse.json({ error: "plan_expired", message: "分析计划已失效，请重新选择分析方向" }, { status: 410 });
     }
     if (plan.confirmationVersion !== confirmation.version) {
-      clearTablePlan(tableId, user.sub);
+      await clearTablePlan(tableId, user.sub);
       return NextResponse.json({ error: "plan_invalid", message: "分析计划已失效（字段 / 表头已变更），请重新选择分析方向" }, { status: 409 });
     }
     return NextResponse.json({ plan });
@@ -359,18 +359,19 @@ async function handlePlanAction(action: string, body: Record<string, unknown>, u
 
   /* list_plans：列出全部计划 + 结果历史（T2-B 版本切换，不重新计算） */
   if (action === "list_plans") {
-    return NextResponse.json({ plans: listTablePlans(tableId, user.sub) });
+    const plans = await listTablePlans(tableId, user.sub);
+    return NextResponse.json({ plans });
   }
 
   /* execute_plan：确认并执行计划（确定性执行，无 LLM 解读）；结果按 planId 留档历史 */
   if (action === "execute_plan") {
     const planId: string = typeof body?.planId === "string" ? body.planId : "";
-    const plan = getTablePlanById(tableId, user.sub, planId);
+    const plan = await getTablePlanById(tableId, user.sub, planId);
     if (!plan) {
       return NextResponse.json({ error: "plan_expired", message: "分析计划已失效，请重新选择分析方向" }, { status: 410 });
     }
     if (plan.confirmationVersion !== confirmation.version) {
-      clearTablePlan(tableId, user.sub);
+      await clearTablePlan(tableId, user.sub);
       return NextResponse.json({ error: "plan_invalid", message: "分析计划已失效（字段 / 表头已变更），请重新选择分析方向" }, { status: 409 });
     }
     if (plan.tableId !== tableId) {
@@ -379,14 +380,16 @@ async function handlePlanAction(action: string, body: Record<string, unknown>, u
     const result = executeAnalysisPlan(plan, { headers, rows, columnTypes: columnTypes as FieldType[] }, qualityContext);
     if (result.status === "failed") {
       const failed: AnalysisPlan = { ...plan, status: "failed" };
-      saveTablePlan(tableId, user.sub, failed);
-      saveTableResult(tableId, user.sub, plan.id, result);
-      return NextResponse.json({ error: "execute_failed", result, plans: listTablePlans(tableId, user.sub) }, { status: 422 });
+      await saveTablePlan(tableId, user.sub, failed);
+      await saveTableResult(tableId, user.sub, plan.id, result);
+      const plans = await listTablePlans(tableId, user.sub);
+      return NextResponse.json({ error: "execute_failed", result, plans }, { status: 422 });
     }
     const executed: AnalysisPlan = { ...plan, status: "executed" };
-    saveTablePlan(tableId, user.sub, executed);
-    saveTableResult(tableId, user.sub, plan.id, result);
-    return NextResponse.json({ result, plans: listTablePlans(tableId, user.sub) });
+    await saveTablePlan(tableId, user.sub, executed);
+    await saveTableResult(tableId, user.sub, plan.id, result);
+    const plans = await listTablePlans(tableId, user.sub);
+    return NextResponse.json({ result, plans });
   }
 
   return NextResponse.json({ error: "unknown_action", message: "未知操作" }, { status: 400 });

@@ -404,7 +404,7 @@ function StyleDialog({
           </div>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto p-5">
+        <div className="flex-1 min-h-0 space-y-5 overflow-y-auto p-5">
           {/* 色板 */}
           <div>
             <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -470,28 +470,28 @@ function StyleDialog({
               {css}
             </pre>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => onTryOn(style)}
-              className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary hover:underline"
-            >
-              <Shirt className="size-3.5" /> 整页试穿这套风格
-            </button>
-            <div className="flex flex-col items-stretch gap-2 sm:items-end">
-              <p className="text-xs text-muted-foreground">应用此风格，进入？</p>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" onClick={() => onApply(style, "builder")}>
-                  页面搭建 <ArrowUpRight className="size-3.5" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => onApply(style, "flow")}>
-                  流程工作台 <ArrowUpRight className="size-3.5" />
-                </Button>
-              </div>
+        <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-5 py-3">
+          <button
+            type="button"
+            onClick={() => onTryOn(style)}
+            className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-primary hover:underline"
+          >
+            <Shirt className="size-3.5" /> 整页试穿这套风格
+          </button>
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <p className="text-xs text-muted-foreground">应用此风格，进入？</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={() => onApply(style, "builder")}>
+                页面搭建 <ArrowUpRight className="size-3.5" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => onApply(style, "flow")}>
+                流程工作台 <ArrowUpRight className="size-3.5" />
+              </Button>
             </div>
           </div>
-        </div>
+        </footer>
       </div>
     </div>,
     document.body,

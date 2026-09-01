@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "bad_request", message: "缺少 tableId" }, { status: 400 });
     }
 
-    const cache = getTableCache(tableId, user.sub);
+    const cache = await getTableCache(tableId, user.sub);
     if (!cache) {
       return NextResponse.json(
         { error: "table_expired", message: "表格数据已失效，请重新上传后再导出" },

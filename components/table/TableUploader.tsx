@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * 表格分析 —— 上传组件
+ * 数据引擎 —— 上传组件
  * 拖拽/点击上传 .xlsx/.xls/.csv/.tsv/.json，XMLHttpRequest 真实进度条，成功后回调解析结果。
  */
 
 import { useCallback, useRef, useState } from "react";
 import { FileSpreadsheet, Loader2, UploadCloud, X } from "lucide-react";
 import type { HeaderCandidate, SheetRecommendation } from "@/lib/table/types";
+import type { JoinSuggestion } from "@/lib/table/combine/detect-join-keys";
 
 const ACCEPT = ".xlsx,.xls,.csv,.tsv,.json";
 const MAX_MB = 100;
@@ -15,15 +16,19 @@ const MAX_MB = 100;
 export interface UploadResult {
   tableId?: string;
   truncated?: string[];
-  parsedInfo: {
+  /** 单文件上传（/api/brain/table/upload）返回；多文件上传时缺省 */
+  parsedInfo?: {
     fileName: string;
     encoding: string;
     sheets: { name: string; headers: string[]; rows: unknown[][]; rowCount: number; colCount: number }[];
   };
-  structure: {
+  /** 单文件上传返回；多文件上传时缺省 */
+  structure?: {
     sameStructureGroups: string[][];
     differentSheets: string[];
   };
+  /** 多文件上传（/api/brain/table/upload-multi）返回：跨表可组合连接键建议 */
+  joinSuggestions?: JoinSuggestion[];
   results: Array<{
     sheetName: string;
     headers: string[];
@@ -46,6 +51,10 @@ export interface UploadResult {
     columnOverrides?: Record<number, { displayName?: string; type?: string }>;
     /** T1-D3：用户确认纳入分析的列下标集合（undefined=全部） */
     confirmedColumns?: number[];
+    /** 由组合引擎生成（/api/brain/table/combine）的宽表结果 */
+    combined?: boolean;
+    /** 组合产生的非阻断警告（如一对多） */
+    joinWarnings?: string[];
   }>;
 }
 
@@ -63,26 +72,31 @@ export function TableUploader({
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
 
-  const upload = useCallback(
-    (file: File) => {
+  const uploadFiles = useCallback(
+    (files: File[]) => {
       setError("");
-      if (!/\.(xlsx|xls|csv|tsv|json)$/i.test(file.name)) {
+      const valid = files.filter((f) => /\.(xlsx|xls|csv|tsv|json)$/i.test(f.name));
+      if (valid.length === 0) {
         setError("仅支持 .xlsx / .xls / .csv / .tsv / .json");
         return;
       }
-      if (file.size > MAX_MB * 1024 * 1024) {
-        setError(`文件超过 ${MAX_MB}MB 上限`);
+      const oversize = valid.find((f) => f.size > MAX_MB * 1024 * 1024);
+      if (oversize) {
+        setError(`文件「${oversize.name}」超过 ${MAX_MB}MB 上限`);
         return;
       }
-      setFileName(file.name);
+      setFileName(valid.map((f) => f.name).join("、"));
       setUploading(true);
       setProgress(0);
 
+      // ≥2 个文件 → 走多文件上传（自动检测可组合连接键）；单文件 → 走单文件上传
+      const isMulti = valid.length > 1;
       const form = new FormData();
-      form.append("file", file);
+      if (isMulti) valid.forEach((f) => form.append("files", f));
+      else form.append("file", valid[0]);
 
       const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/api/brain/table/upload");
+      xhr.open("POST", isMulti ? "/api/brain/table/upload-multi" : "/api/brain/table/upload");
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
           setProgress(Math.round((e.loaded / e.total) * 90)); // 上传占 0~90%
@@ -130,8 +144,8 @@ export function TableUploader({
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          const f = e.dataTransfer.files?.[0];
-          if (f) upload(f);
+          const fs = Array.from(e.dataTransfer.files ?? []);
+          if (fs.length > 0) uploadFiles(fs);
         }}
         className={
           "group flex w-full max-w-md cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-8 py-12 transition-all duration-200 " +
@@ -155,7 +169,7 @@ export function TableUploader({
             {dragging ? "松开即可上传" : "拖拽文件到此处，或点击选择"}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            支持 .xlsx / .xls / .csv / .tsv / .json · 最大 {MAX_MB}MB
+            支持 .xlsx / .xls / .csv / .tsv / .json · 最大 {MAX_MB}MB · 可多选多张表，自动检测可组合字段
           </div>
         </div>
       </div>
@@ -163,10 +177,11 @@ export function TableUploader({
         ref={inputRef}
         type="file"
         accept={ACCEPT}
+        multiple
         className="hidden"
         onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) upload(f);
+          const fs = Array.from(e.target.files ?? []);
+          if (fs.length > 0) uploadFiles(fs);
           e.target.value = "";
         }}
       />

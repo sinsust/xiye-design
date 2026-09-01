@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 取当前缓存的有效数据集（确认表头后已就位）；过期 / 非本人 / 不存在 → session_expired
-    const cached = getTableCache(tableId, user.sub);
+    const cached = await getTableCache(tableId, user.sub);
     if (!cached) {
       return NextResponse.json(
         { error: "session_expired", message: "表格数据已失效（页面停留过久或服务重启导致），请重新上传后再分析" },
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 就地更新该 tableId 的缓存（复用同一 id，rawSheet 保留、前端引用不失效）
-    const updated = updateTableCache(tableId, user.sub, {
+    const updated = await updateTableCache(tableId, user.sub, {
       headers: applied.headers,
       rows: applied.rows,
       columnTypes: applied.columnTypes,
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 合并写入会话级确认状态（保留既有 selectedSheetIds / headerRowBySheet，仅增补字段覆盖）
-    const prev: TableConfirmation | null = getTableConfirmation(tableId, user.sub);
+    const prev: TableConfirmation | null = await getTableConfirmation(tableId, user.sub);
     const now = Date.now();
     const confirmation: TableConfirmation = {
       selectedSheetIds: prev?.selectedSheetIds ?? [],
@@ -126,9 +126,9 @@ export async function POST(req: NextRequest) {
       columnOverrides,
       confirmedColumns,
     };
-    saveTableConfirmation(tableId, user.sub, confirmation);
+    await saveTableConfirmation(tableId, user.sub, confirmation);
     // 字段 / 类型确认版本已更新 → 旧分析计划失效（T2-A）
-    clearTablePlan(tableId, user.sub);
+    await clearTablePlan(tableId, user.sub);
 
     const profile: TableProfileResult = applied.profile;
 

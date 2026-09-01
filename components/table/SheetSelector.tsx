@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 表格分析 —— 解析结果概览 / 选择分析对象（T1-D2 升级）
+ * 数据引擎 —— 解析结果概览 / 选择分析对象（T1-D2 升级）
  *
  * 设计原则：
  *  - 每张 Sheet 卡片清晰呈现：角色标签、推荐标签、有效行列、主要字段类型摘要、推荐理由、
@@ -71,9 +71,20 @@ export function SheetSelector({
   const [selected, setSelected] = useState(defaultIndex);
 
   const totalRows = useMemo(
-    () => data.parsedInfo.sheets.reduce((a, s) => a + s.rowCount, 0),
+    () =>
+      data.parsedInfo
+        ? data.parsedInfo.sheets.reduce((a, s) => a + s.rowCount, 0)
+        : data.results.reduce((a, r) => a + (r.effectiveRowCount ?? 0), 0),
     [data],
   );
+
+  const fileLabel = useMemo(
+    () =>
+      data.parsedInfo?.fileName ??
+      (data.results.length > 1 ? `多文件（${data.results.length} 张表）` : data.results[0]?.sheetName ?? "数据"),
+    [data],
+  );
+  const sheetCount = data.parsedInfo?.sheets.length ?? data.results.length;
 
   // 是否存在任何被推荐的 Sheet（用于「无可分析 Sheet」提示）
   const hasRecommended = cards.some((c) => c.rec?.recommended);
@@ -84,9 +95,9 @@ export function SheetSelector({
       {/* 文件概要（一行） */}
       <div className="flex items-center gap-2 text-sm text-foreground">
         <FileSpreadsheet className="size-4 text-primary" />
-        <span className="font-semibold">{data.parsedInfo.fileName}</span>
+        <span className="font-semibold">{fileLabel}</span>
         <span className="text-muted-foreground">
-          · {data.parsedInfo.sheets.length} 个 Sheet · 共 {totalRows.toLocaleString()} 行
+          · {sheetCount} 个 Sheet · 共 {totalRows.toLocaleString()} 行
         </span>
       </div>
 

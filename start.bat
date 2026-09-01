@@ -24,10 +24,10 @@ if not exist "node_modules" (
     )
 )
 
-set PORT=3000
+set PORT=3200
 
 :: 若端口已在响应，假定 dev server 已运行，直接打开浏览器，避免重复启动导致端口跳变
-powershell -NoProfile -Command "if(Test-NetConnection -ComputerName localhost -Port 3000 -InformationLevel Quiet -WarningAction SilentlyContinue){ exit 0 } else { exit 1 }"
+powershell -NoProfile -Command "if(Test-NetConnection -ComputerName localhost -Port 3200 -InformationLevel Quiet -WarningAction SilentlyContinue){ exit 0 } else { exit 1 }"
 if not errorlevel 1 (
     echo [INFO] 端口 %PORT% 已在响应，dev server 可能已运行，直接打开浏览器。
     start http://localhost:%PORT%

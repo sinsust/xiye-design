@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 表格分析 —— 分析方向与计划预览（T2-A 最小前端接入）
+ * 数据引擎 —— 分析方向与计划预览（T2-A 最小前端接入）
  * 不重做 AnalysisRecommender / AnalysisResultView 的视觉：
  *  - 字段确认后展示「可用分析方向」卡片；
  *  - 点击方向 → 展示 AnalysisPlan 预览（系统将这样计算 / 数据范围 / 使用字段 / 过滤与排除 / 输出）；

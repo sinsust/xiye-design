@@ -41,6 +41,19 @@ export async function createServerSupabaseReadonly() {
 }
 
 /**
+ * 服务端 service_role 客户端：绕过 RLS，仅用于特权服务端读写（如表格会话持久化）。
+ * service_role key 仅在服务端可用，绝不向下游 / 客户端暴露。
+ * 防串读由调用方在代码层用 userId 校验兜底（见 lib/table/session-persist.ts）。
+ */
+export function createServerSupabaseService() {
+  return createServerClient(
+    supabaseEnv.url,
+    supabaseEnv.serviceRoleKey || supabaseEnv.anonKey,
+    { cookies: { getAll: () => [], setAll() {} } },
+  );
+}
+
+/**
  * Route Handler 专用：登录/登出/注册等需要「往响应里写会话 cookie」的接口用它。
  *
  * Next.js Route Handler 里的 cookies() 是只读的，直接 cookieStore.set() 会抛错并被静默吞掉，

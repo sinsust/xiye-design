@@ -39,7 +39,7 @@ export function QuickCapture({ busy, onOrganize }: QuickCaptureProps) {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
         }}
         rows={2}
-        placeholder="粘贴会议纪要、代码片段或灵感，交给 AI 整理…（Ctrl/⌘ + Enter 提交）"
+        placeholder="粘贴会议纪要、代码片段或灵感，智能整理…（Ctrl/⌘ + Enter 提交）"
         className="mt-3 w-full resize-none rounded-lg border border-muted bg-muted/20 px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
       <div className="mt-2 flex items-center justify-between gap-2">

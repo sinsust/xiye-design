@@ -64,7 +64,7 @@ export function InputTab({
           className="bg-gradient-to-r from-primary to-primary/80 shadow-md shadow-primary/25"
         >
           {organizing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-          {organizing ? "AI 整理中…" : "帮我整理"}
+          {organizing ? "整理中…" : "帮我整理"}
         </Button>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 表格分析 —— T1-D3 数据质量前台化面板
+ * 数据引擎 —— T1-D3 数据质量前台化面板
  *
  * 把引擎层 QualityIssue（EMPTY_ROWS_SKIPPABLE / GHOST_COLUMNS_PRESENT /
  * MIXED_DATE_FORMAT / MIXED_CURRENCY / DUPLICATE_ROWS / HIGH_NULL_RATIO）翻译成

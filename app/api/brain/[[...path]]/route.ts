@@ -45,6 +45,8 @@ import * as m39 from "@/lib/api-handlers/brain/table/confirm-columns";
 import * as m40 from "@/lib/api-handlers/brain/table/export";
 import * as m41 from "@/lib/api-handlers/brain/table/narrative";
 import * as m42 from "@/lib/api-handlers/brain/table/upload";
+import * as m52 from "@/lib/api-handlers/brain/table/upload-multi";
+import * as m53 from "@/lib/api-handlers/brain/table/combine";
 import * as m43 from "@/lib/api-handlers/brain/tasks/extract-from-analysis";
 import * as m44 from "@/lib/api-handlers/brain/tasks/gantt";
 import * as m45 from "@/lib/api-handlers/brain/tasks";
@@ -110,6 +112,8 @@ const ROUTES: RouteDef[] = [
   { key: "table/export", methods: { POST: m40.POST as HandlerFn } },
   { key: "table/narrative", methods: { POST: m41.POST as HandlerFn } },
   { key: "table/upload", methods: { POST: m42.POST as HandlerFn } },
+  { key: "table/upload-multi", methods: { POST: m52.POST as HandlerFn } },
+  { key: "table/combine", methods: { POST: m53.POST as HandlerFn } },
   { key: "tasks/extract-from-analysis", methods: { POST: m43.POST as HandlerFn } },
   { key: "tasks/gantt", methods: { GET: m44.GET as HandlerFn } },
   { key: "tasks", methods: { GET: m45.GET as HandlerFn, POST: m45.POST as HandlerFn, PUT: m45.PUT as HandlerFn, DELETE: m45.DELETE as HandlerFn } },

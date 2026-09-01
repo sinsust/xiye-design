@@ -54,6 +54,7 @@ let brainProactiveActions: any;
 let brainNotifications: any;
 let userPreferences: any;
 let userImaConfig: any;
+let userFeishuConfig: any;
 let flowOpLedger: any;
 let schema: any;
 
@@ -96,6 +97,7 @@ if (isPg) {
   brainNotifications = schemaPg.brainNotifications;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
+  userFeishuConfig = schemaPg.userFeishuConfig;
   flowOpLedger = schemaPg.flowOpLedger;
   schema = schemaPg;
 } else {
@@ -682,8 +684,9 @@ if (isPg) {
   brainNotifications = schemaSqlite.brainNotifications;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
+  userFeishuConfig = schemaSqlite.userFeishuConfig;
   flowOpLedger = schemaSqlite.flowOpLedger;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, flowOpLedger, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userFeishuConfig, flowOpLedger, schema };

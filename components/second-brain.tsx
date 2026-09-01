@@ -2,6 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { Toaster, toast } from "./ui/toast";
 import {
   Brain,
   CalendarCheck,
@@ -153,7 +154,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       const data = await cachedGetJson<{ tasks?: BrainTask[] }>("/api/brain/tasks");
       if (Array.isArray(data.tasks)) setTasks(data.tasks);
     } catch {
-      /* 忽略 */
+      toast("任务加载失败", "error");
     }
   }, []);
   useEffect(() => {
@@ -175,7 +176,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         setTasks((prev) => prev.map((t) => (t.id === id ? data.task : t)));
       }
     } catch {
-      /* 忽略 */
+      toast("任务状态更新失败", "error");
     }
   }, [tasks]);
   // 笔记卡片内直接勾选完成 / 取消完成
@@ -191,7 +192,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         setTasks((prev) => prev.map((t) => (t.id === id ? data.task : t)));
       }
     } catch {
-      /* 忽略 */
+      toast("更新失败", "error");
     }
   }, []);
   // noteId → 该笔记下的任务（缓存，供笔记卡片徽标与展开列表）
@@ -236,7 +237,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         setNextReview(data.next ?? null);
       }
     } catch {
-      /* 忽略 */
+      toast("复习加载失败", "error");
     }
   }, []);
   useEffect(() => {
@@ -251,7 +252,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         loadTasks(); // 归档 done 任务后刷新看板
       }
     } catch {
-      /* 忽略 */
+      toast("复习操作失败", "error");
     } finally {
       setReviewingId(null);
     }
@@ -266,7 +267,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       const data = await cachedGetJson<{ strategies?: BrainStrategy[] }>("/api/brain/strategies");
       if (Array.isArray(data.strategies)) setStrategies(data.strategies);
     } catch {
-      /* 忽略 */
+      toast("策略加载失败", "error");
     }
   }, []);
   useEffect(() => {
@@ -283,7 +284,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       const data = await cachedGetJson<{ snippets?: BrainNote[] }>("/api/brain/snippets");
       if (Array.isArray(data.snippets)) setSnippets(data.snippets);
     } catch {
-      /* 忽略 */
+      toast("代码片段加载失败", "error");
     }
   }, []);
   useEffect(() => {
@@ -341,7 +342,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       const data = await cachedGetJson<{ notes?: BrainNote[] }>("/api/brain/notes");
       if (Array.isArray(data.notes)) setNotes(data.notes);
     } catch {
-      /* 忽略 */
+      toast("笔记加载失败", "error");
     }
     loadTasks();
     loadStrategies();
@@ -473,7 +474,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setUpgradeTarget(null);
       loadSnippets();
     } catch {
-      window.alert("升级失败");
+      toast("升级失败", "error");
     } finally {
       setUpgrading(false);
     }
@@ -535,7 +536,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         loadTasks();
       }
     } catch {
-      /* 忽略 */
+      toast("策略删除失败", "error");
     }
     setConfirmDeleteStrategy(null);
   }, [loadTasks]);
@@ -729,6 +730,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       jumpToNote(decodeURIComponent(noteMatch[1]));
     }
   }, [gotoTop, jumpToNote]);
+
+  // 挂载时根据初始 URL 参数跳转（外部链接 / 简报“立即处理”入口进入）；plan 参数由下方专用 effect 续写
+  useEffect(() => {
+    gotoNav(window.location.href);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // —— P1：Cmd/Ctrl+K 唤起全局搜索 / 命令面板 ——
   useEffect(() => {
@@ -1004,7 +1011,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       fillFromPlanBody(data.body);
       refreshPendingPlans();
     } catch {
+      // 即使恢复失败也打开工作台，让用户看到错误提示而非静默无反应
       setApplyError("恢复草稿失败，请刷新后再试");
+      setWorkspaceOpen(true);
     } finally {
       setResuming(false);
     }
@@ -1316,7 +1325,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setEditContent(d.rewritten || editContent);
       setEditStruct(d);
     } catch {
-      window.alert("重新整理失败，请稍后重试");
+      toast("重新整理失败，请稍后重试", "error");
     } finally {
       setReorging(false);
     }
@@ -1341,7 +1350,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       setNotes((prev) => prev.map((n) => (n.id === data.note.id ? data.note : n)));
       setEditing(null);
     } catch {
-      window.alert("保存失败");
+      toast("保存失败", "error");
     } finally {
       setLoading(false);
     }
@@ -1469,7 +1478,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         </div>
 
         {/* 顶部导航：首页（默认）/ 知识沉淀 / 任务看板 / 策略 / 代码片段 + 收件箱 */}
-        <div className="mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border/60 bg-white/70 px-2 py-1.5 shadow-lg shadow-primary/5 backdrop-blur-md">
+        <div className="mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border/60 bg-card/70 px-2 py-1.5 shadow-lg shadow-primary/5 backdrop-blur-md">
           {[
             { v: "dashboard" as const, label: "首页", icon: Home },
             { v: "input" as const, label: "记一笔", icon: PenLine },
@@ -1477,7 +1486,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             { v: "projects" as const, label: "项目", icon: FolderKanban },
             { v: "strategies" as const, label: "策略", icon: Target },
             { v: "snippets" as const, label: "代码片段", icon: Code2 },
-            { v: "table" as const, label: "表格", icon: Table2 },
+            { v: "table" as const, label: "数据引擎", icon: Table2 },
           ].map((i) => {
             const active = topView === "dashboard" ? i.v === "dashboard" : i.v === workTab;
             return (
@@ -1533,8 +1542,8 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                   setSearchOpen((v) => !v);
                 }}
                 className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                aria-label="全局搜索 / AI 问答"
-                title="全局搜索 / AI 问答"
+                aria-label="全局搜索 / 智能问答"
+                title="全局搜索 / 智能问答"
               >
                 <Search className="size-[18px]" />
               </button>
@@ -1615,7 +1624,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           {/* ============ 左列 · 工作台（全宽，概览已移至浮层） ============ */}
           <div className="space-y-6">
             {/* 大脑工作台（整理/提问 Tab 切换） */}
-            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
 {workTab === "snippets" ? (
                 <SnippetsTab
                   snippetLang={snippetLang}
@@ -1698,7 +1707,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             )}
 
             {/* 笔记列表 · 高密度 */}
-            <div className="rounded-xl border border-border bg-white shadow-sm">
+            <div className="rounded-xl border border-border bg-card shadow-sm">
               <div className="flex flex-wrap items-center gap-2 px-5 pt-4">
                 <h2 className="text-sm font-semibold text-foreground">知识沉淀</h2>
                 <span className="text-xs text-muted-foreground">{filteredNotes.length}/{notes.length}</span>
@@ -1841,15 +1850,21 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
 
       {/* ============ 整理工作台 · 全屏模态 ============ */}
       {workspaceOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onKeyDown={(e) => { if (e.key === "Escape") setWorkspaceOpen(false); }}
+        >
           <div
-            className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="整理工作台"
+            className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
           >
             {/* 顶栏 */}
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Sparkles className="size-4 text-primary" />
-                AI 整理工作台
+                整理工作台
                 <span className="rounded-[var(--radius)] bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
                   采纳前可编辑
                 </span>
@@ -1862,7 +1877,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             {/* 整理失败提示 */}
             {organizeError && (
               <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
-                AI 整理未能保存为待确认计划 —— 你的改动仍在，可直接「采纳并入库」保存，或点左下「重新生成」重试。
+                整理结果未能保存为待确认计划 —— 你的改动仍在，可直接「采纳并入库」保存，或点左下「重新生成」重试。
               </div>
             )}
 
@@ -1907,17 +1922,18 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 </pre>
               </div>
 
-              {/* 右 · AI 建议（可编辑表单） */}
+              {/* 右 · 系统建议（可编辑表单） */}
               <div className="flex min-h-0 flex-col">
-                <div className="flex items-center gap-2 border-b border-border bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-primary">
+                <div className="flex items-center gap-2 border-b border-border bg-card px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-primary">
                   <Sparkles className="size-3.5" />
-                  AI 建议 · 可编辑
+                  系统建议 · 可编辑
                 </div>
                 <div className="min-h-0 flex-1 space-y-4 overflow-auto px-5 py-4">
                   {/* 标题 */}
                   <div>
                     <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">标题</label>
                     <input
+                      autoFocus
                       value={wTitle}
                       onChange={(ev) => setWTitle(ev.target.value)}
                       className={inputCls + " mt-1.5 font-medium"}
@@ -2036,11 +2052,11 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     />
                   </div>
 
-                  {/* 规范正文（AI 深度重写，可编辑/预览切换） */}
+                  {/* 规范正文（深度润色，可编辑/预览切换） */}
                   <div>
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        规范正文 · AI 深度重写
+                        规范正文 · 深度润色
                       </label>
                       <div className="flex items-center gap-1 rounded-md border border-border p-0.5 text-[10px]">
                         <button
@@ -2161,9 +2177,16 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
 
       {/* 编辑弹窗 */}
       {editing && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setEditing(null)}>
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setEditing(null)}
+          onKeyDown={(e) => { if (e.key === "Escape") setEditing(null); }}
+        >
           <div
-            className="flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="编辑笔记"
+            className="flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
@@ -2172,13 +2195,13 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 <X className="size-4" />
               </Button>
             </div>
-            <div className="overflow-auto p-5">
+            <div className="flex-1 min-h-0 overflow-auto p-5">
               <label className="text-xs uppercase tracking-wide text-muted-foreground">标题</label>
-              <input className={inputCls + " mt-1.5"} value={editTitle} onChange={(ev) => setEditTitle(ev.target.value)} />
+              <input autoFocus className={inputCls + " mt-1.5"} value={editTitle} onChange={(ev) => setEditTitle(ev.target.value)} />
               {editStruct && (
                 <div className="mt-4">
                   <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                    AI 结构化拆解
+                    结构化拆解
                   </label>
                   <div className="mt-1.5">
                     <StructPreview d={editStruct} />
@@ -2247,9 +2270,13 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         <div
           className="fixed inset-0 z-[115] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           onClick={() => setUpgradeTarget(null)}
+          onKeyDown={(e) => { if (e.key === "Escape") setUpgradeTarget(null); }}
         >
           <div
-            className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="升级为新版"
+            className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
@@ -2264,12 +2291,13 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 <X className="size-4" />
               </Button>
             </div>
-            <div className="overflow-auto p-5">
+            <div className="flex-1 min-h-0 overflow-auto p-5">
               <p className="text-xs text-muted-foreground">
                 不会覆盖当前内容：旧版自动归档，新版本接入同一版本链，并继承关联任务/复习记录。
               </p>
               <label className="mt-4 block text-xs uppercase tracking-wide text-muted-foreground">标题</label>
               <input
+                autoFocus
                 className={inputCls + " mt-1.5"}
                 value={upgradeTitle}
                 onChange={(ev) => setUpgradeTitle(ev.target.value)}
@@ -2291,6 +2319,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           </div>
         </div>
       )}
+      <Toaster />
     </div>
   );
 }

@@ -55,18 +55,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 数据与确认状态（userId 隔离 + TTL）
-    const cached = getTableCache(tableId, user.sub);
+    const cached = await getTableCache(tableId, user.sub);
     if (!cached) {
       return NextResponse.json(
         { error: "table_expired", message: "表格数据已失效（页面停留过久或服务重启导致），请重新上传后再分析" },
         { status: 410 },
       );
     }
-    const confirmation = getTableConfirmation(tableId, user.sub);
+    const confirmation = await getTableConfirmation(tableId, user.sub);
     if (!confirmation) {
       return NextResponse.json({ error: "confirmation_required", message: "请先完成字段确认" }, { status: 400 });
     }
-    const plan = getTablePlanById(tableId, user.sub, planId);
+    const plan = await getTablePlanById(tableId, user.sub, planId);
     if (!plan) {
       return NextResponse.json({ error: "plan_expired", message: "分析计划已失效，请重新选择分析方向" }, { status: 410 });
     }
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     if (plan.tableId !== tableId) {
       return NextResponse.json({ error: "unauthorized", message: "计划与当前表格不匹配" }, { status: 401 });
     }
-    const result = getTableResult(tableId, user.sub, planId);
+    const result = await getTableResult(tableId, user.sub, planId);
     if (!result || result.status !== "executed") {
       return NextResponse.json({ error: "result_not_ready", message: "请先执行分析再生成解读" }, { status: 400 });
     }
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     // 缓存命中（ready 且非强制刷新）→ 直接返回，不调模型
     if (!refresh) {
-      const cachedNarrative = getTableNarrative(tableId, user.sub, planId, resultId);
+      const cachedNarrative = await getTableNarrative(tableId, user.sub, planId, resultId);
       if (cachedNarrative && cachedNarrative.status === "ready") {
         return NextResponse.json({ narrative: cachedNarrative, cached: true });
       }
@@ -104,8 +104,8 @@ export async function POST(req: NextRequest) {
     }
 
     const task = generateNarrative(plan, result, resultId, tableId, user.sub, forceRoute)
-      .then((n) => {
-        if (n.status === "ready") saveTableNarrative(tableId, user.sub, n);
+      .then(async (n) => {
+        if (n.status === "ready") await saveTableNarrative(tableId, user.sub, n);
         return n;
       })
       .finally(() => inflight.delete(key));
@@ -142,7 +142,7 @@ async function generateNarrative(
   } catch (err) {
     // 失败降级：保留上次有效叙述（明确标记可重试）；无则返回 failed 状态（不覆盖确定性结果）
     console.warn("[table/narrative] LLM 生成失败:", (err as Error).message);
-    const prev = getTableNarrative(tableId, userId, plan.id, resultId);
+    const prev = await getTableNarrative(tableId, userId, plan.id, resultId);
     if (prev && prev.status === "ready") {
       return { ...prev, retryable: true };
     }

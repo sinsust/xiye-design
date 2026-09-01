@@ -277,7 +277,7 @@ export function InboxDrawer({
       {/* 抽屉主体：直接出现（无位移动画）；关闭态 display:none，彻底脱离视口与布局 */}
       <aside
         className={
-          "absolute right-0 top-0 flex h-full w-[540px] max-w-full flex-col bg-[#F9FAFB] shadow-2xl " +
+          "absolute right-0 top-0 flex h-full w-[540px] max-w-full flex-col bg-card shadow-2xl " +
           (open ? "animate-in slide-in-from-right-[28px] fade-in duration-200 ease-out" : "hidden")
         }
       >

@@ -126,3 +126,26 @@ CREATE TABLE IF NOT EXISTS flow_op_ledger (
   applied_at bigint NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS flow_op_ledger_unique ON flow_op_ledger(user_id, project_id, operation_id, operation_type);
+
+-- 9) 表格分析会话缓存（修复 Serverless 冷启动/多实例导致的 410 table_expired）
+-- 仅本用户可读写自己的会话；防串读由应用层 userId 校验兜底（与本项目其他 brain_* 表一致，不启用 RLS）。
+CREATE TABLE IF NOT EXISTS brain_table_sessions (
+  id          text PRIMARY KEY,
+  user_id     text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  payload     text NOT NULL,          -- base64(gzip(json(CacheEntry)))
+  expires_at  bigint NOT NULL,
+  created_at  bigint NOT NULL
+);
+CREATE INDEX IF NOT EXISTS brain_table_sessions_user_id_idx ON brain_table_sessions(user_id);
+CREATE INDEX IF NOT EXISTS brain_table_sessions_exp_idx ON brain_table_sessions(expires_at);
+
+-- RLS + owner policy（双保险）：本项目 Supabase 对新建表默认启用 RLS。
+-- 持久层（lib/table/session-persist.ts）实际用 service_role 客户端直写，绕过 RLS；
+-- 此处 policy 作为双保险——即使未来回退到 anon 客户端，已登录用户也能读写本人行，
+-- 未登录/他人 tableId 被 RLS 拒绝，提供 DB 层防串读。
+ALTER TABLE brain_table_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS brain_table_sessions_owner ON brain_table_sessions;
+CREATE POLICY brain_table_sessions_owner ON brain_table_sessions
+  FOR ALL
+  USING (auth.uid()::text = user_id)
+  WITH CHECK (auth.uid()::text = user_id);

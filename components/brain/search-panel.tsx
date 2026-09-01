@@ -95,7 +95,7 @@ export function SearchPanel({
                   ))}
                 </div>
                 <p className="px-1 pb-1 text-[11px] leading-relaxed text-muted-foreground">
-                  输入关键词即时搜索全部内容；需要综合多个笔记给结论时，在下方「AI 问答」提问。
+                  输入关键词即时搜索全部内容；需要综合多个笔记给结论时，在下方「智能问答」提问。
                 </p>
               </div>
             );
@@ -104,7 +104,7 @@ export function SearchPanel({
           if (!total) {
             return (
               <p className="px-1 py-1 text-[11px] text-muted-foreground">
-                没有找到「{query}」相关内容，试试在下方交给 AI 问答。
+                没有找到「{query}」相关内容，试试在下方交给智能问答。
               </p>
             );
           }
@@ -170,11 +170,11 @@ export function SearchPanel({
           );
         })()}
 
-        {/* AI 问答（并入全局搜索） */}
+        {/* 智能问答（并入全局搜索） */}
         <div className="rounded-lg border border-border/70 bg-muted/20 p-2.5">
           <div className="mb-1.5 flex items-center gap-1.5">
             <Sparkles className="size-3.5 text-primary" />
-            <span className="text-[11px] font-medium text-foreground">AI 问答 · 基于全部笔记</span>
+            <span className="text-[11px] font-medium text-foreground">智能问答 · 基于全部笔记</span>
           </div>
           {qa.length > 0 && (
             <div className="mb-2 max-h-40 space-y-1.5 overflow-y-auto">

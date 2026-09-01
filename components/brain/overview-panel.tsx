@@ -363,7 +363,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
                 <Check className="size-3.5" />
               </span>
               <h2 className="text-sm font-semibold text-foreground">本周行动项</h2>
-              <span className="text-[11px] text-muted-foreground">来自 AI 整理</span>
+              <span className="text-[11px] text-muted-foreground">来自智能整理</span>
             </div>
             <ul className="mt-3 space-y-1.5">
               {weekActionItems.map((a, i) => (

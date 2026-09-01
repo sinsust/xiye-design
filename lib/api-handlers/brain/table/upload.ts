@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     const perResult: PerResult[] = [];
     const truncated: string[] = [];
 
-    const analyzeDataset = (name: string, ds: EffectiveDataset, rawSheet: SheetInfo) => {
+    const analyzeDataset = async (name: string, ds: EffectiveDataset, rawSheet: SheetInfo) => {
       // 闸门 3：单元格总量 → 超出行数截断（仅影响画像/缓存规模，不丢业务行语义）
       const cellLimit = Math.max(1, Math.floor(MAX_CELLS / Math.max(ds.effectiveColumnCount, 1)));
       let finalRows = ds.rows;
@@ -117,21 +117,21 @@ export async function POST(req: NextRequest) {
       });
       // 服务端缓存有效（裁剪后）数据，供 analyze 使用（绑定归属用户防串读）；
       // 同时缓存 rawSheet，供用户确认表头后重新构建 EffectiveDataset（T1-D2）。
-      const tableId = cacheTable(user.sub, ds.headers, finalRows, ds.columns, rawSheet);
+      const tableId = await cacheTable(user.sub, ds.headers, finalRows, ds.columns, rawSheet);
       perResult.push({ name, ds, rawSheet, profile, tableId, finalRows });
     };
 
     for (const group of structure.sameStructureGroups) {
       const merged = mergeSheets(group);
-      analyzeDataset(merged.name, buildEffectiveDataset(merged, { headerIdx: 0 }), merged);
+      await analyzeDataset(merged.name, buildEffectiveDataset(merged, { headerIdx: 0 }), merged);
     }
     for (const sheet of structure.differentSheets) {
       const raw = parsed.sheets.find((s) => s.name === sheet.name);
       if (!raw) continue;
-      analyzeDataset(sheet.name, buildEffective(raw), raw);
+      await analyzeDataset(sheet.name, buildEffective(raw), raw);
     }
     if (perResult.length === 0 && parsed.sheets.length > 0) {
-      analyzeDataset(parsed.sheets[0].name, buildEffective(parsed.sheets[0]), parsed.sheets[0]);
+      await analyzeDataset(parsed.sheets[0].name, buildEffective(parsed.sheets[0]), parsed.sheets[0]);
     }
 
     // ⑤ T1-D1： Sheet 推荐（稳定排序、绝不合并）+ 表头候选预览（供 T1-D2 确认面板切换）

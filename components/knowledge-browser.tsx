@@ -324,7 +324,7 @@ function EntryFormModal({
           </Button>
         </div>
 
-        <div className="overflow-auto p-5">
+        <div className="flex-1 min-h-0 overflow-auto p-5">
           {/* 分类选择：水平平铺 */}
           <label className="text-xs uppercase tracking-wide text-muted-foreground">
             分类
@@ -354,7 +354,7 @@ function EntryFormModal({
             className={inputCls + " mt-2"}
             value={draft.name}
             onChange={(ev) => set("name", ev.target.value)}
-            placeholder="例如：让 AI 生成商品卖点的提示词"
+            placeholder="例如：自动生成商品卖点的提示词"
             autoFocus
           />
 
@@ -829,7 +829,7 @@ export function KnowledgeBrowser({
                   </Button>
                 </div>
               </div>
-              <div className="overflow-auto p-5">
+              <div className="flex-1 min-h-0 overflow-auto p-5">
                 <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                   {open.summary && (
                     <div className="sm:col-span-2">

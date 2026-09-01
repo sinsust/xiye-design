@@ -72,6 +72,22 @@ export const userImaConfig = sqliteTable("user_ima_config", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+// 飞书自建应用 OAuth 凭证（每用户一行，按 userId 隔离）。
+// accessTokenEnc / refreshTokenEnc 为 AES-256-GCM 加密后的密文，明文不出服务端、不落 log。
+export const userFeishuConfig = sqliteTable("user_feishu_config", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accessTokenEnc: text("access_token_enc").notNull(),
+  refreshTokenEnc: text("refresh_token_enc").notNull(),
+  // user_access_token 过期时间（epoch ms）；0 表示未知
+  expiresAt: integer("expires_at").notNull().default(0),
+  // 授权范围（如 "bitable:app bitable:app:readonly"）
+  scope: text("scope"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 // 第二大脑：用户私有的个人知识笔记（随手记 + AI 自动整理）。
 // 与知识库(共享技能库)不同，这里是个人私有、按 userId 隔离、随时间累积的笔记。
 export const brainNotes = sqliteTable("brain_notes", {

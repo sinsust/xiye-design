@@ -1,15 +1,18 @@
 "use client";
 
 /**
- * 表格分析 —— 页面容器（全流程）
+ * 数据引擎 —— 页面容器（全流程）
  * 状态机：upload → sheetSelect → profile（画像面板）→ recommend（AI 建议）→ result（结果展示）
  * 串联：TableUploader → SheetSelector → ColumnProfilePanel → AnalysisRecommender → AnalysisResultView
  */
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Download, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, Loader2, Plug, RefreshCw, Sparkles } from "lucide-react";
 import { TableUploader, type UploadResult } from "./TableUploader";
+import { FeishuImportPanel } from "./FeishuImportPanel";
 import { SheetSelector } from "./SheetSelector";
+import { CombineSuggestionCard } from "./CombineSuggestionCard";
+import type { JoinSuggestion } from "@/lib/table/combine/detect-join-keys";
 import { HeaderConfirmationPanel } from "./HeaderConfirmationPanel";
 import { ColumnProfilePanel } from "./ColumnProfilePanel";
 import { ColumnConfirmationPanel } from "./ColumnConfirmationPanel";
@@ -27,7 +30,11 @@ const PHASES: Phase[] = ["upload", "sheetSelect", "confirm_header", "profile", "
 
 export function TableAnalysisPage() {
   const [phase, setPhase] = useState<Phase>("upload");
+  const [source, setSource] = useState<"file" | "feishu">("file");
   const [uploadData, setUploadData] = useState<UploadResult | null>(null);
+  const [joinSuggestions, setJoinSuggestions] = useState<JoinSuggestion[]>([]);
+  const [combining, setCombining] = useState(false);
+  const [combineKey, setCombineKey] = useState<string | undefined>(undefined);
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [results, setResults] = useState<AnalysisResult[]>([]);
@@ -99,7 +106,7 @@ export function TableAnalysisPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${active.headers?.[0] || "表格"}.xlsx`;
+      a.download = `${active.headers?.[0] || "数据引擎"}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -133,7 +140,7 @@ export function TableAnalysisPage() {
       <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Sparkles className="size-4 text-primary" />
-          表格分析
+          数据引擎
         </div>
         <div className="flex items-center gap-3">
           <LLMRouteBadge />
@@ -141,7 +148,11 @@ export function TableAnalysisPage() {
             <button
               onClick={() => {
                 setPhase("upload");
+                setSource("file");
                 setUploadData(null);
+                setJoinSuggestions([]);
+                setCombining(false);
+                setCombineKey(undefined);
                 setActiveIndex(0);
                 setConfirmedIndex(null);
                 setConfirmedHeaderRow(null);
@@ -224,6 +235,13 @@ export function TableAnalysisPage() {
             </button>
             <button
               onClick={() => {
+                // 修改表头：组合生成的宽表无推荐，回选择页重选，避免空白确认面板
+                if (uploadData.results[confirmedIndex]?.combined) {
+                  setColumnConfirmed(false);
+                  resetDownstream();
+                  setPhase("sheetSelect");
+                  return;
+                }
                 // 修改表头：清除下游结果，重新打开确认面板（保留当前 Sheet 选择）
                 setColumnConfirmed(false);
                 resetDownstream();
@@ -240,36 +258,152 @@ export function TableAnalysisPage() {
       {/* 阶段内容 */}
       <div className="flex-1">
         {phase === "upload" && (
-          <TableUploader
-            onUploaded={(data) => {
-              setUploadData(data);
-              setActiveIndex(0);
-              setPhase("sheetSelect");
-            }}
-            onError={(msg) => setError(msg)}
-          />
+          <div className="px-5 py-4">
+            {/* 数据来源切换：本地上传 / 飞书多维表 */}
+            <div className="mb-4 flex w-fit items-center gap-1 rounded-lg border border-border/70 bg-muted/40 p-0.5 text-xs">
+            <button
+              onClick={() => {
+                setSource("file");
+                setJoinSuggestions([]);
+                setCombining(false);
+                setCombineKey(undefined);
+              }}
+              className={
+                "rounded-md px-3 py-1.5 font-medium transition " +
+                (source === "file"
+                  ? "bg-white text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+                本地上传
+              </button>
+            <button
+              onClick={() => {
+                setSource("feishu");
+                setJoinSuggestions([]);
+                setCombining(false);
+                setCombineKey(undefined);
+              }}
+              className={
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition " +
+                (source === "feishu"
+                  ? "bg-white text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+                <Plug className="size-3.5" />
+                飞书多维表
+              </button>
+            </div>
+
+            {source === "file" ? (
+              <TableUploader
+                onUploaded={(data) => {
+                  setUploadData(data);
+                  setJoinSuggestions(data.joinSuggestions ?? []);
+                  setCombining(false);
+                  setCombineKey(undefined);
+                  setActiveIndex(0);
+                  setPhase("sheetSelect");
+                }}
+                onError={(msg) => setError(msg)}
+              />
+            ) : (
+              <FeishuImportPanel
+                onImported={(data) => {
+                  setUploadData(data);
+                  setActiveIndex(0);
+                  setPhase("sheetSelect");
+                }}
+              />
+            )}
+          </div>
         )}
 
         {phase === "sheetSelect" && uploadData && (
-          <SheetSelector
-            data={uploadData}
-            onConfirm={(index) => {
-              const rec = uploadData.results[index]?.recommendation;
-              setActiveIndex(index);
-              setSelectedField(null);
-              resetDownstream();
-              setConfirmedIndex(null);
-              setConfirmedHeaderRow(null);
-              // 推荐且主数据且无需确认表头 → 直接进入画像；其余 → 先确认表头
-              if (nextPhaseAfterSelect(rec) === "profile") {
-                setConfirmedIndex(index);
-                setConfirmedHeaderRow(rec?.header.detectedHeaderRow ?? 0);
-                setPhase("profile");
-              } else {
-                setPhase("confirm_header");
-              }
-            }}
-          />
+          <>
+            <CombineSuggestionCard
+              suggestions={joinSuggestions}
+              combining={combining}
+              combineKey={combineKey}
+              onDismiss={() => setJoinSuggestions([])}
+              onCombine={async (s) => {
+                if (combining) return;
+                const key = `${s.leftTableId}|${s.rightTableId}|${s.keyColumnLeft}|${s.keyColumnRight}`;
+                setCombining(true);
+                setCombineKey(key);
+                setError("");
+                try {
+                  const res = await fetch("/api/brain/table/combine", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      tables: [s.leftTableId, s.rightTableId],
+                      joins: [
+                        {
+                          leftTableId: s.leftTableId,
+                          rightTableId: s.rightTableId,
+                          keyColumnLeft: s.keyColumnLeft,
+                          keyColumnRight: s.keyColumnRight,
+                        },
+                      ],
+                      joinType: "left",
+                    }),
+                  });
+                  const data = await res.json().catch(() => null);
+                  if (!res.ok) throw new Error(data?.message || data?.error || "组合失败");
+                  // 把组合结果追加为一张新表，直接进入画像（组合表头已清洗、无需再确认）
+                  setUploadData((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, results: [...prev.results, data.result] };
+                  });
+                  const newIndex = (uploadData.results?.length ?? 0);
+                  setActiveIndex(newIndex);
+                  setConfirmedIndex(newIndex);
+                  setConfirmedHeaderRow(0);
+                  setColumnConfirmed(false);
+                  resetDownstream();
+                  setJoinSuggestions([]);
+                  setPhase("profile");
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setCombining(false);
+                  setCombineKey(undefined);
+                }
+              }}
+            />
+            <SheetSelector
+              data={uploadData}
+              onConfirm={(index) => {
+                const r = uploadData.results[index];
+                // 组合生成的宽表：表头已清洗，直接进入画像（避免 confirm_header 缺推荐空白）
+                if (r?.combined) {
+                  setActiveIndex(index);
+                  setConfirmedIndex(index);
+                  setConfirmedHeaderRow(0);
+                  setSelectedField(null);
+                  resetDownstream();
+                  setPhase("profile");
+                  return;
+                }
+                const rec = r?.recommendation;
+                setActiveIndex(index);
+                setSelectedField(null);
+                resetDownstream();
+                setConfirmedIndex(null);
+                setConfirmedHeaderRow(null);
+                // 推荐且主数据且无需确认表头 → 直接进入画像；其余 → 先确认表头
+                if (nextPhaseAfterSelect(rec) === "profile") {
+                  setConfirmedIndex(index);
+                  setConfirmedHeaderRow(rec?.header.detectedHeaderRow ?? 0);
+                  setPhase("profile");
+                } else {
+                  setPhase("confirm_header");
+                }
+              }}
+            />
+          </>
         )}
 
         {phase === "confirm_header" && uploadData && (() => {

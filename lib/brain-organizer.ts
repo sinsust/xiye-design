@@ -233,15 +233,23 @@ function heuristicActionItems(content: string): OrganizedNote["actionItems"] {
     .split(/\n|；|。/)
     .map((l) => l.trim())
     .filter(Boolean);
-  const markers = ["待办", "todo", "TODO", "需要", "记得", "别忘了", "务必", "下周", "明天", "周五前", "尽快", "安排"];
+  const markers = [
+    "待办", "todo", "TODO", "需要", "记得", "别忘了", "务必", "下周", "明天", "周五前", "尽快", "安排",
+    // 截止时间标记：9.1 前 / 8.31 前完成 / 8.29 18:00前
+    "前完成", "前提交", "前上线", "前交付", "前评审", "前确认", "前",
+  ];
   const items: OrganizedNote["actionItems"] = [];
   for (const line of lines) {
-    if (line.length > 60) continue;
+    if (line.length > 80) continue;
     if (!markers.some((m) => line.includes(m))) continue;
-    const text = line.replace(/^(待办|TODO|todo|To-do|需要|记得|别忘了|务必)[:：\s]*/, "").slice(0, 40);
+    const text = line
+      .replace(/^(待办|TODO|todo|To-do|需要|记得|别忘了|务必)[:：\s]*/, "")
+      .replace(/\s*(前完成|前提交|前上线|前交付|前评审|前确认|前)\s*$/, "")
+      .slice(0, 60);
     if (!text) continue;
     // 尝试提取截止日期（复用 parseRelativeDate：本地时区、无 UTC 差一天问题）
-    const dueMatch = line.match(/(\d{1,2}\s*月\s*\d{1,2}\s*日|下周[一二三四五六日天]*|明天|后天|周五|本周末|月底|\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
+    // 支持：8月31日、8月31号、2026年8月31日、8.29、9.1、8/31、2026/8/31、下周三、明天、周五前 等
+    const dueMatch = line.match(/(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*[日号]|\d{1,2}\s*月\s*\d{1,2}\s*[日号]|\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/]\d{1,2}|\d{1,2}\.\d{1,2}|大后天|后天|明天|今日|今天|下周[一二三四五六日天]|本周[一二三四五六日天]|周[一二三四五六日天]|礼拜[一二三四五六日天]|本周末|这周末|周末|年初|年底|年末|年中|月初|月底|月末|[Qq][1-4]|[一二三四]\s*季度|下季度|本季度)/);
     const today = new Date();
     const dueDate = dueMatch ? parseRelativeDate(dueMatch[0], today) : null;
     items.push({ text, owner: "", dueDate, priority: line.includes("紧急") || line.includes("尽快") ? "high" : "medium" });
@@ -249,55 +257,153 @@ function heuristicActionItems(content: string): OrganizedNote["actionItems"] {
   return items.slice(0, 6);
 }
 
-/** 把文本里的相对时间（明天/后天/本周五/下周三前/月底/X月Y日/YYYY-M-D）按今天换算成 ISO 日期；无法推断返回 null */
+/**
+ * 把文本里的相对时间按今天换算成 ISO 日期；无法推断返回 null。
+ * 覆盖的常见输入（按优先级）：
+ *  - 完整日期：2026-08-31 / 2026/08/31 / 2026.08.31 / 2026年8月31日 / 2026年8月31号
+ *  - 中文月日：8月31日 / 8月31号
+ *  - 点号简写：8.29 / 08.31 / 9.1（月.日）
+ *  - 斜杠/横线无年：8/31 / 8-31 / 08/31
+ *  - 相对日：今天/今日、明天/明日、后天、大后天
+ *  - 周末：周末/本周末/这周末
+ *  - 节点：月初/月底/月末/年中/年底/年末/年初
+ *  - 周几：周一..周日、礼拜一..礼拜日、本周X、下周X
+ *  - 季度：Q1..Q4、一季度..四季度、本季度、下季度
+ *  - 兜底：下周 / 本周 / 这周
+ * 文本尾部可能带“前/前完成…”截止词，先剥离再解析。
+ */
 export function parseRelativeDate(text: string, today: Date = new Date()): string | null {
-  const s = text.trim();
+  // 剥离尾部的“前（完成/提交/上线…）”等截止描述，避免干扰解析
+  const sRaw = text.trim()
+    .replace(/\s*\d{1,2}:\d{2}.*$/, "") // 去掉 18:00 等具体时间
+    .replace(/\s*前(完成|提交|上线|交付|评审|确认|搞定|交)?\s*.*$/, ""); // 去掉 前 / 前完成 等截止词
+  const s = sRaw || text.trim();
   const day = 86400_000;
   // 用本地时区格式化（toISOString 是 UTC，中国时区会差一天）
   const fmt = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const todayMs = today.getTime();
-
-  const iso = s.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-  if (iso) {
-    return fmt(new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
-  }
-  const md = s.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*日/);
-  if (md) {
-    const d = new Date(today.getFullYear(), Number(md[1]) - 1, Number(md[2]));
+  const sameYearOrNext = (month: number, date: number): Date => {
+    const d = new Date(today.getFullYear(), month - 1, date);
     if (d.getTime() < todayMs - 30 * day) d.setFullYear(today.getFullYear() + 1);
-    return fmt(d);
+    return d;
+  };
+
+  // 1. 完整 ISO（含点号）：2026-08-31 / 2026/08/31 / 2026.08.31
+  const iso = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (iso) {
+    const y = Number(iso[1]);
+    const m = Number(iso[2]);
+    const d = Number(iso[3]);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) return fmt(new Date(y, m - 1, d));
   }
+
+  // 2. 中文年月日：2026年8月31日 / 2026年8月31号 / 8月31日 / 8月31号
+  const cn = s.match(/(?:(\d{4})\s*年\s*)?(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/);
+  if (cn) {
+    const y = cn[1] ? Number(cn[1]) : today.getFullYear();
+    const m = Number(cn[2]);
+    const d = Number(cn[3]);
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      const dt = new Date(y, m - 1, d);
+      if (!cn[1] && dt.getTime() < todayMs - 30 * day) dt.setFullYear(today.getFullYear() + 1);
+      return fmt(dt);
+    }
+  }
+
+  // 3. 点号简写：8.29 / 08.31 / 9.1（月.日）
+  const dotMd = s.match(/^(\d{1,2})\.(\d{1,2})$/);
+  if (dotMd) {
+    const month = Number(dotMd[1]);
+    const date = Number(dotMd[2]);
+    if (month >= 1 && month <= 12 && date >= 1 && date <= 31) {
+      return fmt(sameYearOrNext(month, date));
+    }
+  }
+
+  // 4. 斜杠/横线无年份：8/31 / 8-31 / 08/31
+  const slashMd = s.match(/^(\d{1,2})[-/](\d{1,2})$/);
+  if (slashMd) {
+    const month = Number(slashMd[1]);
+    const date = Number(slashMd[2]);
+    if (month >= 1 && month <= 12 && date >= 1 && date <= 31) {
+      return fmt(sameYearOrNext(month, date));
+    }
+  }
+
+  // 5. 相对日：大后天 / 后天 / 明天|明日 / 今天|今日
+  if (/大后天/.test(s)) return fmt(new Date(todayMs + 3 * day));
   if (/后天/.test(s)) return fmt(new Date(todayMs + 2 * day));
-  if (/明天/.test(s)) return fmt(new Date(todayMs + 1 * day));
-  if (/本周末|这周末/.test(s)) {
+  if (/明天|明日/.test(s)) return fmt(new Date(todayMs + 1 * day));
+  if (/今天|今日/.test(s)) return fmt(new Date(todayMs));
+
+  // 6. 周末
+  if (/本周末|这周末|周末/.test(s)) {
     const off = (6 - today.getDay() + 7) % 7 || 7;
     return fmt(new Date(todayMs + off * day));
   }
-  if (/月底|月末/.test(s)) {
-    return fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+
+  // 7. 年/月节点：年初/年底/年末/年中/月初/月底/月末
+  if (/年底|年末|岁末/.test(s)) return fmt(new Date(today.getFullYear(), 11, 31));
+  if (/年初|明年初/.test(s)) {
+    const y = /明年初/.test(s) ? today.getFullYear() + 1 : today.getFullYear();
+    return fmt(new Date(y, 0, 1));
   }
+  if (/年中/.test(s)) return fmt(new Date(today.getFullYear(), 5, 30));
+  if (/月初/.test(s)) return fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+  if (/月底|月末/.test(s)) return fmt(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+
+  // 8. 季度：Q1..Q4 / 一季度..四季度 / 本季度 / 下季度
+  const qMatch = s.match(/[Qq]([1-4])|([一二三四])\s*季度|第\s*([一二三四])\s*季度/);
+  if (qMatch) {
+    const q = qMatch[1] ? Number(qMatch[1]) : "一二三四".indexOf(qMatch[2] || qMatch[3]) + 1;
+    if (q >= 1 && q <= 4) {
+      const monthEnd = [3, 6, 9, 12][q - 1];
+      const last = new Date(today.getFullYear(), monthEnd, 0).getDate();
+      return fmt(new Date(today.getFullYear(), monthEnd - 1, last));
+    }
+  }
+  if (/下季度/.test(s)) return fmt(new Date(today.getFullYear(), Math.min(today.getMonth() + 3, 11), 1));
+  if (/本季度/.test(s)) {
+    const qEnd = Math.floor(today.getMonth() / 3) * 3 + 3;
+    return fmt(new Date(today.getFullYear(), qEnd, 0));
+  }
+
+  // 9. 周几：下周X / 本周X / 周X / 礼拜X（含礼拜）
   const weekdayOf = (m: RegExpMatchArray | null): number | null => {
     if (!m) return null;
+    const captured = m[1] ?? m[2] ?? m[3] ?? m[4] ?? null;
+    if (!captured) return null;
     const map: Record<string, number> = { "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "日": 7, "天": 7 };
-    return map[m[1]] ?? null;
+    return map[captured] ?? null;
   };
   const nextWeek = weekdayOf(s.match(/下周([一二三四五六日天])/));
   if (nextWeek !== null) {
-    // 下周 X：先到本周日，再 +X 天（周一=1 … 周日=7）
     const days = 7 - today.getDay() + nextWeek;
     return fmt(new Date(todayMs + days * day));
   }
-  const thisWeek = weekdayOf(s.match(/周([一二三四五六日天])/));
+  const thisWeek = weekdayOf(s.match(/本周([一二三四五六日天])|这周([一二三四五六日天])|周([一二三四五六日天])|礼拜([一二三四五六日天])/));
   if (thisWeek !== null) {
     let diff = (thisWeek - today.getDay() + 7) % 7;
     if (diff === 0) diff = 7;
     return fmt(new Date(todayMs + diff * day));
   }
+
+  // 10. 兜底：下周 / 本周 / 这周 / 这礼拜
   if (/下周/.test(s)) return fmt(new Date(todayMs + 7 * day));
   if (/本周/.test(s)) return fmt(new Date(todayMs + ((5 - today.getDay() + 7) % 7 || 7) * day));
   if (/这周|这礼拜/.test(s)) return fmt(new Date(todayMs + 2 * day));
   return null;
+}
+
+/** 从一段文本里抠出日期 token；覆盖 parseRelativeDate 支持的多数写法，并容忍尾部“前/前完成”截止词 */
+function extractDateToken(text: string): string | null {
+  const s = text.trim();
+  const m = s.match(
+    /(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*[日号]|\d{1,2}\s*月\s*\d{1,2}\s*[日号]|\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/]\d{1,2}|\d{1,2}\.\d{1,2}|大后天|后天|明天|明日|今天|今日|下周[一二三四五六日天]|本周[一二三四五六日天]|周[一二三四五六日天]|礼拜[一二三四五六日天]|本周末|这周末|周末|年初|年底|年末|年中|月初|月底|月末|[Qq][1-4]|[一二三四]\s*季度|第\s*[一二三四]\s*季度|下季度|本季度|下周|本周|这周)/,
+  );
+  if (!m) return null;
+  return m[1].trim().replace(/\s*前(完成|提交|上线|交付|评审|确认|搞定|交)?\s*.*$/, "");
 }
 
 /** 规范化行动项日期：优先按 text 里的相对时间重算；AI 给的错年份/过去过久的日期清空；噪音项过滤 */
@@ -307,10 +413,12 @@ export function normalizeActionDates(actions: ActionItem[], today: Date = new Da
   return actions
     .filter((a) => !isNoiseAction(a.text))
     .map((a) => {
-      const rel = parseRelativeDate(a.text, today);
+      const token = extractDateToken(a.text);
+      const rel = token ? parseRelativeDate(token, today) : null;
       if (rel) {
         const t = new Date(rel + "T00:00:00").getTime();
-        return { ...a, dueDate: t >= nowMs - day ? rel : null };
+        // 允许最近 30 天内的“过期”日期（会议纪要可能是当天或刚过期的 deadline）
+        return { ...a, dueDate: t >= nowMs - 30 * day ? rel : null };
       }
       if (!a.dueDate) return a;
       const t = new Date(a.dueDate + "T00:00:00").getTime();

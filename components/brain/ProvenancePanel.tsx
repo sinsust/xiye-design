@@ -163,7 +163,7 @@ export function ProvenancePanel({
       {(view.organizedAt || view.confirmedAt) && (
         <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
           <div className="rounded-lg border border-border/60 px-2.5 py-1.5">
-            <div className="text-muted-foreground">AI 整理</div>
+            <div className="text-muted-foreground">智能整理</div>
             <div className="mt-0.5 font-medium text-foreground">{fmtTime(view.organizedAt)}</div>
           </div>
           <div className="rounded-lg border border-border/60 px-2.5 py-1.5">

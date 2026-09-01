@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 取原始 Sheet（含全部行，未裁剪）；过期 / 非本人 / 不存在 → 410
-    const raw = getRawSheet(tableId, user.sub);
+    const raw = await getRawSheet(tableId, user.sub);
     if (!raw) {
       return NextResponse.json(
         { error: "table_expired", message: "表格数据已失效（页面停留过久或服务重启导致），请重新上传后再分析" },
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 就地更新该 tableId 的缓存（复用同一 id，前端引用不失效）
-    const updated = updateTableCache(tableId, user.sub, {
+    const updated = await updateTableCache(tableId, user.sub, {
       headers: ds.headers,
       rows: finalRows,
       columnTypes: ds.columns,
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 写入会话级确认状态（仅 session 生命周期，不落库）
-    saveTableConfirmation(tableId, user.sub, {
+    await saveTableConfirmation(tableId, user.sub, {
       selectedSheetIds: [ds.sheetId],
       headerRowBySheet: { [ds.sheetId]: headerRow },
       confirmedAt: Date.now(),
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     const cand: HeaderCandidate[] = listHeaderCandidates(raw);
     // 用户已显式确认表头 → 视为已确认（即便表头非首行，不再强制二次确认）
     const recommendation = { ...rec, requiresHeaderConfirmation: false };
-    const confirmation = getTableConfirmation(tableId, user.sub);
+    const confirmation = await getTableConfirmation(tableId, user.sub);
 
     return NextResponse.json({
       tableId,

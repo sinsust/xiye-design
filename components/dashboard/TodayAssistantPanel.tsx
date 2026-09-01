@@ -116,7 +116,7 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
 
       {brief && (
         <>
-          <ProactiveBriefList />
+          <ProactiveBriefList onConfirmPlan={props.onConfirmPlan} />
           <TodayPriorityList items={brief.priorities} onAction={handleAction} />
           <PendingPlanList plans={brief.pendingPlans} onConfirm={props.onConfirmPlan} />
 

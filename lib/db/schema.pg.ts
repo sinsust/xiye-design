@@ -78,6 +78,19 @@ export const userImaConfig = pgTable("user_ima_config", {
   updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 });
 
+// 飞书自建应用 OAuth 凭证（pg 镜像，按 userId 隔离，token 加密存储）。
+export const userFeishuConfig = pgTable("user_feishu_config", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accessTokenEnc: text("access_token_enc").notNull(),
+  refreshTokenEnc: text("refresh_token_enc").notNull(),
+  expiresAt: bigint("expires_at", { mode: "number" }).notNull().default(0),
+  scope: text("scope"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+});
+
 // 第二大脑：用户私有的个人知识笔记（sqlite 镜像，userId 隔离）。
 export const brainNotes = pgTable(
   "brain_notes",
@@ -769,5 +782,24 @@ export const flowOpLedger = pgTable(
       t.operationId,
       t.operationType,
     ),
+  })
+);
+
+// —— 表格分析会话缓存（修复 Serverless 冷启动/多实例导致的 410 table_expired）——
+// 防串读由应用层 userId 校验兜底（lib/table/session-persist.ts），与本项目其他 brain_* 表一致，不启用 RLS。
+export const brainTableSessions = pgTable(
+  "brain_table_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    payload: text("payload").notNull(), // base64(gzip(json(CacheEntry)))
+    expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("brain_table_sessions_user_id_idx").on(t.userId),
+    expIdx: index("brain_table_sessions_exp_idx").on(t.expiresAt),
   })
 );

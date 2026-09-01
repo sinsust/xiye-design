@@ -540,7 +540,7 @@ export function ProjectWorkbench({ projectId, onOpenTask, onBack, onChanged, onV
                       </div>
                       <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{n.summary}</p>
                       <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-                        <span>{n.sourceLabel}{n.hasPlan ? " · 经 AI 整理" : ""}</span>
+                        <span>{n.sourceLabel}{n.hasPlan ? " · 经智能整理" : ""}</span>
                         {n.tags.map((t) => (
                           <span key={t} className="rounded bg-card px-1.5 py-px">{t}</span>
                         ))}

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 表格分析 —— 表头确认面板（T1-D2）
+ * 数据引擎 —— 表头确认面板（T1-D2）
  *
  * 仅在以下情况出现：
  *  - recommendation.requiresHeaderConfirmation = true（表头非首行 / 低置信 / 多候选）

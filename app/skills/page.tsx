@@ -276,7 +276,7 @@ export default function SkillsPage() {
                 <X className="size-4" />
               </Button>
             </div>
-            <div className="overflow-auto p-5">
+            <div className="flex-1 min-h-0 overflow-auto p-5">
               {loading ? (
                 <p className="text-sm text-muted-foreground">加载中…</p>
               ) : (
