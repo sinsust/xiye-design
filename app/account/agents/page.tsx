@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, ImageOff, RotateCcw, Save, Users } from "lucide-react";
+import { Check, ImageOff, RotateCcw, Save, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AGENT_PROFILES, type AgentId } from "@/app/workflow/agents";
-import { useAgentsStore } from "@/app/workflow/agents-store";
+import { useAgentsStore, useCurrentStyle } from "@/app/workflow/agents-store";
 import { AgentAvatar } from "@/app/workflow/components/agent-common";
 import { fetchSession } from "@/lib/auth-session";
 
@@ -17,22 +17,52 @@ interface DraftItem {
 }
 
 const ROLE_TAG: Record<AgentId, string> = {
-  moderator: "老鸨子 · 主持",
+  moderator: "主持",
   pm: "PRD · 页面清单",
   architect: "技术栈 · 取舍",
   designer: "视觉 · 组件基调",
   guard: "开发规范 · 反漂移",
 };
 
+/** 把上传图片压缩为 ≤256px 的 webp data URL（不支持 webp 则回退 png） */
+function compressImageToDataUrl(file: File, maxSize = 256): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("read_failed"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("decode_failed"));
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("no_ctx"));
+        ctx.drawImage(img, 0, 0, w, h);
+        const out = canvas.toDataURL("image/webp", 0.85);
+        // 部分浏览器 toDataURL('image/webp') 仍返回 png，属正常回退
+        resolve(out);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AgentPersonasPage() {
   const router = useRouter();
   const [authLoading, setAuthLoading] = useState(true);
   const booted = useAgentsStore((s) => s.booted);
   const overrides = useAgentsStore((s) => s.overrides);
+  const currentStyleId = useAgentsStore((s) => s.currentStyleId);
   const [draft, setDraft] = useState<DraftItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const adoptedRef = useRef(false);
+  const style = useCurrentStyle();
 
   const defaults = useMemo(
     () =>
@@ -108,7 +138,7 @@ export default function AgentPersonasPage() {
       const res = await fetch("/api/agents", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agents }),
+        body: JSON.stringify({ agents, styleId: currentStyleId }),
       });
       if (res.ok) {
         // 同步到全局 store：全流程立刻生效
@@ -154,7 +184,7 @@ export default function AgentPersonasPage() {
           <Users className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="text-base font-semibold text-foreground">后宫智囊团 · 人设管理</h1>
+          <h1 className="text-base font-semibold text-foreground">{style.framing} · 人设管理</h1>
           <p className="text-xs text-muted-foreground">
             自定义每位专家的名字与头像，全流程即时生效；名字也会影响 AI 会诊时的自称。
           </p>
@@ -183,7 +213,9 @@ export default function AgentPersonasPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{a.name}</p>
-                  <p className="truncate text-[11px] text-muted-foreground">{ROLE_TAG[a.id]}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {a.id === "moderator" ? style.moderatorLabel : ROLE_TAG[a.id]}
+                  </p>
                 </div>
                 <Button
                   variant="ghost"
@@ -209,12 +241,34 @@ export default function AgentPersonasPage() {
                   <span className="text-[11px] text-muted-foreground">
                     头像图地址 <ImageOff className="inline size-3" /> 留空用默认
                   </span>
-                  <input
-                    value={item?.avatarUrl ?? ""}
-                    onChange={(e) => patch(a.id, { avatarUrl: e.target.value })}
-                    placeholder="https://… 或 /path/to.png"
-                    className="h-9 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary/60"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={item?.avatarUrl ?? ""}
+                      onChange={(e) => patch(a.id, { avatarUrl: e.target.value })}
+                      placeholder="https://… 或 /path/to.png"
+                      className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary/60"
+                    />
+                    <label className="flex h-9 shrink-0 cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 text-xs text-foreground hover:border-primary/50">
+                      <Upload className="size-3.5" /> 上传
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          try {
+                            const dataUrl = await compressImageToDataUrl(f);
+                            patch(a.id, { avatarUrl: dataUrl });
+                          } catch {
+                            alert("图片读取失败，请换一张");
+                          } finally {
+                            e.target.value = "";
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
                 </label>
               </div>
             </div>

@@ -50,11 +50,11 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       // 无 key：启发式兜底
       const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: true }));
-      const results = await consultAgents(brief, undefined, messages, agents);
+      const results = await consultAgents(brief, undefined, messages, agents, body?.styleId);
       return NextResponse.json({ agents: results, flowMeta: meta });
     }
     try {
-      const results = await consultAgents(brief, apiKey, messages, agents);
+      const results = await consultAgents(brief, apiKey, messages, agents, body?.styleId);
       const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
       return NextResponse.json({ agents: results, flowMeta: meta });
     } catch (err) {

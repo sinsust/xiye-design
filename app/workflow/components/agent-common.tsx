@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { type LucideIcon } from "lucide-react";
 import { CheckCircle2, Clock3, Maximize2, Sparkles } from "lucide-react";
 import { type AgentId } from "../agents";
-import { useAgent } from "../agents-store";
+import { useAgent, useCurrentStyle } from "../agents-store";
+import { diceBearAvatar } from "@/lib/agent-styles";
 
 export type AgentStatus = "standby" | "thinking" | "producing" | "done";
 
@@ -15,17 +16,25 @@ export interface AgentState {
   details?: string[];
 }
 
-/* 专家头像：优先用用户自定义头像，其次默认照片（缺失则回退图标） */
+/* 专家头像：用户自定义图 → 风格默认图 → 在线 DiceBear 风格化 → 图标兜底 */
 export function AgentAvatar({ role, className }: { role: AgentId; className?: string }) {
   const profile = useAgent(role);
+  const style = useCurrentStyle();
   const Icon: LucideIcon = profile.icon;
-  const [failed, setFailed] = useState(false);
-  if (!failed && profile.avatarUrl) {
+  // 0=用户/风格默认图，1=在线 DiceBear 风格化，2=图标兜底
+  const [stage, setStage] = useState<0 | 1 | 2>(0);
+  const src =
+    stage === 0
+      ? profile.avatarUrl
+      : stage === 1
+        ? diceBearAvatar(style.id, role)
+        : null;
+  if (src) {
     return (
       <img
-        src={profile.avatarUrl}
+        src={src}
         alt={profile.name}
-        onError={() => setFailed(true)}
+        onError={() => setStage((s) => (s < 2 ? ((s + 1) as 0 | 1 | 2) : s))}
         className={["rounded-full object-cover", className ?? ""].join(" ")}
       />
     );

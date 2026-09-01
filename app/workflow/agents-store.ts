@@ -1,7 +1,8 @@
 "use client";
 
-// 全局「后宫智囊团」人设 store：在默认角色（AGENT_PROFILES)基础上，允许用户
-// 自定义每位专家的名字与头像，全流程（左栏 / 会诊条 / 详情卡 / 微调/交付）实时生效。
+// 全局「角色人设」store：在默认角色（AGENT_PROFILES)基础上，允许用户自定义每位专家的名字与头像，
+// 并支持按「风格」整体切换（后宫 / 帝王 / 霸总 / 江湖 / 修仙 / 校园 / 赛博）。
+// 选风格 = 套用该风格 5 位专家的默认名 + 默认头像，并切换会诊 prompt 主题（由 styleId 派生）。
 //
 // 持久化策略：
 // - 始终写一份到 localStorage，未登录用户也能自定义（本机生效）；
@@ -17,6 +18,14 @@ import {
   type AgentId,
   type AgentProfile,
 } from "./agents";
+import {
+  AGENT_ROLES,
+  AGENT_STYLES,
+  DEFAULT_STYLE,
+  getStyle,
+  styleAvatarPath,
+  type AgentStyleId,
+} from "@/lib/agent-styles";
 
 /** 用户对单个专家的个性化覆盖 */
 export interface AgentOverride {
@@ -35,9 +44,13 @@ interface AgentsState {
   /** 是否已触发过一次 boot（避免重复拉取） */
   booted: boolean;
   overrides: Partial<Record<AgentId, AgentOverride>>;
+  /** 当前选中的风格（驱动 prompt 主题 / UI 文案） */
+  currentStyleId: AgentStyleId;
   boot: () => void;
-  hydrate: (rows: { role: AgentId; name: string; avatarUrl: string | null }[]) => void;
+  hydrate: (rows: { role: AgentId; name: string; avatarUrl: string | null; styleId?: string | null }[]) => void;
   setOverride: (role: AgentId, patch: AgentOverride) => void;
+  /** 套用整套风格预设（覆盖 5 位人设名 + 头像）并切换当前风格 */
+  setStyle: (styleId: AgentStyleId) => void;
   resetAll: () => void;
 }
 
@@ -46,6 +59,7 @@ export const useAgentsStore = create<AgentsState>()(
     (set, get) => ({
       booted: false,
       overrides: {},
+      currentStyleId: DEFAULT_STYLE,
       boot: () => {
         if (get().booted) return;
         set({ booted: true });
@@ -61,23 +75,38 @@ export const useAgentsStore = create<AgentsState>()(
       },
       hydrate: (rows) => {
         const overrides: Partial<Record<AgentId, AgentOverride>> = { ...get().overrides };
+        let styleId: AgentStyleId | undefined;
         for (const row of rows) {
           const patch: AgentOverride = {};
           if (row.name) patch.name = row.name;
           patch.avatarUrl = row.avatarUrl || null;
           overrides[row.role] = { ...overrides[row.role], ...patch };
+          if (row.styleId && AGENT_STYLES[row.styleId as AgentStyleId]) {
+            styleId = row.styleId as AgentStyleId;
+          }
         }
-        set({ overrides });
+        set({ overrides, ...(styleId ? { currentStyleId: styleId } : {}) });
       },
       setOverride: (role, patch) =>
         set((s) => ({
           overrides: { ...s.overrides, [role]: { ...s.overrides[role], ...patch } },
         })),
-      resetAll: () => set({ overrides: {} }),
+      setStyle: (styleId) => {
+        const style = AGENT_STYLES[styleId];
+        const overrides: Partial<Record<AgentId, AgentOverride>> = { ...get().overrides };
+        for (const role of AGENT_ROLES) {
+          overrides[role] = {
+            name: style.agents[role].name,
+            avatarUrl: styleAvatarPath(styleId, role),
+          };
+        }
+        set({ overrides, currentStyleId: styleId });
+      },
+      resetAll: () => set({ overrides: {}, currentStyleId: DEFAULT_STYLE }),
     }),
     {
       name: "xiye_agents_personas",
-      partialize: (s) => ({ overrides: s.overrides }) as AgentsState,
+      partialize: (s) => ({ overrides: s.overrides, currentStyleId: s.currentStyleId }) as AgentsState,
     },
   ),
 );
@@ -87,21 +116,38 @@ export function getAgentName(role: AgentId): string | undefined {
   return useAgentsStore.getState().overrides[role]?.name || undefined;
 }
 
+/** 读当前风格 id */
+export function getStyleId(): AgentStyleId {
+  return useAgentsStore.getState().currentStyleId;
+}
+
+/** 响应式读当前风格对象 */
+export function useCurrentStyle() {
+  const id = useAgentsStore((s) => s.currentStyleId);
+  return getStyle(id);
+}
+
 function resolve(role: AgentId): ResolvedAgent {
   const base = AGENT_MAP[role];
   const ov = useAgentsStore.getState().overrides[role];
+  const styleId = useAgentsStore.getState().currentStyleId;
+  const styleFallback =
+    styleId === "harem"
+      ? DEFAULT_AVATARS[role]
+      : styleAvatarPath(styleId, role);
   return {
     ...base,
     name: ov?.name || base.name,
-    avatarUrl: ov?.avatarUrl || DEFAULT_AVATARS[role] || null,
+    avatarUrl: ov?.avatarUrl || styleFallback || null,
   };
 }
 
 /** 响应式订阅单个专家 */
 export function useAgent(role: AgentId): ResolvedAgent {
-  // 触发订阅：任意 override 或 booted 变化都会重渲染
+  // 触发订阅：任意 override / 风格 / booted 变化都会重渲染
   void useAgentsStore((s) => s.overrides[role]);
   void useAgentsStore((s) => s.booted);
+  void useAgentsStore((s) => s.currentStyleId);
   return resolve(role);
 }
 
@@ -109,6 +155,7 @@ export function useAgent(role: AgentId): ResolvedAgent {
 export function useAgentList(): ResolvedAgent[] {
   void useAgentsStore((s) => s.overrides);
   void useAgentsStore((s) => s.booted);
+  void useAgentsStore((s) => s.currentStyleId);
   return AGENT_PROFILES.map((a) => resolve(a.id));
 }
 

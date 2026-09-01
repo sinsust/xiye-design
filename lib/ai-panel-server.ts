@@ -14,6 +14,7 @@ import {
   buildGuardNormDetails,
   guardSummary,
 } from "@/lib/guard-norms";
+import { getStyle, type AgentStyleId } from "@/lib/agent-styles";
 
 export type PanelAgentId = "moderator" | "pm" | "architect" | "designer" | "guard";
 export type PanelStatus = "done" | "thinking" | "producing";
@@ -26,8 +27,8 @@ export interface PanelAgentResult {
   details: string[];
 }
 
-const AGENT_SYSTEM: Record<PanelAgentId, string> = {
-  moderator: `你是多 Agent 协同工作台里的「老鸨子」，负责统筹后宫智囊团会诊。
+const AGENT_SYSTEM_BASE: Record<PanelAgentId, string> = {
+  moderator: `你是多 Agent 协同工作台里的「__TITLE__」，负责统筹__FRAMING__会诊。
 基于下方产品定义，给出：当前最该优先确认的关键问题、需要用户补充的约束、以及下一步建议。
 你必须且只能输出一个 JSON 对象（不要 markdown 代码块、不要 JSON 外任何文字）：
 { "status": "producing" | "thinking" | "done", "progress": <0-100整数>, "summary": "<一句话给用户的协调结论>", "details": ["<关键要点1>", "<关键要点2>", "..."] }`,
@@ -58,6 +59,15 @@ const AGENT_SYSTEM: Record<PanelAgentId, string> = {
 你必须且只能输出一个 JSON 对象（不要 markdown 代码块、不要 JSON 外任何文字）：
 { "status": "producing" | "thinking" | "done", "progress": <0-100整数>, "summary": "<一句话规范侧结论>", "details": ["<边界规范1>", "<边界规范2>", "..."] }`,
 };
+
+/** 按风格解析各角色 system prompt（仅 moderator 含风格头衔/框架词，其余角色中立） */
+export function buildAgentSystem(styleId?: string | null): Record<PanelAgentId, string> {
+  const style = getStyle(styleId);
+  const moderator = AGENT_SYSTEM_BASE.moderator
+    .replace("__TITLE__", style.moderatorTitle)
+    .replace("__FRAMING__", style.framing);
+  return { ...AGENT_SYSTEM_BASE, moderator };
+}
 
 const CORRECT_HINT =
   "你上一轮的回复不是合法 JSON，无法被程序解析。请严格只输出一个 JSON 对象：不要任何解释文字、不要 markdown 代码块、不要 JSON 外的任何字符，直接以 { 开头、以 } 结尾。";
@@ -264,14 +274,17 @@ export async function consultAgents(
   apiKey: string | undefined,
   messages?: { role: string; content: string }[],
   persona?: { role: string; name: string }[],
+  styleId?: string | null,
 ): Promise<PanelAgentResult[]> {
   const completeness = briefCompleteness(brief);
-  const ids = Object.keys(AGENT_SYSTEM) as PanelAgentId[];
+  const ids = Object.keys(AGENT_SYSTEM_BASE) as PanelAgentId[];
+  const style = getStyle(styleId);
 
   // 用户自定义人设：把对应角色的对外姓名注入 system prompt（影响 AI 自称/被称呼）
   const personaMap = new Map((persona ?? []).map((p) => [p.role, p.name.trim()]));
+  const systemMap = buildAgentSystem(styleId);
   const systemPrompt = (id: PanelAgentId): string => {
-    const base = AGENT_SYSTEM[id];
+    const base = systemMap[id];
     const name = personaMap.get(id);
     if (!name) return base;
     return `你的对外人设姓名是「${name}」，请以这个名字自称，并在与用户沟通 / 输出要点时使用这个名字。\n${base}`;
@@ -287,7 +300,7 @@ export async function consultAgents(
   const convo = (messages ?? [])
     .filter((m) => m && typeof m.content === "string" && m.content.trim())
     .slice(-12)
-    .map((m) => `${m.role === "user" ? "用户" : "老鸨子"}：${m.content.trim()}`)
+    .map((m) => `${m.role === "user" ? "用户" : style.moderatorTitle}：${m.content.trim()}`)
     .join("\n");
   const fullContext = convo ? `${context}\n\n【最近对话】\n${convo}` : context;
 

@@ -18,6 +18,12 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { fetchSession } from "@/lib/auth-session";
+import { useCurrentStyle, useAgentsStore } from "@/app/workflow/agents-store";
+import {
+  AGENT_STYLE_LIST,
+  AGENT_ROLES,
+  type AgentStyleId,
+} from "@/lib/agent-styles";
 
 interface MeUser {
   id: string;
@@ -66,6 +72,7 @@ export default function AccountPage() {
   const [user, setUser] = useState<MeUser | null>(null);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const style = useCurrentStyle();
 
   // 腾讯 ima 凭证绑定态与配置表单
   const [imaBound, setImaBound] = useState(false);
@@ -266,6 +273,9 @@ export default function AccountPage() {
         </Button>
       </div>
 
+      {/* 角色风格：选一套即切换主流程氛围（会诊/对话文案 + 人设默认名/头像） */}
+      <StylePickerSection />
+
       {/* 后宫智囊团 · 人设管理入口 */}
       <Link
         href="/account/agents"
@@ -275,7 +285,7 @@ export default function AccountPage() {
           <Users className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-foreground">后宫智囊团 · 人设管理</p>
+          <p className="text-sm font-medium text-foreground">{style.framing} · 人设管理</p>
           <p className="text-xs text-muted-foreground">
             自定义每位专家的名字与头像，全流程生效，AI 会诊也会用新名字自称。
           </p>
@@ -529,5 +539,126 @@ export default function AccountPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/** 角色风格区块：选中即套用该风格预设（覆盖 5 位人设名 + 头像），并切换主流程 prompt 主题 */
+function StylePickerSection() {
+  const style = useCurrentStyle();
+  const [pending, setPending] = useState<AgentStyleId | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function applyStyle(styleId: AgentStyleId) {
+    setSaving(true);
+    setSaved(false);
+    // 1) 本地立即套用预设（覆盖 5 位人设）
+    useAgentsStore.getState().setStyle(styleId);
+    // 2) 持久化到服务端（含 styleId）
+    const overrides = useAgentsStore.getState().overrides;
+    const agents = AGENT_ROLES.map((role) => ({
+      role,
+      name: overrides[role]?.name ?? role,
+      avatarUrl: overrides[role]?.avatarUrl ?? null,
+    }));
+    try {
+      const res = await fetch("/api/agents", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agents, styleId }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2200);
+      } else {
+        alert("风格保存失败，请重试。");
+      }
+    } catch {
+      alert("风格保存失败，请重试。");
+    } finally {
+      setSaving(false);
+      setPending(null);
+    }
+  }
+
+  return (
+    <section className="mt-6 rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Users className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">角色风格</p>
+          <p className="text-xs text-muted-foreground">
+            选一套即切换主流程氛围：会诊 / 对话文案 + 五位人设的默认名与头像。选完仍可到「人设管理」逐个微调。
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+        {AGENT_STYLE_LIST.map((s) => {
+          const active = s.id === style.id;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => (active ? undefined : setPending(s.id))}
+              className={[
+                "flex items-center gap-3 rounded-xl border p-3 text-left transition",
+                active
+                  ? "border-transparent ring-2 ring-offset-1"
+                  : "border-border hover:border-primary/40",
+              ].join(" ")}
+              style={
+                active
+                  ? { boxShadow: `0 0 0 2px ${s.accent}`, backgroundColor: `${s.accent}0f` }
+                  : undefined
+              }
+            >
+              <span
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-lg"
+                style={{ backgroundColor: `${s.accent}1a` }}
+              >
+                {s.emoji}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-sm font-medium text-foreground">{s.name}</span>
+                  {active && (
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{ backgroundColor: s.accent, color: "#fff" }}
+                    >
+                      使用中
+                    </span>
+                  )}
+                </span>
+                <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                  {s.tagline}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {pending && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/[0.04] px-3 py-2">
+          <span className="flex-1 text-xs text-foreground">
+            应用「{AGENT_STYLE_LIST.find((s) => s.id === pending)?.name}」将覆盖当前 5 位人设，确认？
+          </span>
+          <Button size="sm" variant="ghost" onClick={() => setPending(null)} disabled={saving}>
+            取消
+          </Button>
+          <Button size="sm" onClick={() => applyStyle(pending)} disabled={saving}>
+            {saving ? "应用中…" : "应用"}
+          </Button>
+        </div>
+      )}
+
+      {saved && (
+        <p className="mt-2 text-xs font-medium text-emerald-600">已切换风格，主流程即时生效</p>
+      )}
+    </section>
   );
 }

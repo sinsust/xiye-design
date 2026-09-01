@@ -34,6 +34,7 @@ export const agentSettings = sqliteTable(
     role: text("role").notNull(),
     name: text("name").notNull(),
     avatarUrl: text("avatar_url"),
+    styleId: text("style_id"),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
   },

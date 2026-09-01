@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowStore } from "@/lib/store/flow-store";
-import { personaPayload } from "../agents-store";
+import { personaPayload, useCurrentStyle } from "../agents-store";
 import {
   interpretIntentSmart,
   applyIntentRecommendation,
@@ -75,6 +75,7 @@ export function ChatStream({
   const [cancelled, setCancelled] = useState(false);
   const startedRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const style = useCurrentStyle();
   // F0-A：幂等 operationId（同一操作重试复用）+ 可取消的 AbortController
   const opIdRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
@@ -347,7 +348,7 @@ export function ChatStream({
             <div className="mb-5 text-center">
               <h2 className="text-2xl font-semibold text-foreground">今天想做什么产品？</h2>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                用一句话描述想法，老鸨子会陪你聊清楚，再召集后宫智囊团给出建议。
+                用一句话描述想法，{style.hintText}
               </p>
             </div>
             <textarea
@@ -443,7 +444,7 @@ export function ChatStream({
           <div className="flex justify-start">
             <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-border bg-background px-3.5 py-3 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin text-primary" />
-              {consulting ? "后宫智囊团会诊中…" : "老鸨子正在思考…"}
+              {consulting ? style.consultingText : `${style.moderatorTitle}正在思考…`}
             </div>
           </div>
         )}

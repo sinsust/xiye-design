@@ -11,6 +11,7 @@ import {
   type ProductBrief,
 } from "@/lib/ai-discover";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
+import { getStyle } from "@/lib/agent-styles";
 
 export const runtime = "nodejs";
 
@@ -71,7 +72,12 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const pay = await discover(messages, brief, apiKey, moderatorName(body?.agents));
+      const pay = await discover(
+        messages,
+        brief,
+        apiKey,
+        moderatorName(body?.agents) ?? getStyle(body?.styleId).moderatorTitle,
+      );
       const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
       return NextResponse.json({ ...pay, flowMeta: meta });
     } catch (err) {

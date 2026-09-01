@@ -40,6 +40,7 @@ export const agentSettings = pgTable(
     role: text("role").notNull(),
     name: text("name").notNull(),
     avatarUrl: text("avatar_url"),
+    styleId: text("style_id"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
   },

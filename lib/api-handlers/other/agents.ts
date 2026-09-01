@@ -12,10 +12,12 @@ const ROLES = ["moderator", "pm", "architect", "designer", "guard"] as const;
 const itemSchema = z.object({
   role: z.enum(ROLES),
   name: z.string().trim().min(1).max(30),
-  avatarUrl: z.union([z.string().trim().min(1).max(1000), z.null()]).optional(),
+  avatarUrl: z.union([z.string().trim().min(1).max(50000), z.null()]).optional(),
 });
 const putSchema = z.object({
   agents: z.array(itemSchema).max(8),
+  // 当前选中的风格 id（与 lib/agent-styles.ts 的 AgentStyleId 对齐）
+  styleId: z.string().trim().min(1).max(20).optional(),
 });
 
 export async function GET() {
@@ -24,7 +26,12 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const rows = await db
-    .select({ role: agentSettings.role, name: agentSettings.name, avatarUrl: agentSettings.avatarUrl })
+    .select({
+      role: agentSettings.role,
+      name: agentSettings.name,
+      avatarUrl: agentSettings.avatarUrl,
+      styleId: agentSettings.styleId,
+    })
     .from(agentSettings)
     .where(eq(agentSettings.userId, user.sub));
   return NextResponse.json({ agents: rows });
@@ -41,6 +48,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
   const now = Date.now();
+  const styleId = parsed.data.styleId ?? null;
   await Promise.all(
     parsed.data.agents.map((item) =>
       db
@@ -50,6 +58,7 @@ export async function PUT(req: NextRequest) {
           role: item.role,
           name: item.name,
           avatarUrl: item.avatarUrl ?? null,
+          styleId,
           createdAt: now,
           updatedAt: now,
         })
@@ -58,6 +67,7 @@ export async function PUT(req: NextRequest) {
           set: {
             name: item.name,
             avatarUrl: item.avatarUrl ?? null,
+            styleId,
             updatedAt: now,
           },
         }),
