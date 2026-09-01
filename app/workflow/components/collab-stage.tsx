@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowRight,
@@ -16,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChatStream } from "./chat-stream";
 import { type AgentId } from "../agents";
-import { personaPayload, useAgent, useAgentList } from "../agents-store";
+import { personaPayload, useAgent, useAgentList, useCurrentStyle } from "../agents-store";
 import {
   AgentAvatar,
   AgentStatusBadge,
@@ -562,11 +563,46 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   const productBrief = useFlowStore((s) => s.productBrief);
   const setPanelOutput = useFlowStore((s) => s.setPanelOutput);
   const rounds = messages.filter((m) => m.role === "user").length;
+  const style = useCurrentStyle();
 
   // —— F1-A：产品创意 Brief + 完成度 ——
   const conceptBrief = useFlowStore((s) => s.conceptBrief);
   const setConceptBrief = useFlowStore((s) => s.setConceptBrief);
   const savedProjectId = useFlowStore((s) => s.savedProjectId);
+  const router = useRouter();
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [saveDraftError, setSaveDraftError] = useState<string | null>(null);
+  // P1-①：本地草稿（未保存项目）时，给收敛链一个显式解锁入口，替代静默锁死
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    setSaveDraftError(null);
+    try {
+      const store = useFlowStore.getState();
+      const snap = store.captureFlowSnapshot();
+      const brief = store.productBrief;
+      const name =
+        brief?.name || store.projectInfo?.projectName || brief?.vision?.slice(0, 40) || "未命名项目";
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, data: snap }),
+      });
+      if (res.status === 401) {
+        router.push("/login?redirect=/workflow");
+        return;
+      }
+      if (!res.ok) {
+        setSaveDraftError("保存失败，请稍后重试");
+        return;
+      }
+      const j = await res.json().catch(() => null);
+      if (j?.project?.id) store.setSavedProjectId(j.project.id);
+    } catch {
+      setSaveDraftError("保存失败，请稍后重试");
+    } finally {
+      setSavingDraft(false);
+    }
+  };
   const readiness = getConceptReadiness(conceptBrief);
   const [confirmForce, setConfirmForce] = useState(false);
   const conceptSyncingRef = useRef(false);
@@ -1285,6 +1321,27 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
         onBlueprintRebuild={handleBlueprintRebuild}
         onBlueprintRestore={handleBlueprintRestore}
       />
+      {/* P1-①：匿名（本地草稿）用户在收敛链前的显式引导，替代静默锁死 */}
+      {!savedProjectId && conceptBrief && (
+        <div className="flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <div className="space-y-0.5">
+              <p className="font-medium text-foreground">当前为本地草稿</p>
+              <p className="text-xs text-muted-foreground">
+                保存项目后可自动生成完整链路：核心体验旅程 · 页面地图 · 界面规格 · 可点击原型。
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 pl-6">
+            <Button size="sm" className="gap-1.5" onClick={handleSaveDraft} disabled={savingDraft}>
+              {savingDraft ? <LoaderCircle className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
+              {savingDraft ? "保存中…" : "保存项目解锁链路"}
+            </Button>
+            {saveDraftError && <span className="text-xs text-destructive">{saveDraftError}</span>}
+          </div>
+        </div>
+      )}
       {/* F2-B：核心体验旅程（蓝图确认后自动收敛；状态条 + 抽屉，默认不占对话主体） */}
       {(blueprint?.status === "confirmed" || (journey && journey.version > 0)) && (
         <JourneyPanel
@@ -1366,12 +1423,12 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
           />
         </div>
 
-        {/* 右列：后宫智囊团产出流（独立滚动） */}
+        {/* 右列：{style.framing}产出流（独立滚动） */}
         <Card className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 p-0 shadow-sm xl:col-start-2">
           <CardHeader className="shrink-0 px-3 py-2">
             <div className="flex items-center gap-2">
               <FileText className="size-4 text-primary" />
-              <CardTitle className="text-base">后宫智囊团</CardTitle>
+              <CardTitle className="text-base">{style.framing}</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 px-3 pb-3">
@@ -1449,7 +1506,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
               </span>
-              {consulting ? "后宫智囊团会诊中" : "协同生成方案"}
+              {consulting ? style.consultingText : "协同生成方案"}
             </div>
             {consulting && (
               <div className="flex items-center gap-2">

@@ -28,6 +28,12 @@ import { RefineStage } from "./components/refine-stage";
 import { BuildStage } from "./components/build-stage";
 import { DeliverStage } from "./components/deliver-stage";
 import { LeaveDialog } from "./components/leave-dialog";
+
+// 阶段 ↔ store.currentStep（老 /flow 的 1..4）双向映射。历史遗留顺序，语义不可改，
+// 故抽成命名常量，消除散落多处的魔法数组错位（P2-⑥ 工程债清理）。
+const ACTIVE_TO_CURRENT_STEP: number[] = [1, 3, 2, 4]; // active 0..3 → currentStep 1..4
+const CURRENT_STEP_TO_ACTIVE: Record<number, number> = { 1: 0, 2: 2, 3: 1, 4: 3 };
+const CURRENT_STEP_TO_STEP_ID: Record<number, string> = { 1: "collab", 2: "build", 3: "refine", 4: "deliver" };
 import { useFlowStore } from "@/lib/store/flow-store";
 import { coerceConceptBrief } from "@/lib/flow-concept";
 import { useAgentsStore } from "./agents-store";
@@ -54,14 +60,14 @@ export default function FlowV2Page() {
     } else {
       // 无显式 step 参数：从持久化的 store.currentStep（1..4）反推阶段，刷新/重开可续
       const cs = useFlowStore.getState().currentStep ?? 1;
-      const map: Record<number, number> = { 1: 0, 2: 2, 3: 1, 4: 3 };
+      const map = CURRENT_STEP_TO_ACTIVE;
       setActive(map[Math.min(4, Math.max(1, cs))] ?? 0);
     }
   }, []);
 
   // 阶段 ↔ store.currentStep 双向同步，持久化以便刷新/重开后回到同一阶段
   useEffect(() => {
-    const map = [1, 3, 2, 4]; // active 0..3 → store currentStep 1..4
+    const map = ACTIVE_TO_CURRENT_STEP; // active 0..3 → store currentStep 1..4
     useFlowStore.setState({ currentStep: map[active] });
   }, [active]);
 
@@ -92,7 +98,7 @@ export default function FlowV2Page() {
         useFlowStore.setState(st);
         useFlowStore.getState().setSavedProjectId(pid);
         // 旧 currentStep 1..4 → 新 4 阶段（1 协同 / 2 搭建 / 3 完善 / 4 交付）
-        const map: Record<number, number> = { 1: 0, 2: 2, 3: 1, 4: 3 };
+        const map = CURRENT_STEP_TO_ACTIVE;
         const cs = Math.min(4, Math.max(1, Number(st.currentStep ?? 1)));
         setActive(map[cs] ?? 0);
         if (!cancelled) window.history.replaceState({}, "", "/workflow");
@@ -251,7 +257,7 @@ export default function FlowV2Page() {
         const sp = new URLSearchParams(window.location.search);
         sp.set("pid", String(pid2));
         const cs2 = store.currentStep ?? 1;
-        const stepIdMap: Record<number, string> = { 1: "collab", 2: "build", 3: "refine", 4: "deliver" };
+        const stepIdMap = CURRENT_STEP_TO_STEP_ID;
         sp.set("step", stepIdMap[Math.min(4, Math.max(1, cs2))] ?? "collab");
         history.replaceState(null, "", `${window.location.pathname}?${sp.toString()}`);
       }

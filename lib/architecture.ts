@@ -3,6 +3,7 @@
 
 import { ARCHITECTURES, FALLBACK_ARCHITECTURE, type ArchitectureKnowledge } from "@/data/architectures";
 import { SKELETON_PAGE_MAP } from "@/data/skeletons";
+import type { ScreenMap } from "@/lib/flow-screen-map";
 
 export function resolveArchitecture(
   stackId: string | null | undefined,
@@ -112,6 +113,7 @@ export function buildArchitectureMarkdown(
   projectTypeName: string | null,
   featureSummary: string[],
   blueprint: { pageSlug: string; componentId: string }[],
+  screenMap?: ScreenMap | null,
 ): string {
   const { kb, usedFallback } = resolveArchitecture(stackId);
   const mapped = mapPagesToLayers(kb, blueprint);
@@ -176,6 +178,29 @@ export function buildArchitectureMarkdown(
   if (projectTypeName) lines.push(`- 项目类型：${projectTypeName}`);
   if (featureSummary.length) lines.push(`- 核心能力：${featureSummary.join("、")}`);
   lines.push("");
+
+  // 8. 信息架构（协同收敛产出）：来自 collab 阶段「信息架构收敛」，是产品真实页面结构的权威来源
+  if (screenMap && screenMap.screens.length) {
+    const esc = (v?: string) => (v ?? "").replace(/\|/g, "/").replace(/\n/g, " ");
+    lines.push("## 8. 信息架构（协同收敛产出）");
+    lines.push("");
+    lines.push("> 以下页面与跳转来自协同阶段「信息架构收敛」产出，是产品真实结构的权威来源；完整页面地图与跳转决策详见交付包 `docs/INFORMATION_ARCHITECTURE.md`。");
+    lines.push("");
+    lines.push("| 页面 | 类型 | 使命 | 入口 | 出口 |");
+    lines.push("| --- | --- | --- | --- | --- |");
+    for (const s of screenMap.screens.slice(0, 30)) {
+      lines.push(`| **${esc(s.name)}** | ${esc(s.type)} | ${esc(s.purpose)} | ${s.entryPoints.length ? s.entryPoints.map(esc).join("、") : "主入口"} | ${s.exitPaths.map(esc).join("、") || "—"} |`);
+    }
+    if (screenMap.navigation.length) {
+      lines.push("");
+      lines.push("**关键跳转**：");
+      for (const n of screenMap.navigation.slice(0, 20)) {
+        lines.push(`- ${esc(n.action)}：${esc(n.fromScreenId)} → ${esc(n.toScreenId)}${n.condition ? `（条件：${esc(n.condition)}）` : ""}`);
+      }
+    }
+    lines.push("");
+  }
+
   lines.push("> 此架构为知识库确定性推导；可回到骨架工作台用「AI 细化」让大模型按具体项目复核强化。");
   lines.push("");
   return lines.join("\n");

@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { useFlowStore, type FlowState } from "@/lib/store/flow-store";
 import { useShallow } from "zustand/react/shallow";
 import { useSkeletonStore } from "@/lib/skeleton-store";
+import { getStyleId } from "@/app/workflow/agents-store";
 import { generateProject, buildProjectZipFiles, type GeneratedProject } from "@/lib/project-generator";
 import { buildZip, downloadBlob } from "@/lib/zip";
 import { verifySeed, type SeedVerifyReport } from "@/lib/seed-verify";
@@ -132,7 +133,8 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
   const [copied, setCopied] = useState<ItemKey | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [project, setProject] = useState<GeneratedProject | null>(null);
-  const [genState, setGenState] = useState<"idle" | "generating" | "done">("idle");
+  const [genState, setGenState] = useState<"idle" | "generating" | "done" | "error">("idle");
+  const [genError, setGenError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [promptOpen, setPromptOpen] = useState(false);
@@ -174,26 +176,33 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
 
   const generateAll = useCallback(() => {
     if (!hasData) return;
+    setGenError(null);
     setGenState("generating");
     // 让出主线程一帧：generateProject 需同步聚合（含 seed 工程文件生成），避免阻塞首帧渲染
     setTimeout(() => {
-      const raw = useFlowStore.getState();
-      const adapted = {
-        ...raw,
-        projectInfo: {
-          projectName:
-            (productBrief?.name as string | null) ?? raw.projectInfo?.projectName ?? "未命名产品",
-          projectDescription:
-            (productBrief?.description as string | null) ?? raw.projectInfo?.projectDescription ?? null,
-          gitRepoUrl: raw.projectInfo?.gitRepoUrl ?? null,
-        },
-      } as FlowState;
-      // 把 builder 里 AI 改写的文案（skeleton-store）带入整站 ZIP 导出
-      const content = useSkeletonStore.getState().content;
-      const p = generateProject(adapted, content);
-      setProject(p);
-      setGenState("done");
-      if (activeRef.current === "zip" || !project) setActive("zip");
+      try {
+        const raw = useFlowStore.getState();
+        const adapted = {
+          ...raw,
+          projectInfo: {
+            projectName:
+              (productBrief?.name as string | null) ?? raw.projectInfo?.projectName ?? "未命名产品",
+            projectDescription:
+              (productBrief?.description as string | null) ?? raw.projectInfo?.projectDescription ?? null,
+            gitRepoUrl: raw.projectInfo?.gitRepoUrl ?? null,
+          },
+        } as FlowState;
+        // 把 builder 里 AI 改写的文案（skeleton-store）带入整站 ZIP 导出
+        const content = useSkeletonStore.getState().content;
+        // P2-④：把当前选中的「角色风格」透传到收敛链 spec 文档（语气与风格一致）
+        const p = generateProject(adapted, content, getStyleId());
+        setProject(p);
+        setGenState("done");
+        if (activeRef.current === "zip" || !project) setActive("zip");
+      } catch (e) {
+        setGenError(e instanceof Error ? e.message : "生成失败，请稍后重试");
+        setGenState("error");
+      }
     }, 30);
   }, [hasData, productBrief]);
 
@@ -464,6 +473,15 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
                 <LoaderCircle className="size-8 animate-spin text-primary" />
                 <p className="text-sm">正在聚合工程产物…</p>
               </div>
+            ) : genState === "error" ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                <AlertCircle className="size-8 text-destructive" />
+                <p className="text-sm font-medium text-foreground">生成失败</p>
+                <p className="max-w-xs text-xs text-muted-foreground">{genError ?? "生成过程中出现异常，请稍后重试"}</p>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={generateAll} disabled={!hasData}>
+                  <RefreshCw className="size-4" /> 重试
+                </Button>
+              </div>
             ) : !project ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
                 <Rocket className="size-8 opacity-40" />
@@ -581,7 +599,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
             >
               {genState === "generating" ? (
                 <LoaderCircle className="size-4 animate-spin" />
-              ) : genState === "done" ? (
+              ) : genState === "error" || genState === "done" ? (
                 <RefreshCw className="size-4" />
               ) : (
                 <Rocket className="size-4" />

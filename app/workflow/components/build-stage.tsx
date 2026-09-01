@@ -46,6 +46,7 @@ import { VISUAL_STYLES } from "@/data/visual-styles";
 import { ComponentPreview, styleVars } from "@/app/builder/previews";
 import { briefToNarrative, type ProductBrief } from "@/lib/ai-discover";
 import type { ProductPage } from "@/lib/ai-intent";
+import type { ScreenMap } from "@/lib/flow-screen-map";
 import type { VisualStyle } from "@/data/visual-styles";
 import { Workspace } from "./workspace";
 
@@ -72,11 +73,11 @@ interface BuildPageItem {
   path?: string;
   description: string;
   skeleton: SkeletonPage;
-  source: "product" | "skeleton";
+  source: "product" | "skeleton" | "screenMap";
 }
 
-function pickSkeletonPage(productPage: ProductPage): SkeletonPage {
-  const text = `${productPage.name} ${productPage.description ?? ""} ${productPage.path ?? ""}`.toLowerCase();
+function pickSkeletonPage(page: { name: string; description?: string | null; path?: string }): SkeletonPage {
+  const text = `${page.name} ${page.description ?? ""} ${page.path ?? ""}`.toLowerCase();
   const rules: [string[], string][] = [
     [["登录", "注册", "auth", "signin", "signup"], "auth"],
     [["定价", "价格", "套餐", "pricing"], "pricing"],
@@ -161,6 +162,32 @@ function buildPagesFromBrief(brief: ProductBrief | null): BuildPageItem[] {
   }));
 }
 
+/** 把页面名转成稳定 slug（用作页面 id / 路由片段）。中文保留，英文转小写连字符。 */
+function slugify(name: string, fallback: string): string {
+  const s = name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\w一-龥-]/g, "");
+  return s || fallback;
+}
+
+/**
+ * P2-⑤：把协同阶段收敛出的信息架构（screenMap）直接作为「页面搭建」的初始页面来源。
+ * 这样用户在 collab 已收敛出页面结构后，到 build 阶段无需手动重拼一遍（此前 screenMap 与
+ * pageBlueprint 是平行两套页面模型、互不种子）。非破坏性：仅当 productBrief.pages 缺失时回退启用。
+ */
+function buildPagesFromScreenMap(sm: ScreenMap | null): BuildPageItem[] {
+  if (!sm?.screens?.length) return [];
+  return sm.screens.map((s, i) => {
+    const slug = slugify(s.name, `page-${i + 1}`);
+    return {
+      id: slug,
+      name: s.name,
+      path: `/${slug}`,
+      description: s.purpose,
+      skeleton: pickSkeletonPage({ name: s.name, description: s.purpose, path: "" }),
+      source: "screenMap",
+    };
+  });
+}
+
 /** 区块内联预览：选中某个区块时，在卡片正下方就地渲染其变体效果（无需滚回顶部） */
 export function LiveVariantPreview({
   componentId,
@@ -212,13 +239,27 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
   const visualStyleId = useFlowStore((s) => s.visualStyle);
   const techStackId = useFlowStore((s) => s.techStack);
   const productBrief = useFlowStore((s) => s.productBrief);
+  const screenMap = useFlowStore((s) => s.screenMap);
   const projectName = useFlowStore((s) => s.projectInfo?.projectName ?? null);
   const projectType = useFlowStore((s) => s.projectType);
   const addBlueprintComponent = useFlowStore((s) => s.addBlueprintComponent);
   const removeBlueprintComponent = useFlowStore((s) => s.removeBlueprintComponent);
   const setPreviewContent = useSkeletonStore((s) => s.setContent);
 
-  const buildPages = useMemo(() => buildPagesFromBrief(productBrief), [productBrief]);
+  // 页面来源三选：① productBrief.pages（LLM 生成，权威）② screenMap.screens（协同收敛信息架构，回退）
+  // ③ SKELETON_PAGES（兜底）。P2-⑤ 让协同阶段收敛的页面直接进入搭建，避免重复拼装。
+  const buildPages = useMemo(() => {
+    if (productBrief?.pages?.length) return buildPagesFromBrief(productBrief);
+    if (screenMap?.screens?.length) return buildPagesFromScreenMap(screenMap);
+    return SKELETON_PAGES.map((p) => ({
+      id: p.id,
+      name: p.name,
+      path: `/${p.id}`,
+      description: p.description,
+      skeleton: p,
+      source: "skeleton",
+    }));
+  }, [productBrief, screenMap]);
 
   const [activePageId, setActivePageId] = useState<string | null>(buildPages[0]?.id ?? null);
   const [activeComp, setActiveComp] = useState<string | null>(null);

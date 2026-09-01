@@ -516,6 +516,21 @@ export const useFlowStore = create<FlowState>()(
         if (cb && (!Array.isArray(cb.decisions) || !Array.isArray(cb.openCriticalQuestions))) {
           useFlowStore.setState({ conceptBrief: coerceConceptBrief(cb) });
         }
+        // P2-⑥ 工程债修复：收敛链 5 对象此前无再水合迁移兜底，旧快照若缺关键数组字段，
+        // 会在消费侧读取 .length/.map 时崩溃。此处做最小防御降级——非 null 但主标识数组
+        // 缺失/非数组时整体置 null（最坏仅该层需重新生成，不崩渲染）。
+        const conv = state as (typeof state & Record<string, unknown>) | undefined;
+        if (conv) {
+          const guard = (key: "blueprint" | "journey" | "screenMap" | "screenSpec" | "prototype", arr: string) => {
+            const o = conv[key] as Record<string, unknown> | null;
+            if (o && !Array.isArray(o[arr])) (conv as Record<string, unknown>)[key] = null;
+          };
+          guard("blueprint", "targetUsers");
+          guard("journey", "steps");
+          guard("screenMap", "screens");
+          guard("screenSpec", "screens");
+          guard("prototype", "screens");
+        }
       },
       // 持久化：设计 token + Step 1 探索式访谈会话（避免每次进入都重新生成）。
       // 注意：apiKeys 属用户私密凭据，一律不持久化（生成 .env.local 是一次性动作，刷新后需重填）。

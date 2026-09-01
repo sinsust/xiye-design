@@ -31,6 +31,7 @@ import { buildGuardNormsMd } from "@/lib/guard-norms";
 import { resolvePositioning, inferProjectTypeName, inferFeatureDetails } from "@/lib/project-narrative";
 import type { IntentNarrative } from "@/lib/ai-intent";
 import { deriveFeaturePages } from "@/lib/ai-intent";
+import { buildConvergenceDocs } from "@/lib/flow-export";
 
 export interface FeatureCard {
   name: string;
@@ -639,6 +640,56 @@ export function buildPrdMd(
     })
     .join("\n") || "- （暂无 P0 页面，见第 4.2 节优先级）";
 
+  // 收敛链回填（P0 Batch B）：把协同阶段产出的 screenMap / screenSpec 引入 PRD，
+  // 使主文档也引用链，而非仅作为 docs/ 下独立 spec。字段来自 state.screenMap / state.screenSpec（可能 null）。
+  const escMd = (v?: string) => (v ?? "").replace(/\|/g, "/").replace(/\n/g, " ");
+  let screenMapSection = "";
+  if (state.screenMap && state.screenMap.screens.length) {
+    const m = state.screenMap;
+    const rows = m.screens
+      .slice(0, 40)
+      .map(
+        (s) =>
+          `| **${escMd(s.name)}** | ${escMd(s.type)} | ${escMd(s.purpose)} | ${s.entryPoints.length ? s.entryPoints.map(escMd).join("、") : "主入口"} | ${s.exitPaths.map(escMd).join("、") || "—"} |`,
+      )
+      .join("\n");
+    const nav = m.navigation.length
+      ? m.navigation
+          .slice(0, 20)
+          .map((n) => `- ${escMd(n.action)}：${escMd(n.fromScreenId)} → ${escMd(n.toScreenId)}${n.condition ? `（条件：${escMd(n.condition)}）` : ""}`)
+          .join("\n")
+      : "";
+    screenMapSection = `
+### 4.4 信息架构（协同收敛产出）
+
+> 以下来自协同阶段「信息架构收敛」，是产品真实页面结构的权威来源；完整页面地图与跳转决策详见交付包 \`docs/INFORMATION_ARCHITECTURE.md\`。
+
+| 页面 | 类型 | 使命 | 入口 | 出口 |
+| --- | --- | --- | --- | --- |
+${rows}
+${nav ? `\n**关键跳转**：\n${nav}\n` : ""}`;
+  }
+  let screenSpecSection = "";
+  if (state.screenSpec && state.screenSpec.screens.length) {
+    const blocks = state.screenSpec.screens
+      .slice(0, 30)
+      .map((sc) => {
+        const inter = sc.interactions
+          .slice(0, 8)
+          .map((i) => `- **${escMd(i.trigger)}** → 意图：${escMd(i.userIntent)}；系统「${escMd(i.systemResponse)}」${i.nextScreenId ? `；跳转 ${escMd(i.nextScreenId)}` : ""}${i.requiresConfirmation ? "；需二次确认" : ""}`)
+          .join("\n");
+        return `#### ${escMd(sc.name)}（${escMd(sc.type)}）\n- 主结果：${escMd(sc.primaryOutcome)}\n- 交互契约：\n${inter}`;
+      })
+      .join("\n\n");
+    screenSpecSection = `
+### 4.5 界面规格契约摘要
+
+> 以下为协同阶段「界面规格契约」要点；完整信息层级 / 状态设计 / 数据需求 / 开放问题详见交付包 \`docs/SCREEN_SPEC.md\`。
+
+${blocks}
+`;
+  }
+
   // 5. 用户核心旅程：由 P0 页面按序串联（P0 → P0 → P1 的合理推进顺序）
   const p0Pages = featurePages.filter((p) => p.priority === "P0");
   const p1Pages = featurePages.filter((p) => p.priority === "P1");
@@ -652,6 +703,22 @@ export function buildPrdMd(
           })
           .join("\n")
       : "- 进入首页/登录页，沿导航进入核心操作并完成一次闭环";
+
+  // 6. 用户核心旅程（协同收敛优先）：若已生成 ExperienceJourney，用它替换粗糙 P0/P1 串联
+  let coreJourneySection: string;
+  if (state.journey && state.journey.steps.length) {
+    const j = state.journey;
+    const steps = [...j.steps].sort((a, b) => a.order - b.order);
+    const stepLines = steps
+      .map(
+        (s) =>
+          `- **步骤 ${s.order} · ${escMd(s.userGoal)}**：用户「${escMd(s.userAction)}」→ 系统「${escMd(s.systemBehavior)}」→ 可见「${escMd(s.visibleOutcome)}」${s.frictionOrRisk ? `（风险：${escMd(s.frictionOrRisk)}）` : ""}`,
+      )
+      .join("\n");
+    coreJourneySection = `> 以下旅程来自协同阶段「用户体验旅程收敛」产出（由 AI 结合愿景与核心功能推导），是端到端可跑通的关键路径；完整旅程步骤、关键时刻与边界详见交付包 \`docs/USER_JOURNEY.md\`。\n\n- 首要场景：用户「${escMd(j.primaryScenario.user)}」因「${escMd(j.primaryScenario.trigger)}」期望「${escMd(j.primaryScenario.desiredOutcome)}」\n${stepLines}`;
+  } else {
+    coreJourneySection = flowRows;
+  }
 
   // 6. 关键数据模型：由核心功能推导候选实体与建议字段（AI 开发可细化）
   const entityRows = featuresForPrd
@@ -762,6 +829,7 @@ ${featureRows4}
 ### 4.3 页面验收标准（P0 页逐页给出，供 AI 开发按此自检）
 
 ${pageAcRows}
+${screenMapSection}${screenSpecSection}
 
 ## 5. 功能验收标准
 
@@ -773,7 +841,7 @@ ${acceptanceRows}
 
 > 把 P0/P1 页面串成一条可端到端跑通的关键旅程，是「AI 能对着开发不跑偏」的骨架。
 
-${flowRows}
+${coreJourneySection}
 
 ## 7. 关键数据模型（候选实体与建议字段）
 
@@ -835,7 +903,7 @@ export function buildPrdMdForState(state: FlowState): string {
   return buildPrdMd(state, style, narrative);
 }
 
-export function generateProject(state: FlowState, content?: ContentOverride): GeneratedProject {
+export function generateProject(state: FlowState, content?: ContentOverride, styleId?: string | null): GeneratedProject {
   const { style, usedFallback } = resolveStyle(state.visualStyle);
   const projectName =
     state.projectInfo?.projectName ||
@@ -857,6 +925,7 @@ export function generateProject(state: FlowState, content?: ContentOverride): Ge
     pTypeName,
     features.map((f) => f.name),
     state.pageBlueprint,
+    state.screenMap,
   );
 
   const consistency = validateExport(state);
@@ -891,6 +960,10 @@ export function generateProject(state: FlowState, content?: ContentOverride): Ge
       { filename: "GUARD_NORMS.md", title: "开发边界规范", content: buildGuardNormsMd() },
       // 三件套-A：AI 编码工具打开仓库根即自动读取的顶层约定（zip 根目录）
       ...buildAgentMdFiles(state, "").map((f) => ({ filename: f.path, title: "AI 开发约定", content: f.content })),
+      // P0 修复：把 collab 收敛链（蓝图/旅程/页面地图/界面规格/原型）接进交付物，
+      // 否则用户在协同阶段审阅确认的产物在交付门被整体丢弃（此前 project-generator 完全不消费这 5 层）。
+      // P2-④：透传所选角色风格，使 spec 文档顶部带「收敛视角」注脚，语气与风格一致。
+      ...buildConvergenceDocs(state, styleId),
     ],
     xiyeConfig: buildXiyeConfig(state, style),
     seed,
