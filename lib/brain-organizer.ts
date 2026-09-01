@@ -86,6 +86,8 @@ export interface OrganizedNote {
   insights?: string[];
   // 深度重写后的规范正文（Markdown）；空字符串表示未重写（如代码片段 / 启发式兜底）
   rewritten: string;
+  // 本次整理是否实际走了 AI 模型（false = 本地启发式兜底，前端据此提示）
+  aiUsed?: boolean;
 }
 
 // 代码片段识别：命中足够多代码特征则判定为代码片段
@@ -958,6 +960,7 @@ export async function organizeNote(
         keyPoints: ai.keyPoints?.length ? ai.keyPoints : base.keyPoints,
         insights: ai.insights?.length ? ai.insights : base.insights,
         rewritten: ai.rewritten || "",
+        aiUsed: true,
       };
       // 行动项日期统一规范化：相对时间按今天换算，错年份/过去过久的清空
       merged.actionItems = normalizeActionDates(merged.actionItems);
@@ -978,7 +981,7 @@ export async function organizeNote(
     }
   }
   const kw = suggestRelated(content, existing);
-  return { ...base, related: kw.related, relatedReason: kw.reason, actionItems: normalizeActionDates(base.actionItems) };
+  return { ...base, related: kw.related, relatedReason: kw.reason, actionItems: normalizeActionDates(base.actionItems), aiUsed: false };
 }
 
 // ---------------- 收件箱意图分类（第九阶段） ----------------

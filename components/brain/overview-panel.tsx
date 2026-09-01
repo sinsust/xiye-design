@@ -73,6 +73,7 @@ interface OverviewReport {
     }[];
   };
   source?: { id: string; title: string; category: string; summary: string }[];
+  aiUsed?: boolean;
 }
 
 interface OverviewWeekActionItem {
@@ -262,6 +263,17 @@ export function OverviewPanel(props: OverviewPanelProps) {
                 <CalendarClock className="size-3.5" />
               </span>
               本周周报
+              <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+                轻量成果摘要
+              </span>
+              {report?.aiUsed === false && (
+                <span
+                  className="rounded-[var(--radius)] bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-normal text-amber-700"
+                  title="未配置 LLM_MODEL_*（API Key / Base URL / Model ID 三者齐备才走 AI），已用本地启发式聚合，效果弱于 AI"
+                >
+                  未启用 AI 摘要
+                </span>
+              )}
             </h2>
             <Button variant="outline" size="sm" onClick={generateReport} disabled={reporting}>
               {reporting ? <Loader2 className="size-3 animate-spin" /> : <CalendarClock className="size-3" />}

@@ -429,6 +429,7 @@ export function buildNextWeekPlanBody(review: WeeklyReviewData): ProcessingPlanB
     confidence: 0.9,
     reasons: [`来源：${review.weekLabel} 周报复盘`],
     evidence: [],
+    aiUsed: false,
   };
 }
 

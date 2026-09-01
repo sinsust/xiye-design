@@ -180,7 +180,17 @@ export function SearchPanel({
             <div className="mb-2 max-h-40 space-y-1.5 overflow-y-auto">
               {qa.slice(-3).map((item, i) => (
                 <div key={i} className="rounded-md bg-card/70 p-2">
-                  <div className="text-xs font-medium text-foreground">{item.q}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-foreground">{item.q}</span>
+                    {item.semantic === false && (
+                      <span
+                        className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-normal text-amber-700"
+                        title="语义向量未启用（未配置 EMBEDDING_ENABLED 或模型不可用），已用关键词匹配"
+                      >
+                        关键词匹配
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-0.5 line-clamp-3 whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">{item.a}</div>
                   {item.sources.length > 0 && (
                     <div className="mt-1 flex flex-wrap items-center gap-1">

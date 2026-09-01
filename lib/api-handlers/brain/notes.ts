@@ -181,6 +181,23 @@ export async function PUT(req: NextRequest) {
     if (!Object.keys(patch).length) {
       return NextResponse.json({ error: "nothing_to_update" }, { status: 400 });
     }
+
+    // P2：标题/正文/摘要/标签任一变更 → 重算语义向量，避免检索向量陈旧（embed 失败不阻断）
+    const needsEmbed =
+      "title" in body || "content" in body || "summary" in body || "tags" in body;
+    if (needsEmbed) {
+      const prev = await getBrainNote(user.sub, id);
+      if (prev) {
+        const emb = await embedOne(
+          typeof body?.title === "string" ? body.title.trim() : prev.title,
+          typeof body?.content === "string" ? body.content : prev.content,
+          typeof body?.summary === "string" ? body.summary.trim() : prev.summary,
+          "tags" in body ? cleanArr(body.tags) : prev.tags ?? [],
+        );
+        if (emb) patch.embedding = JSON.stringify(emb);
+      }
+    }
+
     const note = await updateBrainNote(user.sub, id, patch);
     if (!note) return NextResponse.json({ error: "not_found" }, { status: 404 });
     await logBrainNoteAccess(note.id, "edit");

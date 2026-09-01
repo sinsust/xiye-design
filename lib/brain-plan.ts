@@ -103,6 +103,8 @@ export interface ProcessingPlanBody {
   confidence: number;
   reasons: string[];
   evidence: string[];
+  // 本次整理是否实际走了 AI 模型（false = 本地启发式兜底）
+  aiUsed: boolean;
 }
 
 /** 用户确认时提交的编辑（仅覆盖可视字段，note 内部的派生字段保持原始计划） */
@@ -201,6 +203,7 @@ export function buildProcessingPlanBody(
     version: PLAN_VERSION,
     rawContent,
     inputType: o.type,
+    aiUsed: o.aiUsed ?? false,
     title,
     category,
     summary: o.summary || cap(rawContent.replace(/\n+/g, " "), 60),

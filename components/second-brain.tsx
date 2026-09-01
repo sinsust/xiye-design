@@ -78,6 +78,7 @@ import { StructPreview } from "./brain/struct-preview";
 import { NoteCard } from "./brain/note-card";
 import { TaskCard } from "./brain/task-card";
 import { OverviewPanel } from "./brain/overview-panel";
+import { WeeklyReviewPanel } from "./brain/weekly-review-panel";
 import { SnippetsTab } from "./brain/workbench/snippets-tab";
 import { StrategiesTab } from "./brain/workbench/strategies-tab";
 import { KanbanTab } from "./brain/workbench/kanban-tab";
@@ -136,7 +137,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const [askMode, setAskMode] = useState<AskMode>("mixed");
-  const [qa, setQa] = useState<{ q: string; a: string; sources: AskSourceItem[] }[]>([]);
+  const [qa, setQa] = useState<{ q: string; a: string; sources: AskSourceItem[]; semantic?: boolean }[]>([]);
   // 编辑
   const [editing, setEditing] = useState<BrainNote | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -574,10 +575,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       next: string[];
     };
     source?: { id: string; title: string; category: string; summary: string }[];
+    aiUsed?: boolean;
   } | null>(null);
   const [reportError, setReportError] = useState(false);
   // 整理工作台
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [wPlanAiUsed, setWPlanAiUsed] = useState(false);
   const [raw, setRaw] = useState("");
   const [wTitle, setWTitle] = useState("");
   const [wCategory, setWCategory] = useState("随手记");
@@ -674,7 +677,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   // 列表来源过滤（全部 / 手动 / ima）
   const [sourceFilter, setSourceFilter] = useState<"all" | "manual" | "ima">("all");
   // 大脑工作台二级 Tab（记一笔 / 任务看板）
-  const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets" | "projects" | "table">("input");
+  const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets" | "projects" | "table" | "review">("input");
   // 最近活跃流是否全部展开
   const [activityShowAll, setActivityShowAll] = useState(false);
   // —— 第九阶段：顶层视图（首页=今日助理面板 / 工作台）+ 收件箱抽屉 ——
@@ -722,7 +725,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     if (tabMatch) {
       const t = tabMatch[1];
       if (t === "tasks") gotoTop("workbench", "kanban");
-      else if (t === "reviews" || t === "strategies") gotoTop("workbench", (t === "reviews" ? "input" : "strategies") as "input" | "strategies");
+      else if (t === "review") gotoTop("workbench", "review");
+      else if (t === "reviews") gotoTop("dashboard"); // 间隔复习 UI 在首页「待复习」
+      else if (t === "strategies") gotoTop("workbench", "strategies");
       else if (t === "projects") {
         if (projectMatch) setOpenProjectId(decodeURIComponent(projectMatch[1]));
         gotoTop("workbench", "projects");
@@ -987,6 +992,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setWLanguage(n.language ?? "");
     setWCode(n.codeContent ?? "");
     setWContent(typeof body.body === "string" && body.body.trim() ? body.body : (typeof body.rawContent === "string" ? body.rawContent : ""));
+    setWPlanAiUsed(body.aiUsed ?? false);
     setWStruct(null);
     // P5-A：项目预填 —— 有 id 直接用 id；仅给名称时，命中已有项目选中，否则记为待建名称
     const pid = body.suggestedProjectId ? String(body.suggestedProjectId) : "";
@@ -996,6 +1002,20 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setWPendingProjectName(pid || matched ? "" : pname);
     setWorkspaceOpen(true);
   };
+
+  /** 周复盘「生成下一周计划」：把已持久化的待确认计划灌入「记一笔」确认（不直接建任务） */
+  const handleUseReviewPlan = useCallback(
+    (planId: string, body: unknown) => {
+      const b = body as { rawContent?: string };
+      setRaw(b?.rawContent ?? "");
+      setWPlanId(planId);
+      setWNoPlan(false);
+      setDupWarning(null);
+      fillFromPlanBody(body);
+      gotoTop("workbench", "input");
+    },
+    [fillFromPlanBody, gotoTop],
+  );
 
   /** 恢复一条历史待确认草稿（刷新/重登后），重新填表并打开工作台 */
   const resumePending = async (id: string) => {
@@ -1138,6 +1158,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     setWKeyPoints([]);
     setWInsights([]);
     setWStruct(null);
+    setWPlanAiUsed(false);
     setWorkspaceOpen(false);
     refreshPendingPlans();
     loadTasks();
@@ -1289,7 +1310,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error);
       const sources: AskSourceItem[] = Array.isArray(data.sources) ? data.sources : [];
-      setQa((prev) => [...prev, { q, a: data.answer, sources }]);
+      setQa((prev) => [...prev, { q, a: data.answer, sources, semantic: data.semantic }]);
       setQuestion("");
     } catch {
       setQa((prev) => [...prev, { q, a: "问答失败，请稍后重试。", sources: [] }]);
@@ -1496,6 +1517,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             { v: "strategies" as const, label: "策略", icon: Target },
             { v: "snippets" as const, label: "代码片段", icon: Code2 },
             { v: "table" as const, label: "数据引擎", icon: Table2 },
+            { v: "review" as const, label: "复盘", icon: RotateCcw },
           ].map((i) => {
             const active = topView === "dashboard" ? i.v === "dashboard" : i.v === workTab;
             return (
@@ -1657,6 +1679,10 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         ) : workTab === "table" ? (
           <div key="view-table" className="animate-in fade-in duration-200 ease-out">
             <TableAnalysisPage />
+          </div>
+        ) : workTab === "review" ? (
+          <div key="view-review" className="animate-in fade-in duration-200 ease-out">
+            <WeeklyReviewPanel onUseAsPlan={handleUseReviewPlan} />
           </div>
         ) : (
         <div key="view-workbench" className="grid grid-cols-1 gap-6 animate-in fade-in duration-200 ease-out">
@@ -1878,6 +1904,18 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 <span className="rounded-[var(--radius)] bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
                   采纳前可编辑
                 </span>
+                {wPlanAiUsed ? (
+                  <span className="rounded-[var(--radius)] bg-emerald-500/10 px-2 py-0.5 text-[11px] font-normal text-emerald-600">
+                    AI 模型整理
+                  </span>
+                ) : (
+                  <span
+                    className="rounded-[var(--radius)] bg-amber-500/10 px-2 py-0.5 text-[11px] font-normal text-amber-700"
+                    title="未配置 LLM_MODEL_*（API Key / Base URL / Model ID 三者齐备才走 AI），已用本地启发式整理，效果弱于 AI"
+                  >
+                    本地启发式整理
+                  </span>
+                )}
               </div>
               <Button variant="ghost" size="sm" className="p-1" onClick={() => setWorkspaceOpen(false)} aria-label="关闭">
                 <X className="size-4" />

@@ -159,7 +159,7 @@ export async function generateWeeklyReport(
   notes: BrainNote[],
   now = Date.now(),
   opts?: { userId?: string },
-): Promise<{ report: WeeklyReport; source: BrainNote[] }> {
+): Promise<{ report: WeeklyReport; source: BrainNote[]; aiUsed: boolean }> {
   const { picked, weekStart, weekEnd } = filterByThisWeek(notes, now);
   const base = heuristicReport(picked, weekStart, weekEnd);
 
@@ -210,7 +210,7 @@ export async function generateWeeklyReport(
   }
 
   if (!picked.length && !taskStats) {
-    return { report: { ...base, summary }, source: picked };
+    return { report: { ...base, summary }, source: picked, aiUsed: false };
   }
 
   const apiKey = process.env.LLM_MODEL_API_KEY;
@@ -236,10 +236,10 @@ export async function generateWeeklyReport(
         taskStats,
         outcomeSummaries,
       };
-      return { report, source: picked };
+      return { report, source: picked, aiUsed: true };
     } catch {
-      return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked };
+      return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked, aiUsed: false };
     }
   }
-  return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked };
+  return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked, aiUsed: false };
 }

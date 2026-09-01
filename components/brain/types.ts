@@ -13,6 +13,8 @@ export interface QaItem {
   q: string;
   a: string;
   sources: AskSourceItem[];
+  // 本次问答是否启用了语义向量检索（false = 关键词匹配兜底），供前端标注
+  semantic?: boolean;
 }
 export interface SearchHits {
   noteHits: BrainNote[];
