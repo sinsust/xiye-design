@@ -46,11 +46,18 @@ export async function createServerSupabaseReadonly() {
  * 防串读由调用方在代码层用 userId 校验兜底（见 lib/table/session-persist.ts）。
  */
 export function createServerSupabaseService() {
-  return createServerClient(
-    supabaseEnv.url,
-    supabaseEnv.serviceRoleKey || supabaseEnv.anonKey,
-    { cookies: { getAll: () => [], setAll() {} } },
-  );
+  const key = supabaseEnv.serviceRoleKey;
+  if (!key) {
+    // 不静默回落 anon：anon 受 RLS 约束，回落后写入会被 42501 拒绝、又被上层
+    // catch 吞掉，表现为「部署成功但功能静默失效」。此处直接失败以暴露配置缺失。
+    throw new Error(
+      "缺少环境变量 SUPABASE_SERVICE_ROLE_KEY。service_role 客户端需绕过 RLS，" +
+        "回落 anon key 会被 RLS 拒绝并静默失败，请在部署环境补上该变量。",
+    );
+  }
+  return createServerClient(supabaseEnv.url, key, {
+    cookies: { getAll: () => [], setAll() {} },
+  });
 }
 
 /**

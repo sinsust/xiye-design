@@ -21,16 +21,36 @@ import { type CacheEntry, TTL_MS } from "./session-cache";
 const TABLE = "brain_table_sessions";
 let warned = false;
 
-/** Supabase 是否可用（只读 env，避免触发 required() 抛错） */
-function pgEnabled(): boolean {
-  return !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-}
-
 function warnOnce(msg: string): void {
   if (!warned) {
     console.warn(`[session-cache] Supabase 持久化不可用，降级为内存缓存：${msg}`);
     warned = true;
   }
+}
+
+/**
+ * L2 是否可用（只读 env，避免触发 required() 抛错）。
+ *
+ * 必须检查 SUPABASE_SERVICE_ROLE_KEY —— 本模块走 createServerSupabaseService()
+ * 用 service_role 绕过 RLS。若只检查 ANON_KEY，则在「配了 anon 但漏配
+ * service_role」的部署（例如 Vercel 只填了 NEXT_PUBLIC_* 变量）里会误判为可用，
+ * 随后请求被 RLS 拒（42501）→ 落入 catch → 静默降级内存，
+ * 跨实例 410 根因无法闭环且几乎无法排查。
+ * 因此此处凭据检查必须与实际使用的凭据严格一致，并在缺失时明确告警。
+ */
+function pgEnabled(): boolean {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    warnOnce("缺少 NEXT_PUBLIC_SUPABASE_URL");
+    return false;
+  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    warnOnce(
+      "缺少 SUPABASE_SERVICE_ROLE_KEY —— L2 需 service_role 绕过 RLS，" +
+        "请在部署环境（Vercel → Settings → Environment Variables）补上该变量",
+    );
+    return false;
+  }
+  return true;
 }
 
 /** 写入/更新一条会话（upsert，按 id 冲突覆盖） */
