@@ -336,7 +336,7 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
       {/* 遮罩 */}
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       {/* 抽屉 */}
-      <div className="relative flex h-full w-full max-w-[480px] flex-col bg-white shadow-2xl">
+      <div className="relative flex h-full w-full max-w-[480px] flex-col bg-card shadow-2xl">
         <div className="flex items-start gap-2 border-b border-border p-4">
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-sm font-semibold text-foreground">{data?.task.title ?? "加载中…"}</h3>
@@ -423,7 +423,7 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
                     <button
                       onClick={buildPlanFromOutcome}
                       disabled={planOpen}
-                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-white px-2 py-1.5 text-[11px] font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60"
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-card px-2 py-1.5 text-[11px] font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60"
                     >
                       {planOpen ? <Loader2 className="size-3 animate-spin" /> : <ArrowRight className="size-3" />}
                       根据该结果生成后续处理计划

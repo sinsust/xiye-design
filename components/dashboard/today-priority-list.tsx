@@ -18,14 +18,14 @@ export interface TodayPriorityListProps {
 export function TodayPriorityList({ items, onAction }: TodayPriorityListProps) {
   if (!items.length) {
     return (
-      <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-foreground">今天最重要的事</h2>
         <p className="mt-3 text-sm text-muted-foreground">🎉 目前没有需要优先处理的事项</p>
       </div>
     );
   }
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         今天最重要的事
         <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">

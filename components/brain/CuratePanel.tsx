@@ -198,7 +198,7 @@ export function CuratePanel({
               ).map(([action, label]) => (
                 <button
                   key={action}
-                  className="rounded border border-amber-300/70 bg-white px-2 py-0.5 text-[10px] text-amber-800 transition hover:border-amber-500 hover:bg-amber-100 disabled:opacity-50"
+                  className="rounded border border-amber-300/70 bg-card px-2 py-0.5 text-[10px] text-amber-800 transition hover:border-amber-500 hover:bg-amber-100 disabled:opacity-50"
                   disabled={pendingId === "stale"}
                   onClick={(ev) => {
                     ev.stopPropagation();

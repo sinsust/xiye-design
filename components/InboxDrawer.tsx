@@ -282,7 +282,7 @@ export function InboxDrawer({
         }
       >
         {/* 头部 */}
-        <div className="flex items-center justify-between border-b border-border/70 bg-white px-5 py-3.5">
+        <div className="flex items-center justify-between border-b border-border/70 bg-card px-5 py-3.5">
           <div className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
             <Inbox className="size-4.5 text-primary" />
             收件箱
@@ -298,7 +298,7 @@ export function InboxDrawer({
         </div>
 
         {/* 批量输入 */}
-        <div className="border-b border-border/70 bg-white px-5 py-3">
+        <div className="border-b border-border/70 bg-card px-5 py-3">
           <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3">
             <textarea
               value={batchText}
@@ -334,7 +334,7 @@ export function InboxDrawer({
             </div>
           )}
           {items.map((item) => (
-            <div key={item.id} className="rounded-lg border border-border bg-white p-3.5 shadow-sm">
+            <div key={item.id} className="rounded-lg border border-border bg-card p-3.5 shadow-sm">
               {/* 意图 + 置信度 + 状态 */}
               <div className="mb-2 flex items-center gap-2">
                 <span className={"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium " + (INTENT_META[item.intent ?? "unknown"]?.cls)}>
@@ -552,7 +552,7 @@ export function InboxDrawer({
 
         {/* 底部批量操作 */}
         {actionableCount > 0 && (
-          <div className="flex items-center justify-between gap-2 border-t border-border/70 bg-white px-5 py-3">
+          <div className="flex items-center justify-between gap-2 border-t border-border/70 bg-card px-5 py-3">
             <span className="text-xs text-muted-foreground">{actionableCount} 条待处理</span>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => batchProcess("dismiss")}>

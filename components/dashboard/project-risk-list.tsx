@@ -12,7 +12,7 @@ export interface ProjectRiskListProps {
 export function ProjectRiskList({ risks, onOpenProject }: ProjectRiskListProps) {
   if (!risks.length) return null;
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <AlertTriangle className="size-4 text-red-500" />
         项目风险

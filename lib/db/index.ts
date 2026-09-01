@@ -4,6 +4,8 @@
 // 两个驱动均按需「动态 import」，确保 Vercel 构建期永远不会触碰 better-sqlite3 原生模块。
 // 业务代码只需 `import { db, users, projects } from "@/lib/db"`，无需关心底层方言。
 
+import { reconcilePgSchema } from "./pg-schema-reconcile";
+
 // Vercel 部署时数据库 URL 可能由不同集成自动注入，这里按优先级兜底识别：
 // 1) DATABASE_URL          —— 用户手动设置（推荐，可用 Supabase 池化串）
 // 2) POSTGRES_URL          —— Vercel 自带 Postgres Storage（池化）
@@ -100,6 +102,16 @@ if (isPg) {
   userFeishuConfig = schemaPg.userFeishuConfig;
   flowOpLedger = schemaPg.flowOpLedger;
   schema = schemaPg;
+  // P0 根治：pg 路径启动幂等补齐缺失表/列（与 SQLite 路径自愈对齐）。
+  // Vercel buildCommand 不跑 schema 脚本，纯 .sql 轨道下线上写操作会因缺表/缺列而崩。
+  // 包裹 try/catch：DDL 失败（权限不足等）只告警，不阻断启动。
+  if (process.env.DATABASE_RECONCILE !== "0") {
+    try {
+      await reconcilePgSchema(client);
+    } catch (err) {
+      console.error("[db] pg schema reconcile failed (non-fatal):", (err as Error)?.message);
+    }
+  }
 } else {
   const [{ default: Database }, { drizzle: drizzleSqlite }, schemaSqlite] =
     await Promise.all([

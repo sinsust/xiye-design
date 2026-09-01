@@ -73,7 +73,7 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
   return (
     <div className="space-y-4">
       {/* 问候 + 今日摘要 */}
-      <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-foreground">
@@ -101,7 +101,7 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
       </div>
 
       {!brief && !error && loading && (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-white py-16 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-16 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> 正在整理今日最优先事项…
         </div>
       )}
@@ -123,7 +123,7 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
           <QuickCapture busy={props.quickBusy} onOrganize={props.onQuickOrganize} />
 
           {/* 次要关注：复习 / 快到期 / 项目风险 / 恢复草稿（默认折起，避免与概览/提醒中心/工作台多处重复平铺） */}
-          <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             <button
               type="button"
               onClick={() => setShowMore((v) => !v)}

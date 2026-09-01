@@ -64,13 +64,6 @@ export interface DashboardData {
   projects: ProjectProgress[];
 }
 
-export interface DashboardPanelProps {
-  onOpenInbox: () => void;
-  onGoto: (view: string) => void;
-  onNewTask: () => void;
-  onOpenProject: (id: string) => void;
-}
-
 export function formatDue(dueDate: string | null): string {
   if (!dueDate) return "";
   const mm = dueDate.slice(5, 7);

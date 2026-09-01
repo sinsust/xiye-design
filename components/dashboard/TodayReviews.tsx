@@ -51,7 +51,7 @@ export function TodayReviews({ reviews }: { reviews: DashboardReview[] }) {
 
   if (!reviews.length) {
     return (
-      <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <GraduationCap className="size-4 text-primary" /> 今日复习
         </div>
@@ -63,7 +63,7 @@ export function TodayReviews({ reviews }: { reviews: DashboardReview[] }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
         <GraduationCap className="size-4 text-primary" /> 今日复习
         <span className="rounded-full bg-red-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-red-600">

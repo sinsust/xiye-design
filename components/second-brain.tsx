@@ -35,6 +35,8 @@ import {
   Tags,
   Target,
   Trash2,
+  ChevronDown,
+  Network,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,7 +123,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMsg, setBackfillMsg] = useState("");
   // 工作台「概览」浮层面板开关
-  const [overviewOpen, setOverviewOpen] = useState(false);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   // 顶栏「全局搜索」下拉面板
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1472,6 +1474,13 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               <span className="pointer-events-none absolute right-0 top-8 z-30 w-64 rounded-xl border border-border bg-popover p-3 text-xs leading-relaxed text-popover-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                 只管往里扔，AI 帮你理清楚、记得住、用得上。粘贴会议纪要、学习笔记或临时想法，
                 自动分类、摘要、打标签、找关联；之后可基于你自己的全部笔记提问。
+                <span className="mt-2 block border-t border-border/60 pt-2">
+                  <span className="font-medium text-foreground">快捷键</span>
+                  <span className="mt-1 flex flex-col gap-1">
+                    <span>⌘/Ctrl + K — 全局搜索 / 智能问答</span>
+                    <span>⌘/Ctrl + ↵ —「记一笔」中快速整理</span>
+                  </span>
+                </span>
               </span>
             </span>
           </span>
@@ -1504,7 +1513,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                   <span className="absolute inset-0 -z-10 rounded-lg bg-gradient-to-r from-primary/14 to-primary/6 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_30%,transparent)]" />
                 )}
                 <i.icon className="size-4" />
-                {i.label}
+                <span className="hidden sm:inline">{i.label}</span>
                 {i.v === "kanban" && taskCounts.todo + taskCounts.in_progress > 0 && (
                   <span className="rounded-full bg-gradient-to-r from-primary to-primary/80 px-1.5 py-px text-[10px] font-semibold text-primary-foreground shadow-sm">
                     {taskCounts.todo + taskCounts.in_progress}
@@ -1524,18 +1533,6 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             );
           })}
           <div className="ml-auto flex items-center gap-2">
-            {topView !== "dashboard" && (
-              <button
-                onClick={() => setOverviewOpen((v) => !v)}
-                className={
-                  "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition " +
-                  (overviewOpen ? "text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground")
-                }
-              >
-                概览
-                {overviewOpen && <span className="size-1.5 rounded-full bg-primary" />}
-              </button>
-            )}
             <div ref={searchWrapRef} className="relative">
               <button
                 onClick={() => {
@@ -1573,7 +1570,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
             >
               <Inbox className="size-4" />
-              收件箱
+              <span className="hidden sm:inline">收件箱</span>
               {inboxPending > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
                   {inboxPending > 99 ? "99+" : inboxPending}
@@ -1606,6 +1603,48 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               }}
               onProcessInbox={() => setInboxOpen(true)}
             />
+            <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <button
+                type="button"
+                onClick={() => setKnowledgeOpen((v) => !v)}
+                className="flex w-full items-center gap-2 px-5 py-3.5 text-left transition hover:bg-muted/30"
+                aria-expanded={knowledgeOpen}
+              >
+                <Network className="size-4 shrink-0 text-primary" />
+                <span className="text-sm font-semibold text-foreground">知识概览</span>
+                <span className="truncate text-[10px] text-muted-foreground">知识厚度 · 活跃 · 待复习 · 周报 · 图谱 · 学习路径</span>
+                <ChevronDown
+                  className={"ml-auto size-4 shrink-0 text-muted-foreground transition-transform " + (knowledgeOpen ? "" : "-rotate-90")}
+                />
+              </button>
+              {knowledgeOpen && (
+                <OverviewPanel
+                  thickness={thickness}
+                  activity={activity}
+                  activityShowAll={activityShowAll}
+                  setActivityShowAll={setActivityShowAll}
+                  dueReviews={dueReviews}
+                  doReview={doReview}
+                  reviewingId={reviewingId}
+                  nextReview={nextReview}
+                  report={report}
+                  reportError={reportError}
+                  generateReport={generateReport}
+                  reporting={reporting}
+                  weekActionItems={weekActionItems}
+                  graphEntries={graphEntries}
+                  centerEntry={centerEntry}
+                  learningTopics={learningTopics}
+                  openTopic={openTopic}
+                  setOpenTopic={setOpenTopic}
+                  onOpenOutcomeTask={(taskId) => {
+                    setKnowledgeOpen(false);
+                    gotoTop("workbench", "kanban");
+                    setDetailTaskId(taskId);
+                  }}
+                />
+              )}
+            </div>
           </div>
         ) : workTab === "projects" ? (
           <div key="view-projects" className="animate-in fade-in duration-200 ease-out">
@@ -1695,7 +1734,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                       key={p.id}
                       onClick={() => resumePending(p.id)}
                       disabled={resuming}
-                      className="rounded bg-white px-2 py-0.5 font-medium text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:opacity-60"
+                      className="rounded bg-card px-2 py-0.5 font-medium text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:opacity-60"
                       title={p.rawContent?.slice(0, 60)}
                     >
                       {resuming ? "恢复中…" : "继续编辑第 " + (recoverPlans.length > 1 ? recoverPlans.indexOf(p) + 1 : 1) + " 条"}
@@ -1815,35 +1854,6 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             </div>
           </div>
 
-          {/* ============ 右列 · 概览（浮层面板：不占布局宽度，可开关） ============ */}
-  {overviewOpen && (
-    <OverviewPanel
-      onClose={() => setOverviewOpen(false)}
-      thickness={thickness}
-      activity={activity}
-      activityShowAll={activityShowAll}
-      setActivityShowAll={setActivityShowAll}
-      dueReviews={dueReviews}
-      doReview={doReview}
-      reviewingId={reviewingId}
-      nextReview={nextReview}
-      report={report}
-      reportError={reportError}
-      generateReport={generateReport}
-      reporting={reporting}
-      weekActionItems={weekActionItems}
-      graphEntries={graphEntries}
-      centerEntry={centerEntry}
-      learningTopics={learningTopics}
-      openTopic={openTopic}
-      setOpenTopic={setOpenTopic}
-      onOpenOutcomeTask={(taskId) => {
-        setOverviewOpen(false);
-        gotoTop("workbench", "kanban");
-        setDetailTaskId(taskId);
-      }}
-    />
-  )}
         </div>
         )}
       </div>
@@ -1986,7 +1996,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                             (wProjectId ? "cursor-not-allowed bg-muted text-muted-foreground/60" : "bg-primary font-medium text-white")
                           }
                         >
-                          <span className="size-1.5 rounded-full bg-white" />
+                          <span className="size-1.5 rounded-full bg-card" />
                           新建「{wPendingProjectName}」
                         </button>
                       ) : null}

@@ -9,7 +9,9 @@
  * 现改为双层：
  *  - L1：进程内 Map，同实例零延迟热缓存；
  *  - L2：Supabase brain_table_sessions 表（gzip+base64 整条 CacheEntry），
- *        跨实例/冷启动兜底，RLS 策略 auth.uid()=user_id 防串读。
+ *        跨实例/冷启动兜底。用 service_role 直写（绕过 RLS，不依赖 RLS 开关
+ *        是否到位）；防串读由本模块每次读取都比对 userId 兜底，
+ *        且 tableId 为随机不可枚举值。
  * TTL 30 分钟（从 createdAt 计，不随访问续期），与旧行为一致。
  *
  * T1-D2 扩展：额外缓存 rawSheet（parser 原始 SheetInfo），供确认表头后服务端

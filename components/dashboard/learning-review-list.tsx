@@ -73,7 +73,7 @@ export function LearningReviewList({
     "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition disabled:opacity-50";
 
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <BookOpen className="size-4 text-primary" />
         建议复习

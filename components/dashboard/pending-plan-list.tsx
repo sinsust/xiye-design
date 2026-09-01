@@ -22,7 +22,7 @@ export function PendingPlanList({ plans, onConfirm }: PendingPlanListProps) {
       </h2>
       <ul className="mt-3 space-y-2">
         {plans.map((p) => (
-          <li key={p.id} className="flex items-center gap-3 rounded-lg border border-indigo-100 bg-white px-3 py-2.5">
+          <li key={p.id} className="flex items-center gap-3 rounded-lg border border-indigo-100 bg-card px-3 py-2.5">
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13px] text-foreground">{p.title}</div>
               <div className="mt-0.5 text-[11px] text-muted-foreground">创建于 {new Date(p.createdAt).toLocaleString("zh-CN")}</div>

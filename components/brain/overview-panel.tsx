@@ -11,7 +11,6 @@ import {
   Network,
   RotateCcw,
   Tags,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
@@ -84,7 +83,6 @@ interface OverviewWeekActionItem {
 }
 
 export interface OverviewPanelProps {
-  onClose: () => void;
   thickness: OverviewThickness;
   activity: OverviewActivityItem[];
   activityShowAll: boolean;
@@ -109,7 +107,6 @@ export interface OverviewPanelProps {
 
 export function OverviewPanel(props: OverviewPanelProps) {
   const {
-    onClose,
     thickness,
     activity,
     activityShowAll,
@@ -132,20 +129,10 @@ export function OverviewPanel(props: OverviewPanelProps) {
   } = props;
 
   return (
-    <div className="fixed right-4 top-20 z-40 flex max-h-[80vh] w-80 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-        <span className="text-sm font-semibold text-foreground">概览</span>
-        <button
-          onClick={onClose}
-          className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          aria-label="关闭概览面板"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-      <div className="flex-1 space-y-6 overflow-y-auto p-4">
+    <div className="w-full flex flex-col overflow-hidden rounded-xl border border-border bg-card">
+      <div className="space-y-6 p-4">
         {/* 知识厚度 */}
-        <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Brain className="size-3.5" />
@@ -173,7 +160,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
         </div>
 
         {/* 最近活跃流 */}
-        <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Activity className="size-3.5" />
@@ -207,7 +194,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
         </div>
 
         {/* 复习提醒（间隔复习/遗忘曲线） */}
-        <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <RotateCcw className="size-3.5" />
@@ -268,7 +255,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
 
         {/* 本周周报（独立一行，全宽） */}
         {/* 最近周报摘要 */}
-        <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -357,7 +344,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
 
         {/* 本周行动项（周报深化：聚合 struct.actionItems） */}
         {weekActionItems.length > 0 && (
-          <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Check className="size-3.5" />
@@ -383,7 +370,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
 
         {/* 图谱（独立一行，全宽） */}
         {graphEntries.length > 0 && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
               <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Network className="size-3.5" />
@@ -396,7 +383,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
 
         {/* 学习路径 */}
         {learningTopics.length > 0 && (
-          <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
               <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <GraduationCap className="size-3.5" />

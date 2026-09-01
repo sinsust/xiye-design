@@ -37,7 +37,7 @@ const TYPE_LABEL: Record<string, string> = {
 const SEV_STYLE: Record<string, string> = {
   high: "border-red-200/60 bg-red-50/50",
   medium: "border-amber-200/70 bg-amber-50/40",
-  low: "border-border bg-white",
+  low: "border-border bg-card",
 };
 const BADGE_STYLE: Record<string, string> = {
   high: "bg-red-100 text-red-700",
@@ -147,7 +147,7 @@ export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = 
       </div>
 
       {loading && items.length === 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-5 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-5 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> 正在扫描高优先级风险…
         </div>
       )}

@@ -28,7 +28,7 @@ export function ProjectProgress({
 }) {
   if (!projects.length) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-white/60 p-5 text-center">
+      <div className="rounded-xl border border-dashed border-border bg-card/60 p-5 text-center">
         <FolderKanban className="mx-auto size-6 text-muted-foreground/40" />
         <p className="mt-2 text-sm text-muted-foreground">项目进度</p>
         <p className="mt-0.5 text-xs text-muted-foreground/60">暂无进行中的项目</p>
@@ -36,7 +36,7 @@ export function ProjectProgress({
     );
   }
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
         <FolderKanban className="size-4 text-primary" /> 项目进度
         <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">

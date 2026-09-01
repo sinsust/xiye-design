@@ -384,7 +384,7 @@ export function ReminderCenter({ onNavigate }: ReminderCenterProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-40 w-[360px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-white shadow-2xl shadow-primary/15">
+        <div className="absolute right-0 top-11 z-40 w-[360px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-primary/15">
           {/* 标题栏 */}
           <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2.5">
             <span className="text-sm font-semibold text-foreground">
@@ -647,14 +647,14 @@ function ReminderSettings({
             type="time"
             value={quietStart}
             onChange={(e) => onQuietStart(e.target.value)}
-            className="h-8 w-full rounded-md border border-border bg-white px-2 text-xs focus:border-primary focus:outline-none"
+            className="h-8 w-full rounded-md border border-border bg-card px-2 text-xs focus:border-primary focus:outline-none"
           />
           <span className="text-xs text-muted-foreground">~</span>
           <input
             type="time"
             value={quietEnd}
             onChange={(e) => onQuietEnd(e.target.value)}
-            className="h-8 w-full rounded-md border border-border bg-white px-2 text-xs focus:border-primary focus:outline-none"
+            className="h-8 w-full rounded-md border border-border bg-card px-2 text-xs focus:border-primary focus:outline-none"
           />
         </div>
         <button
@@ -682,7 +682,7 @@ function ReminderSettings({
               >
                 <span
                   className={
-                    "absolute top-0.5 size-4 rounded-full bg-white shadow transition-all " +
+                    "absolute top-0.5 size-4 rounded-full bg-card shadow transition-all " +
                     (enabled ? "left-[18px]" : "left-0.5")
                   }
                 />
@@ -721,7 +721,7 @@ function ReminderSettings({
           {perm === "granted" && (
             <button
               onClick={onTest}
-              className="rounded-md border border-border bg-white px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted"
+              className="rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted"
             >
               测试通知
             </button>
@@ -786,13 +786,13 @@ function DecayList({
             </button>
             <button
               onClick={() => onAction(n.id, "archive")}
-              className="rounded-md border border-border bg-white px-2 py-0.5 text-[11px] font-medium text-foreground transition hover:bg-muted"
+              className="rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-medium text-foreground transition hover:bg-muted"
             >
               归档
             </button>
             <button
               onClick={() => onAction(n.id, "delete")}
-              className="rounded-md border border-border bg-white px-2 py-0.5 text-[11px] font-medium text-destructive transition hover:bg-destructive/10"
+              className="rounded-md border border-border bg-card px-2 py-0.5 text-[11px] font-medium text-destructive transition hover:bg-destructive/10"
             >
               删除
             </button>

@@ -304,7 +304,7 @@ export function ProjectWorkbench({ projectId, onOpenTask, onBack, onChanged, onV
 
   if (loading && !data) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> 正在加载项目工作台…
         </div>
@@ -314,7 +314,7 @@ export function ProjectWorkbench({ projectId, onOpenTask, onBack, onChanged, onV
 
   if (!ready) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         {onBack && (
           <button onClick={onBack} className="mb-3 inline-flex items-center gap-1.5 rounded-md p-1.5 text-muted-foreground transition hover:bg-muted">
             <ArrowLeft className="size-4" /> 返回项目列表
@@ -342,7 +342,7 @@ export function ProjectWorkbench({ projectId, onOpenTask, onBack, onChanged, onV
   const idle = data!.risks.length === 0 && data!.nextActions.length === 0 && data!.milestones.length === 0 && data!.keyKnowledge.length === 0;
 
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       {/* 顶栏：返回 + 名称 + 状态/优先级/日期 */}
       <div className="flex items-center gap-2">
         {onBack && (

@@ -175,7 +175,7 @@ export function WeeklyReviewPanel(props: WeeklyReviewPanelProps) {
   };
 
   const sectionClass =
-    "rounded-xl border border-border bg-white p-4 shadow-sm";
+    "rounded-xl border border-border bg-card p-4 shadow-sm";
   const titleBar = (icon: React.ReactNode, text: string, count: number, tone: "ok" | "risk" | "next") => (
     <div className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-foreground">
       {icon}
@@ -204,7 +204,7 @@ export function WeeklyReviewPanel(props: WeeklyReviewPanelProps) {
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative flex h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-[#F9FAFB] shadow-2xl">
         {/* 头部 */}
-        <div className="flex items-start gap-2 border-b border-border bg-white px-5 py-4">
+        <div className="flex items-start gap-2 border-b border-border bg-card px-5 py-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-foreground">本周复盘</h3>
@@ -223,7 +223,7 @@ export function WeeklyReviewPanel(props: WeeklyReviewPanelProps) {
             <button
               onClick={saveReview}
               disabled={saving || !review}
-              className="inline-flex items-center gap-1 rounded-lg border border-border bg-white px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
             >
               {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
               保存复盘
@@ -337,7 +337,7 @@ export function WeeklyReviewPanel(props: WeeklyReviewPanelProps) {
         </div>
 
         {/* 底说明 */}
-        <div className="border-t border-border bg-white px-5 py-2 text-[11px] text-muted-foreground">
+        <div className="border-t border-border bg-card px-5 py-2 text-[11px] text-muted-foreground">
           建议基于本周真实数据规则生成；「生成下周计划」仅创建待确认计划，需你在确认面板中审阅后落库。
         </div>
       </div>

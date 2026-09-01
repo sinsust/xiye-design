@@ -14,7 +14,7 @@ export function WeekInsights({ insights }: { insights: DashboardData["insights"]
   return (
     <div className="space-y-4">
       {/* 本周统计 */}
-      <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <BarChart3 className="size-4 text-primary" /> 本周洞察
         </div>
@@ -44,7 +44,7 @@ export function WeekInsights({ insights }: { insights: DashboardData["insights"]
 
       {/* 衰减提醒 */}
       {(insights.decayAlerts.length > 0 || insights.strategyReviews.length > 0) && (
-        <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <TrendingUp className="size-4 text-amber-500" /> 衰减提醒
           </div>

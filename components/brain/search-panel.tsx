@@ -48,7 +48,7 @@ export function SearchPanel({
 }: SearchPanelProps) {
   if (!open) return null;
   return (
-    <div className="absolute right-0 top-11 z-40 w-[380px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-white shadow-2xl shadow-primary/15">
+    <div className="absolute right-0 top-11 z-40 w-[380px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-primary/15">
       <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2.5">
         <Search className="size-3.5 text-muted-foreground" />
         <input
@@ -179,7 +179,7 @@ export function SearchPanel({
           {qa.length > 0 && (
             <div className="mb-2 max-h-40 space-y-1.5 overflow-y-auto">
               {qa.slice(-3).map((item, i) => (
-                <div key={i} className="rounded-md bg-white/70 p-2">
+                <div key={i} className="rounded-md bg-card/70 p-2">
                   <div className="text-xs font-medium text-foreground">{item.q}</div>
                   <div className="mt-0.5 line-clamp-3 whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">{item.a}</div>
                   {item.sources.length > 0 && (
@@ -205,7 +205,7 @@ export function SearchPanel({
             </div>
           )}
           <div className="flex items-center gap-1">
-            <div className="flex shrink-0 overflow-hidden rounded-md border border-border/70 bg-white text-[11px] shadow-sm backdrop-blur">
+            <div className="flex shrink-0 overflow-hidden rounded-md border border-border/70 bg-card text-[11px] shadow-sm backdrop-blur">
               {ASK_MODE_LABEL.map((m) => (
                 <button
                   key={m.value}
@@ -229,7 +229,7 @@ export function SearchPanel({
               onChange={(ev) => setQuestion(ev.target.value)}
               onKeyDown={(ev) => ev.key === "Enter" && ask()}
               placeholder="例如：上次会议关于用户增长的结论？"
-              className="min-w-0 flex-1 rounded-md border border-border bg-white px-2 py-1 text-xs outline-none focus:border-primary"
+              className="min-w-0 flex-1 rounded-md border border-border bg-card px-2 py-1 text-xs outline-none focus:border-primary"
             />
             <Button onClick={ask} disabled={!question.trim() || asking} className="shrink-0 text-[11px]">
               {asking ? <Loader2 className="size-3 animate-spin" /> : "提问"}

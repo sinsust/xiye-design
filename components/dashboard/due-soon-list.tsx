@@ -19,7 +19,7 @@ export function DueSoonList({ items, onOpenTask }: DueSoonListProps) {
     return d.getTime();
   })();
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <CalendarClock className="size-4 text-amber-500" />
         今天到期 / 已逾期
