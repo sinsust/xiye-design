@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { applyProcessingPlan, type ProcessingPlanBody } from "@/lib/brain-plan";
 import type { ProcessingEdits } from "@/lib/brain-plan";
 import type { BrainProcessingPlan } from "@/lib/brain-db";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[brain] organize-save failed:", err);
     return NextResponse.json(
-      { ok: false, error: "direct_save_failed", reason: err instanceof Error ? err.message : "保存失败" },
+      { ok: false, error: "direct_save_failed", reason: safeDetail(err, "保存失败") },
       { status: 500 },
     );
   }

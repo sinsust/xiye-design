@@ -4,7 +4,6 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
 import { db, projects } from "@/lib/db";
 import {
-  FLOW_OPERATION,
   flowError,
   flowMetaDone,
   flowMetaRunning,
@@ -23,6 +22,7 @@ import {
 } from "@/lib/flow-blueprint";
 import { buildBlueprint } from "@/lib/ai-blueprint-server";
 import { applyFlowOpOnce, getFlowOpResult, type FlowOpType } from "@/lib/flow-op";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -376,7 +376,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...payload, flowMeta: meta });
   } catch (err) {
     // F0-A 错误协议：失败保留最近有效 Blueprint（current），不落幂等台账，不清空用户内容
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/blueprint] failed:", reason);
     const code = mapError(reason);
     const errObj = flowError(code, { operation: running.operation, phase: running.phase, requestId: running.requestId });
@@ -462,7 +462,7 @@ async function handleRestore(req: NextRequest, _opLabel: string) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed" }));
     return NextResponse.json({ ...payload, flowMeta: meta });
   } catch (err) {
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/blueprint] restore failed:", reason);
     const code = mapError(reason);
     const errObj = flowError(code, { operation: running.operation, phase: running.phase, requestId: running.requestId });

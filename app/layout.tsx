@@ -65,12 +65,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     function parseHex(h){h=(h||"").trim().replace("#","");if(h.length===3)h=h.split("").map(function(c){return c+c;}).join("");if(!/^[0-9a-fA-F]{6}$/.test(h))return null;var n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255];}
     function mixHex(a,b,t){var ca=parseHex(a),cb=parseHex(b);if(!ca||!cb)return a;var r=Math.round(ca[0]*t+cb[0]*(1-t)),g=Math.round(ca[1]*t+cb[1]*(1-t)),bl=Math.round(ca[2]*t+cb[2]*(1-t));return "#"+[r,g,bl].map(function(v){return v.toString(16).padStart(2,"0");}).join("");}
     function pickReadable(bg,hint,op){var rgb=parseHex(bg);if(!rgb)return hint;var lum=0.2126*rgb[0]+0.7152*rgb[1]+0.0722*rgb[2];var target=lum>140?"#0F172A":"#F5F5F5";return mixHex(hint,target,op);}
-    if(ov.bg)el.style.setProperty("--background",ov.bg);
-    if(ov.surface)el.style.setProperty("--surface",ov.surface);
-    if(ov.text){el.style.setProperty("--foreground",pickReadable(ov.bg||"#ffffff",ov.text,0.95));el.style.setProperty("--muted-foreground",pickReadable(ov.bg||"#ffffff",ov.text,0.55));}
-    if(ov.accent)el.style.setProperty("--primary",ov.accent);
-    if(ov.accent2)el.style.setProperty("--secondary",ov.accent2);
-    if(ov.accents){var seed=[ov.accent||"#000000",ov.accent2||"#000000"].concat(ov.accents);for(var i=0;i<6;i++)el.style.setProperty("--accent-"+(i+1),seed[i%seed.length]);}
+    // hex 校验：localStorage 可被用户/脚本篡改，非法值（含 url(...)）不得写进 CSS 变量
+    function safe(c,fb){return parseHex(c)?c:fb;}
+    var bg=ov.bg||"#ffffff";var accent=ov.accent||"#378ADD";
+    if(ov.bg)el.style.setProperty("--background",safe(ov.bg,"#ffffff"));
+    if(ov.surface)el.style.setProperty("--surface",safe(ov.surface,bg));
+    if(ov.text){el.style.setProperty("--foreground",pickReadable(bg,safe(ov.text,"#0F172A"),0.95));el.style.setProperty("--muted-foreground",pickReadable(bg,safe(ov.text,"#0F172A"),0.55));}
+    if(ov.accent)el.style.setProperty("--primary",safe(ov.accent,"#378ADD"));
+    if(ov.accent2)el.style.setProperty("--secondary",safe(ov.accent2,accent));
+    if(ov.accents&&Array.isArray(ov.accents)){var seed=[accent,safe(ov.accent2,accent)].concat(ov.accents.map(function(c){return safe(c,accent);}));for(var i=0;i<6;i++)el.style.setProperty("--accent-"+(i+1),seed[i%seed.length]);}
   }
   var t=localStorage.getItem("theme");
   var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;

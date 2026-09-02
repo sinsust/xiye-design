@@ -9,6 +9,7 @@ import {
   type NewBrainInboxItem,
 } from "@/lib/brain-db";
 import { organizeNote, deriveIntentFromOrganizedNote, type IntentVerdict } from "@/lib/brain-organizer";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("[inbox] POST failed:", err);
-    return NextResponse.json({ error: "inbox_failed", detail: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "inbox_failed", detail: safeDetail(err) }, { status: 500 });
   }
 }
 

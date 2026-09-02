@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { packBrand, packBrandWithCopy } from "@/lib/brand-pack";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -40,7 +41,8 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
+    console.error("[brand/zip] 打包失败:", e);
+    return new Response(JSON.stringify({ error: safeDetail(e, "打包失败") }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
@@ -75,7 +77,8 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
+    console.error("[brand/zip] 打包失败:", e);
+    return new Response(JSON.stringify({ error: safeDetail(e, "打包失败") }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

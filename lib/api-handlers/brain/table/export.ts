@@ -12,6 +12,7 @@ import ExcelJS from "exceljs";
 import { getSessionUser } from "@/lib/auth";
 import { getTableCache } from "@/lib/table/session-cache";
 import type { FieldType } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     return NextResponse.json(
-      { error: "export_failed", message: `导出失败：${(e as Error).message}` },
+      { error: "export_failed", message: `导出失败：${safeDetail(e)}` },
       { status: 500 },
     );
   }

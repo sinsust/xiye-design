@@ -13,6 +13,7 @@ import {
 import { buildConceptBrief } from "@/lib/ai-concept-server";
 import { getConceptReadiness, emptyConceptBrief, type ConceptBriefInputs, type ProductConceptBrief } from "@/lib/flow-concept";
 import { applyFlowOpOnce, getFlowOpResult, type FlowOpType } from "@/lib/flow-op";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...payload, flowMeta: meta });
   } catch (err) {
     // F0-A 错误协议：失败保留旧 Brief，不落幂等台账，不清空用户内容
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/concept-brief] failed:", reason);
     const code =
       reason.startsWith("network:") || reason.startsWith("http:")

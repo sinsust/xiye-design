@@ -35,6 +35,7 @@ import {
   validateColumnOverrides,
 } from "@/lib/table/column-confirmation";
 import type { ColumnOverride, FieldType, TableConfirmation, TableProfileResult } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("brain table confirm-columns reprofile failed:", err);
       return NextResponse.json(
-        { error: "reprofile_failed", message: `字段重画像失败：${(err as Error).message}` },
+        { error: "reprofile_failed", message: `字段重画像失败：${safeDetail(err)}` },
         { status: 500 },
       );
     }
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("brain table confirm-columns failed:", err);
     return NextResponse.json(
-      { error: "reprofile_failed", message: `字段确认失败：${(err as Error).message}` },
+      { error: "reprofile_failed", message: `字段确认失败：${safeDetail(err)}` },
       { status: 500 },
     );
   }

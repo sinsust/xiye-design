@@ -12,6 +12,7 @@ import {
 } from "@/lib/ai-discover";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
 import { getStyle } from "@/lib/agent-styles";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ...pay, flowMeta: meta });
     } catch (err) {
       // 模型调用失败：不中断对话、不伪装成功。保留已入文的用户/项目状态，brief 原样回传。
-      const reason = err instanceof Error ? err.message : "unknown";
+      const reason = safeDetail(err);
       console.error("[api/ai/discover] failed:", reason);
       // 映射为统一错误码（network→provider_unavailable，http→provider_unavailable，parse/schema→invalid_response）
       const code =

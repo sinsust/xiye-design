@@ -12,6 +12,7 @@ import {
   listLearningReviewsWithNotes,
   getLearningReviewByNote,
 } from "@/lib/brain-learning-review";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     const { review, created } = await addToLearningPlan(user.sub, noteId);
     return NextResponse.json({ review, created });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "";
+    const msg = safeDetail(err, "");
     if (msg === "note_not_found") {
       return NextResponse.json({ error: "note_not_found" }, { status: 404 });
     }

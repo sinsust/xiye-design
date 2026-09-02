@@ -31,6 +31,7 @@ import {
   buildSheetRecommendationInput,
   listHeaderCandidates,
 } from "@/lib/table/sheet-recommender";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -54,11 +55,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file_required", message: "请选择至少一个要上传的文件" }, { status: 400 });
     }
 
+    // 闸门 0：空文件。0 字节文件此前会走到 parseFile 抛错、被 catch 兜成 500，属客户端可预检问题。
+    // 文件名源自上传，回显前脱敏（防控制字符污染响应体）。
+    for (const file of files) {
+      if (file.size === 0) {
+        return NextResponse.json(
+          { error: "empty_file", message: `文件「${safeDetail(file.name, "未命名文件")}」内容为空，请重新选择` },
+          { status: 400 },
+        );
+      }
+    }
+
     // 闸门 1：逐个文件大小
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         return NextResponse.json(
-          { error: "file_too_large", maxMB: 100, message: `文件「${file.name}」超过 100MB 上限（${(file.size / 1024 / 1024).toFixed(1)}MB）` },
+          { error: "file_too_large", maxMB: 100, message: `文件「${safeDetail(file.name, "未命名文件")}」超过 100MB 上限（${(file.size / 1024 / 1024).toFixed(1)}MB）` },
           { status: 413 },
         );
       }
@@ -166,7 +178,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("brain table upload-multi failed:", err);
     return NextResponse.json(
-      { error: "upload_failed", message: `文件解析失败：${(err as Error).message}` },
+      { error: "upload_failed", message: `文件解析失败：${safeDetail(err)}` },
       { status: 500 },
     );
   }

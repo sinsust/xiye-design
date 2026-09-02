@@ -18,6 +18,7 @@ import {
   listBrainImaSyncLogs,
   type BrainImaSyncLogEntry,
 } from "@/lib/brain-db";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
         failed++;
         failures.push({
           title: d.title,
-          reason: err instanceof Error ? err.message.slice(0, 200) : "未知错误",
+          reason: safeDetail(err),
         });
       }
     }

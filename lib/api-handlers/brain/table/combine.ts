@@ -28,6 +28,7 @@ import { buildEffectiveDataset } from "@/lib/table/cleaner";
 import { profileEffectiveDataset } from "@/lib/table/profiler";
 import { joinTables, type JoinType } from "@/lib/table/combine/join-tables";
 import type { EffectiveDataset, SheetInfo, TableProfileResult } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
       res = joinTables(acc, right, rawStep.keyColumnLeft, rawStep.keyColumnRight, { joinType: jt });
     } catch (e) {
       return NextResponse.json(
-        { error: "join_failed", message: `第 ${stepIndex} 步组合失败：${(e as Error).message}` },
+        { error: "join_failed", message: `第 ${stepIndex} 步组合失败：${safeDetail(e)}` },
         { status: 422 },
       );
     }

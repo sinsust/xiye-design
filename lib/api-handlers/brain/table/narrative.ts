@@ -31,6 +31,7 @@ import {
 } from "@/lib/table/narrative";
 import { chatLLMJsonRouted } from "@/lib/table/llm";
 import type { AnalysisPlan, PlanExecutionResult } from "@/lib/table/analysis-plan";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[table/narrative] 失败:", err);
     return NextResponse.json(
-      { error: "narrative_failed", message: `解读失败：${(err as Error).message}` },
+      { error: "narrative_failed", message: `解读失败：${safeDetail(err)}` },
       { status: 500 },
     );
   }
@@ -146,7 +147,7 @@ async function generateNarrative(
     if (prev && prev.status === "ready") {
       return { ...prev, retryable: true };
     }
-    const msg = (err as Error).message;
+    const msg = safeDetail(err);
     const errorCode = /超时|timeout|abort/i.test(msg) ? "llm_timeout" : /JSON|解析|结构无效|无效/.test(msg) ? "invalid_response" : "llm_error";
     return {
       id: randomUUID().replace(/-/g, "").slice(0, 16),

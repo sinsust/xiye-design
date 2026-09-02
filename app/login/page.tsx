@@ -7,6 +7,18 @@ import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AUTH_CHANGED_EVENT, AUTH_CACHE_KEY } from "@/lib/auth-events";
 
+/**
+ * 只接受站内相对路径，阻断开放重定向。
+ * 必须显式拒绝 "//evil.com"（协议相对 URL，浏览器会跳外站）
+ * 与 "/\evil.com"（部分浏览器把反斜杠当斜杠处理）。
+ */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/";
+  if (!raw.startsWith("/")) return "/";
+  if (raw.startsWith("//") || raw.startsWith("/\\")) return "/";
+  return raw;
+}
+
 export default function LoginPage() {
   return (
     <Suspense
@@ -24,7 +36,7 @@ export default function LoginPage() {
 function LoginInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next");
+  const next = safeNext(searchParams.get("next"));
   const verifyFailed = searchParams.get("verify") === "failed";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -78,11 +90,11 @@ function LoginInner() {
       // 直接跳转（不再停留「登录成功」卡片）：prefetch 已 warm 目标页 chunk，
       // 目标页自己的 loading.tsx 骨架会无缝衔接，消除白屏等待
       try {
-        router.prefetch(next?.startsWith("/") ? next : "/");
+        router.prefetch(next);
       } catch {
         /* ignore */
       }
-      router.push(next?.startsWith("/") ? next : "/");
+      router.push(next);
       return;
     }
     setLoading(false);

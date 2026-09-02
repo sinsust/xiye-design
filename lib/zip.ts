@@ -1,5 +1,6 @@
 // 纯前端 .zip 打包（store 无压缩模式），不依赖任何第三方库。
 // 用于把导出的多个工程文件一键打包成一个文件夹(.zip)下载。
+import { sanitizeZipEntryName } from "./zip-name";
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -76,7 +77,8 @@ function buildCentral(entries: ZipEntry[], offsets: number[]): Uint8Array[] {
 export function buildZip(files: { name: string; content: string }[]): Blob {
   const enc = new TextEncoder();
   const entries: ZipEntry[] = files.map((f) => {
-    const nameBytes = enc.encode(f.name);
+    // 清洗条目名：阻断 ../ 穿越与绝对路径写入
+    const nameBytes = enc.encode(sanitizeZipEntryName(f.name));
     const data = enc.encode(f.content);
     return { nameBytes, data, crc: crc32(data), size: data.length };
   });

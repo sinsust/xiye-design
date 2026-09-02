@@ -17,6 +17,7 @@ import {
   mergeConceptBrief,
   normalizeConceptOutput,
 } from "@/lib/flow-concept";
+import { fenceUserInput } from "@/lib/prompt-sanitize";
 
 export const CONCEPT_DEEPSEEK_BASE_URL =
   process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
@@ -214,7 +215,8 @@ export async function buildConceptBrief(
 
   const messages: ChatMsg[] = [
     { role: "system", content: CONCEPT_SYSTEM_PROMPT },
-    { role: "user", content: buildUserContent(inputs, prev) },
+    // inputs/prev 含用户自由输入：隔离后作为「被分析的数据」传入
+    { role: "user", content: fenceUserInput("访谈输入", buildUserContent(inputs, prev), 8000) },
   ];
   const raw = await callConceptModel(messages, apiKey);
   const norm = normalizeConceptOutput(raw);

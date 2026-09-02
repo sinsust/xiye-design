@@ -15,6 +15,7 @@ import {
   guardSummary,
 } from "@/lib/guard-norms";
 import { getStyle, type AgentStyleId } from "@/lib/agent-styles";
+import { fenceUserInput } from "@/lib/prompt-sanitize";
 
 export type PanelAgentId = "moderator" | "pm" | "architect" | "designer" | "guard";
 export type PanelStatus = "done" | "thinking" | "producing";
@@ -198,7 +199,8 @@ async function callPanelAgent(
   const url = `${DEEPSEEK_BASE_URL}/chat/completions`;
   const baseMessages = [
     { role: "system", content: system },
-    { role: "user", content: context },
+    // context 内含用户产品描述等自由文本：隔离后作为「被分析的数据」传入
+    { role: "user", content: fenceUserInput("上下文", context, 8000) },
   ];
 
   let lastEmpty = false;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { processInboxItem, type InboxProcessAction, type InboxOverrides } from "@/lib/inbox-process";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,6 @@ export async function POST(
     return NextResponse.json(result);
   } catch (err) {
     console.error("[inbox] process failed:", err);
-    return NextResponse.json({ error: "process_failed", detail: String(err) }, { status: 500 });
+    return NextResponse.json({ error: "process_failed", detail: safeDetail(err) }, { status: 500 });
   }
 }

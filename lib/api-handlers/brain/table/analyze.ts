@@ -41,6 +41,7 @@ import type {
   FieldType,
   TableProfileResult,
 } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("brain table analyze failed:", err);
     return NextResponse.json(
-      { error: "analyze_failed", message: `分析失败：${(err as Error).message}` },
+      { error: "analyze_failed", message: `分析失败：${safeDetail(err)}` },
       { status: 500 },
     );
   }

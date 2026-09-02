@@ -1,6 +1,7 @@
 // 服务端 .zip 打包（Node zlib deflate + 二进制支持）。
 // 用于把整站品牌目录（含图片等二进制资源）打包为 zip 下载。
 import { deflateRawSync } from "zlib";
+import { sanitizeZipEntryName } from "./zip-name";
 
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
@@ -46,7 +47,8 @@ export function makeZip(files: { name: string; content: Buffer | Uint8Array | st
   let offset = 0;
 
   for (const f of files) {
-    const nameBuf = Buffer.from(enc.encode(f.name.replace(/\\/g, "/")));
+    // 清洗条目名：阻断 ../ 穿越与绝对路径写入
+    const nameBuf = Buffer.from(enc.encode(sanitizeZipEntryName(f.name)));
     if (f.isDir) {
       // 目录条目：method=0, 无内容
       const lh = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), u16(20), u16(0x0800), u16(0), u16(0), u16(0), u32(0), u32(0), u32(0), u16(nameBuf.length), u16(0), nameBuf]);

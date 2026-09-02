@@ -42,6 +42,7 @@ import {
   markPrototypeStaleIfNeeded,
   getPrototypeReadiness,
 } from "@/lib/flow-prototype";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -339,7 +340,7 @@ export async function GET(req: NextRequest) {
     const staleFlag = refreshed !== null ? refreshed.stale : undefined;
     return NextResponse.json({ data: asReadinessResult(sc, staleFlag), flowMeta: meta(running, "completed") });
   } catch (err) {
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/prototype] get failed:", reason);
     return NextResponse.json({ error: "unknown", data: null, flowMeta: meta(running, "failed", reason) });
   }
@@ -377,7 +378,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "forbidden", flowMeta: meta(field, "failed") }, { status: 404 });
     }
     const snap = parseSnapshot(row.data);
-    let sc = readSnap(snap);
+    const sc = readSnap(snap);
     const current = sc.current;
 
     // 幂等：此前已成功应用 → 直接返回既有结果
@@ -483,7 +484,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...payload, flowMeta: meta(field, "completed") });
   } catch (err) {
     // F0-A 错误协议：失败保留最近有效 PrototypeSpec，不清空内容、不落台账
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/prototype] failed:", reason);
     const code = mapError(reason);
     const [row] = await db
@@ -556,7 +557,7 @@ export async function PUT(req: NextRequest) {
     }
     return NextResponse.json({ ...payload, flowMeta: meta(field, "completed") });
   } catch (err) {
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/prototype] restore failed:", reason);
     const code = mapError(reason);
     return NextResponse.json({

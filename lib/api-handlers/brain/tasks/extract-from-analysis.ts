@@ -9,6 +9,7 @@ import { getSessionUser } from "@/lib/auth";
 import { insertBrainTasks, insertBrainNote } from "@/lib/brain-db";
 import { chatLLMJson } from "@/lib/table/llm";
 import type { AnalysisResult } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -81,6 +82,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ created, count: created.length });
   } catch (err) {
     console.error("brain extract tasks failed:", err);
-    return NextResponse.json({ error: "extract_failed", message: `提取任务失败：${(err as Error).message}` }, { status: 500 });
+    return NextResponse.json({ error: "extract_failed", message: `提取任务失败：${safeDetail(err)}` }, { status: 500 });
   }
 }

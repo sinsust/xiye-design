@@ -30,6 +30,7 @@ import {
 } from "@/lib/flow-journey";
 import { buildJourney } from "@/lib/ai-journey-server";
 import { applyFlowOpOnce, getFlowOpResult, type FlowOpType } from "@/lib/flow-op";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -412,7 +413,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...payload, flowMeta: meta });
   } catch (err) {
     // F0-A 错误协议：失败保留最近有效 Journey（current 或 last persisted），不落台账，不清空内容
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/journey] failed:", reason);
     const code = mapError(reason);
     const errObj = flowError(code, { operation: running.operation, phase: running.phase, requestId: running.requestId });
@@ -491,7 +492,7 @@ export async function PUT(req: NextRequest) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed" }));
     return NextResponse.json({ ...payload, flowMeta: meta });
   } catch (err) {
-    const reason = err instanceof Error ? err.message : "unknown";
+    const reason = safeDetail(err);
     console.error("[api/ai/journey] restore failed:", reason);
     const code = mapError(reason);
     const errObj = flowError(code, { operation: running.operation, phase: running.phase, requestId: running.requestId });

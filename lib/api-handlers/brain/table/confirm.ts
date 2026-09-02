@@ -39,6 +39,7 @@ import type {
   QualityIssue,
   TableProfileResult,
 } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("brain table confirm failed:", err);
     return NextResponse.json(
-      { error: "confirm_failed", message: `表头确认失败：${(err as Error).message}` },
+      { error: "confirm_failed", message: `表头确认失败：${safeDetail(err)}` },
       { status: 500 },
     );
   }

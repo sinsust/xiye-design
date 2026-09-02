@@ -19,6 +19,7 @@ import {
   type IntentRecComponent,
 } from "@/lib/ai-intent";
 import { METHODOLOGY_INJECTION } from "@/lib/ai-methodology";
+import { fenceUserInput } from "@/lib/prompt-sanitize";
 import { SKILL_ASSEMBLY_INJECTION } from "@/lib/skill-assembly";
 
 // AI 对话理解（意图解构）固定使用 DeepSeek。
@@ -146,36 +147,58 @@ interface RawOutput {
 }
 
 async function callDeepSeek(text: string, apiKey: string): Promise<RawOutput> {
-  const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
-      temperature: 0.4,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT + buildCatalog() },
-        { role: "user", content: `用户想法：${text}` },
-      ],
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
+  let lastErr: unknown;
+  // 单次 5xx/网络抖动重试一次；解析截断则降级为空对象（走启发式兜底，不抛 502）
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          temperature: 0.4,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT + buildCatalog() },
+            { role: "user", content: fenceUserInput("用户想法", text) },
+          ],
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
 
-  if (!res.ok) {
-    console.error("DeepSeek intent request failed, status:", res.status);
-    throw new Error("AI 服务暂不可用，请稍后重试");
+      if (!res.ok) {
+        // 5xx 重试用一次；4xx（含 401/429）直接失败
+        if (res.status >= 500 && attempt < 1) {
+          lastErr = new Error(`AI 服务暂不可用（${res.status}），重试中`);
+          continue;
+        }
+        console.error("DeepSeek intent request failed, status:", res.status);
+        throw new Error("AI 服务暂不可用，请稍后重试");
+      }
+      const data = await res.json();
+      const content: string = data?.choices?.[0]?.message?.content ?? "";
+      const cleaned = content
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+      try {
+        const parsed = JSON.parse(cleaned) as RawOutput;
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch {
+        // 模型输出被截断/非法 JSON → 降级为空对象，sanitize 走本地启发式兜底
+        console.warn("DeepSeek intent JSON 解析失败，回退启发式");
+        return {};
+      }
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 1) continue;
+      throw e;
+    }
   }
-  const data = await res.json();
-  const content: string = data?.choices?.[0]?.message?.content ?? "";
-  const cleaned = content
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
-  const parsed = JSON.parse(cleaned) as RawOutput;
-  return parsed && typeof parsed === "object" ? parsed : {};
+  throw lastErr instanceof Error ? lastErr : new Error("AI 服务暂不可用，请稍后重试");
 }
 
 // ───────────────────────── 白名单校验 + 归一化 ─────────────────────────

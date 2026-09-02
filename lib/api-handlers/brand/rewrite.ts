@@ -14,6 +14,7 @@ import {
 } from "@/lib/brand-copy";
 import { makeZip } from "@/lib/server-zip";
 import { PROJECT_TYPES } from "@/data/project-types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -120,7 +121,8 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (e) {
-    return json({ error: (e as Error).message || "改写失败" }, 500);
+    console.error("[brand/rewrite] 改写失败:", e);
+    return json({ error: safeDetail(e, "改写失败") }, 500);
   } finally {
     if (tmp) disposeTempCopy(tmp.dir);
   }

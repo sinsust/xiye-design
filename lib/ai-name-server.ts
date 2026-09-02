@@ -1,6 +1,8 @@
 // 服务端：用真实大模型（DeepSeek，OpenAI 兼容）为已丰满的产品给出一对建议名 + 描述。
 // 只被 app/api/ai/name 路由引用，绝不进入客户端 bundle。
 
+import { fenceUserInput } from "@/lib/prompt-sanitize";
+
 const DEEPSEEK_BASE_URL =
   process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
@@ -30,37 +32,58 @@ export async function suggestBrandName(
   productText: string,
   apiKey: string,
 ): Promise<BrandNameSuggestion> {
-  const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
-      temperature: 0.7,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `产品叙事：\n${productText}` },
-      ],
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
+  let lastErr: unknown;
+  // 单次 5xx/网络抖动重试一次；解析截断则降级为空（前端回退本地默认名，不抛 502）
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: DEEPSEEK_MODEL,
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: fenceUserInput("产品叙事", productText) },
+          ],
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
 
-  if (!res.ok) {
-    console.error("DeepSeek name request failed, status:", res.status);
-    throw new Error("AI 服务暂不可用，请稍后重试");
+      if (!res.ok) {
+        if (res.status >= 500 && attempt < 1) {
+          lastErr = new Error(`AI 服务暂不可用（${res.status}），重试中`);
+          continue;
+        }
+        console.error("DeepSeek name request failed, status:", res.status);
+        throw new Error("AI 服务暂不可用，请稍后重试");
+      }
+      const data = await res.json();
+      const content: string = data?.choices?.[0]?.message?.content ?? "";
+      const cleaned = content
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+      try {
+        const parsed = JSON.parse(cleaned) as Partial<BrandNameSuggestion>;
+        return {
+          name: typeof parsed?.name === "string" ? parsed.name.trim() : "",
+          description: typeof parsed?.description === "string" ? parsed.description.trim() : "",
+        };
+      } catch {
+        // 模型输出被截断/非法 JSON → 降级为空，由调用方回退本地默认名
+        console.warn("DeepSeek name JSON 解析失败，回退空命名");
+        return { name: "", description: "" };
+      }
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 1) continue;
+      throw e;
+    }
   }
-  const data = await res.json();
-  const content: string = data?.choices?.[0]?.message?.content ?? "";
-  const cleaned = content
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
-  const parsed = JSON.parse(cleaned) as Partial<BrandNameSuggestion>;
-  return {
-    name: typeof parsed?.name === "string" ? parsed.name.trim() : "",
-    description: typeof parsed?.description === "string" ? parsed.description.trim() : "",
-  };
+  throw lastErr instanceof Error ? lastErr : new Error("AI 服务暂不可用，请稍后重试");
 }

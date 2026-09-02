@@ -73,16 +73,30 @@ export function pickReadable(bg: string, hint: string, opacity: number): string 
   return mixHex(hint, target, opacity);
 }
 
+/**
+ * 只接受合法 hex 颜色。CSS 变量值会被引擎插入 var() 上下文，
+ * 若写入 `url(...)` 之类的任意字符串可做数据外泄，故一律校验后才落地。
+ */
+function cssColor(value: unknown, fallback: string): string {
+  return typeof value === "string" && parseHex(value) ? value : fallback;
+}
+
 /** 把合并后的 palette 写为 CSS 变量覆盖到 <html>，即时生效 */
 export function applyPaletteToRoot(p: ReturnType<typeof mergePalette>) {
   const el = document.documentElement;
-  el.style.setProperty("--background", p.bg);
-  el.style.setProperty("--surface", p.surface);
-  el.style.setProperty("--foreground", pickReadable(p.bg, p.text, 0.95));
-  el.style.setProperty("--muted-foreground", pickReadable(p.bg, p.text, 0.55));
-  el.style.setProperty("--primary", p.accent);
-  el.style.setProperty("--secondary", p.accent2);
-  const seed = [p.accent, p.accent2, ...p.accents];
+  const bg = cssColor(p.bg, "#FFFFFF");
+  const text = cssColor(p.text, "#0F172A");
+  const surface = cssColor(p.surface, bg);
+  const accent = cssColor(p.accent, "#378ADD");
+  const accent2 = cssColor(p.accent2, accent);
+  const accents = Array.isArray(p.accents) ? p.accents : [];
+  el.style.setProperty("--background", bg);
+  el.style.setProperty("--surface", surface);
+  el.style.setProperty("--foreground", pickReadable(bg, text, 0.95));
+  el.style.setProperty("--muted-foreground", pickReadable(bg, text, 0.55));
+  el.style.setProperty("--primary", accent);
+  el.style.setProperty("--secondary", accent2);
+  const seed = [accent, accent2, ...accents.map((c) => cssColor(c, accent))];
   for (let i = 0; i < 6; i++) {
     el.style.setProperty(`--accent-${i + 1}`, seed[i % seed.length]);
   }

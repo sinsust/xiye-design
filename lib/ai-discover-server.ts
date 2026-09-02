@@ -19,6 +19,8 @@ import {
 } from "@/lib/ai-discover";
 import { interpretIntent, type IntentNarrative } from "@/lib/ai-intent";
 import { METHODOLOGY_INJECTION } from "@/lib/ai-methodology";
+import { safeDetail } from "@/lib/api-error";
+import { fenceUserInput } from "@/lib/prompt-sanitize";
 import { SKILL_ASSEMBLY_INJECTION } from "@/lib/skill-assembly";
 import { buildRagContext } from "@/lib/rag";
 import { randomSuffix } from "@/lib/id";
@@ -174,7 +176,7 @@ async function summarizeOldMessages(
             content:
               "把下面这段产品访谈的早期对话压缩成一段结构化摘要（200字内）。必须包含：① 用户想要的产品与所属领域；② 已确认的方向与核心需求；③ 已做出的关键决策/取舍；④ 待澄清的问题。只输出摘要正文，不要标题、不要解释。",
           },
-          { role: "user", content: text },
+          { role: "user", content: fenceUserInput("访谈对话", text, 8000) },
         ],
       }),
       signal: AbortSignal.timeout(20000),
@@ -367,7 +369,7 @@ async function callDeepSeek(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error("[ai-discover] DeepSeek non-ok:", res.status, text.slice(0, 300));
+      console.error("[ai-discover] DeepSeek non-ok:", res.status, safeDetail(text).slice(0, 160));
       throw new Error(`http:${res.status}`);
     }
 
