@@ -9,6 +9,16 @@ const bodySchema = z.object({ password: z.string().min(8).max(100) });
 
 /** 重置密码后调用：仅允许在已建立（重置）会话的上下文里改密。 */
 export async function POST(req: NextRequest) {
+  try {
+    return await handleUpdatePassword(req);
+  } catch (err) {
+    // 兜底：改密链路异常不应裸抛 500 暴露内部细节
+    console.error("[auth/update-password] 改密失败:", err);
+    return NextResponse.json({ error: "update_failed" }, { status: 500 });
+  }
+}
+
+async function handleUpdatePassword(req: NextRequest) {
   if (!rateLimit(`auth:update-password:${getClientIp(req)}`, 10, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

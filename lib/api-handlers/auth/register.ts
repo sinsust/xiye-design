@@ -12,6 +12,16 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handleRegister(req);
+  } catch (err) {
+    // 兜底：注册链路异常不应裸抛 500 暴露内部细节
+    console.error("[auth/register] 注册失败:", err);
+    return NextResponse.json({ error: "register_failed" }, { status: 500 });
+  }
+}
+
+async function handleRegister(req: NextRequest) {
   if (!rateLimit(`auth:register:${getClientIp(req)}`, 5, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

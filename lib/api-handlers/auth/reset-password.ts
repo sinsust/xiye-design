@@ -8,6 +8,16 @@ export const runtime = "nodejs";
 const bodySchema = z.object({ email: z.string().email().max(200) });
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handleReset(req);
+  } catch (err) {
+    // 兜底：邮件通道异常不应裸抛 500 暴露内部细节（对外仍统一成功，避免账号枚举）
+    console.error("[auth/reset-password] 发送失败:", err);
+    return NextResponse.json({ error: "reset_failed" }, { status: 500 });
+  }
+}
+
+async function handleReset(req: NextRequest) {
   if (!rateLimit(`auth:reset:${getClientIp(req)}`, 5, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

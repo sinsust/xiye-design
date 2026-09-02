@@ -11,6 +11,16 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handleLogin(req);
+  } catch (err) {
+    // 兜底：supabase 网络/配置异常不应裸抛 500 暴露内部细节
+    console.error("[auth/login] 登录失败:", err);
+    return NextResponse.json({ error: "login_failed" }, { status: 500 });
+  }
+}
+
+async function handleLogin(req: NextRequest) {
   if (!rateLimit(`auth:login:${getClientIp(req)}`, 10, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
