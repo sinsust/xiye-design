@@ -3,15 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  BookOpenText,
   Bot,
-  Building2,
   Check,
   Copy,
-  Newspaper,
-  Palette,
-  ShieldAlert,
-  ShoppingBag,
   Download,
   Home,
   Menu,
@@ -26,8 +20,6 @@ import {
   Tags,
   ChevronDown,
   ChevronRight,
-  UserRound,
-  LayoutDashboard,
   Table,
   LogIn,
   Share2,
@@ -62,17 +54,14 @@ import {
   Lock,
   type LucideIcon,
 } from "lucide-react";
+import { PAGE_ICONS } from "@/lib/page-icons";
 import { Button } from "@/components/ui/button";
 import { useFlowStore } from "@/lib/store/flow-store";
 import { useSkeletonStore } from "@/lib/skeleton-store";
 import { BuilderElementProvider } from "@/lib/builder-element-context";
-import { buildBlueprint } from "@/lib/blueprint-generator";
-import { buildPrdMd } from "@/lib/project-generator";
-import { buildArchitectureMarkdown } from "@/lib/architecture";
-import { TECH_STACKS } from "@/data/tech-stacks";
-import { inferProjectTypeName, inferFeatureDetails } from "@/lib/project-narrative";
 import { resolveContent } from "@/lib/content-resolver";
 import { summarizeCopyChanges } from "@/lib/copy-generator";
+import { fetchSiteCopyOverride } from "@/lib/site-copy";
 import { VISUAL_STYLES, VISUAL_STYLE_MAP, FONT_STACK } from "@/data/visual-styles";
 import { SKELETON_PAGES, SKELETON_PAGE_MAP, findVariant, type SkeletonPage } from "@/data/skeletons";
 import { ComponentPreview, styleVars, applyMotionPreview, CtaStyleProvider, designTokenBridgeCss } from "./previews";
@@ -99,21 +88,6 @@ const PAGE_GROUPS: { label: string; ids: string[] }[] = [
   { label: "应用工作台", ids: ["dashboard", "ai-chat", "feedback"] },
   { label: "账号与系统", ids: ["auth", "misc"] },
 ];
-
-const PAGE_ICONS: Record<string, LucideIcon> = {
-  Home,
-  Tags,
-  UserRound,
-  LayoutDashboard,
-  Palette,
-  Newspaper,
-  ShoppingBag,
-  Building2,
-  ShieldAlert,
-  BookOpenText,
-  Bot,
-  Loader2,
-};
 
 const COMPONENT_ICONS: Record<string, LucideIcon> = {
   Menu,
@@ -205,7 +179,6 @@ export default function BuilderPage() {
   const projectName = useFlowStore((s) => s.projectInfo?.projectName ?? null);
   const projectType = useFlowStore((s) => s.projectType);
   const intentNarrative = useFlowStore((s) => s.intentNarrative);
-  const techStack = useFlowStore((s) => s.techStack);
   const [copyState, setCopyState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [copySummary, setCopySummary] = useState<string | null>(null);
   const resolveText = (text: string) => resolveContent(text, content);
@@ -534,35 +507,6 @@ export default function BuilderPage() {
     { dependencies: [isSmooth] },
   );
 
-  // 完整蓝图（随选择实时生成，含 PRD / 架构 / 技术栈 / 真实文案覆盖 + 按板块动效覆盖）
-  const blueprint = useMemo(() => {
-    const fs = useFlowStore.getState();
-    const stack = fs.techStack ? TECH_STACKS.find((t) => t.id === fs.techStack) : undefined;
-    const techStackLine = stack
-      ? `${stack.name}｜${stack.frontend} / ${stack.backend} / ${stack.database}`
-      : undefined;
-    const prdMd = fs.intentNarrative ? buildPrdMd(fs, style, fs.intentNarrative) : undefined;
-    const archMd = buildArchitectureMarkdown(
-      fs.techStack,
-      stack?.name ?? "",
-      fs.projectInfo?.projectName ?? "你的产品",
-      inferProjectTypeName(fs),
-      inferFeatureDetails(fs).map((f) => f.name),
-      fs.pageBlueprint,
-    );
-    return buildBlueprint(
-      picks,
-      style,
-      fs.projectInfo?.projectName ?? "我的项目",
-      content,
-      componentMotion,
-      {},
-      prdMd,
-      archMd,
-      techStackLine,
-    );
-  }, [picks, style, content, componentMotion, intentNarrative, techStack, pageBlueprint]);
-
   const downloadVariant = () => {
     if (!activeVariant) return;
     const code = applyButtonStyleToCode(resolveContent(activeVariant.code, content), btnStyle);
@@ -581,13 +525,7 @@ export default function BuilderPage() {
     if (copyState === "loading") return;
     setCopyState("loading");
     try {
-      const res = await fetch("/api/ai/copy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectName, projectType, narrative: intentNarrative }),
-      });
-      if (!res.ok) throw new Error(`copy_${res.status}`);
-      const override = await res.json();
+      const override = await fetchSiteCopyOverride({ projectName, projectType, narrative: intentNarrative });
       const { count, paths } = summarizeCopyChanges(content, override);
       setContent(override);
       setCopyState("done");

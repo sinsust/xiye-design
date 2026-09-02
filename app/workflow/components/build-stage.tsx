@@ -2,19 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Home,
-  Tags,
-  LogIn,
-  LayoutDashboard,
-  Images,
-  Newspaper,
-  ShoppingBag,
-  Info,
-  Mail,
   LayoutGrid,
-  BookOpenText,
-  Bot,
-  MessageSquare,
   ChevronDown,
   ChevronRight,
   Copy,
@@ -31,6 +19,8 @@ import {
   AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
+import { PAGE_ICON_BY_ID } from "@/lib/page-icons";
+import { fetchSiteCopyOverride } from "@/lib/site-copy";
 import { Button } from "@/components/ui/button";
 import {
   SKELETON_PAGES,
@@ -49,23 +39,6 @@ import type { ProductPage } from "@/lib/ai-intent";
 import type { ScreenMap } from "@/lib/flow-screen-map";
 import type { VisualStyle } from "@/data/visual-styles";
 import { Workspace } from "./workspace";
-
-/** 页面图标映射（按 SKELETON_PAGE.id 对应 lucide 图标） */
-const PAGE_ICON: Record<string, LucideIcon> = {
-  home: Home,
-  pricing: Tags,
-  auth: LogIn,
-  dashboard: LayoutDashboard,
-  portfolio: Images,
-  blog: Newspaper,
-  product: ShoppingBag,
-  about: Info,
-  contact: Mail,
-  misc: LayoutGrid,
-  docs: BookOpenText,
-  "ai-chat": Bot,
-  feedback: MessageSquare,
-};
 
 interface BuildPageItem {
   id: string;
@@ -415,17 +388,11 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
     if (copyState === "loading") return;
     setCopyState("loading");
     try {
-      const res = await fetch("/api/ai/copy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectName: projectName ?? productBrief?.name ?? "",
-          projectType,
-          narrative: productBrief ? briefToNarrative(productBrief) : null,
-        }),
+      const override = await fetchSiteCopyOverride({
+        projectName: projectName ?? productBrief?.name ?? "",
+        projectType,
+        narrative: productBrief ? briefToNarrative(productBrief) : null,
       });
-      if (!res.ok) throw new Error(`copy_${res.status}`);
-      const override: ContentOverride = await res.json();
       setPreviewContent(override);
       setCopyState("done");
     } catch {
@@ -445,7 +412,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
         {buildPages.map((buildPage) => {
           const sk = buildPage.skeleton;
-          const Icon = PAGE_ICON[sk.id] ?? LayoutGrid;
+          const Icon = PAGE_ICON_BY_ID[sk.id] ?? LayoutGrid;
           const picked = blockCountByPage[sk.id] ?? 0;
           const open = activePageId === buildPage.id;
           const isProduct = buildPage.source === "product";
@@ -529,7 +496,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
         <div className="flex items-center gap-2">
           {currentPage &&
             (() => {
-              const I = PAGE_ICON[currentPage.id] ?? LayoutGrid;
+              const I = PAGE_ICON_BY_ID[currentPage.id] ?? LayoutGrid;
               return <I className="size-4 text-primary" />;
             })()}
           <h3 className="text-sm font-medium">{currentPage?.name ?? "页面预览"}</h3>
