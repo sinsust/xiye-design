@@ -21,27 +21,35 @@ export async function POST(req: NextRequest) {
   }
   if (!index) return new NextResponse("missing index", { status: 400 });
 
-  const base = join(process.cwd(), "public", "originkit", "wexo");
-  const files: { name: string; content: Buffer | string }[] = [
-    { name: "index.html", content: index },
-  ];
+  try {
+    const base = join(process.cwd(), "public", "originkit", "wexo");
+    const files: { name: string; content: Buffer | string }[] = [
+      { name: "index.html", content: index },
+    ];
 
-  const cssPath = join(base, "framer.css");
-  if (existsSync(cssPath)) files.push({ name: "framer.css", content: readFileSync(cssPath) });
-
-  for (const sub of ["images", "fonts"]) {
-    const dir = join(base, sub);
-    if (!existsSync(dir)) continue;
-    for (const f of collectFilePaths(dir)) {
-      files.push({ name: `${sub}/${f.rel}`, content: readFileSync(f.abs) });
+    const cssPath = join(base, "framer.css");
+    if (existsSync(cssPath)) {
+      files.push({ name: "framer.css", content: readFileSync(cssPath) });
     }
-  }
 
-  const zip = makeZip(files);
-  return new NextResponse(new Uint8Array(zip), {
-    headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": 'attachment; filename="wexo-edited.zip"',
-    },
-  });
+    for (const sub of ["images", "fonts"]) {
+      const dir = join(base, sub);
+      if (!existsSync(dir)) continue;
+      for (const f of collectFilePaths(dir)) {
+        files.push({ name: `${sub}/${f.rel}`, content: readFileSync(f.abs) });
+      }
+    }
+
+    const zip = makeZip(files);
+    return new NextResponse(new Uint8Array(zip), {
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": 'attachment; filename="wexo-edited.zip"',
+      },
+    });
+  } catch (e) {
+    // 资源读取/打包失败（如 public 目录缺失、磁盘 IO 异常）不应裸抛 500 暴露路径
+    console.error("[brand/export-wexo] 打包失败:", e);
+    return NextResponse.json({ error: "wexo_export_failed" }, { status: 500 });
+  }
 }

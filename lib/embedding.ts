@@ -15,6 +15,25 @@ import type { Pipeline } from "@xenova/transformers";
 
 let embedderPromise: Promise<Pipeline> | null = null;
 
+// 单次推理/加载的超时上限（毫秒）。模型首次需下载 ~80MB，冷启动慢是常态；
+// 但绝不能无限挂起——超时的请求会一直占用连接，最终拖垮整个检索链路。
+const EMBEDDING_TIMEOUT_MS = Number.parseInt(
+  process.env.EMBEDDING_TIMEOUT_MS ?? "30000",
+  10,
+);
+
+/** 给任意 Promise 套一层超时，超时即 reject（调用方已有降级分支） */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  if (!Number.isFinite(ms) || ms <= 0) return p;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const guard = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} 超时（${ms}ms）`)), ms);
+  });
+  return Promise.race([p, guard]).finally(() => {
+    if (timer) clearTimeout(timer);
+  }) as Promise<T>;
+}
+
 // 是否启用语义向量（默认开启）。Serverless 等无法稳定加载本地模型、或想省去 80MB 模型下载的环境，
 // 可设置 EMBEDDING_ENABLED=false，避免每次冷启动都尝试下载模型导致请求超时。
 const EMBEDDING_ENABLED = !/^(false|0|no|off)$/i.test(
@@ -61,8 +80,12 @@ export async function embed(text: string): Promise<number[] | null> {
         )) as unknown as Pipeline;
       })();
     }
-    const model = await embedderPromise;
-    const output = await model(text, { pooling: "mean", normalize: true });
+    const model = await withTimeout(embedderPromise, EMBEDDING_TIMEOUT_MS, "embedding 模型加载");
+    const output = await withTimeout(
+      Promise.resolve(model(text, { pooling: "mean", normalize: true })),
+      EMBEDDING_TIMEOUT_MS,
+      "embedding 推理",
+    );
     // output.data 为 Float32Array（按行展平），单条文本即 384 维向量
     const data: any = (output as any).data ?? (output as any).tolist?.()[0];
     return Array.from(data) as number[];
