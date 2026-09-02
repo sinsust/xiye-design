@@ -1126,6 +1126,7 @@ export default function ComponentLibraryPage() {
               <div key={group.category} className="mb-2">
                 <button
                   type="button"
+                  aria-expanded={Boolean(expandedGroups[group.category])}
                   onClick={() =>
                     setExpandedGroups((prev) => ({
                       // 手风琴互斥：打开当前一级，其余一级全部收起
@@ -1175,6 +1176,7 @@ export default function ComponentLibraryPage() {
                         >
                           <button
                             type="button"
+                            aria-expanded={Boolean(expandedSites[site])}
                             onClick={() => {
                               // 点击二级站点：互斥切换（其他所有 site 都收起），同时确保所属一级展开
                               expandOnly(group.category);
@@ -1285,6 +1287,8 @@ export default function ComponentLibraryPage() {
               <Button
                 variant="outline"
                 size="sm"
+                aria-haspopup="menu"
+                aria-expanded={brandMenuOpen}
                 onClick={() => setBrandMenuOpen((v) => !v)}
               >
                 <Package className="size-3.5" />
@@ -1362,6 +1366,8 @@ export default function ComponentLibraryPage() {
                     <div className="mb-2">
                       <button
                         type="button"
+                        aria-haspopup="listbox"
+                        aria-expanded={projectPickerOpen}
                         onClick={() => {
                           loadSavedProjects();
                           setProjectPickerOpen((v) => !v);

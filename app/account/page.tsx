@@ -333,8 +333,13 @@ export default function AccountPage() {
               获取。仅你本人持有，加密存储、明文不出服务端。
             </p>
             <div>
-              <label className="text-xs text-muted-foreground">Client ID</label>
+              <label htmlFor="ima-client-id" className="text-xs text-muted-foreground">
+                Client ID
+              </label>
               <input
+                id="ima-client-id"
+                name="imaClientId"
+                autoComplete="off"
                 value={imaClientId}
                 onChange={(e) => setImaClientId(e.target.value)}
                 className="mt-1 w-full rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
@@ -342,11 +347,16 @@ export default function AccountPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">API Key</label>
+              <label htmlFor="ima-api-key" className="text-xs text-muted-foreground">
+                API Key
+              </label>
               <input
+                id="ima-api-key"
+                name="imaApiKey"
+                type="password"
+                autoComplete="off"
                 value={imaApiKey}
                 onChange={(e) => setImaApiKey(e.target.value)}
-                type="password"
                 className="mt-1 w-full rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                 placeholder="ima-openapi-apikey"
               />

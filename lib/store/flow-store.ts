@@ -495,6 +495,17 @@ export const useFlowStore = create<FlowState>()(
     {
       name: "xiye-flow-design",
       storage: createJSONStorage(() => flowPersistStorage),
+      // 显式版本号：此前无 version，未来 schema 变更无法区分新旧快照。
+      // 结构性清洗仍放在 onRehydrateStorage（对「同版本内的脏数据」也生效），
+      // migrate 只负责跨版本升级时的入口。
+      version: 1,
+      migrate: (persisted, from) => {
+        const raw = (persisted ?? {}) as Record<string, unknown>;
+        if (from >= 1) return raw;
+        // v0 → v1：剔除历史遗留的明文 apiKeys（若还有残留）
+        if (raw.apiKeys) delete raw.apiKeys;
+        return raw;
+      },
       onRehydrateStorage: () => (state) => {
         // 安全迁移：历史版本曾把 apiKeys 明文持久化进 localStorage；现版本 partialize 已剔除。
         // 此处一次性清理旧残留，避免密钥继续滞留浏览器。

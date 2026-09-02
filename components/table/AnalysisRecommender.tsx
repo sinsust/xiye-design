@@ -265,6 +265,8 @@ export function AnalysisRecommender({
 
           {dimensions.length > 4 && (
             <button
+              type="button"
+              aria-expanded={expanded}
               onClick={() => setExpanded(!expanded)}
               className="flex w-full items-center justify-center gap-1 py-1.5 text-[11px] text-muted-foreground transition hover:text-foreground"
             >

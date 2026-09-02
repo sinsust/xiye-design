@@ -147,6 +147,8 @@ export function ColumnProfilePanel({
           return (
             <div key={gKey}>
               <button
+                type="button"
+                aria-expanded={!collapsed}
                 onClick={() =>
                   setGroupCollapsed((prev) => ({ ...prev, [gKey]: !prev[gKey] }))
                 }
@@ -180,6 +182,8 @@ export function ColumnProfilePanel({
                       >
                         {/* 概要行（紧凑：高度 ~44px） */}
                         <button
+                          type="button"
+                          aria-expanded={isOpen}
                           onClick={() => {
                             setExpanded(isOpen ? null : col.name);
                             onSelect?.(col.name);

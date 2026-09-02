@@ -107,6 +107,23 @@ export const useAgentsStore = create<AgentsState>()(
     {
       name: "xiye_agents_personas",
       partialize: (s) => ({ overrides: s.overrides, currentStyleId: s.currentStyleId }) as AgentsState,
+      // 版本号 + 迁移：persist 此前无 version/migrate，schema 一旦变更，老数据会原样灌入新结构。
+      // v1 迁移做一次防御性清洗：非法/已下线的 styleId 回落默认，overrides 非对象则重置。
+      version: 1,
+      migrate: (persisted, from) => {
+        const raw = (persisted ?? {}) as Partial<AgentsState>;
+        if (from >= 1) return raw as AgentsState;
+        const overrides =
+          raw.overrides && typeof raw.overrides === "object" && !Array.isArray(raw.overrides)
+            ? raw.overrides
+            : {};
+        const styleId =
+          typeof raw.currentStyleId === "string" &&
+          AGENT_STYLES[raw.currentStyleId as AgentStyleId]
+            ? raw.currentStyleId
+            : DEFAULT_STYLE;
+        return { overrides, currentStyleId: styleId } as AgentsState;
+      },
     },
   ),
 );

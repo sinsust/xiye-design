@@ -130,6 +130,25 @@ export const useSkeletonStore = create<SkeletonState>()(
         componentOverride: s.componentOverride,
         buttonStyles: s.buttonStyles,
       }),
+      // 版本号 + 迁移：此前 persist 无 version/migrate，schema 变更后老数据会原样灌入新结构。
+      // v1 迁移做一次防御性清洗：所有 map 字段非对象即回落空对象，schemes 非数组即重置，
+      // 避免脏数据导致渲染期读取 undefined 而白屏。
+      version: 1,
+      migrate: (persisted, from) => {
+        const raw = (persisted ?? {}) as Partial<SkeletonState>;
+        if (from >= 1) return raw as SkeletonState;
+        const asMap = (v: unknown) =>
+          v && typeof v === "object" && !Array.isArray(v) ? v : {};
+        return {
+          picks: asMap(raw.picks),
+          schemes: Array.isArray(raw.schemes) ? raw.schemes : [],
+          content: asMap(raw.content),
+          elementInteractions: asMap(raw.elementInteractions),
+          componentMotion: asMap(raw.componentMotion),
+          componentOverride: asMap(raw.componentOverride),
+          buttonStyles: asMap(raw.buttonStyles),
+        } as SkeletonState;
+      },
     },
   ),
 );
