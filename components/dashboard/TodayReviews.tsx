@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GraduationCap, Loader2 } from "lucide-react";
-import { formatDue, type DashboardReview } from "./types";
+import { type DashboardReview } from "./types";
 
 interface ReviewRow extends DashboardReview {
   id: string;

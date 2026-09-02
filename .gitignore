@@ -92,9 +92,17 @@ section-analysis-report.md
 
 # 调试/临时产物（勿入库）
 dev-server.log
+dev.log
+dev_server.log
+install.log
 diag.mjs
 *.bak
 *.removed
+
+# 本地 pnpm 缓存 / 一次性测试残留 / 图标草稿（勿入库）
+.pnpm-store/
+_sqlite_test.txt
+xiye.ico
 
 # 本地构建产物 / 一次性脚本 / 测试库（防误提交，2026-08-26）
 .next-old/

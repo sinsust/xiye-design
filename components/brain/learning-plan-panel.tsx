@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BookOpen, Check, Loader2, Pause, Play, Trash2 } from "lucide-react";
+import { BookOpen, Loader2, Pause, Play, Trash2 } from "lucide-react";
 
 interface ReviewState {
   id: string;

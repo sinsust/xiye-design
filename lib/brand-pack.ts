@@ -1,7 +1,7 @@
 // 品牌包管理：遍历整站目录打包 zip；生成可 AI 改写的临时副本。
 // 所有操作只读原始 outstand/，改写只发生在 os 临时目录副本，保证原目录与组件库预览零影响。
 import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, cpSync, existsSync, rmSync } from "fs";
-import { join, sep, relative, extname, normalize } from "path";
+import { join, extname, normalize } from "path";
 import { tmpdir } from "os";
 import { makeZip } from "@/lib/server-zip";
 import { BRAND_SITES, type BrandSiteMeta } from "@/data/brand-sites";

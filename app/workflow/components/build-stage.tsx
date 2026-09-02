@@ -35,7 +35,6 @@ import { TECH_STACKS } from "@/data/tech-stacks";
 import { VISUAL_STYLES } from "@/data/visual-styles";
 import { ComponentPreview, styleVars } from "@/app/builder/previews";
 import { briefToNarrative, type ProductBrief } from "@/lib/ai-discover";
-import type { ProductPage } from "@/lib/ai-intent";
 import type { ScreenMap } from "@/lib/flow-screen-map";
 import type { VisualStyle } from "@/data/visual-styles";
 import { Workspace } from "./workspace";

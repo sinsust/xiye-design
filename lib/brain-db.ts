@@ -2,7 +2,7 @@
 // 与 knowledge-db（云端共享技能库）不同，这里按 userId 硬隔离，仅本人可见。
 
 import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainNotifications } from "@/lib/db";
-import { eq, and, desc, asc, isNull, inArray, gt, gte, lt, lte, or } from "drizzle-orm";
+import { eq, and, desc, asc, isNull, inArray, gte, lt } from "drizzle-orm";
 import { randomSuffix } from "./id";
 
 export type BrainSource = "text" | "file" | "clip" | "voice" | "ima";

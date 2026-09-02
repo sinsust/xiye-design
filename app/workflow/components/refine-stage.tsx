@@ -23,7 +23,6 @@ import { VISUAL_STYLES } from "@/data/visual-styles";
 import { TECH_STACKS } from "@/data/tech-stacks";
 import { matchVisualStyles, extractPrimaryColor } from "@/lib/visual-match";
 import type { ProductBrief } from "@/lib/ai-discover";
-import type { IntentNarrative } from "@/lib/ai-intent";
 import {
   extractFlowError,
   flowError,

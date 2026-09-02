@@ -1,46 +1,28 @@
 "use client";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import { Toaster, toast } from "./ui/toast";
 import {
   Brain,
-  CalendarCheck,
-  CalendarClock,
   Check,
-  ArrowRight,
-  ClipboardList,
-  Cloud,
   Code2,
-  Columns3,
-  Copy,
-  FileText,
   FileUp,
   FolderKanban,
-  GraduationCap,
   Home,
   Inbox,
-  LayoutDashboard,
-  LayoutList,
   ListTodo,
   Loader2,
-  Mic,
   PenLine,
-  Pencil,
   RotateCcw,
   Search,
-  Shuffle,
   Sparkles,
   Table2,
-  Tags,
   Target,
-  Trash2,
   ChevronDown,
   Network,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { KnowledgeGraph } from "@/components/knowledge-graph";
 import { TableAnalysisPage } from "@/components/table/TableAnalysisPage";
 import { ImaImportModal } from "@/components/ImaImportModal";
 import BatchImportModal from "@/components/BatchImportModal";
@@ -50,8 +32,6 @@ import { TodayAssistantPanel } from "@/components/dashboard/TodayAssistantPanel"
 import { InboxDrawer } from "@/components/InboxDrawer";
 import TaskDetailDrawer from "@/components/tasks/TaskDetailDrawer";
 import ProjectPanel from "@/components/projects/ProjectPanel";
-import GroupedBoard from "@/components/tasks/GroupedBoard";
-import GanttView from "@/components/GanttView";
 import { detectLearningTopics } from "@/lib/brain-path";
 import type { LearningTopic } from "@/lib/brain-path";
 import type {
@@ -72,11 +52,9 @@ import type {
   OrganizedStrategy,
   StructViewData,
 } from "./brain/types";
-import { TYPE_LABEL } from "./brain/types";
 import { SearchPanel } from "./brain/search-panel";
 import { StructPreview } from "./brain/struct-preview";
 import { NoteCard } from "./brain/note-card";
-import { TaskCard } from "./brain/task-card";
 import { OverviewPanel } from "./brain/overview-panel";
 import { WeeklyReviewPanel } from "./brain/weekly-review-panel";
 import { SnippetsTab } from "./brain/workbench/snippets-tab";
@@ -84,26 +62,13 @@ import { StrategiesTab } from "./brain/workbench/strategies-tab";
 import { KanbanTab } from "./brain/workbench/kanban-tab";
 import { InputTab } from "./brain/workbench/input-tab";
 import {
-  STATUS_LABEL,
   STATUS_NEXT,
-  PRIORITY_RANK,
-  PRIORITY_COLOR,
-  STRATEGY_LABEL,
   STRATEGY_NEXT,
-  STRATEGY_COLOR,
-  CATEGORY_COLORS,
   CATEGORY_OPTIONS,
-  SOURCE_ICON,
   asGraphEntries,
   catColor,
-  langColor,
-  langLabel,
-  snippetPreview,
-  highlightCode,
   relativeTime,
   nowDateStr,
-  formatDueDate,
-  nextInHours,
   inputCls,
 } from "./brain/brain-utils";
 import { cachedGetJson } from "@/lib/api-cache";

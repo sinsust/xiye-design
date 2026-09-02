@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, RotateCcw, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingUp } from "lucide-react";
 import type { DashboardData } from "./types";
 
 function relDays(iso: string): string {

@@ -10,7 +10,6 @@
 
 import {
   SKILL_CATALOG,
-  ALL_STACKS,
   type Skill,
 } from "@/data/skill-catalog";
 

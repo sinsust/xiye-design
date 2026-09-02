@@ -9,7 +9,6 @@ import type { ContentOverride } from "@/lib/content-resolver";
 import {
   VISUAL_STYLES,
   VISUAL_STYLE_MAP,
-  FONT_STACK,
   buildStyleSpec,
   type VisualStyle,
 } from "@/data/visual-styles";

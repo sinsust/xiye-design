@@ -3,8 +3,6 @@
 //        收件箱积压 / 里程碑），不编造项目状态；AI 仅作可选摘要增强（本文件不含 LLM 调用）。
 // 系统只给出建议，最终选择权始终在用户：生成「下周计划」走 pending_confirmation Plan，用户确认后才落库。
 
-import { sql } from "drizzle-orm";
-import { db } from "@/lib/db";
 import {
   listBrainTasks,
   listBrainProjects,

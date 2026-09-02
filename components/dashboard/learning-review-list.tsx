@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BookOpen, Check, Clock, Loader2, RotateCcw, ThumbsDown } from "lucide-react";
+import { BookOpen, Check, Clock, Loader2, ThumbsDown } from "lucide-react";
 import { relativeTime } from "@/components/brain/brain-utils";
 
 export interface DueLearningReview {

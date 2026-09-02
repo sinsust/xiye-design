@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Bot,
   Check,
   Copy,
   Download,
@@ -46,11 +45,7 @@ import {
   Trash2,
   RefreshCw,
   Loader2,
-  Hash,
-  PieChart,
   Sparkles,
-  MousePointerClick,
-  Loader,
   Lock,
   type LucideIcon,
 } from "lucide-react";
@@ -62,7 +57,7 @@ import { BuilderElementProvider } from "@/lib/builder-element-context";
 import { resolveContent } from "@/lib/content-resolver";
 import { summarizeCopyChanges } from "@/lib/copy-generator";
 import { fetchSiteCopyOverride } from "@/lib/site-copy";
-import { VISUAL_STYLES, VISUAL_STYLE_MAP, FONT_STACK } from "@/data/visual-styles";
+import { VISUAL_STYLES, VISUAL_STYLE_MAP } from "@/data/visual-styles";
 import { SKELETON_PAGES, SKELETON_PAGE_MAP, findVariant, type SkeletonPage } from "@/data/skeletons";
 import { ComponentPreview, styleVars, applyMotionPreview, CtaStyleProvider, designTokenBridgeCss } from "./previews";
 import { applyButtonStyleToCode, findButtonStyle } from "@/lib/button-styles";
@@ -74,7 +69,6 @@ import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 import { DesignTokensPanel } from "@/components/design-tokens-panel";
 import { BuilderSaveButton } from "@/components/builder-save-button";
 import { applySnapshot } from "@/lib/project-snapshot";
-import { findComponentMotion } from "@/data/component-motions";
 import { ensureWebFonts } from "@/lib/web-fonts";
 import { FONT_OPTIONS } from "@/data/design-presets";
 import { mergePalette, type PaletteOverride } from "@/lib/use-theme-palette";

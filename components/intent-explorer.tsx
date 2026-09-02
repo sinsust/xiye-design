@@ -23,7 +23,6 @@ import {
   applyIntentRecommendation,
 } from "@/lib/ai-intent";
 import {
-  emptyBrief,
   synthesizeBriefToText,
   briefToNarrative,
   type Branch,

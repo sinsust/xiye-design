@@ -3,9 +3,6 @@
 // 把这段提示词一贴，AI 即按既有约定进入开工状态——无需 AI「碰巧读到」交接文档。
 
 import type { FlowState } from "@/lib/store/flow-store";
-import { TECH_STACKS } from "@/data/tech-stacks";
-import { UI_LIBRARIES } from "@/data/ui-libraries";
-import { PROJECT_TYPES } from "@/data/project-types";
 import { MOTION_SCENARIO_MAP, MOTION_VARIANT_MAP } from "@/data/motion-library";
 import { buildSeedProject, resolveSeedTokens } from "@/lib/seed-project";
 import { buildAgentManifest, type AgentManifest } from "@/lib/agent-manifest";

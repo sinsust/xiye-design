@@ -6,6 +6,7 @@ import {
   deleteImaConfig,
 } from "@/lib/ima-config";
 import { listKnowledgeBases } from "@/lib/ima";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -44,7 +45,7 @@ export async function PUT(req: NextRequest) {
     try {
       await listKnowledgeBases({ clientId, apiKey });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "ima_verify_failed";
+      const msg = safeDetail(err, "ima_verify_failed");
       return NextResponse.json(
         { error: "ima_verify_failed", detail: msg },
         { status: 400 },
@@ -55,7 +56,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     // 不要把 drizzle 原始 SQL 泄给前端（既不安全也会撑爆布局），真实异常只在服务端日志留痕
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = safeDetail(err);
     const cause = err instanceof Error && err.cause ? String(err.cause) : undefined;
     console.error("[account/ima PUT] 保存失败:", msg, "| cause:", cause);
     return NextResponse.json(

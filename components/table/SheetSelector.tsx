@@ -19,7 +19,6 @@ import {
   FileSpreadsheet,
   Info,
   Layers,
-  Sparkles,
   Table2,
 } from "lucide-react";
 import type { UploadResult } from "./TableUploader";
@@ -29,7 +28,6 @@ import {
   recommendationTag,
   fieldTypeSummary,
   topReasons,
-  nextPhaseAfterSelect,
   isAnalyzable,
 } from "@/lib/table/confirmation-flow";
 
