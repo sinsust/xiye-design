@@ -107,10 +107,12 @@ export function AnalysisRecommender({
     abortRef.current?.abort();
   };
 
-  // 进入面板即请求推荐（惰性一次）
-  if (dimensions.length === 0 && !loading && !error) {
-    void loadRecommendations();
-  }
+  // 进入面板即请求推荐（惰性一次，useEffect 触发，避免 render 期副作用 / StrictMode 双 fetch）
+  useEffect(() => {
+    if (dimensions.length === 0 && !loading && !error) {
+      void loadRecommendations();
+    }
+  }, [dimensions.length, loading, error, loadRecommendations]);
 
   const visible = expanded ? dimensions : dimensions.slice(0, 4);
   const toggle = (i: number) => {

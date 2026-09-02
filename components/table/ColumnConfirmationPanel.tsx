@@ -14,7 +14,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Loader2, RotateCcw, SlidersHorizontal } from "lucide-react";
 import {
   ALLOWED_OVERRIDE_TYPES,
   evaluateBlocking,
@@ -83,6 +83,8 @@ export function ColumnConfirmationPanel({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  // 低置信字段：展开查看真实样本（单行 + 抽屉式详情）
+  const [expandedLow, setExpandedLow] = useState<Set<number>>(new Set());
 
   // 关键字段（Top 8）
   const keyFields = useMemo(
@@ -226,17 +228,36 @@ export function ColumnConfirmationPanel({
               const col = c as ColumnProfile;
               const ov = overrides[col.index];
               const displayType = ov?.type ?? col.type;
+              const open = expandedLow.has(col.index);
               return (
-                <div key={col.index} className="rounded-lg border border-amber-200 bg-amber-50/40 px-3 py-2.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[13px] font-medium text-foreground">{col.name}</span>
-                    <span className="rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
-                      系统暂按「{TYPE_LABELS.text}」处理
-                    </span>
+                <div key={col.index} className="rounded-lg border border-amber-200 bg-amber-50/40">
+                  <div className="flex flex-wrap items-center gap-2 px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedLow((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(col.index)) next.delete(col.index);
+                          else next.add(col.index);
+                          return next;
+                        })
+                      }
+                      className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                      aria-expanded={open}
+                    >
+                      <ChevronRight
+                        className={"size-3.5 shrink-0 text-amber-600 transition-transform " + (open ? "rotate-90" : "")}
+                      />
+                      <span className="truncate text-[13px] font-medium text-foreground">{col.name}</span>
+                      <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
+                        系统暂按「{TYPE_LABELS.text}」处理
+                      </span>
+                    </button>
                     <select
                       value={displayType}
                       onChange={(e) => setType(col.index, e.target.value as FieldType)}
-                      className="ml-auto rounded-md border border-border/70 bg-white px-2 py-1 text-[11px] outline-none focus:border-primary/50"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 rounded-md border border-border/70 bg-white px-2 py-1 text-[11px] outline-none focus:border-primary/50"
                     >
                       {ALLOWED_OVERRIDE_TYPES.map((t) => (
                         <option key={t} value={t}>
@@ -245,9 +266,28 @@ export function ColumnConfirmationPanel({
                       ))}
                     </select>
                   </div>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-                    若选错类型，该字段在分析时可能被误读（如金额被当作文本、日期无法按时间排序）。
-                  </p>
+                  {open && (
+                    <div className="border-t border-amber-200/70 px-3 py-2">
+                      {col.samples && col.samples.length > 0 && (
+                        <div className="mb-1.5">
+                          <div className="mb-1 text-[11px] text-muted-foreground/70">示例（真实数据样本）</div>
+                          <div className="flex flex-wrap gap-1">
+                            {col.samples.slice(0, 5).map((s, i) => (
+                              <span
+                                key={i}
+                                className="rounded bg-muted/50 px-1.5 py-px text-[10px] text-foreground/80"
+                              >
+                                {String(s).length > 30 ? String(s).slice(0, 30) + "…" : String(s)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                        若选错类型，该字段在分析时可能被误读（如金额被当作文本、日期无法按时间排序）。
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}
