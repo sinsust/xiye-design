@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { listBrainNotes, updateBrainNote } from "@/lib/brain-db";
 import { embed, buildListableText } from "@/lib/embedding";
 
@@ -12,6 +13,10 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // 限流：同一用户每分钟最多 10 次向量补算（本地模型但逐条 embed，属重操作）
+  if (!rateLimit(`brain-backfill:${user.sub}`, 10, 60_000)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   try {
     const body = await req.json().catch(() => null);
     const limit = Math.min(Math.max(typeof body?.limit === "number" ? body.limit : 20, 1), 50);

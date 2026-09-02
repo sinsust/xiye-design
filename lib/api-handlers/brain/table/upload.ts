@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { parseFile, detectSheetStructure } from "@/lib/table/parser";
 import { buildEffectiveDataset } from "@/lib/table/cleaner";
 import { profileEffectiveDataset } from "@/lib/table/profiler";
@@ -36,6 +37,7 @@ import type {
   SheetRecommendation,
   TableProfileResult,
 } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -51,12 +53,25 @@ const PREVIEW_ROWS = 20;
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized", message: "未登录" }, { status: 401 });
+  // 限流：同一用户每分钟最多 15 次表格上传（解析+画像+向量，属重操作）
+  if (!rateLimit(`brain-table-upload:${user.sub}`, 15, 60_000)) {
+    return NextResponse.json({ error: "rate_limited", message: "操作过于频繁，请稍后再试" }, { status: 429 });
+  }
 
   try {
     const form = await req.formData();
     const file = form.get("file");
     if (!(file instanceof File) || !file) {
       return NextResponse.json({ error: "file_required", message: "请选择要上传的文件" }, { status: 400 });
+    }
+
+    // 闸门 0：空文件。此前 0 字节文件会一路走到 parseFile 抛错、被下方 catch 兜成 500，
+    // 属客户端可预检的输入问题，应显式返回 400。
+    if (file.size === 0) {
+      return NextResponse.json(
+        { error: "empty_file", message: "文件内容为空，请重新选择文件" },
+        { status: 400 },
+      );
     }
 
     // 闸门 1：文件大小
@@ -178,7 +193,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("brain table upload failed:", err);
     return NextResponse.json(
-      { error: "upload_failed", message: `文件解析失败：${(err as Error).message}` },
+      { error: "upload_failed", message: `文件解析失败：${safeDetail(err)}` },
       { status: 500 },
     );
   }

@@ -109,6 +109,20 @@ function countReplacementChars(s: string): number {
 /* ─────────────── 主入口 ─────────────── */
 
 /**
+ * 文件名源自用户上传，可能含控制字符/换行（可伪造服务端日志、污染错误响应体），
+ * 也可能超长。统一剥离控制字符并限长后再进入后续流程。
+ */
+function sanitizeFileName(name: unknown): string {
+  const raw = typeof name === "string" ? name : "";
+  const cleaned = raw
+    .replace(/[\u0000-\u001f\u007f]+/g, "")
+    .replace(/[\\/]+/g, "_")
+    .trim();
+  if (!cleaned) return "未命名文件";
+  return cleaned.length > 200 ? `${cleaned.slice(0, 200)}…` : cleaned;
+}
+
+/**
  * 解析上传的表格文件，返回所有 sheet 的原始数据（未清洗）
  * @param buffer 原始字节
  * @param fileName 原始文件名（用于扩展名兜底）
@@ -116,6 +130,17 @@ function countReplacementChars(s: string): number {
 export async function parseFile(buffer: Buffer, fileName: string): Promise<ParsedTable> {
   if (!buffer || buffer.length === 0) {
     throw new Error("parseFile: 文件为空");
+  }
+
+  const safeName = sanitizeFileName(fileName);
+
+  // 防御性体积闸门（与 table/upload.ts 的 100MB 闸门对齐，作为其他调用方的兜底）：
+  // 阻挡明显超大的上传；高压缩率 Zip/XML 炸弹的残余风险由 parseXlsx 的 sheetRows 行上限兜底。
+  const MAX_PARSE_BYTES = 100 * 1024 * 1024;
+  if (buffer.length > MAX_PARSE_BYTES) {
+    throw new Error(
+      `parseFile: 文件过大（${(buffer.length / 1024 / 1024).toFixed(1)}MB > 100MB 上限）`,
+    );
   }
 
   const encoding = detectEncoding(buffer);
@@ -136,22 +161,22 @@ export async function parseFile(buffer: Buffer, fileName: string): Promise<Parse
     }
     case "json": {
       const text = decodeBuffer(buffer, encoding);
-      sheets = parseJsonText(text, fileName);
+      sheets = parseJsonText(text, safeName);
       break;
     }
     case "html": {
       const text = decodeBuffer(buffer, encoding);
-      sheets = parseHtmlTable(text, fileName);
+      sheets = parseHtmlTable(text, safeName);
       break;
     }
     case "unknown":
     default:
       throw new Error(
-        `parseFile: 不支持的文件类型（kind=${kind}, name=${fileName}）。已支持：xlsx/xls/csv/tsv/json/html`,
+        `parseFile: 不支持的文件类型（kind=${kind}, name=${safeName}）。已支持：xlsx/xls/csv/tsv/json/html`,
       );
   }
 
-  return { fileName, encoding, sheets };
+  return { fileName: safeName, encoding, sheets };
 }
 
 /* ─────────────── 格式分发解析 ─────────────── */
@@ -202,7 +227,9 @@ function formatDateCellWithFallback(
 function parseXlsx(buffer: Buffer): SheetInfo[] {
   let wb: XLSX.WorkBook;
   try {
-    wb = XLSX.read(buffer, { type: "buffer", cellDates: false, raw: true });
+    // sheetRows 上限：限制单个 sheet 读取的最大行数，防止高压缩率 Zip/XML 炸弹
+    // 在解压阶段撑爆内存（与 table/upload.ts 的 200 万单元格闸门互补）。
+    wb = XLSX.read(buffer, { type: "buffer", cellDates: false, raw: true, sheetRows: 100_000 });
   } catch (e) {
     throw new Error(`xlsx 解析失败: ${(e as Error).message}`);
   }

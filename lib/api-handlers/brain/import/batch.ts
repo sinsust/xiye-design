@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import {
   listBrainNotes,
   insertBrainNote,
@@ -21,6 +22,10 @@ const DAY_MS = 86400_000;
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // 限流：同一用户每分钟最多 10 次批量导入（每篇跑完整整理+向量管线，属重操作）
+  if (!rateLimit(`brain-import:${user.sub}`, 10, 60_000)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   try {
     const body = await req.json().catch(() => null);
     const raw = Array.isArray(body?.items) ? body.items : [];

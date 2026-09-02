@@ -36,6 +36,34 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [{ source: "/auth/confirm", destination: "/api/auth/confirm" }];
   },
+  // 安全响应头：防 clickjacking / MIME 嗅探 / referrer 泄漏 / 权限滥用。
+  // 注：CSP 为「self 基线 + 图片/字体放行 data/blob」，属保守起步值，
+  // 上线前建议在预发环境验证无控制台拦截后再按需收紧（如为脚本加 nonce）。
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
