@@ -10,43 +10,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { exchangeCodeForToken } from "@/lib/feishu/client";
 import { upsertFeishuConfig } from "@/lib/feishu/feishu-config";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  console.log("[feishu] callback entered");
   const user = await getSessionUser();
   const params = req.nextUrl.searchParams;
   const code = params.get("code");
   const state = params.get("state");
   const home = process.env.FEISHU_FRONTEND_HOME ?? "/";
 
-  console.log("[feishu] callback state", {
-    hasUser: Boolean(user),
-    userSub: user?.sub,
-    hasCode: Boolean(code),
-    codeLen: code?.length ?? 0,
-    hasState: Boolean(state),
-    stateMatches: state && user ? state === user.sub : null,
-  });
-
   if (!user) return NextResponse.redirect(`${home}?feishu=error&reason=unauthorized`);
   if (!code) return NextResponse.redirect(`${home}?feishu=error&reason=no_code`);
-  if (state && state !== user.sub) {
+  // CSRF：state 由 /authorize 写入（= 当前用户 sub），回调必须原样带回且匹配。
+  // 此前 `state && state !== user.sub` 会在 state 缺省时整段跳过校验，
+  // 攻击者可构造不带 state 的回调 URL 完成绑定劫持；此处改为必填强校验。
+  if (!state || state !== user.sub) {
     return NextResponse.redirect(`${home}?feishu=error&reason=state_mismatch`);
   }
 
   try {
-    console.log("[feishu] exchanging code for token...");
     const token = await exchangeCodeForToken(code);
-    console.log("[feishu] token exchanged", {
-      hasAccess: Boolean(token.accessToken),
-      hasRefresh: Boolean(token.refreshToken),
-      expiresIn: token.expiresIn,
-      scope: token.scope,
-    });
     const expiresAt = token.expiresIn > 0 ? Date.now() + token.expiresIn * 1000 : 0;
-    console.log("[feishu] upserting config for user", user.sub);
     await upsertFeishuConfig(
       user.sub,
       token.accessToken,
@@ -54,14 +40,13 @@ export async function GET(req: NextRequest) {
       expiresAt,
       token.scope,
     );
-    console.log("[feishu] upsert OK, redirecting to connected");
     return NextResponse.redirect(`${home}?feishu=connected`);
   } catch (err) {
     console.error("[feishu] callback failed (full):", err);
     console.error("[feishu] err.stack:", (err as Error)?.stack);
     console.error("[feishu] err.name:", (err as Error)?.name);
     console.error("[feishu] err.cause:", (err as { cause?: unknown })?.cause);
-    const reason = encodeURIComponent((err as Error).message).slice(0, 200);
+    const reason = encodeURIComponent(safeDetail(err)).slice(0, 200);
     return NextResponse.redirect(`${home}?feishu=error&reason=${reason}`);
   }
 }

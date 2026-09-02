@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { buildAuthorizeUrl } from "@/lib/feishu/client";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(url);
   } catch (err) {
     return NextResponse.json(
-      { error: "feishu_config_missing", message: (err as Error).message },
+      { error: "feishu_config_missing", message: safeDetail(err) },
       { status: 500 },
     );
   }

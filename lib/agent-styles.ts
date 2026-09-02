@@ -224,7 +224,12 @@ export const AGENT_STYLES: Record<AgentStyleId, AgentStyle> = {
   },
 };
 
-export const DEFAULT_STYLE: AgentStyleId = "harem";
+// 默认人设选「赛博风」而非此前的「后宫风」：
+// ① 默认语气是所有新用户的第一印象，「老鸨子 / 后宫智囊团」在专业与海外场景明显不妥；
+// ② 「核心 ORACLE / 矩阵智囊」在科技产品语境下自然中性，无低俗或性别化联想；
+// ③ 其余人设（帝王/霸总/江湖/修仙/校园/后宫）仍全部保留，用户在「我的风格」里可自由切换。
+// 若要把默认改回，只需把下面的 id 换回 "harem"。
+export const DEFAULT_STYLE: AgentStyleId = "cyber";
 
 export const AGENT_STYLE_LIST: AgentStyle[] = AGENT_ROLES
   ? Object.values(AGENT_STYLES)

@@ -36,11 +36,12 @@ function getKey(): Buffer {
   const raw = process.env.IMA_ENC_KEY;
   if (raw && raw.length >= 32) return Buffer.from(raw.slice(0, 32), "utf8");
   if (raw) return Buffer.from(raw.padEnd(32, "0").slice(0, 32), "utf8");
-  // 安全红线：生产缺失 IMA_ENC_KEY 时拒绝服务（源码内兜底密钥可被任何人解密用户凭证），
-  // 仅本地开发允许使用固定兜底密钥。
-  if (process.env.NODE_ENV === "production") {
+  // 安全红线：源码内兜底密钥是公开的，任何拿到代码的人都能解密用户凭证。
+  // 因此判定采用白名单（仅 development 放行），而非「非 production 即放行」——
+  // 后者会让预览部署、自托管容器、未设 NODE_ENV 的环境静默降级到可预测密钥。
+  if (process.env.NODE_ENV !== "development") {
     throw new Error(
-      "[ima-config] 生产环境必须配置 IMA_ENC_KEY（≥32 字符），拒绝使用源码兜底密钥",
+      "[ima-config] 必须配置 IMA_ENC_KEY（≥32 字符）；非 development 环境拒绝使用源码兜底密钥",
     );
   }
   console.warn(

@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getFeishuConfig, upsertFeishuConfig } from "@/lib/feishu/feishu-config";
 import { listTables, refreshUserAccessToken, FeishuApiError } from "@/lib/feishu/client";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("[feishu] list tables failed:", err);
     const message =
-      err instanceof FeishuApiError ? `飞书接口错误 code=${err.code}` : (err as Error).message;
+      err instanceof FeishuApiError ? `飞书接口错误 code=${err.code}` : safeDetail(err);
     return NextResponse.json({ error: "feishu_list_tables_failed", message }, { status: 500 });
   }
 }

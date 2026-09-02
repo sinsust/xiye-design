@@ -43,10 +43,11 @@ function getKey(): Buffer {
   const raw = process.env.FEISHU_ENC_KEY ?? process.env.IMA_ENC_KEY;
   if (raw && raw.length >= 32) return Buffer.from(raw.slice(0, 32), "utf8");
   if (raw) return Buffer.from(raw.padEnd(32, "0").slice(0, 32), "utf8");
-  // 安全红线：生产缺失加密密钥时拒绝服务，仅本地开发允许固定兜底密钥。
-  if (process.env.NODE_ENV === "production") {
+  // 安全红线：源码内兜底密钥是公开的，任何拿到代码的人都能解密用户 token。
+  // 白名单判定（仅 development 放行），避免预览部署/自托管容器静默降级到可预测密钥。
+  if (process.env.NODE_ENV !== "development") {
     throw new Error(
-      "[feishu-config] 生产环境必须配置 FEISHU_ENC_KEY（≥32 字符），拒绝使用源码兜底密钥",
+      "[feishu-config] 必须配置 FEISHU_ENC_KEY 或 IMA_ENC_KEY（≥32 字符）；非 development 环境拒绝使用源码兜底密钥",
     );
   }
   console.warn(

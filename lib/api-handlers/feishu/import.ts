@@ -27,6 +27,7 @@ import type {
   SheetRecommendation,
   TableProfileResult,
 } from "@/lib/table/types";
+import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 
@@ -141,7 +142,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[feishu] import failed:", err);
     const message =
-      err instanceof FeishuApiError ? `飞书接口错误 code=${err.code}` : (err as Error).message;
+      err instanceof FeishuApiError ? `飞书接口错误 code=${err.code}` : safeDetail(err);
     return NextResponse.json({ error: "feishu_import_failed", message }, { status: 500 });
   }
 }
