@@ -1,6 +1,7 @@
 // 本地向量检索（零成本方案）：
 // 用 @xenova/transformers + Xenova/all-MiniLM-L6-v2（384 维）在 Node.js 本地做语义向量。
-// 首次调用自动下载模型（~80MB，缓存到可写目录），之后纯离线，数据不出本机、0 元 API 费用。
+// 开启后首次调用自动下载模型（~80MB，缓存到可写目录），之后纯离线，数据不出本机、0 元 API 费用。
+// 默认关闭（EMBEDDING_ENABLED 未显式开启即关闭），理由见下方 EMBEDDING_ENABLED 注释。
 //
 // 设计要点：
 // - 单例加载 pipeline，避免多次重复加载模型；
@@ -34,10 +35,16 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   }) as Promise<T>;
 }
 
-// 是否启用语义向量（默认开启）。Serverless 等无法稳定加载本地模型、或想省去 80MB 模型下载的环境，
-// 可设置 EMBEDDING_ENABLED=false，避免每次冷启动都尝试下载模型导致请求超时。
-const EMBEDDING_ENABLED = !/^(false|0|no|off)$/i.test(
-  process.env.EMBEDDING_ENABLED ?? "true",
+// 是否启用语义向量（默认关闭，opt-in）。
+//
+// 背景：@xenova/transformers 依赖树带 protobufjs（critical：任意代码执行）与
+// sharp（high：libvips CVE），且修复只能靠降级到 transformers@1.4.2（breaking）。
+// 语义检索是可降级能力（关闭后走关键词匹配，见 warnEmbeddingDisabled），
+// 故默认关闭：不显式开启就不会加载模型，critical 依赖在生产环境不可达。
+// 需要语义检索的环境请显式设 EMBEDDING_ENABLED=true，并把模型 baked-in
+//（TRANSFORMERS_CACHE_DIR 指向打包内模型），避免冷启动联网下载 80MB。
+const EMBEDDING_ENABLED = /^(true|1|yes|on)$/i.test(
+  process.env.EMBEDDING_ENABLED ?? "false",
 );
 
 let warnedDisabled = false;

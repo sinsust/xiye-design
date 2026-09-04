@@ -10,7 +10,12 @@ const nextConfig: NextConfig = {
   // 故用 build 脚本 `--webpack` 固化；serverExternalPackages 仍由 webpack externals 处理。
   // 本地开发仍可能静态解析到 better-sqlite3，显式声明为外部包，
   // 避免其原生绑定被打包进 server bundle（线上走 Supabase 时本就不会加载）。
-  serverExternalPackages: ["better-sqlite3"],
+  //
+  // @xenova/transformers：本地语义向量（见 lib/embedding.ts）。其依赖树带
+  // protobufjs（critical：任意代码执行）与 sharp（high：libvips CVE）。
+  // 该包仅在 lib/embedding.ts 内「动态 import」，且 EMBEDDING_ENABLED 默认关闭，
+  // 运行时不会加载 —— 这里再外部化一层，确保 critical 依赖既不进 bundle 也不可执行。
+  serverExternalPackages: ["better-sqlite3", "@xenova/transformers"],
   // 文件追踪排除：brand-pack / static-site-handler 的宽泛 fs 扫描会把
   // .git / .next/cache（本机实测 1.6G）等巨物带进函数 nft 追踪（单文件 >200MB），
   // Vercel 在 "Deploying outputs" 上传校验直接拒绝。
@@ -37,9 +42,16 @@ const nextConfig: NextConfig = {
     return [{ source: "/auth/confirm", destination: "/api/auth/confirm" }];
   },
   // 安全响应头：防 clickjacking / MIME 嗅探 / referrer 泄漏 / 权限滥用。
-  // 注：CSP 为「self 基线 + 图片/字体放行 data/blob」，属保守起步值，
-  // 上线前建议在预发环境验证无控制台拦截后再按需收紧（如为脚本加 nonce）。
+  // 注：CSP 为「self 基线 + 图片/字体放行 data/blob」，属保守起步值。
+  // 开发模式追加 'unsafe-eval'：React dev / Turbopack HMR 需 eval 做调试与热更新，
+  // 缺它会出现 "eval() is not supported in this environment" 控制台报错；
+  // 生产模式（React 不用 eval）保持严格基线，不放开 unsafe-eval。
   async headers() {
+    const isDev = process.env.NODE_ENV === "development";
+    const scriptSrc = isDev
+      ? "'self' 'unsafe-inline' 'unsafe-eval'"
+      : "'self' 'unsafe-inline'";
+    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src ${scriptSrc}; connect-src 'self'`;
     return [
       {
         source: "/:path*",
@@ -57,8 +69,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value:
-              "default-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'",
+            value: csp,
           },
         ],
       },
