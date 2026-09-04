@@ -437,6 +437,9 @@ export default function FluidText(props: Props) {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [glEpoch, setGlEpoch] = useState(0);
+  // WebGL 不可用（无 GPU / 驱动受限 / 浮点纹理不支持等）时降级为纯文字，
+  // 避免 canvas 静默空白导致标题不显示。
+  const [webglFailed, setWebglFailed] = useState(false);
 
   const font = { ...DEFAULT_FONT, ...(props.font || {}) };
   const align =
@@ -493,7 +496,11 @@ export default function FluidText(props: Props) {
       gl = (canvas.getContext("webgl", params) ||
         canvas.getContext("experimental-webgl", params)) as WebGLRenderingContext | null;
     }
-    if (!gl) return;
+    if (!gl) {
+      setWebglFailed(true);
+      return;
+    }
+    setWebglFailed(false);
     const g = gl as any;
 
     if (g.isContextLost()) {
@@ -561,7 +568,10 @@ export default function FluidText(props: Props) {
     const formatR = isWebGL2
       ? getSupportedFormat(g.R16F, g.RED, halfFloatTexType)
       : getSupportedFormat(g.RGBA, g.RGBA, halfFloatTexType);
-    if (!formatRGBA || !formatRG || !formatR) return;
+    if (!formatRGBA || !formatRG || !formatR) {
+      setWebglFailed(true);
+      return;
+    }
 
     const effectiveDyeRes = () =>
       supportLinearFiltering ? DYE_RESOLUTION : Math.min(DYE_RESOLUTION, 256);
@@ -1336,6 +1346,41 @@ export default function FluidText(props: Props) {
       g.deleteBuffer(quadIndices);
     };
   }, [glEpoch]);
+
+  // WebGL 不可用时降级：直接用样式化文字展示，保证标题内容始终可见
+  if (webglFailed) {
+    const textStyle: React.CSSProperties = {
+      ...DEFAULT_FONT,
+      ...font,
+      color,
+      width: "100%",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+    };
+    return (
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
+          pointerEvents: "none",
+          ...style,
+        }}
+      >
+        <div style={textStyle}>
+          {String(text)
+            .split("\n")
+            .map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
