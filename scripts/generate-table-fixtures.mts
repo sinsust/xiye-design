@@ -16,11 +16,15 @@
  * XLSX 用 SheetJS 真实生成多 Sheet / 说明行 / 幽灵列(!ref 撑大到 200 列) / 重复列名 / 混合格式。
  */
 
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import * as fs from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
+
+// SheetJS 的 ESM 构建不会自动注入 fs（require('fs') 在 ESM 上下文不可用），
+// 必须显式 set_fs 才能让 XLSX.writeFile 落地到磁盘，否则会抛 "cannot save file"。
+XLSX.set_fs(fs);
 
 /* ── 路径解析（从 workspace 根运行；npm script 默认 cwd=根） ── */
 function generatedDir(): string {
@@ -40,7 +44,7 @@ function writeCsv(dir: string, name: string, aoa: (string | number | null)[][]):
   // 第一行作为表头；papaparse 自动对含逗号/引号/换行的字段加引号
   const csv = Papa.unparse(aoa as unknown[][], { newline: "\n" });
   const file = join(dir, name);
-  writeFileSync(file, csv, "utf-8");
+  fs.writeFileSync(file, csv, "utf-8");
   const dataRows = aoa.length - 1;
   const cols = aoa[0]?.length ?? 0;
   return { file, kind: "csv", sheets: [{ name: "Sheet1", rows: dataRows, cols }] };
@@ -258,7 +262,7 @@ function genDirty(dir: string): GenMeta {
 /* ─────────────── 主流程 ─────────────── */
 export async function generateAll(): Promise<GenMeta[]> {
   const dir = generatedDir();
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const metas: GenMeta[] = [
     genOrdersBasic(dir),

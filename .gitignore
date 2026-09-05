@@ -143,6 +143,7 @@ artifacts/table-sheet-recommendation/
 !scripts/generate-table-fixtures.mts
 !scripts/validation-table-baseline.mts
 !scripts/validation-table-session-l2.mts
+!scripts/validation-combine.mts
 !scripts/_stub-next-headers.mts
 
 .vercel

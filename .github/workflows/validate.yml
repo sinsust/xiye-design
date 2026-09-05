@@ -1,0 +1,33 @@
+name: Validate
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  validation:
+    name: Run validation suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run validations
+        # 仅运行已入库的真实校验脚本（table-baseline / table-session-l2），
+        # 缺失的 25 个 validate:* 已从 package.json 清理，见审计批次1 #2。
+        # 若仓库配置了 Supabase Secrets，则 table-session-l2 会真实执行跨实例验证；
+        # 未配置时该用例自动 SKIP（exit 0），CI 仍为绿。
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run validate
