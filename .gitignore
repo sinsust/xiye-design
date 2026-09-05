@@ -144,6 +144,7 @@ artifacts/table-sheet-recommendation/
 !scripts/validation-table-baseline.mts
 !scripts/validation-table-session-l2.mts
 !scripts/validation-combine.mts
+!scripts/validation-rate-limit.mts
 !scripts/_stub-next-headers.mts
 
 .vercel
