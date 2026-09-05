@@ -218,6 +218,18 @@ ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS estimated_hours double precisio
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS actual_hours double precision;
 
 ALTER TABLE brain_processing_plans ADD COLUMN IF NOT EXISTS archived_at bigint;
+
+-- ===== 限流持久化（批次2 P1 #3）：Vercel 启动幂等补齐 =====
+-- 仅建表；原子 RPC check_rate_limit 由 migration 0010 提供（reconcile 按分号切分，
+-- 函数体含分号会被切碎，故 RPC 不放此处）。RPC 缺失时 rate-limit.ts fail-open 并打日志。
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key          text        PRIMARY KEY,
+  window_start timestamptz NOT NULL DEFAULT now(),
+  hits         integer     NOT NULL DEFAULT 1,
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS rate_limits_updated_at_idx ON rate_limits (updated_at);
+ALTER TABLE rate_limits DISABLE ROW LEVEL SECURITY;
 `;
 
 /**
