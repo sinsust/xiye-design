@@ -355,7 +355,7 @@ export async function POST(req: NextRequest) {
   const isValidOp = ["init_prototype", "update_prototype", "rebuild_prototype", "confirm_prototype"].includes(operationRaw);
   const field = flowMetaRunning({ operation: operationRaw, phase: "prototype", operationId: asString(rawBody?.operationId) || undefined });
 
-  if (!rateLimit(`prototype:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`prototype:${getClientIp(req)}`, 40, 60_000)) {
     return NextResponse.json({ error: "rate_limited", flowMeta: meta(field, "failed") }, { status: 429 });
   }
 
@@ -510,7 +510,7 @@ export async function PUT(req: NextRequest) {
   const projectId = asString(body?.projectId);
   const operationId = asString(body?.operationId);
   const field = flowMetaRunning({ operation: "restore_prototype", phase: "prototype", operationId: operationId || undefined });
-  if (!rateLimit(`prototype:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`prototype:${getClientIp(req)}`, 40, 60_000)) {
     return NextResponse.json({ error: "rate_limited", flowMeta: meta(field, "failed") }, { status: 429 });
   }
   if (!projectId || !operationId) {

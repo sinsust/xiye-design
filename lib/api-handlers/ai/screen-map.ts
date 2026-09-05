@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
   const isValidOp = ["init_screen_map", "update_screen_map", "confirm_screen_map", "rebuild_screen_map"].includes(operationRaw);
   const running = flowMetaRunning({ operation: operationRaw, phase: "screen-map", operationId: asString(rawBody?.operationId) || undefined });
 
-  if (!rateLimit(`screen-map:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`screen-map:${getClientIp(req)}`, 40, 60_000)) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("rate_limited", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
     return NextResponse.json({ error: "rate_limited", flowMeta: meta }, { status: 429 });
   }
@@ -460,7 +460,7 @@ export async function PUT(req: NextRequest) {
   const projectId = asString(body?.projectId);
   const operationId = asString(body?.operationId);
   const running = flowMetaRunning({ operation: "restore_screen_map", phase: "screen-map", operationId: operationId || undefined });
-  if (!rateLimit(`screen-map:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`screen-map:${getClientIp(req)}`, 40, 60_000)) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("rate_limited", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
     return NextResponse.json({ error: "rate_limited", flowMeta: meta }, { status: 429 });
   }

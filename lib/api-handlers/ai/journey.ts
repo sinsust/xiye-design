@@ -270,7 +270,7 @@ export async function POST(req: NextRequest) {
   const isValidOp = ["init_journey", "update_journey", "confirm_journey", "rebuild_journey"].includes(operationRaw);
   const running = flowMetaRunning({ operation: operationRaw, phase: "journey", operationId: asString(rawBody?.operationId) || undefined });
 
-  if (!rateLimit(`journey:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`journey:${getClientIp(req)}`, 40, 60_000)) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("rate_limited", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
     return NextResponse.json({ error: "rate_limited", flowMeta: meta }, { status: 429 });
   }
@@ -439,7 +439,7 @@ export async function PUT(req: NextRequest) {
   const projectId = asString(body?.projectId);
   const operationId = asString(body?.operationId);
   const running = flowMetaRunning({ operation: "restore_journey", phase: "journey", operationId: operationId || undefined });
-  if (!rateLimit(`journey:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`journey:${getClientIp(req)}`, 40, 60_000)) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("rate_limited", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
     return NextResponse.json({ error: "rate_limited", flowMeta: meta }, { status: 429 });
   }

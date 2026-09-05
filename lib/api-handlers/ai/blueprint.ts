@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
   const isValidOp = ["init_blueprint", "update_blueprint", "confirm_blueprint", "rebuild_blueprint"].includes(operationRaw);
   const running = flowMetaRunning({ operation: operationRaw, phase: "blueprint", operationId: asString(rawBody?.operationId) || undefined });
 
-  if (!rateLimit(`blueprint:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`blueprint:${getClientIp(req)}`, 40, 60_000)) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("rate_limited", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
     return NextResponse.json({ error: "rate_limited", flowMeta: meta }, { status: 429 });
   }
@@ -408,7 +408,7 @@ async function handleRestore(req: NextRequest, _opLabel: string) {
   const projectId = asString(body?.projectId);
   const operationId = asString(body?.operationId);
   const running = flowMetaRunning({ operation: "restore_blueprint", phase: "blueprint", operationId: operationId || undefined });
-  if (!rateLimit(`blueprint:${getClientIp(req)}`, 40, 60_000)) {
+  if (!await rateLimit(`blueprint:${getClientIp(req)}`, 40, 60_000)) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("rate_limited", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
     return NextResponse.json({ error: "rate_limited", flowMeta: meta }, { status: 429 });
   }

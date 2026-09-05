@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   // 限流：同一用户每分钟最多 10 次向量补算（本地模型但逐条 embed，属重操作）
-  if (!rateLimit(`brain-backfill:${user.sub}`, 10, 60_000)) {
+  if (!await rateLimit(`brain-backfill:${user.sub}`, 10, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
   try {

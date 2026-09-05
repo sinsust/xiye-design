@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleRegister(req: NextRequest) {
-  if (!rateLimit(`auth:register:${getClientIp(req)}`, 5, 60_000)) {
+  if (!await rateLimit(`auth:register:${getClientIp(req)}`, 5, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
   const json = await req.json().catch(() => null);

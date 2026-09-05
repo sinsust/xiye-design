@@ -26,7 +26,7 @@ export const maxDuration = 300;
 export async function POST(req: NextRequest) {
   const { res } = await requireUser();
   if (res) return res;
-  if (!rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
+  if (!await rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }
   const siteId = req.nextUrl.searchParams.get("site") ?? "Outstand";

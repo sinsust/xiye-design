@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleUpdatePassword(req: NextRequest) {
-  if (!rateLimit(`auth:update-password:${getClientIp(req)}`, 10, 60_000)) {
+  if (!await rateLimit(`auth:update-password:${getClientIp(req)}`, 10, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
   const json = await req.json().catch(() => null);

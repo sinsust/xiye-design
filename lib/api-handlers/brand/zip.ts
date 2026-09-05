@@ -26,7 +26,7 @@ async function requireLogin(): Promise<{ ok: true } | { ok: false; res: Response
 export async function GET(req: NextRequest) {
   const auth = await requireLogin();
   if (!auth.ok) return auth.res;
-  if (!rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
+  if (!await rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }
   try {
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireLogin();
   if (!auth.ok) return auth.res;
-  if (!rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
+  if (!await rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }
   try {

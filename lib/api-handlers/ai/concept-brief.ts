@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     phase: "concept",
     operationId: asString(rawBody?.operationId) || undefined,
   });
-  if (!rateLimit(`concept:${getClientIp(req)}`, 20, 60_000)) {
+  if (!await rateLimit(`concept:${getClientIp(req)}`, 20, 60_000)) {
     const meta = flowMetaToJSON(
       flowMetaDone(running, {
         status: "failed",

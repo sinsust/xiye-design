@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (res) return res;
   const rawBody = req.body ? await req.json().catch(() => null) : null;
   const running = flowMetaRunning({ operation: FLOW_OPERATION.panel, phase: "panel", operationId: typeof rawBody?.operationId === "string" ? rawBody.operationId : undefined });
-  if (!rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {
+  if (!await rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("rate_limited", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
     return NextResponse.json({ error: "rate_limited", agents: [], flowMeta: meta }, { status: 429 });
   }

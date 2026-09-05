@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized", message: "未登录" }, { status: 401 });
   // 限流：同一用户每分钟最多 15 次表格上传（解析+画像+向量，属重操作）
-  if (!rateLimit(`brain-table-upload:${user.sub}`, 15, 60_000)) {
+  if (!await rateLimit(`brain-table-upload:${user.sub}`, 15, 60_000)) {
     return NextResponse.json({ error: "rate_limited", message: "操作过于频繁，请稍后再试" }, { status: 429 });
   }
 

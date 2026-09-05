@@ -9,7 +9,7 @@ import { makeZip } from "@/lib/server-zip";
 import { collectFilePaths } from "@/lib/brand-pack";
 
 export async function POST(req: NextRequest) {
-  if (!rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
+  if (!await rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }
   let index: string;
