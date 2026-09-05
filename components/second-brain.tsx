@@ -1417,7 +1417,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           {imaSyncToast}
         </div>
       )}
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="mx-auto xiye-container px-4 py-8">
         {imaOpen && (
           <ImaImportModal
             onClose={() => setImaOpen(false)}

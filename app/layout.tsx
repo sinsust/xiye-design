@@ -85,7 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <SiteNav />
         <main className="flex-1 w-full min-h-0">
-          <div className="mx-auto flex min-h-full w-full max-w-7xl flex-col px-4 py-8">{children}</div>
+          <div className="mx-auto flex min-h-full w-full xiye-container flex-col px-4 py-8">{children}</div>
         </main>
         <FlowLeaveGuard />
       </body>

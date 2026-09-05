@@ -64,6 +64,21 @@
 /* 默认/兜底主题 = 粗野风（品牌默认，狂野红），绝不回退到绿色。
    正常路径下内联脚本会在首帧前设好 data-theme-preset，命中预设 CSS；
    此处仅作为「JS 未生效 / 无匹配预设」时的兜底，保证任何情况下首帧都不是绿色。 */
+/* 全站内容容器：响应式最大宽度。
+   设计基线 1280（原 Tailwind max-w-7xl），宽屏渐进放大，避免 2K/4K 下两侧大片留白。
+   仅影响 ≥1280 视口；移动端/笔记本维持原观感。 */
+.xiye-container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+@media (min-width: 1280px) {
+  .xiye-container { max-width: 1536px; }
+}
+@media (min-width: 1536px) {
+  .xiye-container { max-width: 1920px; }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0 0 0);
@@ -164,15 +179,16 @@
   }
 }
 
-/* 主内容入场：单次克制的 fade-up，尊重用户减少动效偏好 */
+/* 主内容入场：单次克制的 fade，尊重用户减少动效偏好。
+   注意：这里不能使用 transform —— main > div 是所有页面的祖先容器，
+   一旦带 transform（含 animation 填充态），position:fixed 的弹窗（模态/抽屉/toast）
+   会以它为包含块按「页面高度」居中，导致弹窗整体偏下。 */
 @keyframes xiye-fade-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 

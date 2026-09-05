@@ -703,7 +703,7 @@ export default function Home() {
   return (
     <div
       ref={rootRef}
-      className="mx-auto max-w-7xl px-4 pb-36 pt-6 transition-colors duration-300 sm:pt-10"
+      className="mx-auto xiye-container px-4 pb-36 pt-6 transition-colors duration-300 sm:pt-10"
       style={tryOn ? chromeVars(tryOn) : undefined}
     >
       {/* Hero */}

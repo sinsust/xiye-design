@@ -26,7 +26,7 @@ export function SiteNav() {
       <UiPrefsSync />
       <AuthGuardHost />
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="relative mx-auto flex h-14 max-w-7xl items-center px-4">
+      <div className="relative mx-auto flex h-14 xiye-container items-center px-4">
         <BrandLogo />
         <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 sm:flex">
           {NAV_LINKS.map((link) => {

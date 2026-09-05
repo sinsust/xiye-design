@@ -61,7 +61,7 @@ export default function SkillsPage() {
   const openSkillName = SKILL_CATALOG.find((s) => s.id === openId)?.name ?? "";
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto xiye-container px-4 py-8">
       <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           精选 Skill 配置
