@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
     const scriptSrc = isDev
       ? "'self' 'unsafe-inline' 'unsafe-eval'"
       : "'self' 'unsafe-inline'";
-    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src ${scriptSrc}; connect-src 'self'`;
+    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src ${scriptSrc}; connect-src 'self'`;
     return [
       {
         source: "/:path*",
