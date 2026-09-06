@@ -12,6 +12,7 @@ import {
   Pencil,
   Sparkles,
   Trash2,
+  Undo2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,9 @@ export function InboxDrawer({
   const [error, setError] = useState("");
   // P2-A：展开查看「来源与关联」/ 已转化产物明细的条目 id
   const [openPanel, setOpenPanel] = useState<string | null>(null);
+  // M3 决策 15：auto-apply 即时收录后回执（可撤销），独立于 pending 队列展示
+  const [lastApplied, setLastApplied] = useState<{ noteId: string; title: string; rawContent: string }[]>([]);
+  const [undoingId, setUndoingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -140,7 +144,7 @@ export function InboxDrawer({
     if (open) load();
   }, [open, load]);
 
-  // 提交批量输入：按空行拆分 → POST /inbox → 刷新列表
+  // 提交批量输入：按空行拆分 → POST /inbox（默认 auto-apply 即时收录）→ 展示可撤销回执
   const submitBatch = async () => {
     const blocks = batchText
       .split(/\n\s*\n/)
@@ -157,12 +161,44 @@ export function InboxDrawer({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "提交失败");
-      setBatchText("");
-      await load();
+      // auto-apply：items 已是落库后的笔记（带 noteId），回执供撤销
+      if (data.autoApply && Array.isArray(data.items)) {
+        const applied = (data.items as Record<string, unknown>[])
+          .filter((a) => typeof a?.noteId === "string" && a.noteId)
+          .map((a) => ({
+            noteId: a.noteId as string,
+            title: (a.suggestedTitle as string) || String(a.rawContent || "").slice(0, 40) || "已收录",
+            rawContent: (a.rawContent as string) || "",
+          }));
+        setBatchText("");
+        setLastApplied((prev) => [...applied, ...prev].slice(0, 8));
+        if (applied.length) window.dispatchEvent(new Event("brain:dashboard-refresh"));
+      } else {
+        // 旧预览队列路径（autoApply=false 时），刷新 pending 列表
+        setBatchText("");
+        await load();
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "提交失败");
     } finally {
       setSubmittingBatch(false);
+    }
+  };
+
+  // 撤销一条即时收录（决策 15/16 兜底，防止误录不可逆）
+  const undoNote = async (noteId: string) => {
+    setUndoingId(noteId);
+    setError("");
+    try {
+      const res = await fetch(`/api/brain/notes?id=${encodeURIComponent(noteId)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "撤销失败");
+      setLastApplied((prev) => prev.filter((a) => a.noteId !== noteId));
+      window.dispatchEvent(new Event("brain:dashboard-refresh"));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "撤销失败");
+    } finally {
+      setUndoingId(null);
     }
   };
 
@@ -303,14 +339,50 @@ export function InboxDrawer({
               rows={2}
             />
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">先预览再落库，确认后才写入笔记</span>
+              <span className="text-[11px] text-muted-foreground">AI 即时收录进记忆，可随时撤销</span>
               <Button size="sm" onClick={submitBatch} disabled={!batchText.trim() || submittingBatch}>
                 {submittingBatch ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
-                拆分并预览
+                即时收录
               </Button>
             </div>
           </div>
         </div>
+
+        {/* M3 即时收录回执：已入库，可一键撤销 */}
+        {lastApplied.length > 0 && (
+          <div className="border-b border-border/70 bg-card px-5 py-2.5">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-emerald-600">已收录 {lastApplied.length} 条</span>
+              <button
+                onClick={() => setLastApplied([])}
+                className="text-[11px] text-muted-foreground transition hover:text-foreground"
+              >
+                清空回执
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              {lastApplied.map((a) => (
+                <div key={a.noteId} className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-xs">
+                  <button
+                    onClick={() => onOpenNote?.(a.noteId)}
+                    className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-foreground transition hover:text-primary"
+                  >
+                    <FileText className="size-3.5 shrink-0 text-emerald-600" />
+                    <span className="truncate">{a.title}</span>
+                  </button>
+                  <button
+                    onClick={() => undoNote(a.noteId)}
+                    disabled={undoingId === a.noteId}
+                    className="shrink-0 text-muted-foreground transition hover:text-destructive disabled:opacity-50"
+                    aria-label="撤销"
+                  >
+                    {undoingId === a.noteId ? <Loader2 className="size-3.5 animate-spin" /> : <Undo2 className="size-3.5" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <div className="border-b border-destructive/20 bg-destructive/5 px-5 py-2 text-xs text-destructive">{error}</div>}
 

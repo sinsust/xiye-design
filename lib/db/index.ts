@@ -59,6 +59,7 @@ let userImaConfig: any;
 let userFeishuConfig: any;
 let flowOpLedger: any;
 let projectCheckpoints: any;
+let privateData: any;
 let schema: any;
 
 if (isPg) {
@@ -137,6 +138,31 @@ if (isPg) {
     user_id text not null,
     name text not null,
     data text not null,
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  // M2-C 本地补齐：原仅 PG 迁移 0011 建表，本地 sqlite 缺 CREATE，导致本地 dev checkpoint 查询报 no such table。
+  sqlite.exec(`create table if not exists project_checkpoints (
+    id text primary key,
+    project_id text not null,
+    user_id text not null,
+    data text not null,
+    label text not null default '',
+    created_at integer not null,
+    foreign key (project_id) references projects(id) on delete cascade
+  );`);
+  // M4：私人资料（密文存储，明文仅本地）
+  sqlite.exec(`create table if not exists private_data (
+    id text primary key,
+    user_id text not null,
+    type text not null,
+    name text not null,
+    hint text not null default '',
+    tags text not null default '[]',
+    salt text not null,
+    iv text not null,
+    ciphertext text not null,
     created_at integer not null,
     updated_at integer not null,
     foreign key (user_id) references users(id) on delete cascade
@@ -700,7 +726,8 @@ if (isPg) {
   userFeishuConfig = schemaSqlite.userFeishuConfig;
   flowOpLedger = schemaSqlite.flowOpLedger;
   projectCheckpoints = schemaSqlite.projectCheckpoints;
+  privateData = schemaSqlite.privateData;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, privateData, schema };

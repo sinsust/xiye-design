@@ -30,7 +30,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     id: "brain",
     label: "Brain",
-    items: [{ href: "/brain", label: "第二大脑" }],
+    items: [
+      { href: "/brain", label: "第二大脑" },
+      { href: "/brain/private-data", label: "私人资料" },
+    ],
   },
 ];
 

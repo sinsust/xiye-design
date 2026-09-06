@@ -38,6 +38,23 @@ export const projectCheckpoints = sqliteTable("project_checkpoints", {
   createdAt: integer("created_at").notNull(),
 });
 
+// —— M4：私人资料（端到端加密，服务端只存密文，决策20） ——
+// salt/iv/ciphertext 为 AES-GCM 加密产物；secret 明文仅存在于用户本地（WebCrypto + 解锁口令）。
+// type/name/hint/tags 为可见元数据，用于脱敏预览与筛选，不含明文机密。
+export const privateData = sqliteTable("private_data", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  type: text("type").notNull(),
+  name: text("name").notNull(),
+  hint: text("hint").notNull().default(""),
+  tags: text("tags").notNull().default("[]"),
+  salt: text("salt").notNull(),
+  iv: text("iv").notNull(),
+  ciphertext: text("ciphertext").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 // 用户自定义「后宫智囊团」人设：每个 (user, role) 一行，覆盖默认专家名与头像。
 export const agentSettings = sqliteTable(
   "agent_settings",
@@ -734,6 +751,7 @@ export const flowOpLedger = sqliteTable(
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectCheckpointRow = typeof projectCheckpoints.$inferSelect;
+export type PrivateDataRow = typeof privateData.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
 export type KnowledgeEntryRow = typeof knowledgeEntries.$inferSelect;
 export type BrainNoteRow = typeof brainNotes.$inferSelect;

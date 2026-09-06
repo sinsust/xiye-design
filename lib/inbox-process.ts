@@ -67,52 +67,54 @@ function toPriority(p: unknown): BrainTaskPriority {
   return p === "high" || p === "low" ? p : "medium";
 }
 
+export interface ApplyInput {
+  rawContent: string;
+  title?: string;
+  category?: string;
+  tags?: string[];
+  intent?: BrainInboxIntent;
+  organized?: Partial<OrganizedNote> | null;
+  overrides?: InboxOverrides;
+}
+
+export interface ApplyResult {
+  ok: boolean;
+  error?: string;
+  noteId?: string;
+  createdTasks?: number;
+  createdStrategies?: number;
+}
+
 /**
- * 处理一条收件箱条目。
- * - dismiss → 仅标记 ignored（不落库）
- * - confirm / edit → 按 intent 落库（note / ticketing task / meeting / snippet / project），
- *   覆盖项(overrides)可改标题/分类/标签/意图。
+ * 把「已 AI 整理的原始内容」落库为正式笔记。
+ * 决策 16：content 恒存用户原文，AI 改写(re-written)另存进 struct，绝不覆盖原文。
+ * auto-apply（收录默认直接入库）与收件箱 confirm/edit 两条路径共用，避免逻辑分叉。
  */
-export async function processInboxItem(
+export async function applyOrganizedToNote(
   userId: string,
-  itemId: string,
-  action: InboxProcessAction,
-  overrides: InboxOverrides = {},
-): Promise<InboxProcessResult> {
-  const item: BrainInboxItem | null = await getBrainInboxItem(userId, itemId);
-  if (!item) return { ok: false, action: "processed", error: "not_found" };
-  if (item.status !== "pending" && action !== "dismiss") {
-    return { ok: false, action: "processed", error: "already_processed" };
-  }
+  input: ApplyInput,
+): Promise<ApplyResult> {
+  const { rawContent, organized } = input;
+  const intent: BrainInboxIntent =
+    input.overrides?.intent &&
+    ["note", "task", "meeting", "snippet", "project", "unknown"].includes(input.overrides.intent)
+      ? (input.overrides.intent as BrainInboxIntent)
+      : (input.intent ?? "note");
 
-  // 忽略：不落库
-  if (action === "dismiss") {
-    await updateBrainInboxItem(userId, item.id, { status: "dismissed" });
-    return { ok: true, action: "dismissed" };
-  }
-
-  const organized = parseOrganized(item.organized);
-  const intent: BrainInboxIntent = (
-    overrides.intent &&
-    ["note", "task", "meeting", "snippet", "project", "unknown"].includes(overrides.intent)
-      ? overrides.intent
-      : item.intent ?? "note"
-  ) as BrainInboxIntent;
-
-  const title = (overrides.title?.trim() || item.suggestedTitle || item.rawContent.slice(0, 50)).slice(0, 200);
-  const category = overrides.category?.trim() || item.suggestedCategory || "未分类";
-  const tags = overrides.tags?.length ? overrides.tags : item.suggestedTags;
+  const title = (input.overrides?.title?.trim() || input.title?.trim() || rawContent.slice(0, 50)).slice(0, 200);
+  const category = input.overrides?.category?.trim() || input.category?.trim() || "未分类";
+  const tags = input.overrides?.tags?.length ? input.overrides.tags : input.tags ?? [];
 
   const isSnippet = intent === "snippet";
   const language = isSnippet ? (organized?.language ?? null) : null;
-  const codeContent = isSnippet ? (organized?.codeContent ?? item.rawContent) : null;
+  const codeContent = isSnippet ? (organized?.codeContent ?? rawContent) : null;
   // 用户手动改成 snippet 时兜底：给一段代码语言启发
   const snippetLanguage = isSnippet && !language && organized?.language ? organized.language : language;
 
   const note = await insertBrainNote(userId, {
     source: "text",
     title,
-    content: organized?.rewritten || item.rawContent,
+    content: rawContent, // 决策 16：原文永久保留；改写经 struct 存
     category,
     summary: organized?.summary ?? "",
     tags,
@@ -120,11 +122,11 @@ export async function processInboxItem(
     isSnippet,
     language: snippetLanguage,
     codeContent,
-    embedding: await embeddingFor(title, item.rawContent, organized),
-    // 保留 AI 整理全量结果，刷新不丢
-    struct: item.organized?.slice(0, 20000) ?? null,
+    embedding: await embeddingFor(title, rawContent, organized ?? null),
+    // 保留 AI 整理全量结果（含 rewritten / 参会人 / 策略等），刷新不丢
+    struct: organized ? JSON.stringify(organized).slice(0, 20000) : null,
   });
-  if (!note) return { ok: false, action: "processed", error: "note_create_failed" };
+  if (!note) return { ok: false, error: "note_create_failed" };
 
   // 与 /api/brain/notes 一致：初始复习记录（1 天后，完整 SM-2 结构）
   try {
@@ -183,27 +185,64 @@ export async function processInboxItem(
           : [{ noteId: note.id, title: title.slice(0, 40), dueDate: null, priority: "medium" as BrainTaskPriority, strategyId: null }];
       createdTasks = tasks.length;
       await insertBrainTasks(userId, tasks);
-    } else {
-      // note / snippet / unknown：仅落笔记（不建任务/策略）
-      createdTasks = 0;
-      createdStrategies = 0;
     }
+    // note / snippet / unknown：仅落笔记（不建任务/策略）
   } catch (err) {
     console.error("[inbox-process] create assets failed:", err);
   }
 
+  return { ok: true, noteId: note.id, createdTasks, createdStrategies };
+}
+
+/**
+ * 处理一条收件箱条目（preview 确认队列，高级工具内可选保留）。
+ * - dismiss → 仅标记 ignored（不落库）
+ * - confirm / edit → 委托 applyOrganizedToNote 落库后标记 processed
+ */
+export async function processInboxItem(
+  userId: string,
+  itemId: string,
+  action: InboxProcessAction,
+  overrides: InboxOverrides = {},
+): Promise<InboxProcessResult> {
+  const item: BrainInboxItem | null = await getBrainInboxItem(userId, itemId);
+  if (!item) return { ok: false, action: "processed", error: "not_found" };
+  if (item.status !== "pending" && action !== "dismiss") {
+    return { ok: false, action: "processed", error: "already_processed" };
+  }
+
+  // 忽略：不落库
+  if (action === "dismiss") {
+    await updateBrainInboxItem(userId, item.id, { status: "dismissed" });
+    return { ok: true, action: "dismissed" };
+  }
+
+  const organized = parseOrganized(item.organized);
+  const res = await applyOrganizedToNote(userId, {
+    rawContent: item.rawContent,
+    title: item.suggestedTitle ?? undefined,
+    category: item.suggestedCategory ?? undefined,
+    tags: item.suggestedTags ?? [],
+    intent: item.intent ?? "note",
+    organized,
+    overrides,
+  });
+  if (!res.ok || !res.noteId) {
+    return { ok: false, action: "processed", error: res.error ?? "apply_failed" };
+  }
+
   await updateBrainInboxItem(userId, item.id, {
     status: "processed",
-    noteId: note.id,
+    noteId: res.noteId,
     taskId: null,
   });
 
   return {
     ok: true,
     action: "processed",
-    noteId: note.id,
+    noteId: res.noteId,
     taskId: null,
-    createdTasks,
-    createdStrategies,
+    createdTasks: res.createdTasks,
+    createdStrategies: res.createdStrategies,
   };
 }

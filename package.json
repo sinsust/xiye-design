@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3200",
+    "prebuild": "rm -rf .next",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",

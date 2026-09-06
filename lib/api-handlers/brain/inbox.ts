@@ -9,6 +9,7 @@ import {
   type NewBrainInboxItem,
 } from "@/lib/brain-db";
 import { organizeNote, deriveIntentFromOrganizedNote, type IntentVerdict } from "@/lib/brain-organizer";
+import { applyOrganizedToNote } from "@/lib/inbox-process";
 import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
@@ -30,17 +31,69 @@ function todayStart(): number {
 }
 
 // POST /api/brain/inbox
-// body: { items: [{ rawContent }] }
-// 批量输入 + 智能路由：对每条跑一次完整 AI 整理（organizeNote），据结果判定 intent 与建议，
-// 写入 brain_inbox_items（status=pending）作为预览缓冲——**尚未落库为正式笔记**。
+// body: { items: [{ rawContent }], autoApply?: boolean }
+// 决策 15：默认 autoApply=true——对每条跑一次完整 AI 整理（organizeNote），即时落库为正式笔记
+// （applyOrganizedToNote），不再停留在待确认缓冲；前端可撤销（DELETE /api/brain/notes）。
+// autoApply=false 保留旧"先预览后落库"队列（高级工具内可选）。
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const body = await req.json().catch(() => null);
     const items = Array.isArray(body?.items) ? body.items : [];
+    const autoApply = body?.autoApply !== false; // 默认直接入库
     // 关联建议基于用户已有笔记
     const existing = await listBrainNotes(user.sub).catch(() => []);
+
+    if (autoApply) {
+      const applied: (InboxPreview & { id: string; noteId: string })[] = [];
+      for (const it of items) {
+        const raw = typeof it?.rawContent === "string" ? it.rawContent.trim() : "";
+        if (!raw) continue;
+        try {
+          const organized = await organizeNote(raw, existing);
+          const verdict: IntentVerdict = deriveIntentFromOrganizedNote(raw, organized);
+          const res = await applyOrganizedToNote(user.sub, {
+            rawContent: raw,
+            title: organized.title || undefined,
+            category: organized.category || undefined,
+            tags: organized.tags ?? [],
+            intent: verdict.intent,
+            organized,
+          });
+          if (!res.ok || !res.noteId) {
+            console.error("[inbox] auto-apply failed:", res.error);
+            continue;
+          }
+          applied.push({
+            id: res.noteId,
+            noteId: res.noteId,
+            rawContent: raw,
+            intent: verdict.intent,
+            confidence: verdict.confidence,
+            suggestedTitle: organized.title || raw.slice(0, 50),
+            suggestedCategory: organized.category || "未分类",
+            suggestedTags: organized.tags ?? [],
+          });
+        } catch (err) {
+          console.error("[inbox] organize failed:", err);
+          // 降级：仍落一条原文笔记（决策 16 兜底，避免丢输入），不阻断
+          const res = await applyOrganizedToNote(user.sub, { rawContent: raw, intent: "unknown" as BrainInboxIntent, organized: null }).catch(() => null);
+          if (res?.noteId) {
+            applied.push({ id: res.noteId, noteId: res.noteId, rawContent: raw, intent: "unknown", confidence: 0 });
+          }
+        }
+      }
+      const all = await listBrainInboxItems(user.sub).catch(() => []);
+      return NextResponse.json({
+        autoApply: true,
+        items: applied,
+        inserted: applied.length,
+        stats: inboxStats(all),
+      });
+    }
+
+    // 旧路径：预览缓冲（自动确认队列，高级工具内可选保留）
     const previews: InboxPreview[] = [];
     const toInsert: NewBrainInboxItem[] = [];
 
@@ -87,6 +140,7 @@ export async function POST(req: NextRequest) {
 
     const all = await listBrainInboxItems(user.sub).catch(() => []);
     return NextResponse.json({
+      autoApply: false,
       items: finalPreviews,
       inserted: inserted.length,
       stats: inboxStats(all),
