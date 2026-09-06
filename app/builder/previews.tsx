@@ -5,6 +5,9 @@
 // 变体的 TSX code 写法一致（var(--primary) 等），保证「预览 = 代码效果」。
 
 import { useState, useRef, useEffect, useMemo, createContext, useContext, type CSSProperties, type ReactNode } from "react";
+
+// 渲染期避免重复 new Date()，提为模块级常量
+const CURRENT_YEAR = new Date().getFullYear();
 import type { VisualStyle } from "@/data/visual-styles";
 import { DEMO_CONTENT, type DemoContent } from "@/data/skeleton-content";
 import { useSkeletonStore } from "@/lib/skeleton-store";
@@ -4826,7 +4829,7 @@ function PortfolioAboutPreview({ variantId }: { variantId: string }) {
             {[
               { y: "2018", t: "工作室成立" },
               { y: "2021", t: "首个国际客户" },
-              { y: (new Date().getFullYear()), t: about.team.length ? (about.team.length + " 位伙伴同行") : "40+ 品牌同行" },
+              { y: CURRENT_YEAR, t: about.team.length ? (about.team.length + " 位伙伴同行") : "40+ 品牌同行" },
             ].map((m, i) => (
               <div key={m.y} className="pv-in flex gap-4 border-b py-3 last:border-0 transition-transform hover:-translate-y-1" style={{ ["--i" as string]: i, borderColor: "var(--border)" }}>
                 <span className="text-base font-black" style={{ fontFamily: "'PP Editorial New', 'Newsreader', Georgia, serif" }}>{m.y}</span>

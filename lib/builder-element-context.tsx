@@ -4,9 +4,11 @@
 // 语义化 id = `${scope}:${componentId}:${variantId}:${slot}`：
 //  - 同一组件 + 同一变体下，元素按渲染顺序得到稳定 slot；
 //  - 刷新后组件树结构不变 → id 不变 → elementInteractions 持久化能正确匹配，不丢。
-// Provider 在每次渲染开头把 slot 计数器归零，保证同组件同变体的槽位始终一致。
+// 用 useMemo 基于 (scope, componentId, variantId) 生成稳定的槽位计数器工厂，
+// 避免 render 期直接 mutation ref（StrictMode 双调用 / Suspense 下会污染计数）。
+// 单次渲染内 nextSlot 从 0 递增、跨渲染不保留 —— 与原「每次渲染归零」语义一致。
 
-import { createContext, useContext, useRef, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 
 interface BuilderElementCtxValue {
   scope: string;
@@ -29,15 +31,15 @@ export function BuilderElementProvider({
   variantId: string;
   children: ReactNode;
 }) {
-  const counter = useRef(0);
-  // 每次渲染归零，确保同组件同变体的槽位序列稳定、可复现
-  counter.current = 0;
-  const value: BuilderElementCtxValue = {
-    scope,
-    componentId,
-    variantId,
-    nextSlot: () => counter.current++,
-  };
+  const value: BuilderElementCtxValue = useMemo(() => {
+    let slot = 0;
+    return {
+      scope,
+      componentId,
+      variantId,
+      nextSlot: () => slot++,
+    };
+  }, [scope, componentId, variantId]);
   return (
     <BuilderElementCtx.Provider value={value}>{children}</BuilderElementCtx.Provider>
   );
