@@ -24,6 +24,20 @@ export const projects = sqliteTable("projects", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+// —— M2-C：项目检查点（可回退的产物版本快照） ——
+// data 存 project-snapshot 的 captureSnapshot() 结果（{version,flow,skeleton} 的 JSON 字符串）。
+export const projectCheckpoints = sqliteTable("project_checkpoints", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  // 检查点载荷（project-snapshot captureSnapshot 的 JSON 字符串）
+  data: text("data").notNull(),
+  label: text("label").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+});
+
 // 用户自定义「后宫智囊团」人设：每个 (user, role) 一行，覆盖默认专家名与头像。
 export const agentSettings = sqliteTable(
   "agent_settings",
@@ -719,6 +733,7 @@ export const flowOpLedger = sqliteTable(
 
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
+export type ProjectCheckpointRow = typeof projectCheckpoints.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
 export type KnowledgeEntryRow = typeof knowledgeEntries.$inferSelect;
 export type BrainNoteRow = typeof brainNotes.$inferSelect;

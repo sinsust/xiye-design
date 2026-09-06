@@ -329,6 +329,41 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
     downloadBlob(buildZip(buildProjectZipFiles(project)), `${name}.zip`);
   };
 
+  // M2-D：导出为可直接打开的工作区目录（主交接物）。优先用 File System Access API 写盘，
+  // 非 Chromium / 用户拒绝授权时降级为 zip 下载（与「全部下载」同产物）。
+  const exportToDirectory = async () => {
+    if (!project) return;
+    const picker = (
+      window as unknown as {
+        showDirectoryPicker?: (opts?: { mode?: "readwrite" }) => Promise<FileSystemDirectoryHandle>;
+      }
+    ).showDirectoryPicker;
+    if (typeof picker !== "function") {
+      downloadZip();
+      return;
+    }
+    try {
+      const dir = await picker({ mode: "readwrite" });
+      const files = buildProjectZipFiles(project);
+      for (const f of files) {
+        const parts = f.name.split("/");
+        let cur: FileSystemDirectoryHandle = dir;
+        for (let i = 0; i < parts.length - 1; i++) {
+          cur = await cur.getDirectoryHandle(parts[i], { create: true });
+        }
+        const fileHandle = await cur.getFileHandle(parts[parts.length - 1], { create: true });
+        const w = await fileHandle.createWritable();
+        await w.write(f.content);
+        await w.close();
+      }
+      setSaveMsg("已导出工作区目录");
+    } catch (e) {
+      const errName = (e as { name?: string })?.name;
+      if (errName === "AbortError") return; // 用户取消选择
+      downloadZip(); // 授权失败 → 降级 zip
+    }
+  };
+
   const previewContent =
     project && (activeItem.kind === "doc" || activeItem.kind === "config")
       ? activeItem.kind === "doc"
@@ -617,6 +652,17 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
             >
               <Download className="size-4" />
               全部下载
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={exportToDirectory}
+              disabled={!project}
+              title="导出为可直接打开的工作区目录（AGENTS.md + 源码 + seed）；非 Chromium 自动降级为 zip"
+            >
+              <FolderDown className="size-4" />
+              导出目录
             </Button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import FluidText from "@/components/originkit/ui/fluid-text";
 import {
   ArrowRight,
   ArrowUpRight,
+  Brain,
   Check,
   Copy,
   Layers,
@@ -626,6 +627,61 @@ function HomeIntentInput() {
   );
 }
 
+/** 首页双入口：Studio（AI 产品工作台）与 Brain（第二大脑）两条清晰主线 */
+const ENTRIES = [
+  {
+    id: "studio",
+    tag: "STUDIO",
+    title: "Studio · 产品工作台",
+    desc: "用一句话描述产品，AI 自动解构类型、技术栈与视觉风格，从页面骨架搭到可导出的整站。",
+    icon: Layers,
+    href: "/workflow",
+    cta: "进入 Studio",
+    points: ["做产品 · 流程工作台", "搭页面 · 可视化搭建", "找组件 / 存知识 · 风格库 + 知识库"],
+  },
+  {
+    id: "brain",
+    tag: "BRAIN",
+    title: "Brain · 第二大脑",
+    desc: "把笔记、资料、灵感收拢成可被提问的记忆，自动整理、定期复习、随时问起。",
+    icon: Brain,
+    href: "/brain",
+    cta: "进入 Brain",
+    points: ["今日空间 · 随时记录", "自动整理 · 去重归并", "问记忆 · 周摘与复习"],
+  },
+] as const;
+
+function EntryCard({ entry }: { entry: (typeof ENTRIES)[number] }) {
+  return (
+    <div className="group relative flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {entry.tag}
+      </span>
+      <div className="mt-3 flex items-center gap-3">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <entry.icon className="size-5" />
+        </span>
+        <h2 className="text-lg font-semibold text-foreground">{entry.title}</h2>
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{entry.desc}</p>
+      <ul className="mt-4 space-y-2">
+        {entry.points.map((pt) => (
+          <li key={pt} className="flex items-center gap-2 text-sm text-foreground/90">
+            <Check className="size-3.5 shrink-0 text-primary" />
+            {pt}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-6 pt-2">
+        <Button render={<Link href={entry.href} />} nativeButton={false} className="w-full">
+          {entry.cta}
+          <ArrowRight className="size-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -710,7 +766,7 @@ export default function Home() {
       <section className="reveal mx-auto max-w-3xl text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
           <Sparkles className="size-3.5" />
-          原创预设与主流 UI 库，即选即用
+          一个工作台，两条清晰主线
         </span>
         <h1
           className="relative mt-5 w-full"
@@ -761,80 +817,71 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 三步引导：新手也能一分钟上手 */}
-      <section className="reveal mx-auto mt-12 max-w-4xl">
-        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card/60 p-5 sm:flex-row sm:items-center sm:justify-center sm:gap-5">
-          {[
-            { icon: Palette, title: "浏览风格", desc: "筛选 / 搜索 / 深浅分级" },
-            { icon: Shirt, title: "整页试穿", desc: "hover 卡片或详情里一键换肤" },
-            { icon: ArrowUpRight, title: "带入搭建", desc: "应用风格进页面搭建并导出" },
-          ].map((s, i) => (
-            <div key={s.title} className="flex items-center gap-3 sm:gap-5">
-              {i > 0 && (
-                <span aria-hidden className="hidden text-muted-foreground/60 sm:block">
-                  →
-                </span>
-              )}
-              <div className="flex items-start gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <s.icon className="size-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    <span className="mr-1 font-semibold text-primary">{i + 1}.</span>
-                    {s.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{s.desc}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* 双入口：Studio / Brain 两条清晰主线（M1 产品线拆分落地页呈现） */}
+      <section className="reveal mx-auto mt-12 grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
+        {ENTRIES.map((entry) => (
+          <EntryCard key={entry.id} entry={entry} />
+        ))}
       </section>
 
-      {/* 深浅筛选（仅保留 tone：group / 搜索已移除） */}
-      <section className="reveal mt-16 flex justify-center">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {TONES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTone(t.id)}
-              className={[
-                "rounded-full border px-3 py-1.5 text-xs transition-colors",
-                tone === t.id
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/60",
-              ].join(" ")}
-            >
-              {t.name}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* 风格画廊（入场由卡片逐张 stagger 承担，不再整块 reveal） */}
-      <section className="mt-6">
-        {filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-16 text-center">
-            <p className="text-sm text-muted-foreground">没有匹配的风格，试试调整筛选条件。</p>
+      {/* Studio 预览：视觉风格库（明确标注 Studio 能力，避免与 Brain 心智混用） */}
+      <section className="reveal mx-auto mt-16 max-w-5xl">
+        <div className="mb-5 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Studio
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">视觉风格库</h2>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((style) => (
-              <StyleCard
-                key={style.id}
-                style={style}
-                active={tryOn?.id === style.id}
-                onSelect={(s, rect) => setActive({ style: s, rect })}
-                onTryOn={setTryOn}
-              />
+          <Link href="/workflow" className="text-xs text-primary hover:underline">
+            进入 Studio 工作台 →
+          </Link>
+        </div>
+
+        {/* 深浅筛选 */}
+        <div className="mb-6 flex justify-center">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {TONES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTone(t.id)}
+                className={[
+                  "rounded-full border px-3 py-1.5 text-xs transition-colors",
+                  tone === t.id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-background text-muted-foreground hover:border-primary/60",
+                ].join(" ")}
+              >
+                {t.name}
+              </button>
             ))}
           </div>
-        )}
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          共 {filtered.length} 个风格 · 点击卡片看详情，hover 卡片可「整页试穿」
-        </p>
+        </div>
+
+        {/* 风格画廊 */}
+        <div>
+          {filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-16 text-center">
+              <p className="text-sm text-muted-foreground">没有匹配的风格，试试调整筛选条件。</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+              {filtered.map((style) => (
+                <StyleCard
+                  key={style.id}
+                  style={style}
+                  active={tryOn?.id === style.id}
+                  onSelect={(s, rect) => setActive({ style: s, rect })}
+                  onTryOn={setTryOn}
+                />
+              ))}
+            </div>
+          )}
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            共 {filtered.length} 个风格 · 点击卡片看详情，hover 卡片可「整页试穿」
+          </p>
+        </div>
       </section>
 
       {active && (

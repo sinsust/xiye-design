@@ -11,13 +11,32 @@ import { BrandLogo } from "@/components/brand-logo";
 import { UiPrefsSync } from "@/components/ui-prefs-sync";
 import { AuthGuardHost } from "@/components/auth-guard-host";
 
-const NAV_LINKS = [
-  { href: "/workflow", label: "做产品" },
-  { href: "/builder", label: "搭页面" },
-  { href: "/components", label: "找组件" },
-  { href: "/library", label: "存知识" },
-  { href: "/brain", label: "第二大脑" },
+type NavItem = { href: string; label: string };
+type NavGroup = { id: "studio" | "brain"; label: string; items: NavItem[] };
+
+// M1：xiye 2.0 产品线拆分 —— Studio（AI 产品工作台）与 Brain（个人记忆/知识工作台）
+// 同一母品牌下两个清晰模式，不在同一导航心智里混用。
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "studio",
+    label: "Studio",
+    items: [
+      { href: "/workflow", label: "做产品" },
+      { href: "/builder", label: "搭页面" },
+      { href: "/components", label: "找组件" },
+      { href: "/library", label: "存知识" },
+    ],
+  },
+  {
+    id: "brain",
+    label: "Brain",
+    items: [{ href: "/brain", label: "第二大脑" }],
+  },
 ];
+
+function isItemActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(href + "/");
+}
 
 export function SiteNav() {
   const pathname = usePathname();
@@ -30,22 +49,29 @@ export function SiteNav() {
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="relative mx-auto flex h-14 xiye-container items-center px-4">
         <BrandLogo />
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 sm:flex">
-          {NAV_LINKS.map((link) => {
-            const isActive =
-              pathname === link.href || pathname.startsWith(link.href + "/");
-            return (
-              <Button
-                key={link.href}
-                render={<Link href={link.href} />}
-                nativeButton={false}
-                variant={isActive ? "default" : "ghost"}
-                size="sm"
-              >
-                {link.label}
-              </Button>
-            );
-          })}
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-3 sm:flex">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={group.id} className="flex items-center gap-2">
+              {gi > 0 && <span className="h-5 w-px bg-border" aria-hidden />}
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.label}
+              </span>
+              {group.items.map((link) => {
+                const isActive = isItemActive(pathname, link.href);
+                return (
+                  <Button
+                    key={link.href}
+                    render={<Link href={link.href} />}
+                    nativeButton={false}
+                    variant={isActive ? "default" : "ghost"}
+                    size="sm"
+                  >
+                    {link.label}
+                  </Button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
         <div className="ml-auto flex items-center gap-1.5">
           <ThemePresetToggle />
@@ -70,24 +96,30 @@ export function SiteNav() {
       {mobileOpen && (
         <div className="border-t border-border bg-background sm:hidden">
           <nav className="xiye-container flex flex-col px-4 py-2">
-            {NAV_LINKS.map((link) => {
-              const isActive =
-                pathname === link.href || pathname.startsWith(link.href + "/");
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
+            {NAV_GROUPS.map((group) => (
+              <div key={group.id}>
+                <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {group.label}
+                </div>
+                {group.items.map((link) => {
+                  const isActive = isItemActive(pathname, link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </div>
       )}

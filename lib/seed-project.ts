@@ -1686,6 +1686,17 @@ export function buildAgentMdFiles(state: FlowState, prefix = "../"): SeedFile[] 
       )
       .join("\n") || "- （尚未把组件加入蓝图）";
 
+  // M2-D：把已采纳关键决策（Decision Ledger）注入 AGENTS.md / CLAUDE.md，
+  // 使导出的工作区目录自带决策上下文（PRD 决策18）。当前数据模型仅存采纳项，无驳回语义。
+  const decisions = state.conceptBrief?.decisions ?? [];
+  const decisionsSection = decisions.length
+    ? `## 已采纳关键决策
+
+> 来自 xiye 概念访谈阶段沉淀的产品方向决策（Decision Ledger）。开工若与下列决策冲突，以用户最新口径为准。
+
+${decisions.map((d, i) => `${i + 1}. **${d.title}**${d.detail ? `：${d.detail}` : ""}`).join("\n")}`
+    : "";
+
   const body = `# ${projName} — 开发约定
 
 > 由 xiye 流程工作台生成。本文件是 AI / 开发 Agent 进入本工程的**默认上下文**：
@@ -1746,6 +1757,8 @@ node scripts/verify.mjs
 \`\`\`
 
 通过后按 \`${prefix}docs/AI_HANDOFF.md\` 第八节的「完成回执」格式向用户交付。
+
+${decisionsSection}
 `;
 
   return [

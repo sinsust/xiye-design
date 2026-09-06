@@ -68,7 +68,9 @@ const PREVIEW_DEFAULT_STYLE_ID = "aw-brutalist";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 import { DesignTokensPanel } from "@/components/design-tokens-panel";
 import { BuilderSaveButton } from "@/components/builder-save-button";
+import { LivePreview } from "@/components/live-preview";
 import { applySnapshot } from "@/lib/project-snapshot";
+import { BuilderCheckpoints } from "@/components/builder-checkpoints";
 import { ensureWebFonts } from "@/lib/web-fonts";
 import { FONT_OPTIONS } from "@/data/design-presets";
 import { mergePalette, type PaletteOverride } from "@/lib/use-theme-palette";
@@ -152,6 +154,7 @@ export default function BuilderPage() {
   // 是否从「流程工作台」进入骨架（URL 带 ?from=flow）：是则显示「前进到下一步」按钮，
   // 与项目链路结合；独立进入（仅复制效果）则不显示。
   const [inFlow, setInFlow] = useState(false);
+  const [livePreview, setLivePreview] = useState(false);
   useEffect(() => {
     if (typeof window !== "undefined" && /[?&]from=flow\b/.test(window.location.search)) {
       setInFlow(true);
@@ -173,6 +176,7 @@ export default function BuilderPage() {
   const projectName = useFlowStore((s) => s.projectInfo?.projectName ?? null);
   const projectType = useFlowStore((s) => s.projectType);
   const intentNarrative = useFlowStore((s) => s.intentNarrative);
+  const savedProjectId = useFlowStore((s) => s.savedProjectId);
   const [copyState, setCopyState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [copySummary, setCopySummary] = useState<string | null>(null);
   const resolveText = (text: string) => resolveContent(text, content);
@@ -261,6 +265,8 @@ export default function BuilderPage() {
             ? JSON.parse(d.project.data)
             : d.project.data;
         applySnapshot(snap);
+        // 回填 savedProjectId：确保本工作区后续「保存」走 PUT 更新而非 POST 新建（M2-B 活工作区闭环）
+        useFlowStore.getState().setSavedProjectId(pid);
       }
       window.history.replaceState({}, "", "/builder");
     })();
@@ -1007,6 +1013,9 @@ export default function BuilderPage() {
           )}
         </aside>
 
+        {/* M2-C：检查点面板（保存 / 列出 / 回退） */}
+        <BuilderCheckpoints projectId={savedProjectId} />
+
         {/* 变体抽屉（点按打开；点空白 / Esc / 关闭按钮收起） */}
         <div
           className={[
@@ -1221,52 +1230,62 @@ export default function BuilderPage() {
             {/* 大预览：浏览器视窗框架，让预览一眼可辨 */}
             {isScrollMotion && <div aria-hidden style={{ height: "90vh" }} />}
             <div className="overflow-hidden rounded-xl border border-border bg-card">
-              {/* 浏览器顶栏：红黄绿交通灯 + 地址栏 + 变体标签 */}
-              <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-3 py-2">
-                <span className="flex shrink-0 gap-1.5">
-                  <span className="size-2.5 rounded-full" style={{ background: "#f53e3e" }} title="关闭" />
-                  <span className="size-2.5 rounded-full" style={{ background: "#f5a623" }} title="最小化" />
-                  <span className="size-2.5 rounded-full" style={{ background: "#3bbf4c" }} title="缩放" />
-                </span>
-                <span className="flex h-6 min-w-0 flex-1 items-center overflow-hidden rounded-md border border-border bg-background px-3">
-                  <Lock className="mr-1.5 size-3 shrink-0 text-muted-foreground/70" />
-                  <span className="truncate text-xs text-muted-foreground">
-                    {resolveText(activeComponent?.name ?? "")}.preview
-                  </span>
-                </span>
-                <span className="hidden shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
-                  {resolveText(activeVariant?.name ?? "")}
-                  {btnStyle && (
-                    <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                      {findButtonStyle(btnStyle).name}
+              {livePreview ? (
+                <LivePreview
+                  style={style}
+                  designSystem={designSystem}
+                  blueprint={pageBlueprint}
+                />
+              ) : (
+                <>
+                  {/* 浏览器顶栏：红黄绿交通灯 + 地址栏 + 变体标签 */}
+                  <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-3 py-2">
+                    <span className="flex shrink-0 gap-1.5">
+                      <span className="size-2.5 rounded-full" style={{ background: "#f53e3e" }} title="关闭" />
+                      <span className="size-2.5 rounded-full" style={{ background: "#f5a623" }} title="最小化" />
+                      <span className="size-2.5 rounded-full" style={{ background: "#3bbf4c" }} title="缩放" />
                     </span>
-                  )}
-                </span>
-              </div>
-              {/* 预览画布：衬托「页面」，页面居中带留白与投影 */}
-              <div className="bg-muted/30 p-5 sm:p-8">
-                <div className="mx-auto max-w-4xl">
-                  <div
-                    ref={previewRef}
-                    className="dtox-root min-h-[20rem] overflow-hidden rounded-[var(--radius)] border border-border"
-                    style={{
-                      ...styleVars(style, designSystem),
-                      backgroundColor: "var(--background)",
-                      color: "var(--foreground)",
-                      boxShadow: "var(--shadow)",
-                    }}
-                  >
-                    <style>{designTokenBridgeCss(designSystem)}</style>
-                    {activeComponent && activeVariant && (
-                      <CtaStyleProvider value={btnStyle ?? null}>
-                        <BuilderElementProvider scope="main" componentId={activeComponent.id} variantId={activeVariant.id}>
-                          <ComponentPreview componentId={activeComponent.id} variantId={activeVariant.id} style={style} />
-                        </BuilderElementProvider>
-                      </CtaStyleProvider>
-                    )}
+                    <span className="flex h-6 min-w-0 flex-1 items-center overflow-hidden rounded-md border border-border bg-background px-3">
+                      <Lock className="mr-1.5 size-3 shrink-0 text-muted-foreground/70" />
+                      <span className="truncate text-xs text-muted-foreground">
+                        {resolveText(activeComponent?.name ?? "")}.preview
+                      </span>
+                    </span>
+                    <span className="hidden shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
+                      {resolveText(activeVariant?.name ?? "")}
+                      {btnStyle && (
+                        <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          {findButtonStyle(btnStyle).name}
+                        </span>
+                      )}
+                    </span>
                   </div>
-                </div>
-              </div>
+                  {/* 预览画布：衬托「页面」，页面居中带留白与投影 */}
+                  <div className="bg-muted/30 p-5 sm:p-8">
+                    <div className="mx-auto max-w-4xl">
+                      <div
+                        ref={previewRef}
+                        className="dtox-root min-h-[20rem] overflow-hidden rounded-[var(--radius)] border border-border"
+                        style={{
+                          ...styleVars(style, designSystem),
+                          backgroundColor: "var(--background)",
+                          color: "var(--foreground)",
+                          boxShadow: "var(--shadow)",
+                        }}
+                      >
+                        <style>{designTokenBridgeCss(designSystem)}</style>
+                        {activeComponent && activeVariant && (
+                          <CtaStyleProvider value={btnStyle ?? null}>
+                            <BuilderElementProvider scope="main" componentId={activeComponent.id} variantId={activeVariant.id}>
+                              <ComponentPreview componentId={activeComponent.id} variantId={activeVariant.id} style={style} />
+                            </BuilderElementProvider>
+                          </CtaStyleProvider>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
             {isScrollMotion && <div aria-hidden style={{ height: "60vh" }} />}
 

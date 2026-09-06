@@ -30,6 +30,24 @@ export const projects = pgTable(
   })
 );
 
+// —— M2-C：项目检查点（可回退的产物版本快照） ——
+export const projectCheckpoints = pgTable(
+  "project_checkpoints",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    data: text("data").notNull(),
+    label: text("label").notNull().default(""),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    projectIdIdx: index("project_checkpoints_project_id_idx").on(t.projectId),
+  })
+);
+
 // 用户自定义「后宫智囊团」人设：每个 (user, role) 一行，覆盖默认专家名与头像。
 export const agentSettings = pgTable(
   "agent_settings",
@@ -588,6 +606,7 @@ export const brainTaskOutcomes = pgTable(
 
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
+export type ProjectCheckpointRow = typeof projectCheckpoints.$inferSelect;
 export type AgentSettingRow = typeof agentSettings.$inferSelect;
 export type KnowledgeEntryRow = typeof knowledgeEntries.$inferSelect;
 export type BrainNoteRow = typeof brainNotes.$inferSelect;

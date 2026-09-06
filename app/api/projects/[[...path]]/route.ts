@@ -4,6 +4,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as m0 from "@/lib/api-handlers/projects/_root";
 import * as m1 from "@/lib/api-handlers/projects/[id]";
+import * as m2 from "@/lib/api-handlers/projects/[id]/checkpoints";
+import * as m3 from "@/lib/api-handlers/projects/[id]/checkpoints/[cid]";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +20,8 @@ interface RouteDef {
 const ROUTES: RouteDef[] = [
   { key: "", methods: { GET: m0.GET as HandlerFn, POST: m0.POST as HandlerFn } },
   { key: "[id]", methods: { GET: m1.GET as HandlerFn, PUT: m1.PUT as HandlerFn, DELETE: m1.DELETE as HandlerFn } },
+  { key: "[id]/checkpoints", methods: { GET: m2.GET as HandlerFn, POST: m2.POST as HandlerFn } },
+  { key: "[id]/checkpoints/[cid]", methods: { DELETE: m3.DELETE as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */
