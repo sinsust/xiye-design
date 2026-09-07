@@ -148,3 +148,7 @@ artifacts/table-sheet-recommendation/
 !scripts/_stub-next-headers.mts
 
 .vercel
+
+# tsc 输出产物
+/tsc-out.txt
+tsc-out-*.txt
