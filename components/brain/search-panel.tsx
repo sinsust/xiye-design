@@ -1,7 +1,44 @@
+"use client";
+
 import type { ReactNode } from "react";
-import { Cloud, Code2, FolderKanban, Home, Inbox, ListTodo, Loader2, PenLine, Search, Shuffle, Sparkles, Target, X } from "lucide-react";
+import { useState } from "react";
+import {
+  BookmarkPlus,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Cloud,
+  Code2,
+  FolderKanban,
+  Home,
+  Inbox,
+  ListTodo,
+  Loader2,
+  PenLine,
+  Search,
+  Shuffle,
+  Sparkles,
+  Target,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import type { AskMode, QaItem, SearchHits } from "./types";
+
+/** 命中词高亮：把 text 中首次出现的 query 包成 <mark>，一眼判断是否命中（P1-2） */
+function highlight(text: string, q: string) {
+  const key = q.trim();
+  if (!key) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(key.toLowerCase());
+  if (idx < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="rounded bg-primary/25 px-0.5 text-primary">{text.slice(idx, idx + key.length)}</mark>
+      {text.slice(idx + key.length)}
+    </>
+  );
+}
 
 const ASK_MODE_LABEL: { value: AskMode; label: string; icon: ReactNode; hint: string }[] = [
   { value: "local", label: "本地", icon: <Home className="size-3" />, hint: "仅检索你自己的笔记" },
@@ -26,6 +63,8 @@ interface SearchPanelProps {
   setAskMode: (m: AskMode) => void;
   asking: boolean;
   ask: () => void;
+  // P1-3：问答存为笔记后的回调（父级刷新列表，让新笔记立即可见）
+  onNoteSaved?: () => void;
 }
 
 export function SearchPanel({
@@ -45,7 +84,45 @@ export function SearchPanel({
   setAskMode,
   asking,
   ask,
+  onNoteSaved,
 }: SearchPanelProps) {
+  // P1-2：回答默认三行截断，可展开看全文
+  const [openQa, setOpenQa] = useState<number | null>(null);
+  // P1-3：问答落库为笔记（此前只在内存，刷新即丢）
+  const [savingQa, setSavingQa] = useState<number | null>(null);
+  const [savedQa, setSavedQa] = useState<number | null>(null);
+
+  const saveAsNote = async (item: QaItem, i: number) => {
+    setSavingQa(i);
+    try {
+      const res = await fetch("/api/brain/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `问答：${item.q}`.slice(0, 60),
+          content: [
+            `【问题】\n${item.q}`,
+            `\n【回答】\n${item.a}`,
+            item.sources.length
+              ? `\n【参考来源】\n${item.sources.map((s) => `- ${s.title}`).join("\n")}`
+              : "",
+          ].join("\n"),
+          summary: item.a.slice(0, 200),
+          category: "问答",
+          tags: ["问答"],
+        }),
+      });
+      if (res.ok) {
+        setSavedQa(i);
+        window.setTimeout(() => setSavedQa(null), 2000);
+        onNoteSaved?.();
+      }
+    } catch {
+      /* 保存失败静默，用户可重试 */
+    }
+    setSavingQa(null);
+  };
+
   if (!open) return null;
   return (
     <div className="absolute right-0 top-11 z-40 w-[380px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-primary/15">
@@ -117,9 +194,18 @@ export function SearchPanel({
                     <button
                       key={n.id}
                       onClick={() => { jumpToNote(n.id); onClose(); }}
-                      className="block w-full truncate rounded-md px-2 py-1 text-left text-xs text-foreground transition hover:bg-muted"
+                      className="block w-full rounded-md px-2 py-1.5 text-left transition hover:bg-muted"
                     >
-                      {n.title || "（未命名）"} <span className="text-muted-foreground">· {n.category || "随手记"}</span>
+                      <div className="truncate text-xs text-foreground">
+                        {highlight(n.title || "（未命名）", query)}{" "}
+                        <span className="text-muted-foreground">· {n.category || "随手记"}</span>
+                      </div>
+                      {/* P1-2：露出摘要/原文片段，不必逐条点开就能判断是否命中 */}
+                      {(n.summary || n.content) && (
+                        <div className="mt-0.5 line-clamp-1 text-[10px] leading-relaxed text-muted-foreground">
+                          {highlight((n.summary || n.content).replace(/\s+/g, " ").slice(0, 80), query)}
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -147,7 +233,7 @@ export function SearchPanel({
                       onClick={() => { goto("workbench", "strategies"); onClose(); }}
                       className="block w-full truncate rounded-md px-2 py-1 text-left text-xs text-foreground transition hover:bg-muted"
                     >
-                      {s.title}
+                      {highlight(s.title, query)}
                     </button>
                   ))}
                 </div>
@@ -161,7 +247,7 @@ export function SearchPanel({
                       onClick={() => { openSnippet(s.id); onClose(); }}
                       className="block w-full truncate rounded-md px-2 py-1 text-left text-xs text-foreground transition hover:bg-muted"
                     >
-                      {s.title}
+                      {highlight(s.title, query)}
                     </button>
                   ))}
                 </div>
@@ -181,17 +267,76 @@ export function SearchPanel({
               {qa.slice(-3).map((item, i) => (
                 <div key={i} className="rounded-md bg-card/70 p-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-foreground">{item.q}</span>
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">{item.q}</span>
                     {item.semantic === false && (
                       <span
-                        className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-normal text-amber-700"
+                        className="shrink-0 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-normal text-amber-700"
                         title="语义向量未启用（未配置 EMBEDDING_ENABLED 或模型不可用），已用关键词匹配"
                       >
                         关键词匹配
                       </span>
                     )}
+                    <CopyButton
+                      text={item.a}
+                      size="xs"
+                      iconOnly
+                      title="复制回答全文"
+                      className="ml-auto inline-flex shrink-0 items-center rounded-md border border-border/70 px-1 py-0.5 text-muted-foreground transition hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
+                    />
+                    {/* P1-3：把这条问答存为笔记（此前只在内存，刷新即丢） */}
+                    <button
+                      type="button"
+                      onClick={() => saveAsNote(item, i)}
+                      disabled={savingQa === i}
+                      title="把这条问答存为笔记"
+                      className="inline-flex shrink-0 items-center gap-0.5 rounded-md border border-border/70 px-1 py-0.5 text-[10px] text-muted-foreground transition hover:border-primary/30 hover:bg-primary/10 hover:text-primary disabled:opacity-60"
+                    >
+                      {savedQa === i ? (
+                        <>
+                          <Check className="size-3 text-emerald-500" />
+                          已存
+                        </>
+                      ) : savingQa === i ? (
+                        <>
+                          <Loader2 className="size-3 animate-spin" />
+                          存入
+                        </>
+                      ) : (
+                        <>
+                          <BookmarkPlus className="size-3" />
+                          存为笔记
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <div className="mt-0.5 line-clamp-3 whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground">{item.a}</div>
+                  <div
+                    className={
+                      "mt-0.5 whitespace-pre-wrap text-[11px] leading-relaxed text-muted-foreground " +
+                      (openQa === i ? "" : "line-clamp-3")
+                    }
+                  >
+                    {item.a}
+                  </div>
+                  {/* P1-2：长回答可展开看全文（此前 line-clamp-3 砍掉后无法查看） */}
+                  {item.a.length > 120 && (
+                    <button
+                      type="button"
+                      onClick={() => setOpenQa(openQa === i ? null : i)}
+                      className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-primary transition hover:opacity-80"
+                    >
+                      {openQa === i ? (
+                        <>
+                          <ChevronUp className="size-3" />
+                          收起
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="size-3" />
+                          展开全文
+                        </>
+                      )}
+                    </button>
+                  )}
                   {item.sources.length > 0 && (
                     <div className="mt-1 flex flex-wrap items-center gap-1">
                       {item.sources.map((s, si) =>

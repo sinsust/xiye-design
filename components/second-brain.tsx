@@ -76,6 +76,25 @@ import { LLMRouteBadge } from "@/components/LLMRouteBadge";
 
 export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [notes, setNotes] = useState<BrainNote[]>(initial);
+
+  // 看板新鲜度修复：进入看板时客户端重拉全量笔记，覆盖服务端预取快照，
+  // 使「今日空间」即时收录的新记录在看板立即可见（不再停留在页面加载时的旧快照）。
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/brain/notes");
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive && Array.isArray(json.notes)) setNotes(json.notes as BrainNote[]);
+      } catch {
+        /* 拉取失败则保留服务端快照 */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
   // 第二大脑 · 从用户绑定的腾讯 ima 知识库导入
   const [imaOpen, setImaOpen] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
@@ -641,6 +660,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [listFilter, setListFilter] = useState("全部");
   // 列表来源过滤（全部 / 手动 / ima）
   const [sourceFilter, setSourceFilter] = useState<"all" | "manual" | "ima">("all");
+  // P2-3：按标签过滤（点笔记卡上的 #标签 触发）
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  // P3-3：批量选择（多选删除 / 批量加标签）
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
   // 大脑工作台二级 Tab（记一笔 / 任务看板）
   const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets" | "projects" | "table" | "review">("input");
   // 最近活跃流是否全部展开
@@ -766,26 +791,144 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       sourceFilter === "all"
         ? notes
         : notes.filter((n) => (n.source === "ima" ? "ima" : "manual") === sourceFilter);
-    return listFilter === "全部"
-      ? bySource
-      : bySource.filter((n) => (n.category || "随手记") === listFilter);
-  }, [notes, listFilter, sourceFilter]);
+    const byCategory =
+      listFilter === "全部" ? bySource : bySource.filter((n) => (n.category || "随手记") === listFilter);
+    // P2-3：标签过滤（点击笔记卡上的 #标签 触发）
+    return tagFilter ? byCategory.filter((n) => (n.tags ?? []).includes(tagFilter)) : byCategory;
+  }, [notes, listFilter, sourceFilter, tagFilter]);
+
+  // ---------- P3-3：批量操作（多选删除 / 批量加标签） ----------
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const exitSelectMode = useCallback(() => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const batchDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`确认删除选中的 ${selectedIds.size} 条笔记？此操作不可撤销。`)) return;
+    setBatchBusy(true);
+    try {
+      await Promise.all(
+        [...selectedIds].map((id) =>
+          fetch(`/api/brain/notes?id=${id}`, { method: "DELETE" }).catch(() => null),
+        ),
+      );
+      setNotes((prev) => prev.filter((n) => !selectedIds.has(n.id)));
+      toast(`已删除 ${selectedIds.size} 条笔记`);
+      exitSelectMode();
+    } finally {
+      setBatchBusy(false);
+    }
+  }, [selectedIds, exitSelectMode]);
+
+  const batchTag = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    const tag = window.prompt("为选中的笔记添加标签（多个用英文逗号分隔）：", "");
+    if (!tag) return;
+    const tags = tag
+      .split(/[,，]/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    if (tags.length === 0) return;
+    setBatchBusy(true);
+    try {
+      const results = await Promise.all(
+        [...selectedIds].map(async (id) => {
+          const cur = notes.find((n) => n.id === id);
+          if (!cur) return null;
+          const merged = Array.from(new Set([...(cur.tags ?? []), ...tags]));
+          const res = await fetch(`/api/brain/notes?id=${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tags: merged }),
+          });
+          return res.ok ? { id, tags: merged } : null;
+        }),
+      );
+      const ok = results.filter(Boolean) as { id: string; tags: string[] }[];
+      setNotes((prev) =>
+        prev.map((n) => {
+          const hit = ok.find((o) => o.id === n.id);
+          return hit ? { ...n, tags: hit.tags } : n;
+        }),
+      );
+      toast(`已为 ${ok.length} 条笔记添加标签`);
+      exitSelectMode();
+    } finally {
+      setBatchBusy(false);
+    }
+  }, [selectedIds, notes, exitSelectMode]);
 
   // 最近活跃流（Activity Feed）
   const activity = useMemo(() => {
-    const items: { kind: string; text: string; time: string }[] = [];
+    const items: { kind: string; text: string; time: string; noteId?: string }[] = [];
     const sorted = [...notes].sort((a, b) => b.createdAt - a.createdAt);
     for (const n of sorted.slice(0, 5)) {
       items.push({
         kind: n.source || "text",
         text: `整理了「${n.title}」(${n.category || "随手记"})`,
         time: relativeTime(n.createdAt),
+        noteId: n.id,
       });
     }
     const tagCount = learningTopics.reduce((s, t) => s + t.count, 0);
     if (tagCount) items.push({ kind: "tag", text: `新增 ${tagCount} 个学习关联标签`, time: "近一周" });
     return items.slice(0, 6);
   }, [notes, learningTopics]);
+
+  // ---------- P1-5：概览面板从「只读仪表盘」升级为「可行动面板」 ----------
+  /** 传给 OverviewPanel 的最小笔记摘要（不把整份 BrainNote 塞进概览） */
+  const overviewNotes = useMemo(
+    () =>
+      notes.map((n) => ({
+        id: n.id,
+        title: n.title,
+        category: n.category,
+        parentId: n.parentId ?? null,
+        version: n.version ?? 1,
+        isSnippet: Boolean(n.isSnippet),
+        superseded: Boolean(n.superseded),
+      })),
+    [notes],
+  );
+
+  /** 概览里把周报成果 / 本周行动项一键存为任务 */
+  const createOverviewTask = useCallback(
+    async (payload: { title: string; dueDate?: string; assignee?: string }) => {
+      try {
+        const res = await fetch("/api/brain/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: payload.title,
+            dueDate: payload.dueDate || undefined,
+            assignee: payload.assignee || undefined,
+            priority: "medium",
+          }),
+        });
+        if (!res.ok) {
+          toast("存为任务失败", "error");
+          return false;
+        }
+        toast("已存为任务", "success");
+        loadTasks();
+        return true;
+      } catch {
+        toast("存为任务失败", "error");
+        return false;
+      }
+    },
+    [loadTasks],
+  );
 
   /** 整理：打开工作台并将 AI 建议填充到可编辑表单 */
   const organize = async (overrideContent?: string) => {
@@ -1549,6 +1692,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 setAskMode={setAskMode}
                 asking={asking}
                 ask={ask}
+                onNoteSaved={refreshAll}
               />
             </div>
             <ReminderCenter onNavigate={gotoNav} />
@@ -1629,6 +1773,13 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     gotoTop("workbench", "kanban");
                     setDetailTaskId(taskId);
                   }}
+                  notes={overviewNotes}
+                  onOpenNote={(id) => {
+                    setKnowledgeOpen(false);
+                    gotoTop("workbench", "input");
+                    jumpToNote(id);
+                  }}
+                  onCreateTask={createOverviewTask}
                 />
               )}
             </div>
@@ -1738,6 +1889,19 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
 
             {/* 笔记列表 · 高密度 */}
             <div className="rounded-xl border border-border bg-card shadow-sm">
+              {/* P2-3：标签过滤进行中提示 */}
+              {tagFilter && (
+                <div className="flex items-center gap-2 border-b border-border bg-primary/[0.04] px-5 py-2 text-xs">
+                  <span className="text-muted-foreground">正在按标签筛选：</span>
+                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary">#{tagFilter}</span>
+                  <button
+                    onClick={() => setTagFilter(null)}
+                    className="ml-auto rounded px-1.5 py-0.5 text-primary transition hover:bg-primary/10"
+                  >
+                    ✕ 清除
+                  </button>
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-2 px-5 pt-4">
                 <h2 className="text-sm font-semibold text-foreground">知识沉淀</h2>
                 <span className="text-xs text-muted-foreground">{filteredNotes.length}/{notes.length}</span>
@@ -1762,8 +1926,20 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                     </button>
                   ))}
                 </div>
-                {/* 导出 / 向量回填 */}
+                {/* 导出 / 向量回填 / 批量选择 */}
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+                    className={
+                      "rounded-[var(--radius)] border px-2 py-1 text-xs transition " +
+                      (selectMode
+                        ? "border-primary/40 bg-primary/10 font-medium text-primary"
+                        : "border-border text-muted-foreground hover:bg-muted hover:text-foreground")
+                    }
+                    title={selectMode ? "退出批量选择" : "进入批量选择（多选删除 / 批量加标签）"}
+                  >
+                    {selectMode ? "取消选择" : "批量选择"}
+                  </button>
                   <button
                     onClick={exportAllMd}
                     className="rounded-[var(--radius)] border border-border px-2 py-1 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
@@ -1799,10 +1975,49 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 </div>
               </div>
 
+              {/* P3-3：批量操作工具条 */}
+              {selectMode && (
+                <div className="flex flex-wrap items-center gap-2 border-t border-border px-5 py-2.5">
+                  <button
+                    onClick={() =>
+                      setSelectedIds(
+                        selectedIds.size === filteredNotes.length
+                          ? new Set()
+                          : new Set(filteredNotes.map((n) => n.id)),
+                      )
+                    }
+                    className="text-xs font-medium text-primary transition hover:underline"
+                  >
+                    {selectedIds.size === filteredNotes.length ? "取消全选" : "全选"}
+                  </button>
+                  <span className="text-xs text-muted-foreground">已选 {selectedIds.size} 条</span>
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <button
+                      onClick={batchTag}
+                      disabled={batchBusy || selectedIds.size === 0}
+                      className="rounded-[var(--radius)] border border-border px-2.5 py-1 text-xs text-foreground transition hover:bg-muted disabled:opacity-50"
+                    >
+                      {batchBusy ? "处理中…" : "批量加标签"}
+                    </button>
+                    <button
+                      onClick={batchDelete}
+                      disabled={batchBusy || selectedIds.size === 0}
+                      className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    >
+                      {batchBusy ? "处理中…" : `删除 ${selectedIds.size}`}
+                    </button>
+                  </span>
+                </div>
+              )}
+
               <div className="px-5 pb-5 pt-3">
                 {filteredNotes.length === 0 ? (
                   <div className="py-10 text-center text-sm text-muted-foreground">
-                    {listFilter !== "全部" ? "这个分类还没有笔记。" : "还没有笔记，先在「记一笔」里扔一段进来。"}
+                    {tagFilter
+                      ? `没有带 #${tagFilter} 标签的笔记。`
+                      : listFilter !== "全部"
+                        ? "这个分类还没有笔记。"
+                        : "还没有笔记，先在「记一笔」里扔一段进来。"}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 items-stretch gap-3 md:grid-cols-2">
@@ -1818,10 +2033,25 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                         versions={versionsByNote[n.id] ?? []}
                         expanded={expanded === n.id}
                         confirmDelete={confirmDelete === n.id}
+                        selectable={selectMode}
+                        selected={selectedIds.has(n.id)}
+                        onSelectChange={toggleSelect}
                         onToggle={() => {
+                          // P3-3：选择模式下点击卡片 = 切换选中，不展开
+                          if (selectMode) {
+                            toggleSelect(n.id);
+                            return;
+                          }
                           const next = expanded === n.id ? null : n.id;
                           setExpanded(next);
                           if (next) loadVersions(n.id);
+                        }}
+                        onTagClick={(tag) => {
+                          // P2-3：点标签 = 按标签过滤（笔记列表就在当前工作台下方，无需切视图）
+                          setTagFilter(tag);
+                          setListFilter("全部");
+                          setSourceFilter("all");
+                          setExpanded(null);
                         }}
                         onEdit={() => startEdit(n)}
                         onDeletePress={() =>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, FileText, Layers, ListTodo, Bell, FolderKanban, Sparkles } from "lucide-react";
+import { CopyButton } from "@/components/ui/copy-button";
 import type {
   ProvenanceViewModel,
   ProvenanceOutputNote,
@@ -227,9 +228,15 @@ export function ProvenancePanel({
 
       {/* 原始内容展开 */}
       {showRaw && view.rawContent && (
-        <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-muted/50 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-          {view.rawContent}
-        </pre>
+        <div className="mt-2">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-medium text-muted-foreground">原始内容</span>
+            <CopyButton text={view.rawContent} size="xs" label="复制" />
+          </div>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-muted/50 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+            {view.rawContent}
+          </pre>
+        </div>
       )}
     </div>
   );

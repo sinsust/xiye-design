@@ -23,6 +23,9 @@ export interface RecentNoteMeta {
   tags: string[];
   source: string;
   summary: string;
+  // M4 修复：原文与结构化整理结果一并透出，详情弹层才能看到当初输入（不再只有摘要）
+  content: string;
+  struct: string | null;
   createdAt: number;
 }
 
@@ -99,6 +102,8 @@ export async function GET() {
         tags: n.tags ?? [],
         source: n.source,
         summary: n.summary ?? "",
+        content: n.content,
+        struct: n.struct ?? null,
         createdAt: n.createdAt,
       }));
 

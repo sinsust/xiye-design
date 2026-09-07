@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import type { BrainTaskPriority } from "@/lib/brain-db";
+import { CopyButton } from "@/components/ui/copy-button";
 import { TYPE_LABEL } from "./types";
 import type { OrganizedActionItem, StructViewData } from "./types";
 
@@ -22,17 +23,52 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
     (d.source ? 1 : 0);
   if (!has) return null;
 
-  const sectionTitle = (t: string) => (
-    <div className="mb-1 text-xs font-medium text-foreground">{t}</div>
+  // 各区块纯文本快照（供复制：第二大脑的整理结果必须可被取用）
+  const problemText = (d.problemDomains ?? [])
+    .map((p) => `${p.domain}｜现状：${p.status}｜结论：${p.conclusion}`)
+    .join("\n");
+  const decisionsText = (d.decisions ?? []).join("\n");
+  const kpText = kp.map((k) => k.point).join("\n");
+  const insText = ins.join("\n");
+  const aiText = ai
+    .map((a) => [a.text, a.owner ? `@${a.owner}` : "", a.dueDate ?? "", a.priority].filter(Boolean).join(" · "))
+    .join("\n");
+  const strategyText = (d.strategy ?? []).map((s) => `${s.angle}：${s.logic}`).join("\n");
+  const oqText = (d.openQuestions ?? []).join("\n");
+
+  // 整份结构化结果（一键复制全部，避免逐块复制）
+  const allText = [
+    d.attendees?.length ? `参会人：${d.attendees.join("、")}` : "",
+    d.metrics?.length ? `指标：${d.metrics.map((m) => `${m.label}=${m.value}`).join("；")}` : "",
+    problemText ? `问题域：\n${problemText}` : "",
+    decisionsText ? `会议决议：\n${decisionsText}` : "",
+    d.source ? `来源：${d.source}` : "",
+    kpText ? `${type === "clip" ? "核心观点" : "要点"}：\n${kpText}` : "",
+    insText ? `${type === "clip" ? "我的批注与启发" : "灵感"}：\n${insText}` : "",
+    aiText ? `行动项：\n${aiText}` : "",
+    strategyText ? `策略规划建议：\n${strategyText}` : "",
+    oqText ? `待决策 / 风险：\n${oqText}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const sectionTitle = (t: string, copy?: string) => (
+    <div className="mb-1 flex items-center justify-between gap-2">
+      <div className="text-xs font-medium text-foreground">{t}</div>
+      {copy ? <CopyButton text={copy} size="xs" iconOnly title={`复制「${t}」`} /> : null}
+    </div>
   );
 
   return (
     <div className="space-y-4 rounded-lg border border-dashed border-border p-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-primary">AI 结构化拆解</div>
-        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
-          {TYPE_LABEL[type] || "随手记"}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <CopyButton text={allText} label="复制全部" size="xs" />
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+            {TYPE_LABEL[type] || "随手记"}
+          </span>
+        </div>
       </div>
 
       {/* 参会人 + 指标 chips：有则展示（会议/粘贴类常见） */}
@@ -54,34 +90,37 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
 
       {/* 问题域表（会议） */}
       {(d.problemDomains?.length || 0) > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="text-left text-muted-foreground">
-                <th className="border border-border px-2 py-1 font-medium">问题域</th>
-                <th className="border border-border px-2 py-1 font-medium">现状 / 痛点</th>
-                <th className="border border-border px-2 py-1 font-medium">结论 / 待决策</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(d.problemDomains ?? []).map((p, i) => (
-                <tr key={i}>
-                  <td className="whitespace-nowrap border border-border px-2 py-1 font-medium text-foreground">
-                    {p.domain}
-                  </td>
-                  <td className="border border-border px-2 py-1 text-muted-foreground">{p.status}</td>
-                  <td className="border border-border px-2 py-1 text-foreground">{p.conclusion}</td>
+        <div>
+          {sectionTitle("问题域", problemText)}
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="border border-border px-2 py-1 font-medium">问题域</th>
+                  <th className="border border-border px-2 py-1 font-medium">现状 / 痛点</th>
+                  <th className="border border-border px-2 py-1 font-medium">结论 / 待决策</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(d.problemDomains ?? []).map((p, i) => (
+                  <tr key={i}>
+                    <td className="whitespace-nowrap border border-border px-2 py-1 font-medium text-foreground">
+                      {p.domain}
+                    </td>
+                    <td className="border border-border px-2 py-1 text-muted-foreground">{p.status}</td>
+                    <td className="border border-border px-2 py-1 text-foreground">{p.conclusion}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* 会议决议 */}
       {(d.decisions?.length || 0) > 0 && (
         <div>
-          {sectionTitle("会议决议")}
+          {sectionTitle("会议决议", decisionsText)}
           <ul className="list-disc space-y-0.5 pl-4 text-xs text-foreground">
             {(d.decisions ?? []).map((x, i) => (
               <li key={i}>{x}</li>
@@ -93,7 +132,7 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
       {/* 来源（clip） */}
       {d.source ? (
         <div>
-          {sectionTitle("来源")}
+          {sectionTitle("来源", d.source)}
           <p className="break-all text-xs text-muted-foreground">{d.source}</p>
         </div>
       ) : null}
@@ -101,7 +140,7 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
       {/* 核心观点 / 要点（clip / jotting） */}
       {kp.length > 0 && (
         <div>
-          {sectionTitle(type === "clip" ? "核心观点" : "要点")}
+          {sectionTitle(type === "clip" ? "核心观点" : "要点", kpText)}
           <ul className="space-y-1">
             {kp.map((k, i) => (
               <li
@@ -119,7 +158,7 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
       {/* 我的批注 / 灵感 */}
       {ins.length > 0 && (
         <div>
-          {sectionTitle(type === "clip" ? "我的批注与启发" : "灵感")}
+          {sectionTitle(type === "clip" ? "我的批注与启发" : "灵感", insText)}
           <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
             {ins.map((x, i) => (
               <li key={i}>{x}</li>
@@ -131,7 +170,7 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
       {/* 行动项：所有类型通用；工作台可编辑，详情只读 */}
       {ai.length > 0 && (
         <div>
-          {sectionTitle("行动项")}
+          {sectionTitle("行动项", aiText)}
           {onActionItemsChange ? (
             <div className="space-y-1.5">
               {ai.map((a, i) => (
@@ -235,7 +274,7 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
       {/* 策略规划建议（meeting） */}
       {(d.strategy?.length || 0) > 0 && (
         <div>
-          {sectionTitle("策略规划建议")}
+          {sectionTitle("策略规划建议", strategyText)}
           <div className="space-y-1.5">
             {(d.strategy ?? []).map((s, i) => (
               <div key={i} className="rounded-md border border-border bg-muted/40 px-2 py-1.5">
@@ -250,7 +289,7 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
       {/* 待决策 / 风险 */}
       {(d.openQuestions?.length || 0) > 0 && (
         <div>
-          {sectionTitle("待决策 / 风险")}
+          {sectionTitle("待决策 / 风险", oqText)}
           <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
             {(d.openQuestions ?? []).map((q, i) => (
               <li key={i}>{q}</li>

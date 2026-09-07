@@ -1,18 +1,22 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   Activity,
   Brain,
   CalendarClock,
   Check,
+  ChevronDown,
   ClipboardList,
   GraduationCap,
+  ListPlus,
   Loader2,
   Network,
   RotateCcw,
   Tags,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
 import type { LearningTopic } from "@/lib/brain-path";
 import { catColor, nextInHours, relativeTime, SOURCE_ICON } from "./brain-utils";
@@ -37,6 +41,19 @@ interface OverviewActivityItem {
   kind: string;
   text: string;
   time: string;
+  /** P1-5：可点击跳转到对应笔记 */
+  noteId?: string;
+}
+
+/** P1-5：概览面板行动化所需的最小笔记摘要（避免把完整 BrainNote 传进来） */
+export interface OverviewNoteDigest {
+  id: string;
+  title: string;
+  category: string;
+  parentId: string | null;
+  version: number;
+  isSnippet: boolean;
+  superseded: boolean;
 }
 
 interface OverviewDueReview {
@@ -104,6 +121,12 @@ export interface OverviewPanelProps {
   setOpenTopic: (value: string | null) => void;
   /** P3-B：点击周报任务结果摘要 → 打开对应任务详情 */
   onOpenOutcomeTask?: (taskId: string) => void;
+  /** P1-5：概览「可行动化」——点击数字卡展开清单、点击清单跳笔记 */
+  notes?: OverviewNoteDigest[];
+  /** P1-5：跳到指定笔记（关闭概览 + 展开 + 滚动定位） */
+  onOpenNote?: (noteId: string) => void;
+  /** P1-5：把周报成果 / 行动项一键存为任务，返回是否成功 */
+  onCreateTask?: (payload: { title: string; dueDate?: string; assignee?: string }) => Promise<boolean>;
 }
 
 export function OverviewPanel(props: OverviewPanelProps) {
@@ -127,7 +150,40 @@ export function OverviewPanel(props: OverviewPanelProps) {
     openTopic,
     setOpenTopic,
     onOpenOutcomeTask,
+    notes,
+    onOpenNote,
+    onCreateTask,
   } = props;
+
+  // ---------- P1-5：概览可行动化 ----------
+  /** 数字卡展开态：active/versioned/snippet 可展开清单，depth 为纯统计不可点 */
+  const [openMetric, setOpenMetric] = useState<"active" | "versioned" | "snippet" | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [savedKeys, setSavedKeys] = useState<Record<string, true>>({});
+
+  const metricCards: { key: "active" | "versioned" | "snippet" | "depth"; value: number; label: [string, string]; clickable: boolean }[] = [
+    { key: "active", value: thickness.activeNoteIds, label: ["有效笔记", `共 ${thickness.allNoteIds} 篇`], clickable: true },
+    { key: "versioned", value: thickness.versioned, label: ["版本演化", "笔记链数"], clickable: true },
+    { key: "snippet", value: thickness.snippetCount, label: ["代码片段", "已沉淀"], clickable: true },
+    { key: "depth", value: thickness.avgDepth, label: ["平均每篇", "版本迭代次数"], clickable: false },
+  ];
+
+  const metricDetail = useMemo(() => {
+    const all = notes ?? [];
+    if (openMetric === "active") return all.filter((n) => !n.superseded).slice(0, 8);
+    if (openMetric === "versioned") return all.filter((n) => n.parentId || n.version > 1).slice(0, 8);
+    if (openMetric === "snippet") return all.filter((n) => n.isSnippet).slice(0, 8);
+    return [];
+  }, [notes, openMetric]);
+
+  /** 把周报成果 / 行动项存为任务 */
+  const saveTask = async (key: string, title: string, dueDate?: string, assignee?: string) => {
+    if (!onCreateTask || !title.trim() || savingKey === key || savedKeys[key]) return;
+    setSavingKey(key);
+    const ok = await onCreateTask({ title: title.trim().slice(0, 80), dueDate, assignee });
+    setSavingKey(null);
+    if (ok) setSavedKeys((prev) => ({ ...prev, [key]: true }));
+  };
 
   return (
     <div className="w-full flex flex-col overflow-hidden rounded-xl border border-border bg-card">
@@ -141,23 +197,80 @@ export function OverviewPanel(props: OverviewPanelProps) {
             知识厚度
           </h2>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
-              <div className="text-xl font-semibold leading-none text-foreground">{thickness.activeNoteIds}</div>
-              <div className="mt-1.5 text-[11px] leading-tight text-muted-foreground">有效笔记<br/>（共 {thickness.allNoteIds} 篇）</div>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
-              <div className="text-xl font-semibold leading-none text-foreground">{thickness.versioned}</div>
-              <div className="mt-1.5 text-[11px] leading-tight text-muted-foreground">版本演化<br/>笔记链数</div>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
-              <div className="text-xl font-semibold leading-none text-foreground">{thickness.snippetCount}</div>
-              <div className="mt-1.5 text-[11px] leading-tight text-muted-foreground">代码片段<br/>已沉淀</div>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-muted/30 p-3">
-              <div className="text-xl font-semibold leading-none text-foreground">{thickness.avgDepth}</div>
-              <div className="mt-1.5 text-[11px] leading-tight text-muted-foreground">平均每篇<br/>版本迭代次数</div>
-            </div>
+            {metricCards.map((m) => {
+              const on = openMetric === m.key;
+              return (
+                <button
+                  key={m.key}
+                  type="button"
+                  disabled={!m.clickable}
+                  onClick={() => {
+                    if (!m.clickable) return;
+                    // depth 为纯统计（clickable=false），此处 m.key 只会是可展开的三类
+                    setOpenMetric(on ? null : (m.key as "active" | "versioned" | "snippet"));
+                  }}
+                  title={m.clickable ? (on ? "收起清单" : "点击查看清单") : "纯统计指标，不可展开"}
+                  className={
+                    "rounded-lg border p-3 text-left transition " +
+                    (m.clickable ? "cursor-pointer hover:border-primary/40 hover:bg-primary/5 " : "cursor-default ") +
+                    (on ? "border-primary/50 bg-primary/5" : "border-border/70 bg-muted/30")
+                  }
+                >
+                  <div className="flex items-start gap-1">
+                    <div className="text-xl font-semibold leading-none text-foreground">{m.value}</div>
+                    {m.clickable && (
+                      <ChevronDown
+                        className={
+                          "ml-auto size-3.5 shrink-0 transition-transform " +
+                          (on ? "rotate-180 text-primary" : "text-muted-foreground")
+                        }
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1.5 text-[11px] leading-tight text-muted-foreground">
+                    {m.label[0]}
+                    <br />
+                    {m.label[1]}
+                  </div>
+                </button>
+              );
+            })}
           </div>
+          {openMetric && (
+            <div className="mt-2 rounded-lg border border-border/70 bg-muted/20 p-2">
+              {metricDetail.length === 0 ? (
+                <p className="px-1 text-[11px] text-muted-foreground">暂无对应笔记</p>
+              ) : (
+                <ul className="space-y-0.5">
+                  {metricDetail.map((n) => (
+                    <li key={n.id}>
+                      <button
+                        type="button"
+                        onClick={() => onOpenNote?.(n.id)}
+                        className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition hover:bg-muted"
+                        title="打开这条笔记"
+                      >
+                        <span
+                          className="inline-block size-1.5 shrink-0 rounded-full"
+                          style={{ background: catColor(n.category) }}
+                        />
+                        <span className="min-w-0 flex-1 truncate text-xs text-foreground">{n.title || "（未命名）"}</span>
+                        {n.version > 1 && (
+                          <span className="shrink-0 rounded bg-muted px-1 py-px text-[10px] text-muted-foreground">
+                            v{n.version}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                  {(openMetric === "active" ? thickness.activeNoteIds : openMetric === "snippet" ? thickness.snippetCount : thickness.versioned) >
+                    metricDetail.length && (
+                    <li className="px-1.5 pt-0.5 text-[10px] text-muted-foreground/70">仅显示最近 8 条</li>
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 最近活跃流 */}
@@ -172,17 +285,35 @@ export function OverviewPanel(props: OverviewPanelProps) {
             {activity.length === 0 && (
               <li className="text-xs text-muted-foreground">还没有活动，录入几条笔记试试。</li>
             )}
-            {(activityShowAll ? activity : activity.slice(0, 3)).map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-                <span className="mt-px shrink-0 text-[11px]">
-                  {item.kind === "tag" ? <Tags className="size-3.5" /> : SOURCE_ICON[item.kind] ?? <ClipboardList className="size-3.5" />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="text-foreground">{item.text.trim()}</span>{" "}
-                  <span className="text-muted-foreground/70">{item.time}</span>
-                </span>
-              </li>
-            ))}
+            {(activityShowAll ? activity : activity.slice(0, 3)).map((item, i) => {
+              const body = (
+                <>
+                  <span className="mt-px shrink-0 text-[11px]">
+                    {item.kind === "tag" ? <Tags className="size-3.5" /> : SOURCE_ICON[item.kind] ?? <ClipboardList className="size-3.5" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="text-foreground">{item.text.trim()}</span>{" "}
+                    <span className="text-muted-foreground/70">{item.time}</span>
+                  </span>
+                </>
+              );
+              return (
+                <li key={i} className="text-xs leading-relaxed text-muted-foreground">
+                  {item.noteId && onOpenNote ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenNote(item.noteId!)}
+                      className="flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left transition hover:bg-muted"
+                      title="打开这条笔记"
+                    >
+                      {body}
+                    </button>
+                  ) : (
+                    <div className="flex items-start gap-2 px-1.5 py-1">{body}</div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
           {activity.length > 3 && (
             <button
@@ -210,12 +341,23 @@ export function OverviewPanel(props: OverviewPanelProps) {
 
           <div className="mt-3">
             {dueReviews.length === 0 ? (
-              <p className="text-xs text-muted-foreground">✅ 今天没有需要复习的笔记</p>
+              <p className="text-xs text-muted-foreground">今天没有需要复习的笔记</p>
             ) : (
               <ul className="space-y-2">
                 {dueReviews.map((r) => (
                   <li key={r.id} className="rounded-[var(--radius)] border border-border/70 bg-muted/20 p-2.5">
-                    <div className="truncate text-xs font-medium text-foreground">{r.noteTitle}</div>
+                    {onOpenNote ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenNote(r.noteId)}
+                        className="block w-full truncate rounded text-left text-xs font-medium text-foreground transition hover:text-primary"
+                        title="打开这条笔记"
+                      >
+                        {r.noteTitle}
+                      </button>
+                    ) : (
+                      <div className="truncate text-xs font-medium text-foreground">{r.noteTitle}</div>
+                    )}
                     <div className="mt-0.5 text-[11px] text-muted-foreground">
                       第 {r.reviewCount + 1} 次复习 · 间隔 {r.interval} 天
                     </div>
@@ -227,7 +369,8 @@ export function OverviewPanel(props: OverviewPanelProps) {
                         onClick={() => doReview(r.id, "complete")}
                         disabled={reviewingId === r.id}
                       >
-                        ✅ 已复习
+                        <Check className="size-3" />
+                        已复习
                       </Button>
                       <Button
                         size="sm"
@@ -236,7 +379,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
                         onClick={() => doReview(r.id, "skip")}
                         disabled={reviewingId === r.id}
                       >
-                        ⏭ 跳过
+                        跳过
                       </Button>
                     </div>
                   </li>
@@ -285,15 +428,34 @@ export function OverviewPanel(props: OverviewPanelProps) {
 
           {report?.report ? (
             <div className="mt-3 space-y-2.5 border-t border-border pt-3">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                {report.report.weekLabel}
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {report.report.weekLabel}
+                </span>
+                <CopyButton
+                  size="xs"
+                  label="复制周报"
+                  title="复制周报全文（摘要 + 成果 + 结果摘要）"
+                  text={[
+                    report.report.summary,
+                    ...report.report.completed,
+                    ...(report.report.outcomeSummaries ?? []).map((o) => o.summary),
+                  ].join("\n")}
+                />
+              </div>
               <p className="text-sm font-medium leading-relaxed text-foreground">{report.report.summary}</p>
               <div className="space-y-1.5">
                 {report.report.completed.slice(0, 3).map((it, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
                     <span className="mt-1.5 inline-block size-1 shrink-0 rounded-full bg-primary" />
-                    <span className="line-clamp-1">{it}</span>
+                    <span className="line-clamp-1 min-w-0 flex-1">{it}</span>
+                    {onCreateTask && (
+                      <TaskSaveButton
+                        saved={Boolean(savedKeys[`done-${i}`])}
+                        saving={savingKey === `done-${i}`}
+                        onClick={() => saveTask(`done-${i}`, it)}
+                      />
+                    )}
                   </div>
                 ))}
                 {report.report.completed.length > 3 && (
@@ -374,6 +536,14 @@ export function OverviewPanel(props: OverviewPanelProps) {
                   {a.owner && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{a.owner}</span>}
                   {a.dueDate && <span className="text-muted-foreground">{a.dueDate}</span>}
                   <span className="max-w-28 truncate text-[10px] text-muted-foreground/70">{a.noteTitle}</span>
+                  <CopyButton text={a.text} size="xs" iconOnly title="复制行动项" />
+                  {onCreateTask && (
+                    <TaskSaveButton
+                      saved={Boolean(savedKeys[`act-${i}`])}
+                      saving={savingKey === `act-${i}`}
+                      onClick={() => saveTask(`act-${i}`, a.text, a.dueDate, a.owner)}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -406,10 +576,19 @@ export function OverviewPanel(props: OverviewPanelProps) {
               {learningTopics.map((t) => {
                 const open = openTopic === t.key;
                 return (
-                  <button
+                  <div
                     key={t.key}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={open}
                     onClick={() => setOpenTopic(open ? null : t.key)}
-                    className="w-full rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setOpenTopic(open ? null : t.key);
+                      }
+                    }}
+                    className="w-full cursor-pointer rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40"
                   >
                     <div className="flex items-center gap-2">
                       <span
@@ -436,7 +615,21 @@ export function OverviewPanel(props: OverviewPanelProps) {
                             <div key={n.id} className="relative">
                               <span className="absolute -left-[13.5px] top-1.5 size-2 rounded-full border-2 border-background" style={{ background: t.color }} />
                               <div className="min-w-0">
-                                <div className="truncate text-xs font-medium text-foreground">{n.title}</div>
+                                {onOpenNote ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onOpenNote(n.id);
+                                    }}
+                                    className="block w-full truncate rounded text-left text-xs font-medium text-foreground transition hover:text-primary"
+                                    title="打开这条笔记"
+                                  >
+                                    {n.title}
+                                  </button>
+                                ) : (
+                                  <div className="truncate text-xs font-medium text-foreground">{n.title}</div>
+                                )}
                                 {n.summary && (
                                   <div className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{n.summary}</div>
                                 )}
@@ -444,12 +637,12 @@ export function OverviewPanel(props: OverviewPanelProps) {
                             </div>
                           ))}
                         </div>
-                        {!open && t.count > 4 && (
+                        {t.count > 4 && (
                           <div className="mt-2 text-[11px] text-muted-foreground">还有 {t.count - 4} 篇…</div>
                         )}
                       </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -457,5 +650,43 @@ export function OverviewPanel(props: OverviewPanelProps) {
         )}
       </div>
     </div>
+  );
+}
+
+/** P1-5：把周报成果 / 行动项一键存为任务的小按钮（三态：存为任务 → 存入中 → 已存） */
+function TaskSaveButton({
+  saved,
+  saving,
+  onClick,
+}: {
+  saved: boolean;
+  saving: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      disabled={saved || saving}
+      title={saved ? "已存为任务" : "存为任务"}
+      className={
+        "inline-flex shrink-0 items-center gap-0.5 rounded-md border px-1 py-0.5 text-[10px] transition " +
+        (saved
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+          : "border-border/70 text-muted-foreground hover:border-primary/30 hover:bg-primary/10 hover:text-primary")
+      }
+    >
+      {saving ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : saved ? (
+        <Check className="size-3" />
+      ) : (
+        <ListPlus className="size-3" />
+      )}
+      {saved ? "已存" : "存任务"}
+    </button>
   );
 }

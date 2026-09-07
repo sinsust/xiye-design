@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, EyeOff, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { CalendarClock, ChevronDown, EyeOff, Loader2, RefreshCw, Sparkles, SquareArrowOutUpRight } from "lucide-react";
 
 // P4-C：主动风险简报（"今天值得关注"推送层）前端区块。
 // 最多展示 3 张卡片；无主动建议时保持轻量。控制动作：立即处理 / 明天提醒 / 本周静默 / 忽略。
@@ -58,6 +58,8 @@ export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = 
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [revealIgnore, setRevealIgnore] = useState<string | null>(null);
+  // 方案B：卡片点击原地展开内联详情（不跳页），避免「只能看标题的通知条」无意义
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -170,35 +172,99 @@ export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = 
         </div>
       )}
 
-      {items.map((it) => (
+      {items.map((it) => {
+        const expanded = expandedId === it.id;
+        const typeLabel = TYPE_LABEL[it.type] ?? it.type.replace("proactive_", "");
+        return (
         <div
           key={it.id}
           className={"rounded-xl border p-4 shadow-sm transition " + (SEV_STYLE[it.severity] ?? SEV_STYLE.low)}
         >
-          <div className="flex items-start gap-2">
-            <span
-              className={
-                "mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold " +
-                (BADGE_STYLE[it.severity] ?? BADGE_STYLE.low)
+          {/* 可点击展开区：badge + 标题 + 摘要 + 原因（点击原地展开详情，不跳页） */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setExpandedId(expanded ? null : it.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setExpandedId(expanded ? null : it.id);
               }
-            >
-              {TYPE_LABEL[it.type] ?? it.type.replace("proactive_", "")}
-            </span>
-            <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground">{it.title}</h3>
+            }}
+            className="cursor-pointer select-none rounded-md outline-none focus-visible:ring-1 focus-visible:ring-primary"
+          >
+            <div className="flex items-start gap-2">
+              <span
+                className={
+                  "mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold " +
+                  (BADGE_STYLE[it.severity] ?? BADGE_STYLE.low)
+                }
+              >
+                {typeLabel}
+              </span>
+              <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground">{it.title}</h3>
+              <ChevronDown
+                className={"ml-1 mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform " + (expanded ? "" : "-rotate-90")}
+              />
+            </div>
+
+            <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{it.summary}</p>
+
+            {it.reasons.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {it.reasons.slice(0, expanded ? it.reasons.length : 3).map((r, i) => (
+                  <span
+                    key={i}
+                    className="rounded-md bg-background/70 px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                  >
+                    {r}
+                  </span>
+                ))}
+                {!expanded && it.reasons.length > 3 && (
+                  <span className="rounded-md bg-background/70 px-1.5 py-0.5 text-[11px] text-primary">
+                    +{it.reasons.length - 3} 条
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
-          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{it.summary}</p>
-
-          {it.reasons.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {it.reasons.slice(0, 3).map((r, i) => (
-                <span
-                  key={i}
-                  className="rounded-md bg-background/70 px-1.5 py-0.5 text-[11px] text-muted-foreground"
-                >
-                  {r}
-                </span>
-              ))}
+          {/* 展开详情：完整元信息 + 关联对象 + 去完整页入口（内联，不跳页） */}
+          {expanded && (
+            <div className="mt-3 space-y-2 rounded-lg border border-border/60 bg-background/50 p-3 text-[12px]">
+              <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
+                <span className="text-muted-foreground">类型</span>
+                <span className="text-foreground">{typeLabel}</span>
+                <span className="text-muted-foreground">关联对象</span>
+                <span className="break-all text-foreground">{it.targetType} · {it.targetId}</span>
+                <span className="text-muted-foreground">严重度</span>
+                <span className="text-foreground">{it.severity}</span>
+                <span className="text-muted-foreground">分值</span>
+                <span className="text-foreground">{it.score}</span>
+                <span className="text-muted-foreground">生成时间</span>
+                <span className="text-foreground">{new Date(it.generatedAt).toLocaleString("zh-CN")}</span>
+              </div>
+              {it.reasons.length > 0 && (
+                <div>
+                  <div className="mb-1 text-muted-foreground">全部原因</div>
+                  <ul className="space-y-0.5">
+                    {it.reasons.map((r, i) => (
+                      <li key={i} className="flex items-start gap-1 text-foreground">
+                        <span className="mt-1.5 size-1 shrink-0 rounded-full bg-primary/50" />
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => router.push(it.link)}
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-muted-foreground transition hover:text-foreground"
+              >
+                打开完整详情
+                <SquareArrowOutUpRight className="size-3.5" />
+              </button>
             </div>
           )}
 
@@ -272,7 +338,8 @@ export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = 
             </div>
           )}
         </div>
-      ))}
+      );
+      })}
     </section>
   );
 }

@@ -14,6 +14,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 import { CuratePanel } from "@/components/brain/CuratePanel";
 import { LearningPlanPanel } from "@/components/brain/learning-plan-panel";
@@ -47,6 +48,10 @@ export function NoteCard({
   onToggleTask,
   onUpgrade,
   onCopyCode,
+  onTagClick,
+  selectable,
+  selected,
+  onSelectChange,
 }: {
   note: BrainNote;
   tasks: BrainTask[];
@@ -61,10 +66,18 @@ export function NoteCard({
   onToggleTask: (id: string, done: boolean) => void;
   onUpgrade: () => void;
   onCopyCode: (code: string, id: string) => void;
+  /** P2-3：点标签按该标签过滤 */
+  onTagClick?: (tag: string) => void;
+  /** P3-3：批量选择模式 */
+  selectable?: boolean;
+  selected?: boolean;
+  onSelectChange?: (id: string, checked: boolean) => void;
 }) {
   const openCount = tasks.filter((t) => t.status !== "done").length;
   // 本地版本切换：点圆点查看历史/其它版本内容；null 表示看最新（链首）
   const [viewVersion, setViewVersion] = useState<BrainNote | null>(null);
+  // P2-3：标签默认只露前 3 个，点「+N」展开全量
+  const [showAllTags, setShowAllTags] = useState(false);
   // 展开后的次级区块默认折起，避免单卡纵向爆涨；需要时再展开（顺带延迟触发该区块的网络请求）
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showRelated, setShowRelated] = useState(false);
@@ -72,11 +85,29 @@ export function NoteCard({
   return (
     <div
       id={`note-${note.id}`}
-      className="pv-lift group relative cursor-pointer rounded-[var(--radius)] border border-border bg-card shadow-sm"
+      className={
+        "pv-lift group relative cursor-pointer rounded-[var(--radius)] border bg-card shadow-sm transition-colors duration-200 " +
+        (expanded ? "border-primary/40 bg-primary/[0.03]" : "border-border")
+      }
       onClick={onToggle}
     >
-      {/* 顶部：分类色块 + 来源图标 + 任务徽标 + hover 操作 */}
+      {/* 顶部：分类色块 + 来源图标 + 任务徽标 + 常驻操作 */}
       <div className="flex items-center gap-2 px-3.5 pt-3">
+        {/* P3-3：批量选择 */}
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={Boolean(selected)}
+            aria-label={selected ? "取消选择" : "选择这条笔记"}
+            title={selected ? "取消选择" : "选择这条笔记"}
+            onClick={(ev) => ev.stopPropagation()}
+            onChange={(ev) => {
+              ev.stopPropagation();
+              onSelectChange?.(note.id, ev.target.checked);
+            }}
+            className="size-3.5 shrink-0 cursor-pointer accent-[var(--primary)]"
+          />
+        )}
         {note.isSnippet && (
           <span
             className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold text-white"
@@ -126,7 +157,8 @@ export function NoteCard({
           </span>
         ) : null}
         <span className="ml-auto text-sm leading-none">{SOURCE_ICON[note.source] ?? <ClipboardList className="size-3.5" />}</span>
-        <span className="relative flex items-center gap-0.5 pl-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {/* P2-2：操作按钮常驻可见（此前 opacity-0 + group-hover 才出现 → 移动端完全点不到） */}
+        <span className="relative flex items-center gap-0.5 pl-1">
           <button
             className="rounded-[var(--radius)] p-1.5 text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
             onClick={(ev) => {
@@ -134,6 +166,7 @@ export function NoteCard({
               onEdit();
             }}
             aria-label="编辑"
+            title="编辑"
           >
             <Pencil className="size-3.5" />
           </button>
@@ -149,6 +182,7 @@ export function NoteCard({
               onDeletePress();
             }}
             aria-label={confirmDelete ? "确认删除" : "删除"}
+            title={confirmDelete ? "再点一次确认删除" : "删除"}
           >
             {confirmDelete ? <Check className="size-3.5" /> : <Trash2 className="size-3.5" />}
           </button>
@@ -185,22 +219,62 @@ export function NoteCard({
 
       {/* 底部：标签 + 相对时间 */}
       <div className="flex flex-wrap items-center gap-1.5 px-3.5 pb-3 pt-2.5">
-        {cur.tags.slice(0, 2).map((t) => (
-          <span key={t} className="rounded-[var(--radius)] bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-            #{t}
-          </span>
-        ))}
-        {cur.tags.length > 2 && (
-          <span className="text-[11px] text-muted-foreground">+{cur.tags.length - 2}</span>
+        {/* P2-3：标签可点击过滤；超过 3 个折叠，点「+N」展开全量 */}
+        {(showAllTags ? cur.tags : cur.tags.slice(0, 3)).map((t) =>
+          onTagClick ? (
+            <button
+              key={t}
+              type="button"
+              onClick={(ev) => {
+                ev.stopPropagation();
+                onTagClick(t);
+              }}
+              title={`按标签「${t}」筛选`}
+              className="rounded-[var(--radius)] bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+            >
+              #{t}
+            </button>
+          ) : (
+            <span key={t} className="rounded-[var(--radius)] bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+              #{t}
+            </span>
+          ),
         )}
-        <span className="ml-auto text-[11px] text-muted-foreground">{relativeTime(cur.createdAt)}</span>
+        {cur.tags.length > 3 && (
+          <button
+            type="button"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setShowAllTags((v) => !v);
+            }}
+            title={showAllTags ? "收起标签" : "展开全部标签"}
+            className="text-[11px] text-muted-foreground underline-offset-2 transition hover:text-primary hover:underline"
+          >
+            {showAllTags ? "收起" : `+${cur.tags.length - 3}`}
+          </button>
+        )}
+        <span className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground">
+          <ChevronDown
+            className={
+              "size-3.5 shrink-0 transition-transform duration-200 " + (expanded ? "rotate-180 text-primary" : "")
+            }
+            aria-hidden
+          />
+          {relativeTime(cur.createdAt)}
+        </span>
       </div>
 
       {/* 展开原文 */}
       {expanded && (
-        <pre className="max-h-48 overflow-auto whitespace-pre-wrap border-t border-border/70 bg-muted/30 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-          {cur.content}
-        </pre>
+        <div className="border-t border-border/70">
+          <div className="flex items-center justify-between gap-2 px-4 pt-2">
+            <span className="text-[11px] font-medium text-muted-foreground">原文</span>
+            <CopyButton text={cur.content} label="复制原文" size="xs" />
+          </div>
+          <pre className="max-h-48 overflow-auto whitespace-pre-wrap bg-muted/30 px-4 pb-3 pt-1 text-xs leading-relaxed text-muted-foreground">
+            {cur.content}
+          </pre>
+        </div>
       )}
 
       {/* 智能分析：溯源 / 整理建议 / 学习计划（默认折起，展开时才发起其网络请求） */}
@@ -307,7 +381,8 @@ export function NoteCard({
       )}
 
       {/* 展开版本时间线 + 升级按钮 */}
-      {expanded && versions.length > 0 && (
+      {/* 单版本笔记无历史可回溯，隐藏时间线以免展开区纵向膨胀（P1-4） */}
+      {expanded && versions.length > 1 && (
         <div className="border-t border-border/70 px-4 py-2.5">
           <div className="mb-1.5 flex items-center gap-2">
             <span className="text-[11px] font-semibold text-foreground">版本时间线（{versions.length}）</span>
