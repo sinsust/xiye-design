@@ -110,6 +110,10 @@ export const useAgentsStore = create<AgentsState>()(
       // 版本号 + 迁移：persist 此前无 version/migrate，schema 一旦变更，老数据会原样灌入新结构。
       // v1 迁移做一次防御性清洗：非法/已下线的 styleId 回落默认，overrides 非对象则重置。
       version: 1,
+      // SSR 防抖：默认 persist 会在客户端 store 创建时同步从 localStorage 读出覆盖，
+      // 导致首帧 currentStyleId 与无 localStorage 的服务端不一致 → 头像 src 等派生属性 hydration mismatch。
+      // 改为客户端挂载后再手动 rehydrate()，保证服务端/客户端首帧都走 DEFAULT_STYLE（一致）。
+      skipHydration: true,
       migrate: (persisted, from) => {
         const raw = (persisted ?? {}) as Partial<AgentsState>;
         if (from >= 1) return raw as AgentsState;

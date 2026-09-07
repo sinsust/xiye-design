@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 import { FlowLeaveGuard } from "@/components/flow-leave-guard";
+import { AgentsHydrator } from "@/components/agents-hydrator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -88,6 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto flex min-h-full w-full xiye-container flex-col px-4 py-8">{children}</div>
         </main>
         <FlowLeaveGuard />
+        <AgentsHydrator />
       </body>
     </html>
   );

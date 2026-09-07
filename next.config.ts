@@ -51,7 +51,12 @@ const nextConfig: NextConfig = {
     const scriptSrc = isDev
       ? "'self' 'unsafe-inline' 'unsafe-eval'"
       : "'self' 'unsafe-inline'";
-    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src ${scriptSrc}; connect-src 'self'`;
+    // img-src 放行说明：
+    // - 'self' / data: / blob:：本地头像（/flow-v2/avatars/*）、人设上传的 data URL、DiceBear 之外的本地图
+    // - https://api.dicebear.com：角色头像的在线兜底（AgentAvatar 的 stage-1 回退），不加会被 CSP 拦成图标
+    // - https://*.supabase.co：头像若走 Supabase Storage 托管（人设同步到云端时的外链图）
+    // - https://picsum.photos / https://imagedelivery.net：既有占位/交付图域名，保留
+    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net https://api.dicebear.com https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src ${scriptSrc}; connect-src 'self'`;
     return [
       {
         source: "/:path*",

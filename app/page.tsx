@@ -8,7 +8,6 @@ import FluidText from "@/components/originkit/ui/fluid-text";
 import {
   ArrowRight,
   ArrowUpRight,
-  Brain,
   Check,
   Copy,
   Layers,
@@ -627,61 +626,6 @@ function HomeIntentInput() {
   );
 }
 
-/** 首页双入口：Studio（AI 产品工作台）与 Brain（第二大脑）两条清晰主线 */
-const ENTRIES = [
-  {
-    id: "studio",
-    tag: "STUDIO",
-    title: "Studio · 产品工作台",
-    desc: "用一句话描述产品，AI 自动解构类型、技术栈与视觉风格，从页面骨架搭到可导出的整站。",
-    icon: Layers,
-    href: "/workflow",
-    cta: "进入 Studio",
-    points: ["做产品 · 流程工作台", "搭页面 · 可视化搭建", "找组件 / 存知识 · 风格库 + 知识库"],
-  },
-  {
-    id: "brain",
-    tag: "BRAIN",
-    title: "Brain · 第二大脑",
-    desc: "把笔记、资料、灵感收拢成可被提问的记忆，自动整理、定期复习、随时问起。",
-    icon: Brain,
-    href: "/brain",
-    cta: "进入 Brain",
-    points: ["今日空间 · 随时记录", "自动整理 · 去重归并", "问记忆 · 周摘与复习"],
-  },
-] as const;
-
-function EntryCard({ entry }: { entry: (typeof ENTRIES)[number] }) {
-  return (
-    <div className="group relative flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {entry.tag}
-      </span>
-      <div className="mt-3 flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <entry.icon className="size-5" />
-        </span>
-        <h2 className="text-lg font-semibold text-foreground">{entry.title}</h2>
-      </div>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{entry.desc}</p>
-      <ul className="mt-4 space-y-2">
-        {entry.points.map((pt) => (
-          <li key={pt} className="flex items-center gap-2 text-sm text-foreground/90">
-            <Check className="size-3.5 shrink-0 text-primary" />
-            {pt}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-6 pt-2">
-        <Button render={<Link href={entry.href} />} nativeButton={false} className="w-full">
-          {entry.cta}
-          <ArrowRight className="size-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -817,14 +761,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 双入口：Studio / Brain 两条清晰主线（M1 产品线拆分落地页呈现） */}
-      <section className="reveal mx-auto mt-12 grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
-        {ENTRIES.map((entry) => (
-          <EntryCard key={entry.id} entry={entry} />
-        ))}
-      </section>
-
-      {/* Studio 预览：视觉风格库（明确标注 Studio 能力，避免与 Brain 心智混用） */}
+      {/* Studio 预览：视觉风格库 */}
       <section className="reveal mx-auto mt-16 max-w-5xl">
         <div className="mb-5 flex items-end justify-between gap-3">
           <div>
