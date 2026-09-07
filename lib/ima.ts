@@ -1,4 +1,4 @@
-// 腾讯 ima 知识库 OpenAPI 客户端（只读检索 + 取原文，用于「导入通道」定位）。
+// 腾讯 ima 知识库 OpenAPI 客户端（只读检索 + 取原文 + 写适配，决策 8 双向）。
 //
 // 端点与认证头均取自 ima 官方 OpenAPI（社区 ima-mcp-server 源码反推确认，非猜测）：
 //   - Base:        https://ima.qq.com
@@ -7,7 +7,9 @@
 //   - 认证头:       ima-openapi-clientid / ima-openapi-apikey
 //   - 响应结构:     { code, msg, data }，code===0 成功
 //
-// 本模块只负责「把用户自己的 ima 资料拉进来」，不做写回（定位：ima 只进不出）。
+// 定位：读（listKnowledgeBases / searchKnowledge / getMediaInfo / listKnowledgeBaseDocs）
+// 用于「把用户自己的 ima 资料拉进来」；写（createImaNote / appendImaNote）为决策 8 的双向能力。
+// 写端点契约未在本仓库锁定：不可用/无权限一律抛 ImaApiError，由调用方标记 degraded，绝不伪装成功。
 
 const BASE_URL = "https://ima.qq.com";
 const WIKI_PREFIX = "openapi/wiki/v1";
@@ -47,6 +49,20 @@ export interface ImaMediaInfo {
   url?: string; // 网页 / 文件类返回可访问 URL
   notebook_ext_info?: { notebook_id?: string };
   [k: string]: unknown;
+}
+
+/** 写入结果：仅透传 id / note_id / url 等落点引用字段，其余透传。 */
+export interface ImaWriteResult {
+  id?: string;
+  note_id?: string;
+  url?: string;
+  [k: string]: unknown;
+}
+
+export interface ImaCreateNoteInput {
+  content: string;
+  title?: string;
+  kbId?: string; // 目标知识库 id（notebook_id）；缺省为默认收藏夹
 }
 
 export class ImaApiError extends Error {
@@ -192,4 +208,41 @@ export async function getMediaInfo(
     }
   }
   return info;
+}
+
+/**
+ * 在 ima 工作台创建一篇新笔记（决策 8 双向写）。
+ * 走 NOTE_PREFIX + add_note；contract 不可用/无权限会抛 ImaApiError，由调用方标记 degraded。
+ */
+export async function createImaNote(
+  creds: ImaCredentials,
+  input: ImaCreateNoteInput,
+): Promise<ImaWriteResult> {
+  return imaRequest<ImaWriteResult>(
+    "add_note",
+    {
+      source_content: input.content,
+      source_title: input.title ?? "",
+      notebook_id: input.kbId ?? "",
+    },
+    creds,
+    NOTE_PREFIX,
+  );
+}
+
+/**
+ * 向既有 ima 笔记追加正文（决策 8 双向写）。
+ * 端点语义为"更新笔记内容"；不支持时抛 ImaApiError，调用方标记 degraded。
+ */
+export async function appendImaNote(
+  creds: ImaCredentials,
+  noteId: string,
+  content: string,
+): Promise<ImaWriteResult> {
+  return imaRequest<ImaWriteResult>(
+    "update_note",
+    { note_id: noteId, content, update_type: 1 },
+    creds,
+    NOTE_PREFIX,
+  );
 }

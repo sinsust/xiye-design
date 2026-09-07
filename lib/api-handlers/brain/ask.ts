@@ -4,7 +4,7 @@ import { listBrainNotes } from "@/lib/brain-db";
 import { brainRetrieve, buildBrainContext, type BrainRagHit } from "@/lib/brain-rag";
 import { embeddingEnabled } from "@/lib/embedding";
 import { getImaConfig } from "@/lib/ima-config";
-import { listKnowledgeBases, searchKnowledge, getMediaInfo } from "@/lib/ima";
+import { getConnector } from "@/lib/connectors/registry";
 import { logBrainNoteAccess } from "@/lib/brain-reminder";
 
 export const runtime = "nodejs";
@@ -25,74 +25,6 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
     p,
     new Promise<T>((_, reject) => setTimeout(() => reject(new Error("ima_timeout")), ms)),
   ]);
-}
-
-/**
- * 实时检索用户 ima 知识库并取原文。返回 ima 上下文 + 带来源标注的引用。
- * 防御式：任一步失败都静默跳过/降级，问答回退到本地。
- */
-async function enrichWithIma(
-  question: string,
-  creds: { clientId: string; apiKey: string },
-): Promise<{ context: string; sources: AskSource[] }> {
-  const kbData = await withTimeout(listKnowledgeBases(creds), 8000);
-  const kbs = (kbData.list ?? []).slice(0, 3);
-  if (!kbs.length) return { context: "", sources: [] };
-
-  // 每个知识库分别检索，并记住所属知识库名
-  const perKb = await Promise.all(
-    kbs.map(async (kb: any) => {
-      const kbId = String(kb.id ?? kb.knowledge_base_id ?? "");
-      const kbName = typeof kb.name === "string" && kb.name.trim() ? kb.name : "";
-      if (!kbId) return [];
-      try {
-        const q = await withTimeout(searchKnowledge(creds, kbId, question), 8000);
-        return (q.list ?? [])
-          .map((h: any) => ({ h, kbName }))
-          .filter((x: any) => x.h?.media_id)
-          .slice(0, 2);
-      } catch {
-        return [];
-      }
-    }),
-  );
-  const top = perKb.flat().slice(0, 3);
-  if (!top.length) return { context: "", sources: [] };
-
-  const result = await Promise.all(
-    top.map(async ({ h, kbName }: { h: any; kbName: string }) => {
-      try {
-        const mediaId = String(h.media_id);
-        const info = await withTimeout(getMediaInfo(creds, mediaId), 8000);
-        const text =
-          (info.note_content && info.note_content.trim()) ||
-          (typeof info.url === "string" ? info.url : "") ||
-          "";
-        if (!text) return null;
-        // 尽力从命中提取相关度（ima 不同版本字段不一致，取不到则省略）
-        let relevance: number | undefined;
-        const rawRel = h.relevance ?? h.score;
-        if (typeof rawRel === "number") relevance = Math.max(0, Math.min(1, rawRel));
-        return {
-          noteId: `ima-${mediaId}`,
-          title: String(h.title ?? h.name ?? "(无标题)"),
-          source: "ima" as const,
-          sourceName: kbName || undefined,
-          relevance,
-          text,
-        };
-      } catch {
-        return null;
-      }
-    }),
-  );
-  const valid = result.filter(Boolean) as Array<AskSource & { text: string }>;
-  if (!valid.length) return { context: "", sources: [] };
-
-  const context = `\n\n【你的 ima 知识库（实时检索到的个人资料）】
-${valid.map((c) => `### ${c.title}\n${c.text}`).join("\n\n")}`;
-  const sources: AskSource[] = valid.map(({ text: _t, ...rest }) => rest);
-  return { context, sources };
 }
 
 // POST /api/brain/ask
@@ -130,14 +62,17 @@ export async function POST(req: NextRequest) {
     // 被提问引用 → 记访问流水，重置知识衰减计时
     for (const h of localHits) await logBrainNoteAccess(h.id, "rag_reference");
 
-    // ima 实时检索（失败静默跳过）
+    // ima 实时检索（连接器统一入口；失败静默跳过）
     let imaContext = "";
     let imaSources: AskSource[] = [];
     if (useIma && imaCfg) {
       try {
-        const r = await enrichWithIma(question, imaCfg);
-        imaContext = r.context;
-        imaSources = r.sources;
+        const conn = getConnector("ima");
+        if (conn?.read) {
+          const r = await withTimeout(conn.read({ question }, imaCfg), 8000);
+          imaContext = r.context;
+          imaSources = r.sources as AskSource[];
+        }
       } catch (err) {
         console.error("[brain ask] ima enrich failed:", err);
       }

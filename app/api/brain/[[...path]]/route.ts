@@ -59,6 +59,7 @@ import * as m51 from "@/lib/api-handlers/brain/organize-save";
 // 手扩：today（M3 今日空间聚合）。注意：生成脚本源 app/api/brain/*/route.ts 已删除，
 // 再跑 migrate-api-catchall.mjs 会清空本组所有 handler，故此后台新增路由直接二者在此登记。
 import * as m54 from "@/lib/api-handlers/brain/today";
+import * as m55 from "@/lib/api-handlers/brain/ima/write";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -126,6 +127,7 @@ const ROUTES: RouteDef[] = [
   { key: "weekly-review/plan", methods: { POST: m49.POST as HandlerFn } },
   { key: "weekly-review", methods: { GET: m50.GET as HandlerFn, POST: m50.POST as HandlerFn } },
   { key: "today", methods: { GET: m54.GET as HandlerFn } },
+  { key: "ima/write", methods: { POST: m55.POST as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

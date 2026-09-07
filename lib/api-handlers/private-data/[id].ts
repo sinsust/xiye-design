@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, privateData } from "@/lib/db";
+import { db, privateData, privateDataAudit } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/auth";
@@ -89,6 +89,24 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
       { error: owned.status === 404 ? "not_found" : "forbidden" },
       { status: owned.status },
     );
+  // 先取去敏元数据（name/type）便于删除审计，再落审计、删数据（决策 20）
+  const [row] = await db
+    .select({ name: privateData.name, type: privateData.type })
+    .from(privateData)
+    .where(eq(privateData.id, id))
+    .limit(1);
+  await db.insert(privateDataAudit).values({
+    id: crypto.randomUUID(),
+    userId: user.sub,
+    privateDataId: id,
+    action: "delete",
+    detail: JSON.stringify({
+      name: row?.name ?? "",
+      type: row?.type ?? "",
+      deletedAt: Date.now(),
+    }),
+    createdAt: Date.now(),
+  });
   await db.delete(privateData).where(eq(privateData.id, id));
   return NextResponse.json({ ok: true });
 }

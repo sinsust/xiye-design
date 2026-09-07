@@ -17,6 +17,9 @@ import {
   Download,
   Lock,
   ShieldCheck,
+  MousePointerClick,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 import { decryptJSON, encryptJSON, verifyPassphrase, type EncryptedPayload } from "@/lib/webcrypto";
 
@@ -72,6 +75,46 @@ export default function PrivateDataPage() {
   const [viewFields, setViewFields] = useState<SecretField[] | null>(null);
   const [viewErr, setViewErr] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // 决策 20：自动填充——解锁后将已存的账号机密（账号/密码等）填进一个样例表单，明文不出前端
+  const [fillSecret, setFillSecret] = useState<SecretField[] | null>(null);
+  const [fillErr, setFillErr] = useState("");
+  const [filling, setFilling] = useState(false);
+
+  async function fillSampleForm() {
+    if (passphrase === null || !items.length) return;
+    setFilling(true);
+    setFillErr("");
+    try {
+      const target = items.find((i) => i.type === "account") ?? items[0];
+      const res = await fetch(`/api/private-data/${target.id}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const item = data.item;
+      const sec = await decryptJSON<SecretField[]>(passphrase, {
+        salt: item.salt,
+        iv: item.iv,
+        ciphertext: item.ciphertext,
+      });
+      const valid = Array.isArray(sec) ? sec : [];
+      setFillSecret(valid);
+      if (target.type !== "account" && !valid.some((f) => /(密码|password)/i.test(f.label))) {
+        setFillErr("当前条目不含账号类字段，可先新增一条「账号」类型资料再试。");
+      }
+    } catch {
+      setFillSecret(null);
+      setFillErr("解密失败，口令可能已变更");
+    } finally {
+      setFilling(false);
+    }
+  }
+
+  function fillValue(labels: string[]): string {
+    if (!fillSecret) return "";
+    const l = labels.map((s) => s.toLowerCase());
+    const hit = fillSecret.find((f) => l.some((k) => f.label.toLowerCase().includes(k)));
+    return hit?.value ?? "";
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -313,6 +356,48 @@ export default function PrivateDataPage() {
       )}
 
       {error && <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</div>}
+
+      {/* 决策 20：自动填充测试卡（明文仅本地，不回传服务端） */}
+      {passphrase !== null && items.length > 0 && (
+        <div className="mb-4 rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <MousePointerClick className="size-4 text-emerald-600" /> 自动填充表单（测试）
+            </h2>
+            <Button size="sm" variant="outline" onClick={fillSampleForm} disabled={filling}>
+              {filling ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              {fillSecret ? "重新填充" : "填入样例表单"}
+            </Button>
+          </div>
+          {fillErr && <p className="mt-1 text-xs text-destructive">{fillErr}</p>}
+          {fillSecret && fillSecret.length > 0 && (
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label className="block text-xs text-muted-foreground">
+                账号
+                <input
+                  readOnly
+                  value={fillValue(["账号", "user", "name", "登录名"])}
+                  className="mt-1 w-full rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-sm text-foreground"
+                  placeholder="填充后显示账号"
+                />
+              </label>
+              <label className="block text-xs text-muted-foreground">
+                密码
+                <input
+                  readOnly
+                  value={fillValue(["密码", "pass", "key"])}
+                  className="mt-1 w-full rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-sm"
+                  type="password"
+                  placeholder="填充后显示密码"
+                />
+              </label>
+              <p className="col-span-full text-[11px] text-muted-foreground">
+                已自动填入，明文仅在此本地表单展示，不会回传服务端。
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="py-12 text-center text-sm text-muted-foreground">加载中…</div>
