@@ -205,6 +205,11 @@ ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS embedding text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS ima_doc_id text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS ima_synced_at text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS struct text;
+-- obsidian 直连溯源（决策 13/14，桌面壳前仅预留列，不做 watcher/写回）
+ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_vault text;
+ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_rel_path text;
+ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_note_id text;
+ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_synced_at text;
 
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS archived integer NOT NULL DEFAULT 0;
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS strategy_id text REFERENCES brain_strategies(id) ON DELETE SET NULL;
@@ -230,6 +235,32 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 CREATE INDEX IF NOT EXISTS rate_limits_updated_at_idx ON rate_limits (updated_at);
 ALTER TABLE rate_limits DISABLE ROW LEVEL SECURITY;
+
+-- 私人资料删除审计（决策 20；detail 存 JSON，不含明文机密）
+CREATE TABLE IF NOT EXISTS private_data_audit (
+  id              text PRIMARY KEY,
+  user_id         text NOT NULL,
+  private_data_id text,
+  action          text NOT NULL DEFAULT 'delete',
+  detail          text,
+  created_at      bigint NOT NULL
+);
+CREATE INDEX IF NOT EXISTS private_data_audit_user_id_idx ON private_data_audit (user_id);
+ALTER TABLE private_data_audit DISABLE ROW LEVEL SECURITY;
+
+-- ===== 决策台账（Decision Ledger，决策18）：仅缺失时补齐 =====
+CREATE TABLE IF NOT EXISTS decision_ledger (
+  id          text PRIMARY KEY,
+  project_id  text NOT NULL,
+  user_id     text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title       text NOT NULL,
+  detail      text NOT NULL DEFAULT '',
+  status      text NOT NULL DEFAULT 'hypothesis',
+  reason      text NOT NULL DEFAULT '',
+  created_at  bigint NOT NULL,
+  updated_at  bigint NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS decision_ledger_project_title_idx ON decision_ledger (project_id, title);
 `;
 
 /**

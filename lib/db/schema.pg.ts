@@ -69,6 +69,22 @@ export const privateData = pgTable(
   })
 );
 
+// 私人资料删除审计（决策 20）：记录删除动作，明细存 detail(JSON)，不存明文机密。
+export const privateDataAudit = pgTable(
+  "private_data_audit",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    privateDataId: text("private_data_id"),
+    action: text("action").notNull().default("delete"),
+    detail: text("detail"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdIdx: index("private_data_audit_user_id_idx").on(t.userId),
+  })
+);
+
 // 用户自定义「后宫智囊团」人设：每个 (user, role) 一行，覆盖默认专家名与头像。
 export const agentSettings = pgTable(
   "agent_settings",
@@ -155,6 +171,11 @@ export const brainNotes = pgTable(
     embedding: text("embedding"),
     imaDocId: text("ima_doc_id"),
     imaSyncedAt: text("ima_synced_at"),
+    // obsidian 直连溯源（决策 13/14，桌面壳前仅预留列，不做 watcher/写回）
+    obsidianVault: text("obsidian_vault"),
+    obsidianRelPath: text("obsidian_rel_path"),
+    obsidianNoteId: text("obsidian_note_id"),
+    obsidianSyncedAt: text("obsidian_synced_at"),
     // AI 整理完整结构化结果（OrganizedNote JSON 字符串），供详情页全可视化
     struct: text("struct"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
@@ -824,6 +845,27 @@ export const flowOpLedger = pgTable(
       t.operationId,
       t.operationType,
     ),
+  })
+);
+
+// —— A：决策台账（Decision Ledger，PRD 决策18；与 SQLite 镜像）——
+export const decisionLedger = pgTable(
+  "decision_ledger",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    detail: text("detail").notNull().default(""),
+    status: text("status").notNull().default("hypothesis"),
+    reason: text("reason").notNull().default(""),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+    updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    projectIdx: uniqueIndex("decision_ledger_project_title_idx").on(t.projectId, t.title),
   })
 );
 

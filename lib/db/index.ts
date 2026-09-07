@@ -60,6 +60,8 @@ let userFeishuConfig: any;
 let flowOpLedger: any;
 let projectCheckpoints: any;
 let privateData: any;
+let privateDataAudit: any;
+let decisionLedger: any;
 let schema: any;
 
 if (isPg) {
@@ -103,6 +105,8 @@ if (isPg) {
   userImaConfig = schemaPg.userImaConfig;
   userFeishuConfig = schemaPg.userFeishuConfig;
   flowOpLedger = schemaPg.flowOpLedger;
+  privateDataAudit = schemaPg.privateDataAudit;
+  decisionLedger = schemaPg.decisionLedger;
   schema = schemaPg;
   // P0 根治：pg 路径启动幂等补齐缺失表/列（与 SQLite 路径自愈对齐）。
   // Vercel buildCommand 不跑 schema 脚本，纯 .sql 轨道下线上写操作会因缺表/缺列而崩。
@@ -167,6 +171,16 @@ if (isPg) {
     updated_at integer not null,
     foreign key (user_id) references users(id) on delete cascade
   );`);
+  // M4：私人资料删除审计（决策 20；detail 存 JSON，不含明文机密）
+  sqlite.exec(`create table if not exists private_data_audit (
+    id text primary key,
+    user_id text not null,
+    private_data_id text,
+    action text not null default 'delete',
+    detail text,
+    created_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
   sqlite.exec(`create table if not exists agent_settings (
     user_id text not null,
     role text not null,
@@ -190,6 +204,21 @@ if (isPg) {
   );`);
   sqlite.exec(`create unique index if not exists flow_op_ledger_unique
     on flow_op_ledger (user_id, project_id, operation_id, operation_type);`);
+  // A：决策台账（Decision Ledger，决策18；title 按项目唯一，同名决策更新不重复）
+  sqlite.exec(`create table if not exists decision_ledger (
+    id text primary key,
+    project_id text not null,
+    user_id text not null,
+    title text not null,
+    detail text not null default '',
+    status text not null default 'hypothesis',
+    reason text not null default '',
+    created_at integer not null,
+    updated_at integer not null,
+    foreign key (user_id) references users(id) on delete cascade
+  );`);
+  sqlite.exec(`create unique index if not exists decision_ledger_project_title_idx
+    on decision_ledger (project_id, title);`);
   // 本地零运维：直接幂等建表（避免每次手动 drizzle-kit push）
   sqlite.exec(`create table if not exists knowledge_entries (
     slug text primary key,
@@ -265,6 +294,19 @@ if (isPg) {
     sqlite.exec(`alter table brain_notes add column struct text`);
   } catch {
     /* 列已存在 */
+  }
+  // 阶段升级：brain_notes obsidian 直连溯源列（决策 13/14，仅预留，幂等补列）
+  for (const col of [
+    `alter table brain_notes add column obsidian_vault text`,
+    `alter table brain_notes add column obsidian_rel_path text`,
+    `alter table brain_notes add column obsidian_note_id text`,
+    `alter table brain_notes add column obsidian_synced_at text`,
+  ]) {
+    try {
+      sqlite.exec(col);
+    } catch {
+      /* 列已存在 */
+    }
   }
   sqlite.exec(`create table if not exists brain_ima_sync_log (
     id text primary key,
@@ -727,7 +769,9 @@ if (isPg) {
   flowOpLedger = schemaSqlite.flowOpLedger;
   projectCheckpoints = schemaSqlite.projectCheckpoints;
   privateData = schemaSqlite.privateData;
+  privateDataAudit = schemaSqlite.privateDataAudit;
+  decisionLedger = schemaSqlite.decisionLedger;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, privateData, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, privateData, privateDataAudit, decisionLedger, schema };

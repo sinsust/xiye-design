@@ -55,6 +55,16 @@ export const privateData = sqliteTable("private_data", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+// 私人资料删除审计（决策 20）：记录删除动作，明细存 detail(JSON)，不存明文机密。
+export const privateDataAudit = sqliteTable("private_data_audit", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  privateDataId: text("private_data_id"),
+  action: text("action").notNull().default("delete"),
+  detail: text("detail"),
+  createdAt: integer("created_at").notNull(),
+});
+
 // 用户自定义「后宫智囊团」人设：每个 (user, role) 一行，覆盖默认专家名与头像。
 export const agentSettings = sqliteTable(
   "agent_settings",
@@ -154,6 +164,11 @@ export const brainNotes = sqliteTable("brain_notes", {
   // ima 增量同步：来源文档唯一标识 + 最近一次同步时间
   imaDocId: text("ima_doc_id"),
   imaSyncedAt: text("ima_synced_at"),
+  // obsidian 直连溯源（决策 13/14，桌面壳前仅预留列，不做 watcher/写回）
+  obsidianVault: text("obsidian_vault"),
+  obsidianRelPath: text("obsidian_rel_path"),
+  obsidianNoteId: text("obsidian_note_id"),
+  obsidianSyncedAt: text("obsidian_synced_at"),
   // AI 整理完整结构化结果（OrganizedNote 的 JSON 字符串）：参会人/指标/问题域/策略/重写正文等，
   // 与基础列(title/content/summary/tags)分开存，刷新不丢、可供详情页全可视化。
   struct: text("struct"),
@@ -748,6 +763,30 @@ export const flowOpLedger = sqliteTable(
   })
 );
 
+// —— A：决策台账（Decision Ledger，PRD 决策18）——
+// 记录产品方向上的「已采纳 / 已驳回 / 待验证」决策及理由，供 AGENTS.md 注入决策上下文。
+export const decisionLedger = sqliteTable(
+  "decision_ledger",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    detail: text("detail").notNull().default(""),
+    // 决策状态：accepted / rejected / hypothesis（待验证假设）
+    status: text("status").notNull().default("hypothesis"),
+    // 采纳/驳回时的理由说明
+    reason: text("reason").notNull().default(""),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => ({
+    projectIdx: uniqueIndex("decision_ledger_project_title_idx").on(t.projectId, t.title),
+  })
+);
+
 export type UserRow = typeof users.$inferSelect;
 export type ProjectRow = typeof projects.$inferSelect;
 export type ProjectCheckpointRow = typeof projectCheckpoints.$inferSelect;
@@ -779,3 +818,4 @@ export type BrainLearningReviewEventRow = typeof brainLearningReviewEvents.$infe
 export type BrainProactiveStateRow = typeof brainProactiveState.$inferSelect;
 export type BrainProactivePreferenceRow = typeof brainProactivePreferences.$inferSelect;
 export type BrainProactiveActionRow = typeof brainProactiveActions.$inferSelect;
+export type DecisionLedgerRow = typeof decisionLedger.$inferSelect;
