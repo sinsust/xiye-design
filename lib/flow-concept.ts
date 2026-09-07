@@ -16,6 +16,10 @@ export interface ConceptDecision {
   detail: string;
   /** epoch ms */
   at: number;
+  /** 决策台账语义（决策18）：accepted 已采纳 / rejected 已驳回 / hypothesis 待验证 */
+  status?: "accepted" | "rejected" | "hypothesis";
+  /** 采纳 / 驳回时的理由说明 */
+  reason?: string;
 }
 
 /** Brief 证据来源：能够回指到对应的用户输入或已确认结论 */

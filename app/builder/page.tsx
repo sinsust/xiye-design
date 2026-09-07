@@ -69,8 +69,10 @@ import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 import { DesignTokensPanel } from "@/components/design-tokens-panel";
 import { BuilderSaveButton } from "@/components/builder-save-button";
 import { LivePreview } from "@/components/live-preview";
+import { StaticProjectPreview } from "@/components/static-project-preview";
 import { applySnapshot } from "@/lib/project-snapshot";
 import { BuilderCheckpoints } from "@/components/builder-checkpoints";
+import { DecisionSuggestionCard } from "@/components/decision-suggestion-card";
 import { ensureWebFonts } from "@/lib/web-fonts";
 import { FONT_OPTIONS } from "@/data/design-presets";
 import { mergePalette, type PaletteOverride } from "@/lib/use-theme-palette";
@@ -155,6 +157,8 @@ export default function BuilderPage() {
   // 与项目链路结合；独立进入（仅复制效果）则不显示。
   const [inFlow, setInFlow] = useState(false);
   const [livePreview, setLivePreview] = useState(false);
+  // D：静态产物预览档（决策17）——在组件预览 / 实时预览之外独立一档
+  const [staticPreview, setStaticPreview] = useState(false);
   useEffect(() => {
     if (typeof window !== "undefined" && /[?&]from=flow\b/.test(window.location.search)) {
       setInFlow(true);
@@ -1016,6 +1020,9 @@ export default function BuilderPage() {
         {/* M2-C：检查点面板（保存 / 列出 / 回退） */}
         <BuilderCheckpoints projectId={savedProjectId} />
 
+        {/* A：决策台账卡片（采纳 / 驳回概念决策） */}
+        <DecisionSuggestionCard projectId={savedProjectId} />
+
         {/* 变体抽屉（点按打开；点空白 / Esc / 关闭按钮收起） */}
         <div
           className={[
@@ -1227,10 +1234,46 @@ export default function BuilderPage() {
           </div>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-3">
+            {/* 预览档位：组件（默认）/ 实时 / 静态产物（决策17） */}
+            <div className="mb-2 flex items-center gap-1 rounded-lg border border-border bg-background p-1 text-[11px]">
+              {(
+                [
+                  { key: "component", label: "组件" },
+                  { key: "live", label: "实时预览" },
+                  { key: "static", label: "静态产物" },
+                ] as const
+              ).map((m) => {
+                const active =
+                  m.key === "component" ? !livePreview && !staticPreview : m.key === "live" ? livePreview : staticPreview;
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => {
+                      setLivePreview(m.key === "live");
+                      setStaticPreview(m.key === "static");
+                    }}
+                    className={[
+                      "rounded-md px-2.5 py-1 font-medium transition-colors",
+                      active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                    ].join(" ")}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
             {/* 大预览：浏览器视窗框架，让预览一眼可辨 */}
             {isScrollMotion && <div aria-hidden style={{ height: "90vh" }} />}
             <div className="overflow-hidden rounded-xl border border-border bg-card">
-              {livePreview ? (
+              {staticPreview ? (
+                <StaticProjectPreview
+                  style={style}
+                  styleId={visualStyle ?? PREVIEW_DEFAULT_STYLE_ID}
+                  designSystem={designSystem}
+                  blueprint={pageBlueprint}
+                />
+              ) : livePreview ? (
                 <LivePreview
                   style={style}
                   designSystem={designSystem}

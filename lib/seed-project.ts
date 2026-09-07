@@ -17,6 +17,7 @@ import { DEMO_CONTENT, type DemoContent } from "@/data/skeleton-content";
 import { deepMerge, type ContentOverride } from "@/lib/content-resolver";
 import { resolveArchitecture } from "@/lib/architecture";
 import { SECRET_PATTERN } from "@/lib/security";
+import { buildStaticPreviewHtml } from "@/lib/static-preview";
 
 const DEFAULT_STYLE_ID = "aw-brutalist";
 
@@ -1645,8 +1646,11 @@ app.listen(port, () => console.log(\`API ready on :\${port}\`));
   }
 
   // 组装：README → 约定文件 → 框架文件 → 蓝图落盘（后者覆盖壳页面）→ 风格锚点 → verify
+  // 决策17：静态产物预览档 preview.html（自包含 HTML，独立可开，勿放 docs/ 避免与 README 混淆）
+  const style = VISUAL_STYLE_MAP[state.visualStyle ?? ""] ?? VISUAL_STYLES[0];
   const assembled: SeedFile[] = [
     { path: "README.md", content: readme },
+    { path: "preview.html", content: buildStaticPreviewHtml(state, style, state.designSystem) },
     ...buildAgentMdFiles(state),
     ...files,
     ...buildBlueprintFiles(state, tokens),
@@ -1687,15 +1691,32 @@ export function buildAgentMdFiles(state: FlowState, prefix = "../"): SeedFile[] 
       .join("\n") || "- （尚未把组件加入蓝图）";
 
   // M2-D：把已采纳关键决策（Decision Ledger）注入 AGENTS.md / CLAUDE.md，
-  // 使导出的工作区目录自带决策上下文（PRD 决策18）。当前数据模型仅存采纳项，无驳回语义。
+  // 使导出的工作区目录自带决策上下文（PRD 决策18）。支持 accepted / rejected / hypothesis 三态，
+  // 未标状态的既有决策按「已采纳」渲染（兼容旧数据）。
   const decisions = state.conceptBrief?.decisions ?? [];
-  const decisionsSection = decisions.length
-    ? `## 已采纳关键决策
 
-> 来自 xiye 概念访谈阶段沉淀的产品方向决策（Decision Ledger）。开工若与下列决策冲突，以用户最新口径为准。
+  function fmtDecision(d: { title: string; detail?: string }): string {
+    return d.detail ? `${d.title}：${d.detail}` : d.title;
+  }
 
-${decisions.map((d, i) => `${i + 1}. **${d.title}**${d.detail ? `：${d.detail}` : ""}`).join("\n")}`
-    : "";
+  let decisionsSection = "";
+  if (decisions.length) {
+    const accepted = decisions.filter((d) => d.status !== "rejected");
+    const rejected = decisions.filter((d) => d.status === "rejected");
+    const hypotheses = decisions.filter((d) => d.status === "hypothesis");
+    decisionsSection = `## 决策台账（Decision Ledger）
+
+> 来自 xiye 概念访谈阶段沉淀的产品方向决策（决策18）。开工若与下列决策冲突，以用户最新口径为准。
+${accepted.length ? `
+### 已采纳
+${accepted.map((d, i) => `${i + 1}. **${fmtDecision(d)}**${d.reason ? ` — ${d.reason}` : ""}`).join("\n")}` : ""}${hypotheses.length ? `
+### 待验证假设
+${hypotheses.map((d, i) => `${i + 1}. **${fmtDecision(d)}**${d.reason ? ` — ${d.reason}` : ""}`).join("\n")}` : ""}${rejected.length ? `
+### 已驳回
+${rejected.map((d, i) => `${i + 1}. ~~${d.title}~~${d.detail ? `：${d.detail}` : ""}${d.reason ? ` — 驳回理由：${d.reason}` : ""}`).join("\n")}` : ""}
+
+`;
+  }
 
   const body = `# ${projName} — 开发约定
 
