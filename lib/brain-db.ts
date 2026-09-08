@@ -449,7 +449,8 @@ export async function insertBrainNote(
 ): Promise<BrainNote> {
   const now = Date.now();
   const id = row.id ?? `bn-${now.toString(36)}-${randomSuffix()}`;
-  await db.insert(brainNotes).values({
+  // P3-perf：INSERT 直接 .returning() 取回刚插入行，省掉「插入后再 SELECT 回查」的一次往返（2→1）。
+  const insertedRows = await db.insert(brainNotes).values({
     id,
     userId,
     source: row.source,
@@ -471,8 +472,8 @@ export async function insertBrainNote(
     struct: row.struct ?? null,
     createdAt: now,
     updatedAt: now,
-  });
-  const inserted = await getBrainNote(userId, id);
+  }).returning();
+  const inserted = insertedRows[0] ? toNote(insertedRows[0] as BrainRow) : null;
   if (inserted) onNoteInserted(inserted);
   return inserted ?? {
     id,
@@ -674,56 +675,67 @@ export async function insertBrainTasks(
   items: NewBrainTask[],
 ): Promise<BrainTask[]> {
   const now = Date.now();
-  const inserted: BrainTask[] = [];
-  for (const item of items) {
+  if (!items.length) return [];
+  // P3-perf：客户端生成 id，单次多行 INSERT 任务 + 单次多行 INSERT 时间线，
+  // 把「每条任务 = INSERT + 时间线」的 2×N 次往返压缩为 2 次（与 N 无关）。
+  const taskRows = items.map((item) => {
     const id = `bt-${now.toString(36)}-${randomSuffix()}`;
-    try {
-      await db.insert(brainTasks).values({
-        id,
-        userId,
-        noteId: item.noteId,
-        title: item.title,
-        status: item.status ?? "todo",
-        dueDate: item.dueDate ?? null,
-        priority: item.priority ?? "medium",
-        createdAt: now,
-        completedAt: item.status === "done" ? now : null,
-        strategyId: item.strategyId ?? null,
-        projectId: item.projectId ?? null,
-        assignee: item.assignee ?? null,
-        startDate: item.startDate ?? null,
-        milestone: item.milestone ?? null,
-        parentTaskId: item.parentTaskId ?? null,
-        sortOrder: item.sortOrder ?? 0,
-        estimatedHours: item.estimatedHours ?? null,
-        actualHours: item.actualHours ?? null,
-      });
-      inserted.push({
-        id,
-        userId,
-        noteId: item.noteId,
-        title: item.title,
-        status: item.status ?? "todo",
-        dueDate: item.dueDate ?? null,
-        priority: item.priority ?? "medium",
-        createdAt: now,
-        completedAt: item.status === "done" ? now : null,
-        archived: false,
-        strategyId: item.strategyId ?? null,
-        projectId: item.projectId ?? null,
-        assignee: item.assignee ?? null,
-        startDate: item.startDate ?? null,
-        milestone: item.milestone ?? null,
-        parentTaskId: item.parentTaskId ?? null,
-        sortOrder: item.sortOrder ?? 0,
-        estimatedHours: item.estimatedHours ?? null,
-        actualHours: item.actualHours ?? null,
-      });
-      // 记录"创建"时间线
-      await insertBrainTaskTimeline(userId, id, "created", { title: item.title });
-    } catch (err) {
-      console.error("[brain-db] insert task failed:", err);
-    }
+    const status = item.status ?? "todo";
+    return {
+      id,
+      userId,
+      noteId: item.noteId,
+      title: item.title,
+      status,
+      dueDate: item.dueDate ?? null,
+      priority: item.priority ?? "medium",
+      createdAt: now,
+      completedAt: status === "done" ? now : null,
+      strategyId: item.strategyId ?? null,
+      projectId: item.projectId ?? null,
+      assignee: item.assignee ?? null,
+      startDate: item.startDate ?? null,
+      milestone: item.milestone ?? null,
+      parentTaskId: item.parentTaskId ?? null,
+      sortOrder: item.sortOrder ?? 0,
+      estimatedHours: item.estimatedHours ?? null,
+      actualHours: item.actualHours ?? null,
+    };
+  });
+  const inserted: BrainTask[] = taskRows.map((r) => ({
+    id: r.id,
+    userId: r.userId,
+    noteId: r.noteId,
+    title: r.title,
+    status: r.status,
+    dueDate: r.dueDate,
+    priority: r.priority,
+    createdAt: r.createdAt,
+    completedAt: r.completedAt,
+    archived: false,
+    strategyId: r.strategyId,
+    projectId: r.projectId,
+    assignee: r.assignee,
+    startDate: r.startDate,
+    milestone: r.milestone,
+    parentTaskId: r.parentTaskId,
+    sortOrder: r.sortOrder,
+    estimatedHours: r.estimatedHours,
+    actualHours: r.actualHours,
+  }));
+  const timelineRows = taskRows.map((r) => ({
+    id: `tt-${now.toString(36)}-${randomSuffix()}`,
+    taskId: r.id,
+    action: "created",
+    detail: JSON.stringify({ title: r.title }),
+    createdAt: now,
+  }));
+  try {
+    await db.insert(brainTasks).values(taskRows);
+    await db.insert(brainTaskTimeline).values(timelineRows);
+  } catch (err) {
+    console.error("[brain-db] insert tasks failed:", err);
+    return [];
   }
   return inserted;
 }
@@ -1232,7 +1244,8 @@ export async function insertBrainReview(
 ): Promise<BrainReview> {
   const now = Date.now();
   const id = `br-${now.toString(36)}-${randomSuffix()}`;
-  await db.insert(brainReviews).values({
+  // P3-perf：.returning() 直接取回，省「插入后 SELECT 回查」一次往返（2→1）。
+  const insertedRows = await db.insert(brainReviews).values({
     id,
     noteId: row.noteId,
     userId,
@@ -1242,8 +1255,8 @@ export async function insertBrainReview(
     status: "pending",
     reviewCount: row.reviewCount,
     createdAt: now,
-  });
-  const inserted = await getBrainReview(userId, id);
+  }).returning();
+  const inserted = insertedRows[0] ? toReview(insertedRows[0] as ReviewRow) : null;
   return inserted ?? {
     id,
     noteId: row.noteId,
@@ -1420,12 +1433,12 @@ export async function insertBrainStrategies(
   items: NewBrainStrategy[],
 ): Promise<BrainStrategy[]> {
   const now = Date.now();
-  const inserted: BrainStrategy[] = [];
-  for (const item of items) {
-    const id = `bs-${now.toString(36)}-${randomSuffix()}`;
-    try {
-      await db.insert(brainStrategies).values({
-        id,
+  if (!items.length) return [];
+  // P3-perf：单次多行 INSERT...RETURNING，把「每条 = INSERT + SELECT 回查」的 2×N 往返压缩为 1 次。
+  try {
+    const rows = await db.insert(brainStrategies).values(
+      items.map((item) => ({
+        id: `bs-${now.toString(36)}-${randomSuffix()}`,
         userId,
         noteId: item.noteId,
         title: item.title,
@@ -1433,14 +1446,13 @@ export async function insertBrainStrategies(
         status: item.status ?? "active",
         createdAt: now,
         updatedAt: now,
-      });
-      const created = await getBrainStrategy(userId, id);
-      if (created) inserted.push(created);
-    } catch (err) {
-      console.error("[brain-db] insert strategy failed:", err);
-    }
+      })),
+    ).returning();
+    return rows.map((r: StrategyRow) => toStrategy(r));
+  } catch (err) {
+    console.error("[brain-db] insert strategies failed:", err);
+    return [];
   }
-  return inserted;
 }
 
 /** 更新策略状态/标题/描述。 */
@@ -2339,6 +2351,43 @@ function toReminderItem(r: ReminderItemRow): BrainReminderItem {
 }
 
 /** 用户确认后创建单条提醒。 */
+// P3-perf：批量插入提醒，单次多行 INSERT...RETURNING，省「每条 = INSERT + SELECT 回查」的 2×N 往返。
+export async function insertBrainReminderItems(
+  userId: string,
+  inputs: Array<{
+    title: string;
+    remindAt?: string | null;
+    dueDate?: string | null;
+    noteId?: string | null;
+    taskId?: string | null;
+    planId?: string | null;
+  }>,
+): Promise<BrainReminderItem[]> {
+  if (!inputs.length) return [];
+  const now = Date.now();
+  try {
+    const rows = await db.insert(brainReminderItems).values(
+      inputs.map((input) => ({
+        id: `bri-${now.toString(36)}-${randomSuffix()}`,
+        userId,
+        title: input.title,
+        remindAt: input.remindAt ?? null,
+        dueDate: input.dueDate ?? null,
+        noteId: input.noteId ?? null,
+        taskId: input.taskId ?? null,
+        planId: input.planId ?? null,
+        done: 0,
+        status: "pending",
+        createdAt: now,
+      })),
+    ).returning();
+    return rows.map((r: ReminderItemRow) => toReminderItem(r));
+  } catch (err) {
+    console.error("[brain-db] insert reminder items failed:", err);
+    return [];
+  }
+}
+
 export async function insertBrainReminderItem(
   userId: string,
   input: {
@@ -2350,27 +2399,8 @@ export async function insertBrainReminderItem(
     planId?: string | null;
   },
 ): Promise<BrainReminderItem | null> {
-  const now = Date.now();
-  const id = `bri-${now.toString(36)}-${randomSuffix()}`;
-  try {
-    await db.insert(brainReminderItems).values({
-      id,
-      userId,
-      title: input.title,
-      remindAt: input.remindAt ?? null,
-      dueDate: input.dueDate ?? null,
-      noteId: input.noteId ?? null,
-      taskId: input.taskId ?? null,
-      planId: input.planId ?? null,
-      done: 0,
-      status: "pending",
-      createdAt: now,
-    });
-    return getBrainReminderItem(userId, id);
-  } catch (err) {
-    console.error("[brain-db] insert reminder item failed:", err);
-    return null;
-  }
+  const [item] = await insertBrainReminderItems(userId, [input]);
+  return item ?? null;
 }
 
 export async function getBrainReminderItem(

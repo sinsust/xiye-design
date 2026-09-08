@@ -11,6 +11,7 @@ import {
 import { organizeNote, deriveIntentFromOrganizedNote, type IntentVerdict } from "@/lib/brain-organizer";
 import { applyOrganizedToNote, enrichNoteWithOrganized } from "@/lib/inbox-process";
 import { safeDetail } from "@/lib/api-error";
+import { getCached } from "@/lib/brain-cache";
 
 export const runtime = "nodejs";
 
@@ -42,8 +43,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const items = Array.isArray(body?.items) ? body.items : [];
     const autoApply = body?.autoApply !== false; // 默认直接入库
-    // 关联建议基于用户已有笔记
-    const existing = await listBrainNotes(user.sub).catch(() => []);
+    // P3-perf：关联建议基于用户已有笔记。listBrainNotes 是全量（含 content/embedding 大字段），
+    // 用 30s 服务端 TTL 缓存，连发保存不重复全量读（AI 关联用标题/分类/标签，30s 陈旧可接受）。
+    const DBG = process.env.DEBUG_SAVE_LATENCY === "1";
+    const _t0 = Date.now();
+    const existing =
+      (await getCached(`inbox:existing:${user.sub}`, 30_000, () => listBrainNotes(user.sub)).catch(() => [])) ?? [];
+    if (DBG) console.log(`[save-latency] inbox.autoApply read-existing:${Date.now() - _t0}ms items=${items.length}`);
 
     if (autoApply) {
       const applied: (InboxPreview & { id: string; noteId: string; organizing: boolean })[] = [];
@@ -85,6 +91,7 @@ export async function POST(req: NextRequest) {
       // 响应先行，后台整理在响应结束后继续执行（Next after()；本地 dev 与 Vercel 均支持）
       if (bgJobs.length) after(() => Promise.allSettled(bgJobs));
       const all = await listBrainInboxItems(user.sub).catch(() => []);
+      if (DBG) console.log(`[save-latency] inbox.autoApply total:${Date.now() - _t0}ms inserted=${applied.length}`);
       return NextResponse.json({
         autoApply: true,
         items: applied,

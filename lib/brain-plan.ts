@@ -2,13 +2,14 @@
 // 任意第二大脑输入 → organizeToPlan 生成待确认 ProcessingPlan（只落 plan_json，绝不直接建任务/提醒/项目关系）
 // → 用户编辑确认 → applyProcessingPlan 在单个服务内原子写入（笔记/策略/任务/提醒/项目/审计），失败回滚。
 
+import { after } from "next/server";
 import {
   listBrainNotes,
   insertBrainNote,
   insertBrainStrategies,
   insertBrainTasks,
   insertBrainReview,
-  insertBrainReminderItem,
+  insertBrainReminderItems,
   deleteBrainNote,
   deleteBrainReminderItem,
   insertBrainProcessingPlan,
@@ -447,8 +448,14 @@ export async function applyProcessingPlan(
   plan: BrainProcessingPlan,
   edits?: ProcessingEdits | null,
 ): Promise<ApplyResult> {
+  // P3-perf 计时（DEBUG_SAVE_LATENCY=1 时打印逐阶段耗时，便于定位真实瓶颈，不影响生产）。
+  const DBG = process.env.DEBUG_SAVE_LATENCY === "1";
+  const _t0 = Date.now();
+  const marks: string[] = [];
+  const mark = (m: string) => { if (DBG) marks.push(`${m}:${Date.now() - _t0}ms`); };
   // 并发/连点/页面恢复后的重复确认护栏：以库内最新状态为准，已应用则不再重复产出。
   const fresh = await getBrainProcessingPlan(userId, plan.id);
+  mark("plan-loaded");
   if (fresh && fresh.status === "applied") {
     return { ok: false, error: "already_applied", reason: "该计划已确认保存，请勿重复提交", strategyIds: [], taskIds: [], reminderIds: [], plan: fresh };
   }
@@ -527,6 +534,7 @@ export async function applyProcessingPlan(
       struct: JSON.stringify(buildStructDraft(final)).slice(0, 20000),
     });
     createdNoteId = note?.id ?? null;
+    mark("note");
     if (!createdNoteId) return fail("save_note_failed", "笔记写入失败");
 
     // 2) 策略
@@ -538,6 +546,7 @@ export async function applyProcessingPlan(
         )
       : [];
     createdStrategyIds = createdStrategies.map((s) => s.id);
+    mark("strats");
     const strategyIndexMap = new Map<number, string>();
     createdStrategies.forEach((s, idx) => strategyIndexMap.set(idx, s.id));
 
@@ -550,6 +559,7 @@ export async function applyProcessingPlan(
       );
       createdTaskIds = created.map((t) => t.id);
     }
+    mark("tasks");
 
     // 4) 确认的提醒（任务勾选 makeReminder + 用户显式追加的 reminders）
     const reminderSources: ProcessingReminder[] = [];
@@ -570,17 +580,20 @@ export async function applyProcessingPlan(
       const t = tasks.find((x) => x.title === title);
       return t ? createdTaskIds[tasks.indexOf(t)] ?? null : null;
     };
-    for (const r of reminderSources.slice(0, 8)) {
-      const item = await insertBrainReminderItem(userId, {
-        title: cap(r.title, 80),
-        remindAt: r.remindAt || null,
-        dueDate: r.dueDate || null,
-        noteId: createdNoteId,
-        taskId: remindAtToTaskId(r.title),
-        planId: plan.id,
-      });
-      if (item?.id) createdReminderIds.push(item.id);
-    }
+    // P3-perf：提醒批量插入，单次多行 INSERT...RETURNING（2×N→1 次往返）。
+    const reminderInputs = reminderSources.slice(0, 8).map((r) => ({
+      title: cap(r.title, 80),
+      remindAt: r.remindAt || null,
+      dueDate: r.dueDate || null,
+      noteId: createdNoteId,
+      taskId: remindAtToTaskId(r.title),
+      planId: plan.id,
+    }));
+    const createdReminders = reminderInputs.length
+      ? await insertBrainReminderItems(userId, reminderInputs)
+      : [];
+    createdReminderIds = createdReminders.map((c) => c.id);
+    mark("reminders");
 
     // 5) 复习记录（1 天后）
     await insertBrainReview(userId, {
@@ -590,6 +603,7 @@ export async function applyProcessingPlan(
       easeFactor: 2.5,
       reviewCount: 0,
     });
+    mark("review");
 
     // 6) 审计：回写 plan 状态与产出对象 ID
     await updateBrainProcessingPlan(userId, plan.id, {
@@ -604,15 +618,34 @@ export async function applyProcessingPlan(
       failureReason: null,
       recovery: null,
     });
-    // P2-A：关联收件箱统一回写 converted + 产出对象（best-effort，不阻断主流程）
-    await syncInboxFromPlan(userId, plan.id, {
-      status: "converted",
+    // P2-A：关联收件箱统一回写 converted + 产出对象（best-effort）。
+    // P3-perf：收件箱回写属副作用，移入 after() 不阻塞响应（前端 refetch 自愈 <1s 状态差）。
+    const syncInbox = () =>
+      syncInboxFromPlan(userId, plan.id, {
+        status: "converted",
+        noteId: createdNoteId,
+        outputTaskIds: createdTaskIds,
+        outputReminderIds: createdReminderIds,
+        outputProjectId: projectId,
+      }).catch((e) => console.error("[brain-plan] sync inbox after apply failed:", e));
+    if (typeof after === "function") after(syncInbox);
+    else await syncInbox();
+    // P3-perf：末次 getBrainProcessingPlan 回查改为用 fresh + 本次写入构造，省 1 次往返。
+    const updated: BrainProcessingPlan = {
+      ...(fresh ?? plan),
+      status: "applied",
       noteId: createdNoteId,
-      outputTaskIds: createdTaskIds,
-      outputReminderIds: createdReminderIds,
-      outputProjectId: projectId,
-    });
-    const updated = await getBrainProcessingPlan(userId, plan.id);
+      taskIds: createdTaskIds,
+      strategyIds: createdStrategyIds,
+      reminderIds: createdReminderIds,
+      projectId: projectId ?? (fresh ?? plan).projectId ?? null,
+      editsJson: edits ? JSON.stringify(edits) : null,
+      applyAt: Date.now(),
+      failureReason: null,
+      recovery: null,
+    };
+    mark("audit+inbox");
+    if (DBG) console.log("[save-latency] applyProcessingPlan", marks.join(" "));
     return { ok: true, note, strategyIds: createdStrategyIds, taskIds: createdTaskIds, reminderIds: createdReminderIds, plan: updated };
   } catch (err) {
     console.error("[brain-plan] apply failed:", err);
