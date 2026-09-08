@@ -189,6 +189,12 @@ export async function listBrainNotes(userId: string): Promise<BrainNote[]> {
         imaDocId: brainNotes.imaDocId,
         imaSyncedAt: brainNotes.imaSyncedAt,
         struct: brainNotes.struct,
+        // Obsidian 溯源列：缺了它们，列表返回的 note.obsidianVault/noteId 恒为 null，
+        // UI 无法标记「已同步到 Obsidian」，删除/回写也拿不到 vault 定位信息。
+        obsidianVault: brainNotes.obsidianVault,
+        obsidianRelPath: brainNotes.obsidianRelPath,
+        obsidianNoteId: brainNotes.obsidianNoteId,
+        obsidianSyncedAt: brainNotes.obsidianSyncedAt,
         createdAt: brainNotes.createdAt,
         updatedAt: brainNotes.updatedAt,
       })
@@ -250,6 +256,10 @@ export async function listBrainNotesPaginated(
         imaDocId: brainNotes.imaDocId,
         imaSyncedAt: brainNotes.imaSyncedAt,
         struct: brainNotes.struct,
+        obsidianVault: brainNotes.obsidianVault,
+        obsidianRelPath: brainNotes.obsidianRelPath,
+        obsidianNoteId: brainNotes.obsidianNoteId,
+        obsidianSyncedAt: brainNotes.obsidianSyncedAt,
         createdAt: brainNotes.createdAt,
         updatedAt: brainNotes.updatedAt,
       })
@@ -325,6 +335,10 @@ export async function listBrainNotesByIds(userId: string, ids: string[]): Promis
         imaDocId: brainNotes.imaDocId,
         imaSyncedAt: brainNotes.imaSyncedAt,
         struct: brainNotes.struct,
+        obsidianVault: brainNotes.obsidianVault,
+        obsidianRelPath: brainNotes.obsidianRelPath,
+        obsidianNoteId: brainNotes.obsidianNoteId,
+        obsidianSyncedAt: brainNotes.obsidianSyncedAt,
         createdAt: brainNotes.createdAt,
         updatedAt: brainNotes.updatedAt,
       })
@@ -441,6 +455,12 @@ export type NewBrainNote = {
   imaSyncedAt?: string | null;
   // AI 整理完整结构化结果（JSON 字符串）；可选，落库/回填写入
   struct?: string | null;
+  // Obsidian 直连溯源（obsidian-sync 的更新/删除写回依赖 vault + noteId，
+  // 缺失会导致从 vault 导入的笔记在 xiye 侧改动无法回写、删除无法同步删文件）
+  obsidianVault?: string | null;
+  obsidianRelPath?: string | null;
+  obsidianNoteId?: string | null;
+  obsidianSyncedAt?: string | null;
 };
 
 export async function insertBrainNote(
@@ -470,6 +490,10 @@ export async function insertBrainNote(
     imaDocId: row.imaDocId ?? null,
     imaSyncedAt: row.imaSyncedAt ?? null,
     struct: row.struct ?? null,
+    obsidianVault: row.obsidianVault ?? null,
+    obsidianRelPath: row.obsidianRelPath ?? null,
+    obsidianNoteId: row.obsidianNoteId ?? null,
+    obsidianSyncedAt: row.obsidianSyncedAt ?? null,
     createdAt: now,
     updatedAt: now,
   }).returning();
@@ -519,6 +543,10 @@ export type UpdateBrainNote = Partial<
     | "struct"
     | "isSnippet"
     | "language"
+    | "obsidianVault"
+    | "obsidianRelPath"
+    | "obsidianNoteId"
+    | "obsidianSyncedAt"
   >
 >;
 
@@ -540,6 +568,10 @@ export async function updateBrainNote(
     struct: patch.struct === undefined ? undefined : (patch.struct ?? null),
     isSnippet: patch.isSnippet === undefined ? undefined : (patch.isSnippet ? 1 : 0),
     language: patch.language === undefined ? undefined : (patch.language ?? null),
+    obsidianVault: patch.obsidianVault === undefined ? undefined : (patch.obsidianVault ?? null),
+    obsidianRelPath: patch.obsidianRelPath === undefined ? undefined : (patch.obsidianRelPath ?? null),
+    obsidianNoteId: patch.obsidianNoteId === undefined ? undefined : (patch.obsidianNoteId ?? null),
+    obsidianSyncedAt: patch.obsidianSyncedAt === undefined ? undefined : (patch.obsidianSyncedAt ?? null),
     updatedAt: Date.now(),
   };
   for (const k of Object.keys(set)) {

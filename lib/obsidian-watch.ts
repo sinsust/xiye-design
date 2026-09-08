@@ -16,33 +16,66 @@ import type { BrainNote } from "@/lib/brain-db";
 // Obsidian → xiye 监听（单例 watcher + 防抖 + 去重落库）。
 // 循环防护：syncingPaths 由 obsidian-sync 写回时填充，watch 忽略这些路径的变更事件。
 
-const watchers: fs.FSWatcher[] = [];
-const debounceMap = new Map<string, NodeJS.Timeout>();
+// 单例状态挂 globalThis：dev 模式 HMR 会反复求值本模块，
+// 若用模块级变量，旧 watcher 的引用会丢失（无法 close）造成句柄泄漏与重复监听。
+const g = globalThis as typeof globalThis & {
+  __xiyeObsidianWatch?: {
+    watchers: fs.FSWatcher[];
+    debounce: Map<string, NodeJS.Timeout>;
+    pollTimer: NodeJS.Timeout | null;
+    lastMtime: Map<string, number>;
+    /** 处理实现（间接层）：dev HMR 后模块重新求值会覆盖它，
+     *  使旧 fs.watch 回调也走最新代码，避免「改了代码没生效」。 */
+    handler: ((abs: string, userId: string, vaultDir: string) => Promise<unknown>) | null;
+  };
+};
+
+function state() {
+  if (!g.__xiyeObsidianWatch) {
+    g.__xiyeObsidianWatch = {
+      watchers: [],
+      debounce: new Map(),
+      pollTimer: null,
+      lastMtime: new Map(),
+      handler: null,
+    };
+  }
+  return g.__xiyeObsidianWatch;
+}
 
 function hashRel(rel: string): string {
   return createHash("sha1").update(rel).digest("hex").slice(0, 12);
 }
 
 export function stopObsidianWatch(): void {
-  for (const w of watchers) {
+  const s = state();
+  for (const w of s.watchers) {
     try {
       w.close();
     } catch {
       /* ignore */
     }
   }
-  watchers.length = 0;
-  for (const t of debounceMap.values()) clearTimeout(t);
-  debounceMap.clear();
+  s.watchers.length = 0;
+  for (const t of s.debounce.values()) clearTimeout(t);
+  s.debounce.clear();
+  if (s.pollTimer) {
+    clearInterval(s.pollTimer);
+    s.pollTimer = null;
+  }
+  s.lastMtime.clear();
 }
 
 export async function startObsidianWatch(): Promise<{ ok: boolean; error?: string; watching: number }> {
   stopObsidianWatch();
+  // 每次启动都把处理实现刷新到单例上，保证回调始终指向当前模块版本。
+  state().handler = (abs, userId, vaultDir) => processFile(abs, userId, vaultDir);
   const cfgs = await db
     .select()
     .from(userObsidianConfig)
     .where(eq(userObsidianConfig.enabled, 1));
   let watching = 0;
+  const errors: string[] = [];
   for (const cfg of cfgs) {
     if (!cfg.vaultPath) continue;
     try {
@@ -53,45 +86,104 @@ export async function startObsidianWatch(): Promise<{ ok: boolean; error?: strin
         if (syncingPaths.has(abs)) return;
         scheduleProcess(abs, cfg.userId, cfg.vaultPath);
       });
-      watchers.push(w);
+      state().watchers.push(w);
       watching++;
     } catch (e) {
+      // 改 continue：多 vault 配置下任一失败不应中断其余，也不应丢弃已建立的 watcher。
       const msg = e instanceof Error ? e.message : String(e);
       console.error("[obsidian-watch] watch failed:", cfg.vaultPath, msg);
-      return { ok: false, error: `无法监听 "${cfg.vaultPath}": ${msg}`, watching: 0 };
+      errors.push(`无法监听 "${cfg.vaultPath}": ${msg}`);
     }
   }
-  return { ok: true, watching };
+  if (watching > 0) startPolling();
+  return errors.length
+    ? { ok: watching > 0, error: errors.join("; "), watching }
+    : { ok: true, watching };
+}
+
+// Windows 下 fs.watch(recursive:true) 对深层子目录/部分编辑器原子写入会漏报，
+// 用低频轮询兜底：只处理 mtime 相对上次快照发生变化的文件。
+const POLL_MS = Math.max(10_000, Number(process.env.OBSIDIAN_POLL_MS ?? 60_000));
+
+function startPolling(): void {
+  const s = state();
+  if (s.pollTimer) return;
+  s.pollTimer = setInterval(() => {
+    void pollTick().catch((e) => console.error("[obsidian-watch] poll failed:", e));
+  }, POLL_MS);
+  // 不 unref：轮询是本模块的存活职责，进程退出时由 stopObsidianWatch 清理。
+}
+
+async function pollTick(): Promise<void> {
+  const cfgs = await db
+    .select()
+    .from(userObsidianConfig)
+    .where(eq(userObsidianConfig.enabled, 1));
+  const s = state();
+  const seen = new Set<string>();
+  for (const cfg of cfgs) {
+    if (!cfg.vaultPath) continue;
+    const files: string[] = [];
+    collectMd(cfg.vaultPath, files);
+    for (const abs of files) {
+      seen.add(abs);
+      let mtime: number;
+      try {
+        mtime = fs.statSync(abs).mtimeMs;
+      } catch {
+        continue;
+      }
+      const prev = s.lastMtime.get(abs);
+      s.lastMtime.set(abs, mtime);
+      // 首次快照只记录不处理，避免启动时把整个 vault 当变更全量重放。
+      if (prev === undefined || mtime <= prev) continue;
+      if (syncingPaths.has(abs)) continue;
+      scheduleProcess(abs, cfg.userId, cfg.vaultPath);
+    }
+  }
+  // 清理已删除文件的快照，避免 Map 无限增长
+  for (const k of s.lastMtime.keys()) if (!seen.has(k)) s.lastMtime.delete(k);
 }
 
 function scheduleProcess(abs: string, userId: string, vaultDir: string): void {
-  const prev = debounceMap.get(abs);
+  const s = state();
+  const prev = s.debounce.get(abs);
   if (prev) clearTimeout(prev);
-  debounceMap.set(
+  s.debounce.set(
     abs,
     setTimeout(() => {
-      debounceMap.delete(abs);
-      void processFile(abs, userId, vaultDir).catch((e) =>
+      s.debounce.delete(abs);
+      const fn = s.handler ?? ((a: string, u: string, v: string) => processFile(a, u, v));
+      void fn(abs, userId, vaultDir).catch((e) =>
         console.error("[obsidian-watch] process failed:", abs, e),
       );
     }, 300),
   );
 }
 
-/** 文件名对齐：若当前 .md 文件名非 xiye 预期（如纯 Obsidian 新建文件），重命名为预期名，避免孤儿文件 */
-async function alignFileName(note: BrainNote, abs: string, vaultDir: string): Promise<void> {
+/** 文件名对齐：若当前 .md 文件名非 xiye 预期（如纯 Obsidian 新建文件），重命名为预期名，避免孤儿文件。
+ *  返回对齐后的最终绝对路径（未重命名则原样返回）。 */
+async function alignFileName(note: BrainNote, abs: string, vaultDir: string): Promise<string> {
   const expected = fileNameForNote(note);
-  if (path.basename(abs) === expected) return;
+  if (path.basename(abs) === expected) return abs;
   const expectedAbs = path.join(vaultDir, expected);
   syncingPaths.add(expectedAbs);
   try {
     if (fs.existsSync(expectedAbs)) fs.unlinkSync(expectedAbs);
     fs.renameSync(abs, expectedAbs);
+    return expectedAbs;
   } catch (e) {
     console.error("[obsidian-watch] align failed:", abs, e);
+    return abs;
   } finally {
     setTimeout(() => syncingPaths.delete(expectedAbs), 1500);
   }
+}
+
+/** 相对目录（vault 根为 ""），供 obsidian-sync 拼回绝对路径 */
+function relDirOf(vaultDir: string, abs: string): string {
+  const d = path.dirname(path.relative(vaultDir, abs));
+  return d === "." ? "" : d;
 }
 
 async function processFile(abs: string, userId: string, vaultDir: string): Promise<BrainNote | null> {
@@ -111,7 +203,13 @@ async function processFile(abs: string, userId: string, vaultDir: string): Promi
   }
 
   let targetId: string | null = meta.obsidianNoteId || null;
-  let existing: BrainNote | null = targetId ? await findBrainNoteByObsidianNoteId(userId, targetId) : null;
+  // 双重查找：先按 obsidian_note_id 列查（规范路径），
+  // 再按主键 id 兜底 —— xiye 写回时生成的 id 就是 noteId，
+  // 而历史数据（obsidian_note_id 列为空）只能靠 id 命中，否则会误走 insert 撞主键。
+  let existing: BrainNote | null = targetId
+    ? ((await findBrainNoteByObsidianNoteId(userId, targetId)) ??
+      (await getBrainNote(userId, targetId)))
+    : null;
 
   if (!existing && !targetId) {
     // 纯 Obsidian 文件（无 xiye 渊源）：用相对路径派生稳定 id
@@ -119,33 +217,83 @@ async function processFile(abs: string, userId: string, vaultDir: string): Promi
     existing = await getBrainNote(userId, targetId);
   }
 
+  const nowIso = new Date().toISOString();
+
   if (existing) {
     // 冲突：最后写入优先（.md mtime vs xiye updatedAt）
     if (stat.mtimeMs <= existing.updatedAt) return existing;
-    await updateBrainNote(userId, existing.id, {
+    const updated = await updateBrainNote(userId, existing.id, {
       title: meta.title || existing.title,
       content: meta.content,
       category: meta.category || existing.category,
       tags: meta.tags,
       related: meta.related,
       struct: meta.struct,
+      // 溯源字段：obsidian-sync 的更新/删除写回依赖 vault + noteId
+      obsidianVault: vaultDir,
+      obsidianRelPath: relDirOf(vaultDir, abs),
+      obsidianNoteId: meta.obsidianNoteId || path.basename(abs, ".md"),
+      obsidianSyncedAt: nowIso,
     });
-    const updated = await getBrainNote(userId, existing.id);
-    if (updated) await alignFileName(updated, abs, vaultDir);
+    if (!updated) return null;
+    const finalAbs = await alignFileName(updated, abs, vaultDir);
+    const finalId = path.basename(finalAbs, ".md");
+    // 对齐重命名后 noteId 已变（落库的是旧名），补一次更新保证删除时能定位到真实文件
+    if (finalAbs !== abs && updated.obsidianNoteId !== finalId) {
+      return await updateBrainNote(userId, updated.id, {
+        obsidianVault: vaultDir,
+        obsidianRelPath: relDirOf(vaultDir, finalAbs),
+        obsidianNoteId: finalId,
+        obsidianSyncedAt: nowIso,
+      });
+    }
     return updated;
   }
 
-  const inserted = await insertBrainNote(userId, {
+  const draft = {
     id: targetId ?? undefined,
-    source: "obsidian",
+    source: "obsidian" as const,
     title: meta.title || "未命名笔记",
     content: meta.content,
     category: meta.category,
     tags: meta.tags,
     related: meta.related,
     struct: meta.struct,
-  });
-  if (inserted) await alignFileName(inserted, abs, vaultDir);
+    obsidianVault: vaultDir,
+    obsidianRelPath: relDirOf(vaultDir, abs),
+    obsidianNoteId: meta.obsidianNoteId || path.basename(abs, ".md"),
+    obsidianSyncedAt: nowIso,
+  };
+  let inserted: BrainNote | null;
+  try {
+    inserted = await insertBrainNote(userId, draft);
+  } catch (e) {
+    // 并发/历史数据竞争下可能撞主键：降级为更新既有记录，避免整条同步失败。
+    const fallback = targetId ? await getBrainNote(userId, targetId) : null;
+    if (!fallback) throw e;
+    inserted = await updateBrainNote(userId, fallback.id, {
+      title: draft.title,
+      content: draft.content,
+      category: draft.category,
+      tags: draft.tags,
+      related: draft.related,
+      struct: draft.struct,
+      obsidianVault: draft.obsidianVault,
+      obsidianRelPath: draft.obsidianRelPath,
+      obsidianNoteId: draft.obsidianNoteId,
+      obsidianSyncedAt: draft.obsidianSyncedAt,
+    });
+  }
+  if (inserted) {
+    const finalAbs = await alignFileName(inserted, abs, vaultDir);
+    const finalId = path.basename(finalAbs, ".md");
+    if (finalAbs !== abs && inserted.obsidianNoteId !== finalId) {
+      return await updateBrainNote(userId, inserted.id, {
+        obsidianRelPath: relDirOf(vaultDir, finalAbs),
+        obsidianNoteId: finalId,
+      });
+    }
+  }
   return inserted;
 }
 
