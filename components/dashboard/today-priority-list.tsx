@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import type { TodayBrief, TodayPriorityItem } from "@/lib/brain-priority";
 
 const LEVEL_META: Record<TodayPriorityItem["priority"], { label: string; bar: string; badge: string }> = {
-  critical: { label: "紧急", bar: "#ef4444", badge: "bg-red-500/10 text-red-600" },
-  high: { label: "高", bar: "#f59e0b", badge: "bg-amber-500/10 text-amber-600" },
+  critical: { label: "紧急", bar: "#ef4444", badge: "bg-danger/10 text-danger" },
+  high: { label: "高", bar: "#f59e0b", badge: "bg-warning/10 text-warning" },
   normal: { label: "普通", bar: "#9ca3af", badge: "bg-muted text-muted-foreground" },
 };
 

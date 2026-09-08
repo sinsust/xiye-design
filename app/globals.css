@@ -42,6 +42,17 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  /* 语义状态色：success / warning / danger / info。
+     与品牌色解耦（不随 data-theme-preset 漂移），明暗双主题各自取值，
+     统一替换散落的 bg-emerald-50 / bg-amber-50 / bg-red-50 等硬编码浅底。 */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -97,6 +108,15 @@
   --accent: oklch(0.5635 0.2408 260.8178);
   --accent-foreground: oklch(1 0 0);
   --destructive: oklch(0 0 0);
+  /* 语义状态色（浅色主题：600 级实色，保证 /10 浅底上同样可读） */
+  --success: oklch(0.5956 0.1452 163.4377);
+  --success-foreground: oklch(0.9819 0.0181 164.5542);
+  --warning: oklch(0.6459 0.1446 65.3578);
+  --warning-foreground: oklch(0.9869 0.0218 92.3377);
+  --danger: oklch(0.5766 0.2451 27.3307);
+  --danger-foreground: oklch(0.9714 0.0132 17.3846);
+  --info: oklch(0.6231 0.2140 259.8148);
+  --info-foreground: oklch(0.9684 0.0165 252.4184);
   --border: oklch(0 0 0);
   --input: oklch(0 0 0);
   --ring: oklch(0.6489 0.237 26.9728);
@@ -132,6 +152,15 @@
   --accent: oklch(0.6755 0.1765 252.2592);
   --accent-foreground: oklch(0 0 0);
   --destructive: oklch(1 0 0);
+  /* 语义状态色（深色主题：300~400 级亮色，保证 /15 透明底上对比度达标） */
+  --success: oklch(0.7649 0.1551 163.2235);
+  --success-foreground: oklch(0.2621 0.0512 163.4389);
+  --warning: oklch(0.7692 0.1549 70.0808);
+  --warning-foreground: oklch(0.2795 0.0561 60.0236);
+  --danger: oklch(0.7044 0.1872 23.1858);
+  --danger-foreground: oklch(0.2577 0.0891 26.0417);
+  --info: oklch(0.7459 0.1604 254.6240);
+  --info-foreground: oklch(0.2789 0.1409 259.7195);
   --border: oklch(1 0 0);
   --input: oklch(1 0 0);
   --ring: oklch(0.7044 0.1872 23.1858);

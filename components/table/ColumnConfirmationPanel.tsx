@@ -202,7 +202,7 @@ export function ColumnConfirmationPanel({
             const ov = overrides[col.index];
             const displayType = ov?.type ?? col.type;
             return (
-              <div key={col.index} className="rounded-lg border border-border/70 bg-white px-2.5 py-2">
+              <div key={col.index} className="rounded-lg border border-border/70 bg-background px-2.5 py-2">
                 <div className="truncate text-[12px] font-medium text-foreground">
                   {ov?.displayName ?? col.name}
                 </div>
@@ -230,7 +230,7 @@ export function ColumnConfirmationPanel({
               const displayType = ov?.type ?? col.type;
               const open = expandedLow.has(col.index);
               return (
-                <div key={col.index} className="rounded-lg border border-amber-200 bg-amber-50/40">
+                <div key={col.index} className="rounded-lg border border-warning/30 bg-warning/10">
                   <div className="flex flex-wrap items-center gap-2 px-3 py-2">
                     <button
                       type="button"
@@ -246,7 +246,7 @@ export function ColumnConfirmationPanel({
                       aria-expanded={open}
                     >
                       <ChevronRight
-                        className={"size-3.5 shrink-0 text-amber-600 transition-transform " + (open ? "rotate-90" : "")}
+                        className={"size-3.5 shrink-0 text-warning transition-transform " + (open ? "rotate-90" : "")}
                       />
                       <span className="truncate text-[13px] font-medium text-foreground">{col.name}</span>
                       <span className="shrink-0 rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
@@ -257,7 +257,7 @@ export function ColumnConfirmationPanel({
                       value={displayType}
                       onChange={(e) => setType(col.index, e.target.value as FieldType)}
                       onClick={(e) => e.stopPropagation()}
-                      className="shrink-0 rounded-md border border-border/70 bg-white px-2 py-1 text-[11px] outline-none focus:border-primary/50"
+                      className="shrink-0 rounded-md border border-border/70 bg-background px-2 py-1 text-[11px] outline-none focus:border-primary/50"
                     >
                       {ALLOWED_OVERRIDE_TYPES.map((t) => (
                         <option key={t} value={t}>
@@ -267,7 +267,7 @@ export function ColumnConfirmationPanel({
                     </select>
                   </div>
                   {open && (
-                    <div className="border-t border-amber-200/70 px-3 py-2">
+                    <div className="border-t border-warning/30 px-3 py-2">
                       {col.samples && col.samples.length > 0 && (
                         <div className="mb-1.5">
                           <div className="mb-1 text-[11px] text-muted-foreground/70">示例（真实数据样本）</div>
@@ -301,7 +301,7 @@ export function ColumnConfirmationPanel({
       </Section>
 
       {/* 4) 查看并调整（就地展开，非整屏表单） */}
-      <div className="rounded-lg border border-border/70 bg-white">
+      <div className="rounded-lg border border-border/70 bg-background">
         <button
           onClick={() => setSettingsOpen((v) => !v)}
           className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[12px] font-medium text-foreground transition hover:bg-muted/30"
@@ -323,12 +323,12 @@ export function ColumnConfirmationPanel({
                     <input
                       value={ov?.displayName ?? col.name}
                       onChange={(e) => setDisplayName(col.index, e.target.value)}
-                      className="w-36 rounded border border-border/70 bg-white px-2 py-1 text-[11px] outline-none focus:border-primary/50"
+                      className="w-36 rounded border border-border/70 bg-background px-2 py-1 text-[11px] outline-none focus:border-primary/50"
                     />
                     <select
                       value={displayType}
                       onChange={(e) => setType(col.index, e.target.value as FieldType)}
-                      className="rounded border border-border/70 bg-white px-2 py-1 text-[11px] outline-none focus:border-primary/50"
+                      className="rounded border border-border/70 bg-background px-2 py-1 text-[11px] outline-none focus:border-primary/50"
                     >
                       {ALLOWED_OVERRIDE_TYPES.map((t) => (
                         <option key={t} value={t}>
@@ -358,7 +358,7 @@ export function ColumnConfirmationPanel({
         {onBack && (
           <button
             onClick={onBack}
-            className="flex items-center gap-1 rounded-lg border border-border/70 bg-white px-3 py-2 text-[12px] font-medium text-muted-foreground transition hover:text-foreground"
+            className="flex items-center gap-1 rounded-lg border border-border/70 bg-background px-3 py-2 text-[12px] font-medium text-muted-foreground transition hover:text-foreground"
           >
             <RotateCcw className="size-3.5" />
             更换表头
@@ -367,19 +367,19 @@ export function ColumnConfirmationPanel({
 
         <div className="min-w-0 flex-1">
           {saveState === "error" && (
-            <div className="flex items-center gap-1 text-[11px] text-red-600">
+            <div className="flex items-center gap-1 text-[11px] text-danger">
               <AlertTriangle className="size-3" />
               {saveError}
             </div>
           )}
           {blocking.blocked && saveState !== "error" && (
-            <div className="flex items-center gap-1 text-[11px] text-amber-600">
+            <div className="flex items-center gap-1 text-[11px] text-warning">
               <AlertTriangle className="size-3" />
               {blocking.reasons[0]}
             </div>
           )}
           {saveState === "success" && (
-            <div className="flex items-center gap-1 text-[11px] text-emerald-600">
+            <div className="flex items-center gap-1 text-[11px] text-success">
               <CheckCircle2 className="size-3" />
               已确认，正在进入分析建议…
             </div>
@@ -420,7 +420,7 @@ function Section({
       <div className="mb-1.5 flex items-baseline gap-2">
         <h4
           className={
-            "text-[12px] font-semibold " + (tone === "warn" ? "text-amber-700" : "text-foreground")
+            "text-[12px] font-semibold " + (tone === "warn" ? "text-warning" : "text-foreground")
           }
         >
           {title}

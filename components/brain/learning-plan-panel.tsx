@@ -125,7 +125,7 @@ export function LearningPlanPanel({
               (review.status === "paused"
                 ? "bg-muted text-muted-foreground"
                 : review.status === "mastered"
-                  ? "bg-emerald-500/10 text-emerald-600"
+                  ? "bg-success/10 text-success"
                   : "bg-primary/10 text-primary")
             }
           >

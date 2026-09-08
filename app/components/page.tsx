@@ -1296,9 +1296,9 @@ export default function ComponentLibraryPage() {
       </aside>
 
       {/* 主区域 */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 min-h-0 flex-1 flex-col overflow-y-auto">
         {/* 顶部工具条：参数设置 / 复制源码 */}
-        <div className="flex h-11 shrink-0 items-center justify-between gap-4 border-b border-border px-4">
+        <div className="flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-border px-4 py-1">
           <span className="truncate text-sm font-medium text-foreground">
             {comp.name}
           </span>

@@ -39,14 +39,14 @@ export function EvidenceGallery({
         {images.slice(0, 3).map((img) => (
           <div
             key={img.id}
-            className="relative h-9 w-9 overflow-hidden rounded border border-zinc-200 bg-white"
+            className="relative h-9 w-9 overflow-hidden rounded border border-zinc-200 bg-background"
             title={img.label}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={img.url} alt={img.label ?? ""} className="h-full w-full object-cover" />
           </div>
         ))}
-        <span className="text-[10px] text-zinc-500">{images.length} 张凭证图</span>
+        <span className="text-[10px] text-muted-foreground">{images.length} 张凭证图</span>
       </div>
     );
   }
@@ -54,12 +54,12 @@ export function EvidenceGallery({
   return (
     <div className="mt-3">
       <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-[12px] font-medium text-zinc-700">{title}</h4>
-        <span className="text-[11px] text-zinc-400">{countText(images.length)}</span>
+        <h4 className="text-[12px] font-medium text-muted-foreground">{title}</h4>
+        <span className="text-[11px] text-muted-foreground">{countText(images.length)}</span>
       </div>
       {active && (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
-          <div className="relative aspect-[4/3] w-full bg-white">
+        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-muted/40">
+          <div className="relative aspect-[4/3] w-full bg-background">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={active.url}
@@ -69,7 +69,7 @@ export function EvidenceGallery({
           </div>
           <div className="border-t border-zinc-200 px-3 py-2">
             <div className="text-[12px] font-medium text-zinc-800">{active.label}</div>
-            <div className="mt-0.5 flex flex-wrap gap-2 text-[11px] text-zinc-500">
+            <div className="mt-0.5 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
               <span>{active.source}</span>
               {active.uploadedAt && <span>· {active.uploadedAt}</span>}
             </div>
@@ -83,7 +83,7 @@ export function EvidenceGallery({
               key={img.id}
               type="button"
               onClick={() => setActiveId(img.id)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 bg-white transition-colors ${
+              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 bg-background transition-colors ${
                 (activeId ?? images[0].id) === img.id
                   ? "border-[#1e4d5c]"
                   : "border-zinc-200 hover:border-zinc-300"

@@ -189,7 +189,7 @@ export function FeishuImportPanel({
         className={
           "flex items-center justify-between rounded-xl border px-4 py-3 " +
           (status === "connected"
-            ? "border-emerald-200 bg-emerald-50/70"
+            ? "border-success/30 bg-success/10"
             : "border-border/70 bg-muted/30")
         }
       >
@@ -198,7 +198,7 @@ export function FeishuImportPanel({
             className={
               "flex size-8 items-center justify-center rounded-lg " +
               (status === "connected"
-                ? "bg-emerald-500/15 text-emerald-600"
+                ? "bg-success/10 text-success"
                 : "bg-muted text-muted-foreground")
             }
           >
@@ -245,7 +245,7 @@ export function FeishuImportPanel({
               value={appToken}
               onChange={(e) => setAppToken(e.target.value)}
               placeholder="粘贴 appToken"
-              className="flex-1 rounded-lg border border-border/70 bg-white px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+              className="flex-1 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
             />
             <button
               onClick={listTables}
@@ -262,7 +262,7 @@ export function FeishuImportPanel({
               <select
                 value={selectedTableId}
                 onChange={(e) => setSelectedTableId(e.target.value)}
-                className="rounded-lg border border-border/70 bg-white px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+                className="rounded-lg border border-border/70 bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
               >
                 <option value="">选择要导入的数据表…</option>
                 {tables.map((t) => (
@@ -300,7 +300,7 @@ export function FeishuImportPanel({
 
       {/* 错误 */}
       {error && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <div className="mt-4 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
           <X className="size-3.5 shrink-0" />
           <span className="break-all">{error}</span>
         </div>
@@ -312,8 +312,8 @@ export function FeishuImportPanel({
           className={
             "fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium shadow-lg animate-in fade-in slide-in-from-bottom-3 " +
             (toast.kind === "ok"
-              ? "bg-emerald-600 text-white"
-              : "bg-red-600 text-white")
+              ? "bg-success text-success-foreground"
+              : "bg-danger text-danger-foreground")
           }
         >
           {toast.kind === "ok" ? <Check className="size-3.5" /> : <AlertCircle className="size-3.5" />}

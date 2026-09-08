@@ -50,9 +50,9 @@ function StatusBadge({ status, stale }: { status: PrototypeSpec["status"]; stale
         : "草稿";
   const tone =
     status === "confirmed"
-      ? "bg-emerald-500/15 text-emerald-600"
+      ? "bg-success/10 text-success"
       : status === "reviewing"
-        ? "bg-amber-500/15 text-amber-600"
+        ? "bg-warning/10 text-warning"
         : "bg-muted text-muted-foreground";
   return (
     <span className="flex items-center gap-1.5 text-[11px]">
@@ -133,9 +133,9 @@ export function PrototypePanel({
           </div>
         )}
         {hasSpec && prototype?.lastConflicts && prototype.lastConflicts.length > 0 && (
-          <div className="flex items-start gap-2 rounded-xl border border-amber-400/40 bg-card px-3 py-2">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-            <p className="text-[11px] leading-snug text-amber-700">
+          <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-card px-3 py-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <p className="text-[11px] leading-snug text-warning">
               重建时保留了你在 {prototype.lastConflicts.length} 处的调整，但这些与最新界面规格冲突，已列为待确认。
             </p>
           </div>

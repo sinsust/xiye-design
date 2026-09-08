@@ -157,7 +157,7 @@ export function PrototypePlayer({ prototype, busy, onFeedback }: PrototypePlayer
           原型试玩 · {meta.mode === "wireframe" ? "线框" : "中保真"} · v{meta.version}
         </span>
         {isPivotScreen && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+          <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
             <Flag className="size-3" /> 关键时刻
           </span>
         )}
@@ -277,10 +277,10 @@ export function PrototypePlayer({ prototype, busy, onFeedback }: PrototypePlayer
             <div className="grid grid-cols-2 gap-1.5">
               {(
                 [
-                  ["confusion", "困惑", AlertCircle, "text-sky-600"],
+                  ["confusion", "困惑", AlertCircle, "text-info"],
                   ["blocker", "卡点", X, "text-destructive"],
-                  ["suggestion", "建议", Lightbulb, "text-amber-600"],
-                  ["success", "顺畅", ThumbsUp, "text-emerald-600"],
+                  ["suggestion", "建议", Lightbulb, "text-warning"],
+                  ["success", "顺畅", ThumbsUp, "text-success"],
                 ] as const
               ).map(([type, label, Icon, tone]) => (
                 <Button
@@ -324,9 +324,9 @@ export function PrototypePlayer({ prototype, busy, onFeedback }: PrototypePlayer
                 {stateOverlay.state === "error" ? (
                   <AlertCircle className="size-4 text-destructive" />
                 ) : stateOverlay.state === "success" ? (
-                  <CheckCircle2 className="size-4 text-emerald-600" />
+                  <CheckCircle2 className="size-4 text-success" />
                 ) : (
-                  <Flag className="size-4 text-amber-600" />
+                  <Flag className="size-4 text-warning" />
                 )}
                 <p className="text-sm font-semibold text-foreground">{stateOverlay.state}</p>
               </div>

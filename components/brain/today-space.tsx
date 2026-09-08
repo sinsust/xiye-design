@@ -63,16 +63,16 @@ interface AskSource {
 
 /* ═══ 标签配色：系统标签固定色 + 自定义标签哈希确定性分配 ═══ */
 const TAG_PALETTE = [
-  { bg: "bg-blue-50/80", text: "text-blue-700", ring: "ring-blue-200/60" },   // 0 工作
-  { bg: "bg-amber-50/80", text: "text-amber-700", ring: "ring-amber-200/60" }, // 1 阅读
+  { bg: "bg-info", text: "text-info", ring: "ring-info/30" },   // 0 工作
+  { bg: "bg-warning", text: "text-warning", ring: "ring-warning/30" }, // 1 阅读
   { bg: "bg-rose-50/80", text: "text-rose-600", ring: "ring-rose-200/60" },    // 2 随手记
   { bg: "bg-slate-100/80", text: "text-slate-600", ring: "ring-slate-200/60" },// 3 文档
-  { bg: "bg-emerald-50/80", text: "text-emerald-700", ring: "ring-emerald-200/60" }, // 4 技术
-  { bg: "bg-violet-50/80", text: "text-violet-700", ring: "ring-violet-200/60" }, // 5 待办
-  { bg: "bg-purple-50/80", text: "text-purple-700", ring: "ring-purple-200/60" }, // 6 学习
+  { bg: "bg-success", text: "text-success", ring: "ring-success/30" }, // 4 技术
+  { bg: "bg-violet-500/15", text: "text-violet-700 dark:text-violet-300", ring: "ring-violet-500/30" }, // 5 待办
+  { bg: "bg-purple-500/15", text: "text-purple-700 dark:text-purple-300", ring: "ring-purple-500/30" }, // 6 学习
   { bg: "bg-cyan-50/80", text: "text-cyan-700", ring: "ring-cyan-200/60" },     // 7 灵感
   { bg: "bg-teal-50/80", text: "text-teal-700", ring: "ring-teal-200/60" },     // 8 问答
-  { bg: "bg-orange-50/80", text: "text-orange-700", ring: "ring-orange-200/60" },// 9 自定义兜底
+  { bg: "bg-warning", text: "text-warning", ring: "ring-warning/30" },// 9 自定义兜底
 ] as const;
 
 const SYSTEM_TAG_MAP: Record<string, number> = {
@@ -353,14 +353,14 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
             {receipt.length > 0 && (
               <div className="mt-3 space-y-1.5 border-t border-border pt-3">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-emerald-600">已收录 {receipt.length} 条</span>
+                  <span className="text-[11px] font-semibold text-success">已收录 {receipt.length} 条</span>
                   <button onClick={() => setReceipt([])} className="text-[11px] text-muted-foreground transition hover:text-foreground">
                     清空
                   </button>
                 </div>
                 {receipt.map((a) => (
                   <div key={a.noteId} className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-xs">
-                    <BookOpen className="size-3.5 shrink-0 text-emerald-600" />
+                    <BookOpen className="size-3.5 shrink-0 text-success" />
                     <span className="flex-1 truncate text-foreground">{a.title}</span>
                     <button onClick={() => undoNote(a.noteId)} className="shrink-0 text-muted-foreground transition hover:text-destructive" aria-label="撤销">
                       <X className="size-3.5" />
@@ -452,7 +452,7 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
               <div className="space-y-2">
                 {data?.todayReviews.map((c) => {
                   const accent = c.kind === "sm2" ? "border-l-sky-400" : "border-l-violet-400";
-                  const badge = c.kind === "sm2" ? "bg-sky-500/10 text-sky-600" : "bg-violet-500/10 text-violet-600";
+                  const badge = c.kind === "sm2" ? "bg-info/10 text-info dark:text-info" : "bg-violet-500/15 text-violet-700 dark:text-violet-300";
                   const preview = c.noteSummary || c.noteContentPreview;
                   const expanded = expandedReviews.has(c.reviewId);
                   return (
@@ -572,7 +572,7 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
                     >
                       {savedAsk ? (
                         <>
-                          <Check className="size-3 text-emerald-500" />
+                          <Check className="size-3 text-success" />
                           已存入笔记
                         </>
                       ) : savingAsk ? (

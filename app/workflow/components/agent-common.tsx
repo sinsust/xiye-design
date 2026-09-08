@@ -116,10 +116,10 @@ export function AvatarZoom({ role, className }: { role: AgentId; className?: str
 
 export function AgentStatusBadge({ status }: { status: AgentStatus }) {
   const map = {
-    done: { icon: CheckCircle2, cls: "bg-emerald-600/90 text-white", label: "已完成" },
+    done: { icon: CheckCircle2, cls: "bg-success text-success-foreground", label: "已完成" },
     thinking: { icon: Clock3, cls: "bg-muted text-foreground animate-[spin_2s_linear_infinite]", label: "思考中" },
     standby: { icon: Clock3, cls: "bg-muted text-muted-foreground", label: "等待中" },
-    producing: { icon: Sparkles, cls: "bg-amber-500/90 text-white animate-pulse", label: "产出中" },
+    producing: { icon: Sparkles, cls: "bg-warning text-warning-foreground animate-pulse", label: "产出中" },
   } as const;
   const { icon: Icon, cls, label } = map[status];
   return (

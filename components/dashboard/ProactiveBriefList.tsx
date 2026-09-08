@@ -36,13 +36,13 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const SEV_STYLE: Record<string, string> = {
-  high: "border-red-200/60 bg-red-50/50",
-  medium: "border-amber-200/70 bg-amber-50/40",
+  high: "border-danger/30 bg-danger/10",
+  medium: "border-warning/30 bg-warning/10",
   low: "border-border bg-card",
 };
 const BADGE_STYLE: Record<string, string> = {
-  high: "bg-red-100 text-red-700",
-  medium: "bg-amber-100 text-amber-700",
+  high: "bg-danger/10 text-danger",
+  medium: "bg-warning/10 text-warning",
   low: "bg-muted text-muted-foreground",
 };
 

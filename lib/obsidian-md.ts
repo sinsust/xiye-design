@@ -57,7 +57,7 @@ function parseFrontmatter(raw: string): { meta: Record<string, unknown>; body: s
     const mm = line.match(/^([\w-]+):\s*(.*)$/);
     if (!mm) continue;
     const key = mm[1];
-    let val = mm[2].trim();
+    const val = mm[2].trim();
     if (val.startsWith("[") && val.endsWith("]")) {
       const inner = val.slice(1, -1).trim();
       meta[key] = inner ? inner.split(",").map((s) => s.trim().replace(/^"|"$/g, "")) : [];

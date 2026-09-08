@@ -411,7 +411,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
               </span>
               {report?.aiUsed === false && (
                 <span
-                  className="rounded-[var(--radius)] bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-normal text-amber-700"
+                  className="rounded-[var(--radius)] bg-warning/10 px-1.5 py-0.5 text-[10px] font-normal text-warning"
                   title="未配置 LLM_MODEL_*（API Key / Base URL / Model ID 三者齐备才走 AI），已用本地启发式聚合，效果弱于 AI"
                 >
                   未启用 AI 摘要
@@ -675,7 +675,7 @@ function TaskSaveButton({
       className={
         "inline-flex shrink-0 items-center gap-0.5 rounded-md border px-1 py-0.5 text-[10px] transition " +
         (saved
-          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+          ? "border-success/30 bg-success/10 text-success"
           : "border-border/70 text-muted-foreground hover:border-primary/30 hover:bg-primary/10 hover:text-primary")
       }
     >

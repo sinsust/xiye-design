@@ -90,7 +90,7 @@ export function HeaderConfirmationPanel({
                   "rounded-lg border px-2.5 py-1.5 text-left text-[11px] transition " +
                   (active
                     ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/70 bg-white text-muted-foreground hover:border-primary/30")
+                    : "border-border/70 bg-background text-muted-foreground hover:border-primary/30")
                 }
               >
                 <div className="font-medium">第 {c.rowIndex + 1} 行</div>
@@ -158,7 +158,7 @@ export function HeaderConfirmationPanel({
 
       {/* 排除说明 */}
       {(excludedRows > 0 || excludedCols > 0) && (
-        <div className="mt-3 flex items-start gap-1.5 rounded-md bg-zinc-50 px-2.5 py-2 text-[11px] text-zinc-600">
+        <div className="mt-3 flex items-start gap-1.5 rounded-md bg-muted/40 px-2.5 py-2 text-[11px] text-muted-foreground">
           <AlertTriangle className="mt-0.5 size-3 shrink-0" />
           <span>
             确认后，系统将排除 {excludedRows} 个说明/空行、{excludedCols} 个无表头列，仅保留有效数据用于分析。
@@ -168,7 +168,7 @@ export function HeaderConfirmationPanel({
 
       {/* 错误横幅 */}
       {error && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
           <AlertTriangle className="size-3.5 shrink-0" />
           <span className="break-all">{error}</span>
         </div>

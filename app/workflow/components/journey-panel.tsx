@@ -7,6 +7,7 @@
 //   每步带证据徽标（已确认 / 假设 / 待确认）与来源；支持局部「修改」与「按假设暂缓」。
 // - 底部页脚：接受当前体验 / 带假设进入下一步 / 返回继续讨论（沿用 F0-A 保存与失败恢复）。
 
+import { useDialogA11y } from "@/lib/use-dialog-a11y";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -77,19 +78,19 @@ export function JourneyPanel({
         <CardContent className="px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-indigo-500/10 text-indigo-600">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                 <Footprints className="size-4" />
               </span>
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-medium text-foreground">
                   核心体验旅程
                   {journey?.status === "confirmed" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                       <ShieldCheck className="size-3" /> v{journey.version} 已确认
                     </span>
                   )}
                   {stale && !busy && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
                       <AlertTriangle className="size-3" /> 蓝图已更新待重建
                     </span>
                   )}
@@ -153,14 +154,14 @@ export function JourneyPanel({
 function EvidenceBadge({ evidence }: { evidence: JourneyEvidence }) {
   if (evidence === "confirmed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+      <span className="inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
         <CheckCircle2 className="size-2.5" /> 已确认
       </span>
     );
   }
   if (evidence === "assumption") {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+      <span className="inline-flex items-center gap-1 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning">
         <FlaskConical className="size-2.5" /> 假设
       </span>
     );
@@ -275,20 +276,22 @@ function JourneyDrawer({
   const edges = journey.edgeCases ?? [];
   const decisions = journey.openDecisions ?? [];
 
+  const { titleId, dialogProps } = useDialogA11y<HTMLElement>(onClose);
+
   return createPortal(
     <>
       <div className="fixed inset-0 z-50 bg-black/30" onClick={onClose} aria-hidden />
-      <aside className="fixed inset-y-0 right-0 z-50 flex w-[min(620px,100vw)] flex-col border-l border-border bg-background shadow-xl">
+      <aside {...dialogProps} className="fixed inset-y-0 right-0 z-50 flex w-[min(620px,100vw)] flex-col border-l border-border bg-background shadow-xl">
         <header className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
           <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+            <p id={titleId} className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
               核心体验旅程 ExperienceJourney
               {confirmed ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                   <ShieldCheck className="size-3" /> v{journey.version} 已确认
                 </span>
               ) : journey.status === "reviewing" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
                   <ScrollText className="size-3" /> 审阅中
                 </span>
               ) : (
@@ -313,11 +316,11 @@ function JourneyDrawer({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {stale && (
-            <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-3">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <div className="mb-4 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-3">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-amber-700">产品蓝图已更新</p>
-                <p className="mt-0.5 text-xs text-amber-600/80">你的手动修改会被保留，冲突将标为待确认。建议基于最新方案重建体验旅程。</p>
+                <p className="text-sm font-medium text-warning">产品蓝图已更新</p>
+                <p className="mt-0.5 text-xs text-warning/80">你的手动修改会被保留，冲突将标为待确认。建议基于最新方案重建体验旅程。</p>
                 <Button size="sm" variant="outline" className="mt-2 gap-1.5" onClick={onRebuild} disabled={busy}>
                   <RotateCcw className="size-3.5" /> 基于最新蓝图重建
                 </Button>
@@ -341,9 +344,9 @@ function JourneyDrawer({
               <div key={s.id} className="rounded-xl border border-border/60 bg-card px-3 py-2">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium text-foreground">
-                    <span className="mr-1.5 inline-grid size-4 place-items-center rounded-full bg-indigo-500/15 text-[10px] text-indigo-600">{s.order}</span>
+                    <span className="mr-1.5 inline-grid size-4 place-items-center rounded-full bg-primary/15 text-[10px] text-primary">{s.order}</span>
                     {s.userGoal}
-                    {s.frictionOrRisk && <span className="ml-1.5 text-xs text-amber-600">· 卡点：{s.frictionOrRisk}</span>}
+                    {s.frictionOrRisk && <span className="ml-1.5 text-xs text-warning">· 卡点：{s.frictionOrRisk}</span>}
                   </p>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <EvidenceBadge evidence={s.evidence} />
@@ -391,7 +394,7 @@ function JourneyDrawer({
               <div key={e.id} className="rounded-xl border border-border/60 bg-card px-3 py-2">
                 <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                   {e.trigger}
-                  <span className={`rounded px-1 text-[10px] ${e.priority === "high" ? "bg-red-500/10 text-red-600" : e.priority === "low" ? "bg-muted text-muted-foreground" : "bg-amber-500/10 text-amber-600"}`}>
+                  <span className={`rounded px-1 text-[10px] ${e.priority === "high" ? "bg-danger/10 text-danger" : e.priority === "low" ? "bg-muted text-muted-foreground" : "bg-warning/10 text-warning"}`}>
                     {e.priority === "high" ? "高" : e.priority === "low" ? "低" : "中"}
                   </span>
                 </p>

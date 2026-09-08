@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 
 const TONE_CLASS = {
-  neutral: "border-zinc-200 bg-zinc-50 text-zinc-700",
+  neutral: "border-zinc-200 bg-muted/40 text-muted-foreground",
   problem: "border-rose-200 bg-rose-50 text-rose-800",
-  violet: "border-violet-200 bg-violet-50 text-violet-700",
-  amber: "border-amber-200 bg-amber-50 text-amber-800",
-  red: "border-red-200 bg-red-50 text-red-800",
-  emerald: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  sky: "border-sky-200 bg-sky-50 text-sky-800",
+  violet: "border-violet-500/30 bg-violet-500/15 text-violet-700 dark:text-violet-300",
+  amber: "border-warning/30 bg-warning/10 text-warning",
+  red: "border-danger/30 bg-danger/10 text-danger",
+  emerald: "border-success/30 bg-success/10 text-success",
+  sky: "border-info/30 bg-info/10 text-info",
 } as const;
 
 export function MetaBadge({

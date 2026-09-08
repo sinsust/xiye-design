@@ -282,7 +282,7 @@ export default function AgentPersonasPage() {
           {saving ? "保存中…" : "保存人设"}
         </Button>
         {saved && (
-          <span className="text-xs font-medium text-emerald-600">
+          <span className="text-xs font-medium text-success">
             已保存，全流程生效
           </span>
         )}

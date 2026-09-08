@@ -1,10 +1,10 @@
 // 泛型等级徽标（源：agent-workstudio/src/components/ui/PriorityBadge.tsx，去业务类型化）
 // 原版依赖 URGENCY_LABELS/UrgencyLevel（订单催货上下文），此处改为 label + tone 通用接口。
 const TONE_CLASS = {
-  red: "border-red-200 bg-red-50 text-red-700",
-  amber: "border-amber-200 bg-amber-50 text-amber-800",
-  sky: "border-sky-200 bg-sky-50 text-sky-800",
-  zinc: "border-zinc-200 bg-zinc-100 text-zinc-600",
+  red: "border-danger/30 bg-danger/10 text-danger",
+  amber: "border-warning/30 bg-warning/10 text-warning",
+  sky: "border-info/30 bg-info/10 text-info",
+  zinc: "border-zinc-200 bg-muted text-muted-foreground",
 } as const;
 
 export function LevelBadge({

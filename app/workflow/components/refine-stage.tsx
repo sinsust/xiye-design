@@ -335,11 +335,11 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
             <Layout className="size-4 shrink-0" />
             <span className="whitespace-nowrap">方案完善度 {overallProgress}%</span>
             {overallProgress >= 80 && (
-              <span className="whitespace-nowrap text-emerald-600">已达到可搭建水平</span>
+              <span className="whitespace-nowrap text-success">已达到可搭建水平</span>
             )}
             {panelError && (
               <span
-                className="inline-flex items-center gap-1.5 text-xs text-amber-600"
+                className="inline-flex items-center gap-1.5 text-xs text-warning"
                 title="本轮会诊未完成，可重试或继续手动完善后进入下一步"
               >
                 <AlertTriangle className="size-3.5 shrink-0" />
@@ -386,15 +386,15 @@ function GuideBar({
 }) {
   if (needs.length) {
     return (
-      <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2">
-        <AlertTriangle className="size-4 shrink-0 text-amber-600" />
-        <span className="text-xs text-amber-700">还有 {needs.length} 项待完善：</span>
+      <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-xl bg-warning/10 px-3 py-2">
+        <AlertTriangle className="size-4 shrink-0 text-warning" />
+        <span className="text-xs text-warning">还有 {needs.length} 项待完善：</span>
         {needs.map((n) => (
           <button
             key={n.view}
             type="button"
             onClick={() => onGoto(n.view)}
-            className="rounded-full border border-amber-600/30 bg-background px-2.5 py-0.5 text-[11px] text-amber-700 transition hover:bg-amber-500/10"
+            className="rounded-full border border-warning/30 bg-background px-2.5 py-0.5 text-[11px] text-warning transition hover:bg-warning/20"
           >
             {n.label}
           </button>
@@ -461,11 +461,11 @@ function AllView({
               <div className="mt-auto flex items-center justify-between pt-2 text-[11px] text-muted-foreground">
                 <span>{decisionLabel(a.id)}</span>
                 {pct === 100 ? (
-                  <span className="flex items-center gap-0.5 text-emerald-600">
+                  <span className="flex items-center gap-0.5 text-success">
                     <CheckCircle2 className="size-3" /> 已定
                   </span>
                 ) : hasOutput ? (
-                  <span className="text-amber-600">{pct}%</span>
+                  <span className="text-warning">{pct}%</span>
                 ) : working ? (
                   <span className="text-muted-foreground">待产出</span>
                 ) : (
@@ -487,14 +487,14 @@ function AllView({
       {/* 风险与待办：规划师-丽颖（会诊汇总）产出 */}
       <div className="rounded-xl bg-muted/30 p-3">
         <p className="flex items-center gap-1.5 text-sm font-medium">
-          <AlertTriangle className="size-4 text-amber-600" />
+          <AlertTriangle className="size-4 text-warning" />
           风险与待办
         </p>
         {panelAgents.moderator?.details?.length ? (
           <ul className="mt-2 space-y-1.5">
             {panelAgents.moderator.details.map((d, i) => (
               <li key={i} className="flex gap-2 text-xs leading-snug text-muted-foreground">
-                <span className="mt-1.5 size-1 shrink-0 rounded-full bg-amber-500" />
+                <span className="mt-1.5 size-1 shrink-0 rounded-full bg-warning" />
                 <span>{d}</span>
               </li>
             ))}
@@ -506,9 +506,9 @@ function AllView({
         )}
         {overallProgress < 100 && (
           <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
-            {!productBrief?.vision && <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-700">缺产品愿景</span>}
-            {!productBrief?.pages?.length && <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-700">缺页面清单</span>}
-            {!panelAgents.guard?.details?.length && <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-700">开发规范待确认</span>}
+            {!productBrief?.vision && <span className="rounded-full bg-warning/10 px-2 py-0.5 text-warning">缺产品愿景</span>}
+            {!productBrief?.pages?.length && <span className="rounded-full bg-warning/10 px-2 py-0.5 text-warning">缺页面清单</span>}
+            {!panelAgents.guard?.details?.length && <span className="rounded-full bg-warning/10 px-2 py-0.5 text-warning">开发规范待确认</span>}
           </div>
         )}
       </div>
@@ -766,7 +766,7 @@ function VisualView({
           视觉专家-冰冰 给出了推荐，但你可以换——点选即切换，会带入页面搭建与交付工程包。
         </p>
         {recommendedIds.length > 0 && (
-          <p className="mt-1.5 text-xs text-amber-700">
+          <p className="mt-1.5 text-xs text-warning">
             对话里聊过的设计偏好已匹配为「AI 对话推荐」，点选即可把对话方案落进视觉规范。
           </p>
         )}
@@ -775,7 +775,7 @@ function VisualView({
         <div
           className={[
             "flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3",
-            applied ? "border-emerald-500/40 bg-emerald-500/10" : "border-amber-500/40 bg-amber-500/10",
+            applied ? "border-success/30 bg-success/10" : "border-warning/30 bg-warning/10",
           ].join(" ")}
         >
           <div className="flex min-w-0 items-center gap-2.5">
@@ -823,7 +823,7 @@ function VisualView({
                 active
                   ? "bg-primary/10 ring-1 ring-primary/25"
                   : recommended
-                    ? "bg-amber-500/10 ring-1 ring-amber-500/30 hover:bg-amber-500/15"
+                    ? "bg-warning/10 ring-1 ring-warning/30 hover:bg-warning/20"
                     : "bg-muted/30 hover:bg-muted/50",
               ].join(" ")}
             >
@@ -836,7 +836,7 @@ function VisualView({
                 {active ? (
                   <span className="text-[11px] font-medium text-primary">当前</span>
                 ) : recommended ? (
-                  <span className="text-[11px] font-medium text-amber-700">AI 对话推荐</span>
+                  <span className="text-[11px] font-medium text-warning">AI 对话推荐</span>
                 ) : null}
               </div>
               <p className="mt-2 text-sm font-medium">{s.name}</p>
@@ -854,9 +854,9 @@ function VisualView({
 
 const LEARNING_LABEL: Record<string, string> = { low: "低", medium: "中", high: "高" };
 const LEARNING_COLOR: Record<string, string> = {
-  low: "text-emerald-600",
-  medium: "text-amber-600",
-  high: "text-red-600",
+  low: "text-success",
+  medium: "text-warning",
+  high: "text-danger",
 };
 
 function TechView({

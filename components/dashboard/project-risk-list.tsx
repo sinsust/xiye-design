@@ -14,9 +14,9 @@ export function ProjectRiskList({ risks, onOpenProject }: ProjectRiskListProps) 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <AlertTriangle className="size-4 text-red-500" />
+        <AlertTriangle className="size-4 text-danger" />
         项目风险
-        <span className="rounded-full bg-red-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-red-600">
+        <span className="rounded-full bg-danger/10 px-1.5 py-0.5 text-[11px] font-semibold text-danger">
           {risks.length}
         </span>
       </h2>
@@ -29,7 +29,7 @@ export function ProjectRiskList({ risks, onOpenProject }: ProjectRiskListProps) 
                 <ul className="mt-1 space-y-0.5">
                   {p.reasons.map((r, idx) => (
                     <li key={idx} className="flex items-start gap-1 text-[11px] text-muted-foreground">
-                      <span className="mt-1 size-1 shrink-0 rounded-full bg-red-400" />
+                      <span className="mt-1 size-1 shrink-0 rounded-full bg-danger" />
                       <span>{r}</span>
                     </li>
                   ))}

@@ -73,7 +73,7 @@ const CHART_PHRASE: Record<string, string> = {
 
 function caveatStyle(level: QualityCaveatLevel): string {
   return level === "attention"
-    ? "border-amber-200 bg-amber-50 text-amber-800"
+    ? "border-warning/30 bg-warning/10 text-warning"
     : "border-border/70 bg-muted/30 text-muted-foreground";
 }
 
@@ -267,7 +267,7 @@ export function AnalysisResultView({
             {evidence.appliedFilters.length > 0 && (
               <>
                 <span className="text-muted-foreground/50">·</span>
-                <span className="text-amber-700">
+                <span className="text-warning">
                   未包含：{evidence.appliedFilters.map((f) => `${f.label}${f.affectedRows ? ` ${f.affectedRows} 条` : ""}`).join("；")}
                 </span>
               </>
@@ -276,7 +276,7 @@ export function AnalysisResultView({
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <button
               onClick={() => setShowCaliber((v) => !v)}
-              className="flex items-center gap-1 rounded-md border border-border/60 bg-white px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+              className="flex items-center gap-1 rounded-md border border-border/60 bg-background px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
             >
               <Info className="size-3" />
               {showCaliber ? "收起计算口径" : "查看计算口径"}
@@ -284,7 +284,7 @@ export function AnalysisResultView({
             <button
               onClick={() => setShowDetail((v) => !v)}
               disabled={!drillAvailable}
-              className="flex items-center gap-1 rounded-md border border-border/60 bg-white px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-1 rounded-md border border-border/60 bg-background px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Table2 className="size-3" />
               {showDetail ? "收起明细" : `查看明细${drillAvailable ? `（${drill?.rowCount ?? 0} 行）` : ""}`}
@@ -294,17 +294,17 @@ export function AnalysisResultView({
               className={
                 "flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] transition " +
                 (flagged
-                  ? "border-amber-300 bg-amber-50 text-amber-700"
-                  : "border-border/60 bg-white text-muted-foreground hover:border-amber-300 hover:text-amber-600")
+                  ? "border-warning/30 bg-warning/10 text-warning"
+                  : "border-border/60 bg-background text-muted-foreground hover:border-warning/30 hover:text-warning")
               }
             >
-              <Flag className={"size-3" + (flagged ? " fill-amber-400 text-amber-500" : "")} />
+              <Flag className={"size-3" + (flagged ? " fill-amber-400 text-warning" : "")} />
               {flagged ? "已标记异常" : "标记异常"}
             </button>
             {canAdjustCaliber && onAdjustCaliber && (
               <button
                 onClick={onAdjustCaliber}
-                className="flex items-center gap-1 rounded-md border border-border/60 bg-white px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+                className="flex items-center gap-1 rounded-md border border-border/60 bg-background px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
               >
                 <SlidersHorizontal className="size-3" />
                 调整口径
@@ -316,16 +316,16 @@ export function AnalysisResultView({
 
       {/* 标记异常提示 */}
       {flagged && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+        <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-[11px] text-warning">
           已标记为异常，请结合「查看计算口径」复查数据范围与过滤规则后再下结论。
         </div>
       )}
 
       {/* 图表 / 明细（数据为空时显示「无法得出结论」，不渲染空图） */}
       {showNoData ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-6 text-center">
-          <div className="text-[13px] font-medium text-amber-800">无法得出结论</div>
-          <div className="mx-auto mt-1 max-w-md text-[11px] leading-relaxed text-amber-700">
+        <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-6 text-center">
+          <div className="text-[13px] font-medium text-warning">无法得出结论</div>
+          <div className="mx-auto mt-1 max-w-md text-[11px] leading-relaxed text-warning">
             {evidence!.qualityCaveats.filter((c) => c.level === "attention").map((c) => c.message).join("；") ||
               "该输出没有可用于计算的有效数据（字段可能为空或全部被过滤）。"}
           </div>
@@ -333,7 +333,7 @@ export function AnalysisResultView({
       ) : isTable ? (
         <DataTable headers={headers} rows={rows} />
       ) : (
-        <div className="rounded-xl border border-border/70 bg-white p-2">
+        <div className="rounded-xl border border-border/70 bg-background p-2">
           <div data-chart-export="true">
             <EChart option={option as never} height={300} />
           </div>
@@ -368,7 +368,7 @@ export function AnalysisResultView({
             <div className="mb-1 font-medium text-foreground/80">使用字段</div>
             <div className="flex flex-wrap gap-1.5">
               {evidence.usedFields.map((f) => (
-                <span key={f.columnId} className="rounded bg-white px-1.5 py-px text-foreground/90">
+                <span key={f.columnId} className="rounded bg-background px-1.5 py-px text-foreground/90">
                   {f.displayName}
                   <span className="ml-1 text-muted-foreground/70">
                     {ROLE_LABEL[f.role] ?? ""} · {TYPE_LABEL[f.type] ?? f.type}
@@ -400,7 +400,7 @@ export function AnalysisResultView({
                 {evidence.calculation.formulas.map((f, i) => (
                   <li key={i}>
                     <span className="text-foreground/90">{f.label}</span>
-                    <code className="ml-1.5 rounded bg-white px-1 py-px text-[10px] text-primary">{f.expression}</code>
+                    <code className="ml-1.5 rounded bg-background px-1 py-px text-[10px] text-primary">{f.expression}</code>
                   </li>
                 ))}
               </ul>
@@ -437,7 +437,7 @@ export function AnalysisResultView({
                   setDetailGroup(e.target.value);
                   setDetailPage(0);
                 }}
-                className="rounded-md border border-border/70 bg-white px-2 py-1 text-[11px] text-foreground outline-none focus:border-primary/50"
+                className="rounded-md border border-border/70 bg-background px-2 py-1 text-[11px] text-foreground outline-none focus:border-primary/50"
               >
                 <option value="">全部{groupField ? `（按${groupField}）` : ""}</option>
                 {categoryValues.map((v) => (
@@ -450,7 +450,7 @@ export function AnalysisResultView({
           </div>
 
           {!drillAvailable ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">
+            <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-[11px] text-warning">
               该输出无有效数据行，无法展开明细。
             </div>
           ) : (
@@ -461,7 +461,7 @@ export function AnalysisResultView({
                   <button
                     onClick={() => setDetailPage(Math.max(0, safePage - 1))}
                     disabled={safePage === 0}
-                    className="flex items-center gap-0.5 rounded-md border border-border/60 bg-white px-2 py-1 transition hover:text-primary disabled:opacity-40"
+                    className="flex items-center gap-0.5 rounded-md border border-border/60 bg-background px-2 py-1 transition hover:text-primary disabled:opacity-40"
                   >
                     <ChevronLeft className="size-3" /> 上一页
                   </button>
@@ -471,7 +471,7 @@ export function AnalysisResultView({
                   <button
                     onClick={() => setDetailPage(Math.min(pageCount - 1, safePage + 1))}
                     disabled={safePage >= pageCount - 1}
-                    className="flex items-center gap-0.5 rounded-md border border-border/60 bg-white px-2 py-1 transition hover:text-primary disabled:opacity-40"
+                    className="flex items-center gap-0.5 rounded-md border border-border/60 bg-background px-2 py-1 transition hover:text-primary disabled:opacity-40"
                   >
                     下一页 <ChevronRight className="size-3" />
                   </button>

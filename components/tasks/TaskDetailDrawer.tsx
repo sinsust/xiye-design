@@ -362,7 +362,7 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
                 </span>
               )}
               {data?.task.milestone && (
-                <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[11px] text-indigo-600">
+                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">
                   里程碑：{data.task.milestone}
                 </span>
               )}
@@ -383,7 +383,7 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
                     className="w-24 bg-transparent text-[11px] text-foreground outline-none placeholder:text-muted-foreground/60"
                     aria-label="指派负责人"
                   />
-                  <button onClick={saveAssignee} disabled={busy} className="text-emerald-600 transition hover:text-emerald-500" aria-label="保存负责人">
+                  <button onClick={saveAssignee} disabled={busy} className="text-success transition hover:text-success" aria-label="保存负责人">
                     <Check className="size-3.5" />
                   </button>
                   <button onClick={() => { setEditAssignee(false); setAssigneeDraft(""); }} className="text-muted-foreground transition hover:text-foreground" aria-label="取消">
@@ -478,22 +478,22 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
               </div>
 
               {savedOutcome && savedOutcome.taskId === data.task.id && (
-                <div className="mt-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                <div className="mt-2 space-y-2 rounded-lg border border-success/30 bg-success/10 p-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-success">
                     <Check className="size-3.5" /> 已保存任务结果
                   </div>
                   {organizePayload && (
                     <button
                       onClick={buildPlanFromOutcome}
                       disabled={planOpen}
-                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-card px-2 py-1.5 text-[11px] font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-60"
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-success/30 bg-card px-2 py-1.5 text-[11px] font-medium text-success transition hover:bg-success/10 disabled:opacity-60"
                     >
                       {planOpen ? <Loader2 className="size-3 animate-spin" /> : <ArrowRight className="size-3" />}
                       根据该结果生成后续处理计划
                     </button>
                   )}
                   {planError && (
-                    <div className="text-[11px] text-red-600">生成处理计划失败，请重试。</div>
+                    <div className="text-[11px] text-danger">生成处理计划失败，请重试。</div>
                   )}
                 </div>
               )}
@@ -537,7 +537,7 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
                     <p className="text-[11px] text-muted-foreground">不保存结果，仅完成任务即可。</p>
                   )}
                   {outcomeError && (
-                    <div className="text-[11px] text-red-600">保存失败，请重试。</div>
+                    <div className="text-[11px] text-danger">保存失败，请重试。</div>
                   )}
                   <div className="flex items-center justify-end gap-1.5">
                     <button

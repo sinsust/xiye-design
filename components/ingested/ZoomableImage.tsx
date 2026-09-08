@@ -43,9 +43,9 @@ export function ZoomableImage({
 
   if (!url) {
     return (
-      <div className={`overflow-hidden bg-zinc-50 ${className}`}>
+      <div className={`overflow-hidden bg-muted/40 ${className}`}>
         {children ?? (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-zinc-400">
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
             无图
           </div>
         )}
@@ -122,7 +122,7 @@ export function ZoomableImage({
               setOpen(true);
             }
           }}
-          className={`relative inline-block overflow-hidden bg-zinc-50 ${className}`}
+          className={`relative inline-block overflow-hidden bg-muted/40 ${className}`}
         >
           {thumb}
         </span>
@@ -131,7 +131,7 @@ export function ZoomableImage({
           type="button"
           title="查看大图"
           onClick={openZoom}
-          className={`relative block shrink-0 overflow-hidden bg-zinc-50 text-left ${className}`}
+          className={`relative block shrink-0 overflow-hidden bg-muted/40 text-left ${className}`}
         >
           {thumb}
         </button>

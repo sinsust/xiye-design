@@ -134,7 +134,7 @@ export function LearningReviewList({
                 </button>
                 <button
                   onClick={() => act(r.id, "mastered")}
-                  className={btn + " bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"}
+                  className={btn + " bg-success/10 text-success hover:bg-success/10"}
                   disabled={actingId === r.id}
                 >
                   {actingId === r.id ? (
@@ -146,7 +146,7 @@ export function LearningReviewList({
                 </button>
                 <button
                   onClick={() => act(r.id, "not_sure")}
-                  className={btn + " bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"}
+                  className={btn + " bg-warning/10 text-warning hover:bg-warning/10"}
                   disabled={actingId === r.id}
                 >
                   <ThumbsDown className="size-3" /> 不熟

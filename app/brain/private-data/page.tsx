@@ -333,7 +333,7 @@ export default function PrivateDataPage() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold">
-            <ShieldCheck className="size-5 text-emerald-600" /> 私人资料
+            <ShieldCheck className="size-5 text-success" /> 私人资料
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             银行、账号、密钥、证件等敏感内容。端到端加密：明文仅本地解密，服务端只存密文，不进检索与 AI。
@@ -350,7 +350,7 @@ export default function PrivateDataPage() {
       </div>
 
       {passphrase === null && (
-        <div className="mb-4 flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700">
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
           <Lock className="size-4" /> 本地解密口令未解锁，敏感字段不可查看。
         </div>
       )}
@@ -362,7 +362,7 @@ export default function PrivateDataPage() {
         <div className="mb-4 rounded-lg border border-border bg-card p-4">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
-              <MousePointerClick className="size-4 text-emerald-600" /> 自动填充表单（测试）
+              <MousePointerClick className="size-4 text-success" /> 自动填充表单（测试）
             </h2>
             <Button size="sm" variant="outline" onClick={fillSampleForm} disabled={filling}>
               {filling ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
@@ -418,7 +418,7 @@ export default function PrivateDataPage() {
             return (
               <li key={it.id} className="rounded-lg border border-border bg-card">
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <Icon className="size-4 shrink-0 text-emerald-600" />
+                  <Icon className="size-4 shrink-0 text-success" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{maskName(it.name)}</div>
                     {it.hint && <div className="truncate text-xs text-muted-foreground">{it.hint}</div>}
@@ -500,7 +500,7 @@ export default function PrivateDataPage() {
             onChange={(e) => setUnlockInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && doUnlock()}
             placeholder="本地解密口令"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-emerald-500"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-success/30"
           />
           {unlockErr && <p className="mt-2 text-xs text-destructive">{unlockErr}</p>}
           <div className="mt-4 flex justify-end gap-2">
@@ -539,7 +539,7 @@ export default function PrivateDataPage() {
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="如：招商银行储蓄卡"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-success/30"
               />
             </Field>
             <Field label="提示（可见，非机密）">
@@ -547,7 +547,7 @@ export default function PrivateDataPage() {
                 value={formHint}
                 onChange={(e) => setFormHint(e.target.value)}
                 placeholder="如：工资卡 / 尾号 8000"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-success/30"
               />
             </Field>
             <Field label="标签（逗号分隔，可选）">
@@ -555,7 +555,7 @@ export default function PrivateDataPage() {
                 value={formTags}
                 onChange={(e) => setFormTags(e.target.value)}
                 placeholder="银行, 常用"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-success/30"
               />
             </Field>
             <div>
@@ -567,13 +567,13 @@ export default function PrivateDataPage() {
                       value={f.label}
                       onChange={(e) => updateField(i, "label", e.target.value)}
                       placeholder={TYPE_META[formType].placeholder[i] ?? "字段名"}
-                      className="w-1/3 rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-emerald-500"
+                      className="w-1/3 rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-success/30"
                     />
                     <input
                       value={f.value}
                       onChange={(e) => updateField(i, "value", e.target.value)}
                       placeholder="值"
-                      className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-emerald-500"
+                      className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-success/30"
                     />
                     <Button
                       variant="ghost"

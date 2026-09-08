@@ -40,7 +40,7 @@ export function CopyButton({
 
   return (
     <button type="button" onClick={onCopy} title={title} className={className ?? base}>
-      {copied ? <Check className={iconSize + " text-emerald-500"} /> : <Copy className={iconSize} />}
+      {copied ? <Check className={iconSize + " text-success"} /> : <Copy className={iconSize} />}
       {!iconOnly && <span>{copied ? (copiedLabel ?? "已复制") : (label ?? "复制")}</span>}
     </button>
   );

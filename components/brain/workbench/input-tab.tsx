@@ -211,7 +211,7 @@ export function InputTab({
       />
 
       {parseErr && (
-        <div className="mt-2 flex items-start gap-1.5 rounded-[var(--radius)] border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-800 dark:bg-red-950 dark:text-red-400">
+        <div className="mt-2 flex items-start gap-1.5 rounded-[var(--radius)] border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger dark:border-danger/30 dark:bg-danger dark:text-danger">
           <X className="mt-0.5 size-3 shrink-0" />
           <span>{parseErr}</span>
           <button type="button" className="ml-auto underline" onClick={() => setParseErr(null)}>

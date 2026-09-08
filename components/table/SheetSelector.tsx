@@ -32,11 +32,11 @@ import {
 } from "@/lib/table/confirmation-flow";
 
 const ROLE_TONE: Record<SheetRole, string> = {
-  primary_data: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  secondary_data: "bg-sky-50 text-sky-700 border-sky-200",
-  summary: "bg-amber-50 text-amber-700 border-amber-200",
-  notes: "bg-zinc-100 text-zinc-600 border-zinc-200",
-  unknown: "bg-zinc-100 text-zinc-500 border-zinc-200",
+  primary_data: "bg-success/10 text-success border-success/30",
+  secondary_data: "bg-info/10 text-info border-info/30",
+  summary: "bg-warning/10 text-warning border-warning/30",
+  notes: "bg-muted text-muted-foreground border-zinc-200",
+  unknown: "bg-muted text-muted-foreground border-zinc-200",
 };
 
 export function SheetSelector({
@@ -106,7 +106,7 @@ export function SheetSelector({
 
       {/* 无可推荐 Sheet 的提示（仍允许手动选择，但给出原因与返回入口） */}
       {!hasRecommended && (
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <div className="mt-3 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
           <span>
             未能自动推荐可分析的数据表（可能全是汇总/备注/说明表）。你仍可手动选择一个继续，
@@ -135,7 +135,7 @@ export function SheetSelector({
                 "w-full rounded-xl border text-left transition-all duration-200 " +
                 (isSel
                   ? "border-primary/50 bg-primary/5 shadow-sm"
-                  : "border-border/70 bg-white hover:border-primary/30 hover:bg-muted/30")
+                  : "border-border/70 bg-background hover:border-primary/30 hover:bg-muted/30")
               }
             >
               {/* 卡片头：图标 + 名称 + 标签 + 行数 */}
@@ -165,16 +165,16 @@ export function SheetSelector({
                         "rounded-full px-1.5 py-px text-[10px] font-medium " +
                         (recommended
                           ? needsConfirm
-                            ? "bg-sky-100 text-sky-700"
-                            : "bg-emerald-100 text-emerald-700"
-                          : "bg-zinc-100 text-zinc-500")
+                            ? "bg-info/10 text-info"
+                            : "bg-success/10 text-success"
+                          : "bg-muted text-muted-foreground")
                       }
                     >
                       {recommendationTag(rec as SheetRecommendation)}
                     </span>
                     {/* 需确认表头徽标 */}
                     {needsConfirm && (
-                      <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-medium text-amber-700">
+                      <span className="flex items-center gap-0.5 rounded-full bg-warning/10 px-1.5 py-px text-[10px] font-medium text-warning">
                         <Info className="size-2.5" /> 需确认表头
                       </span>
                     )}
@@ -204,7 +204,7 @@ export function SheetSelector({
 
               {/* 非推荐 Sheet 的风险提示 */}
               {!recommended && (
-                <div className="mx-3.5 mb-3 mt-2 flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700">
+                <div className="mx-3.5 mb-3 mt-2 flex items-start gap-1.5 rounded-md bg-warning/10 px-2 py-1.5 text-[11px] text-warning">
                   <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                   <span>此表不被推荐用于分析（{ROLE_LABELS[role]}）。选择它仅作手动分析，结果可能不准确。</span>
                 </div>

@@ -416,7 +416,7 @@ export function IntentExplorer({
 
           {error && (
             <div className="flex flex-col items-center gap-2 py-2">
-              <p className="text-center text-xs text-red-500">{error.message}</p>
+              <p className="text-center text-xs text-danger">{error.message}</p>
               <Button variant="outline" size="sm" onClick={retryLast} disabled={thinking}>
                 <RotateCcw className="size-3.5" /> 重试
               </Button>

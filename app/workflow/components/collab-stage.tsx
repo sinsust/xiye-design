@@ -639,6 +639,11 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   const conceptAccepted =
     conceptBrief?.acceptance === "accepted" ||
     conceptBrief?.acceptance === "continue_with_assumptions";
+  // icon-only 按钮的悬浮提示与无障碍名称复用同一文案，避免两者漂移
+  const continueWithAssumptionsLabel =
+    hasConceptPlan && !conceptAccepted
+      ? "带着假设继续"
+      : (readiness.reasons[0] ?? "带着待确认项继续");
 
   // —— F2-A：产品蓝图（F1-A 可继续后自动收敛，随访谈更新及重建）——
   const blueprint = useFlowStore((s) => s.blueprint);
@@ -1323,9 +1328,9 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
       />
       {/* P1-①：匿名（本地草稿）用户在收敛链前的显式引导，替代静默锁死 */}
       {!savedProjectId && conceptBrief && (
-        <div className="flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
+        <div className="flex flex-col gap-2 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
             <div className="space-y-0.5">
               <p className="font-medium text-foreground">当前为本地草稿</p>
               <p className="text-xs text-muted-foreground">
@@ -1503,8 +1508,8 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-success" />
               </span>
               {consulting ? style.consultingText : "协同生成方案"}
             </div>
@@ -1520,7 +1525,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
           <div className="flex items-center gap-2">
             {conversationBlocked || panelError ? (
               <span
-                className="inline-flex items-center gap-1.5 text-xs text-amber-600"
+                className="inline-flex items-center gap-1.5 text-xs text-warning"
                 title="本轮 AI 操作未完成，可重试或用「继续手动完善」解除阻塞"
               >
                 <AlertTriangle className="size-3.5 shrink-0" />
@@ -1534,6 +1539,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
                     size="icon"
                     variant="outline"
                     title="接受当前方案并进入方案落地"
+                    aria-label="接受当前方案并进入方案落地"
                     onClick={() => {
                       if (conceptBrief) setConceptBrief(acceptConceptPlan(conceptBrief));
                       onAdvance();
@@ -1545,11 +1551,8 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
                 <Button
                   size="icon"
                   variant="outline"
-                  title={
-                    hasConceptPlan && !conceptAccepted
-                      ? "带着假设继续"
-                      : (readiness.reasons[0] ?? "带着待确认项继续")
-                  }
+                  title={continueWithAssumptionsLabel}
+                  aria-label={continueWithAssumptionsLabel}
                   onClick={() => {
                     if (hasConceptPlan && !conceptAccepted && conceptBrief) {
                       setConceptBrief(continueConceptWithAssumptions(conceptBrief));
@@ -1563,6 +1566,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
                   size="icon"
                   variant="outline"
                   title="返回补充"
+                  aria-label="返回补充"
                   onClick={() => setConfirmForce(false)}
                 >
                   <Undo2 className="size-4" />

@@ -25,19 +25,19 @@ const GROUP_HEADER: Record<QualityGroup, { label: string; desc: string; icon: ty
     label: "系统已自动处理",
     desc: "这些结构性问题不影响分析，你无需操作",
     icon: CheckCircle2,
-    tone: "text-emerald-600",
+    tone: "text-success",
   },
   attention: {
     label: "需要你留意",
     desc: "系统识别但未改写原值，可能影响相关维度结论",
     icon: AlertTriangle,
-    tone: "text-amber-600",
+    tone: "text-warning",
   },
   advisory: {
     label: "供你判断",
     desc: "存在风险点，是否处理由你结合业务决定",
     icon: Info,
-    tone: "text-sky-600",
+    tone: "text-info",
   },
 };
 
@@ -79,7 +79,7 @@ export function DataQualityReview({
 
   if (total === 0) {
     return (
-      <div className={`rounded-lg border border-border/70 bg-white px-4 py-3 text-xs text-muted-foreground ${className}`}>
+      <div className={`rounded-lg border border-border/70 bg-background px-4 py-3 text-xs text-muted-foreground ${className}`}>
         未检测到明显的数据质量问题。
       </div>
     );
@@ -107,12 +107,12 @@ export function DataQualityReview({
                 return (
                   <div
                     key={`${it.code}-${i}`}
-                    className="rounded-lg border border-border/70 bg-white px-3 py-2.5"
+                    className="rounded-lg border border-border/70 bg-background px-3 py-2.5"
                   >
                     <div className="flex items-start gap-2">
                       <span className="mt-px truncate text-[13px] font-medium text-foreground">{m.title}</span>
                       {g === "auto_handled" && (
-                        <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-px text-[10px] text-emerald-600">
+                        <span className="shrink-0 rounded bg-success/10 px-1.5 py-px text-[10px] text-success">
                           已处理
                         </span>
                       )}

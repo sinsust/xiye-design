@@ -206,9 +206,9 @@ export function AnalysisObjectiveFlow({
         <>
           {loadingObj && <div className="py-8 text-center text-xs text-muted-foreground">正在分析可用方向…</div>}
           {objError && (
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
               <span className="flex-1 break-all">{objError}</span>
-              <button className="text-amber-700 underline" onClick={() => void loadObjectives()}>
+              <button className="text-warning underline" onClick={() => void loadObjectives()}>
                 重试
               </button>
             </div>
@@ -223,14 +223,14 @@ export function AnalysisObjectiveFlow({
                   className={
                     "block w-full rounded-xl border px-3.5 py-3 text-left transition-all duration-200 " +
                     (o.available
-                      ? "border-border/70 bg-white hover:border-primary/25 hover:bg-muted/20"
+                      ? "border-border/70 bg-background hover:border-primary/25 hover:bg-muted/20"
                       : "cursor-not-allowed border-border/40 bg-muted/30 opacity-70")
                   }
                 >
                   <div className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
-                    {o.available ? <Check className="size-3.5 shrink-0 text-primary" /> : <span className="size-3.5 shrink-0 rounded-full border border-amber-400" />}
+                    {o.available ? <Check className="size-3.5 shrink-0 text-primary" /> : <span className="size-3.5 shrink-0 rounded-full border border-warning/30" />}
                     <span>{o.title}</span>
-                    {!o.available && <span className="ml-auto text-[10px] text-amber-600">暂不可用</span>}
+                    {!o.available && <span className="ml-auto text-[10px] text-warning">暂不可用</span>}
                   </div>
                   <div className="mt-1 text-[11px] text-muted-foreground">{o.description}</div>
                   {o.available ? (
@@ -246,7 +246,7 @@ export function AnalysisObjectiveFlow({
                       </div>
                     </>
                   ) : (
-                    <div className="mt-1.5 text-[11px] text-amber-700">缺失：{o.missingReasons.join("；")}</div>
+                    <div className="mt-1.5 text-[11px] text-warning">缺失：{o.missingReasons.join("；")}</div>
                   )}
                 </button>
               ))}
@@ -271,9 +271,9 @@ export function AnalysisObjectiveFlow({
 
           {loadingPlan && <div className="py-8 text-center text-xs text-muted-foreground">正在生成分析计划…</div>}
           {planError && !loadingPlan && (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
               <span className="flex-1 break-all">{planError}</span>
-              <button className="text-amber-700 underline" onClick={() => selected && void generatePlan(selected.objective, options)}>
+              <button className="text-warning underline" onClick={() => selected && void generatePlan(selected.objective, options)}>
                 重试
               </button>
             </div>
@@ -298,7 +298,7 @@ export function AnalysisObjectiveFlow({
                       <select
                         value={options.timeField ?? ""}
                         onChange={(e) => onOptionChange({ ...options, timeField: e.target.value || undefined })}
-                        className="rounded-md border border-border/70 bg-white px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
+                        className="rounded-md border border-border/70 bg-background px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
                       >
                         <option value="">自动（默认检测）</option>
                         {timeFields.map((f) => (
@@ -315,7 +315,7 @@ export function AnalysisObjectiveFlow({
                       <select
                         value={options.groupField ?? ""}
                         onChange={(e) => onOptionChange({ ...options, groupField: e.target.value || undefined })}
-                        className="rounded-md border border-border/70 bg-white px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
+                        className="rounded-md border border-border/70 bg-background px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary/50"
                       >
                         <option value="">自动（默认检测）</option>
                         {groupFields.map((f) => (
@@ -406,7 +406,7 @@ export function AnalysisObjectiveFlow({
               </Section>
 
               {/* 操作 */}
-              <div className="sticky bottom-0 -mx-5 mt-2 flex gap-2 border-t border-border/60 bg-white/90 px-5 py-3 backdrop-blur">
+              <div className="sticky bottom-0 -mx-5 mt-2 flex gap-2 border-t border-border/60 bg-background/90 px-5 py-3 backdrop-blur">
                 <button
                   onClick={onBackToFields}
                   className="flex items-center gap-1 rounded-lg border border-border/70 px-3 py-2 text-xs text-foreground transition hover:border-primary/40 hover:text-primary"
@@ -444,7 +444,7 @@ export function AnalysisObjectiveFlow({
                   <select
                     value={Math.min(activeVersion, history.length - 1)}
                     onChange={(e) => setActiveVersion(Number(e.target.value))}
-                    className="rounded-md border border-border/70 bg-white px-2 py-1 text-[11px] text-foreground outline-none focus:border-primary/50"
+                    className="rounded-md border border-border/70 bg-background px-2 py-1 text-[11px] text-foreground outline-none focus:border-primary/50"
                   >
                     {history.map((h, i) => (
                       <option key={h.plan.id} value={i}>
@@ -458,12 +458,12 @@ export function AnalysisObjectiveFlow({
 
             {executing && <div className="py-8 text-center text-xs text-muted-foreground">正在执行分析…</div>}
             {execError && !executing && (
-              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
                 <span className="flex-1 break-all">{execError}</span>
-                <button className="text-amber-700 underline" onClick={() => void execute()}>
+                <button className="text-warning underline" onClick={() => void execute()}>
                   重试
                 </button>
-                <button className="text-amber-700 underline" onClick={onBackToFields}>
+                <button className="text-warning underline" onClick={onBackToFields}>
                   返回调整字段
                 </button>
               </div>

@@ -110,6 +110,7 @@ export function BuilderCheckpoints({ projectId }: { projectId: string | null }) 
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
+          aria-label="检查点备注"
           placeholder="备注（可选）"
           className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1 text-xs outline-none placeholder:text-muted-foreground"
         />
@@ -152,7 +153,7 @@ export function BuilderCheckpoints({ projectId }: { projectId: string | null }) 
                     type="button"
                     onClick={() => remove(cp.id)}
                     title="删除检查点"
-                    className="shrink-0 rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-red-500"
+                    className="shrink-0 rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-danger"
                   >
                     <Trash2 className="size-3.5" />
                   </button>

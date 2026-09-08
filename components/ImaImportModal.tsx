@@ -216,7 +216,7 @@ export function ImaImportModal({
           {bound === true && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs text-success dark:text-success">
                   已绑定 ima 凭证
                 </span>
                 <Button

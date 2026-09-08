@@ -471,7 +471,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
                           <span
                             className={[
                               "size-1.5 shrink-0 rounded-full",
-                              vId ? "bg-emerald-500" : "bg-muted-foreground/40",
+                              vId ? "bg-success" : "bg-muted-foreground/40",
                             ].join(" ")}
                           />
                           <span className="min-w-0 flex-1 truncate">{resolveText(comp.name)}</span>
@@ -553,7 +553,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
                     ].join(" ")}
                   >
                     <span className="font-medium">{resolveText(c.name)}</span>
-                    {added && <span className="ml-1.5 text-[10px] text-emerald-600">已添加</span>}
+                    {added && <span className="ml-1.5 text-[10px] text-success">已添加</span>}
                     <span className="mt-0.5 block line-clamp-1 text-[11px] opacity-80">{resolveText(c.description)}</span>
                   </button>
                 );
@@ -601,7 +601,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-medium text-foreground">{resolveText(comp.name)}</p>
                           {variant ? (
-                            <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 text-[10px] text-emerald-600">
+                            <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] text-success">
                               {resolveText(variant.name)}
                             </span>
                           ) : (
@@ -757,7 +757,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
           </span>
           {copyState === "error" && (
             <span
-              className="inline-flex items-center gap-1.5 text-xs text-amber-600"
+              className="inline-flex items-center gap-1.5 text-xs text-warning"
               title="全站文案改写失败，已保留原文案，可重试"
             >
               <AlertTriangle className="size-3.5 shrink-0" />
@@ -776,7 +776,7 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Sparkles
-                  className={copyState === "done" ? "size-4 text-emerald-600" : "size-4"}
+                  className={copyState === "done" ? "size-4 text-success" : "size-4"}
                 />
               )}
             </Button>

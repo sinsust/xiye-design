@@ -135,7 +135,7 @@ export function TableAnalysisPage() {
   };
 
   return (
-    <div className="flex min-h-[480px] flex-col rounded-xl border border-border bg-white shadow-sm">
+    <div className="flex min-h-[480px] flex-col rounded-xl border border-border bg-background shadow-sm">
       {/* 头部 */}
       <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -197,18 +197,18 @@ export function TableAnalysisPage() {
 
       {/* 错误横幅 */}
       {error && (
-        <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">{error}</div>
+        <div className="border-b border-warning/30 bg-warning/10 px-5 py-2 text-xs text-warning">{error}</div>
       )}
       {uploadData?.truncated && uploadData.truncated.length > 0 && (
-        <div className="border-b border-sky-100 bg-sky-50 px-5 py-2 text-xs text-sky-700">
+        <div className="border-b border-info/30 bg-info/10 px-5 py-2 text-xs text-info">
           {uploadData.truncated.join("；")}
         </div>
       )}
 
       {/* 已确认状态横幅（清晰展示当前数据表与表头，并提供更换/修改入口） */}
       {confirmedIndex !== null && confirmedHeaderRow !== null && phase !== "upload" && phase !== "sheetSelect" && phase !== "confirm_header" && uploadData && (
-        <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-emerald-50/60 px-5 py-2 text-xs">
-          <div className="flex min-w-0 items-center gap-2 text-emerald-800">
+        <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-success/10 px-5 py-2 text-xs">
+          <div className="flex min-w-0 items-center gap-2 text-success">
             <Check className="size-3.5 shrink-0" />
             <span className="truncate">
               当前数据表：<span className="font-medium">{uploadData.results[confirmedIndex]?.sheetName}</span>
@@ -271,7 +271,7 @@ export function TableAnalysisPage() {
               className={
                 "rounded-md px-3 py-1.5 font-medium transition " +
                 (source === "file"
-                  ? "bg-white text-foreground shadow-sm"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground")
               }
             >
@@ -287,7 +287,7 @@ export function TableAnalysisPage() {
               className={
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition " +
                 (source === "feishu"
-                  ? "bg-white text-foreground shadow-sm"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground")
               }
             >
@@ -478,7 +478,7 @@ export function TableAnalysisPage() {
               selected={selectedField}
             />
             {/* 下一步 CTA：让 AI 推荐分析维度 */}
-            <div className="sticky bottom-0 -mx-5 mt-4 border-t border-border/60 bg-white/90 px-5 py-3 backdrop-blur">
+            <div className="sticky bottom-0 -mx-5 mt-4 border-t border-border/60 bg-background/90 px-5 py-3 backdrop-blur">
               <button
                 onClick={() => {
                   setSelectedField(null);

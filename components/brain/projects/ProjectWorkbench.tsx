@@ -123,8 +123,8 @@ const STATUS_LABEL: Record<WorkbenchVM["project"]["status"], string> = {
   archived: "已归档",
 };
 const SEV_STYLE: Record<Severity, string> = {
-  high: "bg-red-50 text-red-600 border-red-200",
-  medium: "bg-amber-50 text-amber-600 border-amber-200",
+  high: "bg-danger/10 text-danger border-danger/30",
+  medium: "bg-warning/10 text-warning border-warning/30",
   low: "bg-slate-50 text-slate-500 border-slate-200",
 };
 const SEV_ICON: Record<Severity, typeof AlertTriangle> = {
@@ -451,9 +451,9 @@ export function ProjectWorkbench({ projectId, onOpenTask, onBack, onChanged, onV
                   <div className="text-xl font-bold" style={{ color: p.color }}>{data!.progress.completionRate}%</div>
                   <div className="text-[11px] text-muted-foreground">完成 {data!.progress.done} / {data!.progress.totalTasks} 个任务</div>
                   <div className="mt-2 grid grid-cols-3 gap-1 text-center">
-                    <Stat label="待处理" value={data!.progress.todo} tone={data!.progress.todo ? "text-amber-600" : "text-muted-foreground"} />
-                    <Stat label="进行中" value={data!.progress.doing} tone={data!.progress.doing ? "text-blue-600" : "text-muted-foreground"} />
-                    <Stat label={data!.progress.overdue ? "逾期" : "阻塞"} value={data!.progress.overdue ? data!.progress.overdue : data!.progress.blocked} tone={data!.progress.overdue ? "text-red-600" : data!.progress.blocked ? "text-red-600" : "text-muted-foreground"} />
+                    <Stat label="待处理" value={data!.progress.todo} tone={data!.progress.todo ? "text-warning" : "text-muted-foreground"} />
+                    <Stat label="进行中" value={data!.progress.doing} tone={data!.progress.doing ? "text-info" : "text-muted-foreground"} />
+                    <Stat label={data!.progress.overdue ? "逾期" : "阻塞"} value={data!.progress.overdue ? data!.progress.overdue : data!.progress.blocked} tone={data!.progress.overdue ? "text-danger" : data!.progress.blocked ? "text-danger" : "text-muted-foreground"} />
                   </div>
                 </div>
               </div>
@@ -502,9 +502,9 @@ export function ProjectWorkbench({ projectId, onOpenTask, onBack, onChanged, onV
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-foreground">🔖 {m.name}</span>
                       {m.overdue ? (
-                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-600">已到期</span>
+                        <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-medium text-danger">已到期</span>
                       ) : (
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">即将到期</span>
+                        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">即将到期</span>
                       )}
                     </div>
                     <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">

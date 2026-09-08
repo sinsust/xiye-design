@@ -12,8 +12,8 @@ export function InboxBanner({
   onOpenInbox: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600">
+    <div className="flex items-center gap-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3">
+      <span className="flex size-8 items-center justify-center rounded-lg bg-warning/10 text-warning">
         <Inbox className="size-4" />
       </span>
       <div className="min-w-0 flex-1">

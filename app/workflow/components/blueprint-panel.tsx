@@ -36,14 +36,14 @@ import {
 function EvidenceBadge({ evidence }: { evidence: BlueprintEvidence }) {
   if (evidence === "confirmed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+      <span className="inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
         <CheckCircle2 className="size-2.5" /> 已确认
       </span>
     );
   }
   if (evidence === "assumption") {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+      <span className="inline-flex items-center gap-1 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning">
         <FlaskConical className="size-2.5" /> 假设
       </span>
     );
@@ -166,11 +166,11 @@ export function BlueprintDrawer({
             <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
               产品蓝图 ProductBlueprint
               {confirmed ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                   <ShieldCheck className="size-3" /> 已确认 · v{blueprint.version}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[11px] font-medium text-indigo-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                   v{blueprint.version}
                 </span>
               )}
@@ -186,8 +186,8 @@ export function BlueprintDrawer({
 
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-4">
           {stale && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <div className="flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-foreground">F1-A 有了新的关键决策，蓝图已过期</p>
                 <Button
@@ -211,7 +211,7 @@ export function BlueprintDrawer({
             </p>
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${Math.min(100, Math.round((readiness.consensusCount / Math.max(1, readiness.consensusCount + readiness.unresolvedCount)) * 100))}%` }} />
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, Math.round((readiness.consensusCount / Math.max(1, readiness.consensusCount + readiness.unresolvedCount)) * 100))}%` }} />
               </div>
               <span className="text-xs tabular-nums text-muted-foreground">
                 {readiness.consensusCount} 项共识 · {readiness.unresolvedCount} 项待确认
@@ -265,9 +265,9 @@ export function BlueprintDrawer({
           <Section title="核心闭环">
             {blueprint.coreLoop.length ? (
               blueprint.coreLoop.map((s, si) => (
-                <div key={s.id} className="rounded-xl border border-dashed border-indigo-300/60 bg-indigo-500/5 px-3 py-2.5">
+                <div key={s.id} className="rounded-xl border border-dashed border-primary/30 bg-primary/5 px-3 py-2.5">
                   <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <Target className="size-3.5 text-indigo-600" /> {s.step} · 第 {si + 1} 步
+                    <Target className="size-3.5 text-primary" /> {s.step} · 第 {si + 1} 步
                     <EvidenceBadge evidence={s.evidence} />
                   </p>
                   <ul className="space-y-1 text-xs text-muted-foreground">
@@ -316,7 +316,7 @@ export function BlueprintDrawer({
             {blueprint.assumptions.length ? (
               <ul className="space-y-1.5">
                 {blueprint.assumptions.map((a) => (
-                  <li key={a.id} className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+                  <li key={a.id} className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2">
                     <p className="text-sm text-foreground/90">{a.text}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">影响：{a.impact}</p>
                     <p className="text-xs text-muted-foreground">验证：{a.validationIdea}</p>
@@ -351,7 +351,7 @@ export function BlueprintDrawer({
                 {blueprint.unresolvedDecisions.map((d) => (
                   <li key={d.id} className="flex flex-col gap-1.5 rounded-xl border border-border/60 bg-background px-3 py-2">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+                      <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-foreground/90">{d.question}</p>
                         {(d.impactNote || d.chosenHint) && (
@@ -409,7 +409,7 @@ export function BlueprintDrawer({
                 </Button>
               </>
             ) : (
-              <span className="flex items-center gap-1.5 text-xs text-emerald-600">
+              <span className="flex items-center gap-1.5 text-xs text-success">
                 <ShieldCheck className="size-4" />{" "}
                 {blueprint.acceptance === "continue_with_assumptions" ? "蓝图已带假设确认，可进入方案落地。" : "蓝图已确认，可进入方案落地。"}
               </span>

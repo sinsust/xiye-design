@@ -8,6 +8,7 @@
 // - 抽屉里展示自动沉淀的内容，支持局部修改（初稿 / 关键决策 / 产品定义字段 / 方案表态），但绝不用它代替访谈。
 // - 不把 targetUsers / 场景 / 问题 / 价值 / MVP 能力铺成首屏平铺表单。
 
+import { useDialogA11y } from "@/lib/use-dialog-a11y";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -190,7 +191,7 @@ export function ConceptDraftDrawer({
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-medium text-foreground">
             编辑 {meta.label}
-            {confirmed && <span className="ml-1 text-[11px] text-emerald-600">（你已手动确认，AI 不再覆盖）</span>}
+            {confirmed && <span className="ml-1 text-[11px] text-success">（你已手动确认，AI 不再覆盖）</span>}
           </p>
           <button type="button" onClick={() => setEditing(null)} className="text-muted-foreground hover:text-foreground">
             <X className="size-4" />
@@ -256,17 +257,19 @@ export function ConceptDraftDrawer({
     );
   };
 
+  const { titleId, dialogProps } = useDialogA11y<HTMLElement>(onClose);
+
   return createPortal(
     <>
       <div className="fixed inset-0 z-50 bg-black/30" onClick={onClose} aria-hidden />
-      <aside className="fixed inset-y-0 right-0 z-50 flex w-[min(560px,100vw)] flex-col border-l border-border bg-background shadow-xl">
+      <aside {...dialogProps} className="fixed inset-y-0 right-0 z-50 flex w-[min(560px,100vw)] flex-col border-l border-border bg-background shadow-xl">
         {/* 头部 */}
         <header className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
           <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+            <p id={titleId} className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
               产品创意 Brief
               {brief.status === "confirmed" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                   <CheckCircle2 className="size-3" /> 已确认 · v{brief.frozenVersion ?? brief.version}
                 </span>
               ) : (
@@ -279,7 +282,12 @@ export function ConceptDraftDrawer({
               这里由访谈自动沉淀，可局部修订；单条修改不影响“老鸭子”主导的多轮访谈节奏。
             </p>
           </div>
-          <button type="button" onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="关闭"
+            className="shrink-0 rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
             <X className="size-5" />
           </button>
         </header>
@@ -304,7 +312,7 @@ export function ConceptDraftDrawer({
             )}
             {brief.planDraft.trim() && (
               <div className="mt-2 flex items-center justify-end gap-2">
-                <span className={draftSaved ? "text-[11px] text-emerald-600" : "text-[11px] text-muted-foreground"}>
+                <span className={draftSaved ? "text-[11px] text-success" : "text-[11px] text-muted-foreground"}>
                   {draftSaved ? "已保存，并以它为基线续写" : "可随时修订，尊重你的选择"}
                 </span>
                 <Button size="sm" variant="outline" onClick={savePlanDraft} disabled={planDraft === brief.planDraft}>
@@ -356,7 +364,7 @@ export function ConceptDraftDrawer({
             {brief.openCriticalQuestions.length || brief.openQuestions.length ? (
               <ul className="space-y-1.5">
                 {brief.openCriticalQuestions.map((q) => (
-                  <li key={q} className="flex gap-2 text-xs leading-snug text-amber-700 dark:text-amber-400">
+                  <li key={q} className="flex gap-2 text-xs leading-snug text-warning dark:text-warning">
                     <AlertTriangle className="mt-0.5 size-3 shrink-0" />
                     <span>
                       <span className="font-medium">关键（会改变首版方向）· </span>
@@ -403,7 +411,7 @@ export function ConceptDraftDrawer({
                     >
                       <div className="flex items-center gap-1">
                         <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
-                        {confirmed && <CheckCircle2 className="size-2.5 text-emerald-500" />}
+                        {confirmed && <CheckCircle2 className="size-2.5 text-success" />}
                       </div>
                       {key === "coreCapabilities" ? (
                         arrayVal(key).length ? (
@@ -450,7 +458,7 @@ export function ConceptDraftDrawer({
               <>
                 {brief.planDraft.trim() && !accepted ? (
                   <>
-                    <span className={brief.acceptance === "continue_with_assumptions" ? "text-[11px] text-amber-600" : "text-[11px] text-muted-foreground"}>
+                    <span className={brief.acceptance === "continue_with_assumptions" ? "text-[11px] text-warning" : "text-[11px] text-muted-foreground"}>
                       有待确认的关键问题时可带假设推进
                     </span>
                     <Button
@@ -485,7 +493,7 @@ export function ConceptDraftDrawer({
                 </Button>
               </>
             ) : (
-              <span className="flex items-center gap-1.5 text-xs text-emerald-600">
+              <span className="flex items-center gap-1.5 text-xs text-success">
                 <CheckCircle2 className="size-4" /> 产品创意已确认，可前往方案落地。
               </span>
             )}

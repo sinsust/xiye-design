@@ -8,6 +8,7 @@
 // - 底部页脚：接受当前页面结构 / 带假设进入下一步 / 返回继续讨论（沿用 F0-A 保存与失败恢复）。
 // - 不显示 JSON、内部 id、代码术语、技术 schema 或画布编辑器。
 
+import { useDialogA11y } from "@/lib/use-dialog-a11y";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -102,19 +103,19 @@ export function ScreenMapPanel({
         <CardContent className="px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-indigo-500/10 text-indigo-600">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                 <LayoutTemplate className="size-4" />
               </span>
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-medium text-foreground">
                   页面结构
                   {screenMap?.status === "confirmed" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                       <ShieldCheck className="size-3" /> v{screenMap.version} 已确认
                     </span>
                   )}
                   {stale && !busy && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
                       <AlertTriangle className="size-3" /> 蓝图或体验已更新待重建
                     </span>
                   )}
@@ -178,14 +179,14 @@ export function ScreenMapPanel({
 function EvidenceBadge({ evidence }: { evidence: ScreenMapEvidence }) {
   if (evidence === "confirmed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+      <span className="inline-flex items-center gap-1 rounded bg-success/10 px-1.5 py-0.5 text-[10px] font-medium text-success">
         <CheckCircle2 className="size-2.5" /> 已确认
       </span>
     );
   }
   if (evidence === "assumption") {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+      <span className="inline-flex items-center gap-1 rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning">
         <FlaskConical className="size-2.5" /> 假设
       </span>
     );
@@ -248,20 +249,22 @@ function ScreenMapDrawer({
     return s ? `第 ${s.order} 步 · ${s.userGoal}` : "";
   };
 
+  const { titleId, dialogProps } = useDialogA11y<HTMLElement>(onClose);
+
   return createPortal(
     <>
       <div className="fixed inset-0 z-50 bg-black/30" onClick={onClose} aria-hidden />
-      <aside className="fixed inset-y-0 right-0 z-50 flex w-[min(640px,100vw)] flex-col border-l border-border bg-background shadow-xl">
+      <aside {...dialogProps} className="fixed inset-y-0 right-0 z-50 flex w-[min(640px,100vw)] flex-col border-l border-border bg-background shadow-xl">
         <header className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
           <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+            <p id={titleId} className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
               首版页面结构
               {confirmed ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                   <ShieldCheck className="size-3" /> v{screenMap.version} 已确认
                 </span>
               ) : screenMap.status === "reviewing" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
                   <Sparkles className="size-3" /> 审阅中
                 </span>
               ) : (
@@ -286,11 +289,11 @@ function ScreenMapDrawer({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {stale && (
-            <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-3">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+            <div className="mb-4 flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-3">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-amber-700">蓝图或核心体验已更新</p>
-                <p className="mt-0.5 text-xs text-amber-600/80">你的手动修改会被保留，冲突将标为待确认。建议基于最新方案重建页面结构。</p>
+                <p className="text-sm font-medium text-warning">蓝图或核心体验已更新</p>
+                <p className="mt-0.5 text-xs text-warning/80">你的手动修改会被保留，冲突将标为待确认。建议基于最新方案重建页面结构。</p>
                 <Button size="sm" variant="outline" className="mt-2 gap-1.5" onClick={onRebuild} disabled={busy}>
                   <RotateCcw className="size-3.5" /> 基于最新方案重建
                 </Button>
@@ -314,7 +317,7 @@ function ScreenMapDrawer({
               <div key={s.id} className="rounded-xl border border-border/60 bg-card px-3 py-2">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium text-foreground">
-                    <span className="mr-1.5 inline-grid size-4 place-items-center rounded bg-indigo-500/10 text-[10px] text-indigo-600">{i + 1}</span>
+                    <span className="mr-1.5 inline-grid size-4 place-items-center rounded bg-primary/10 text-[10px] text-primary">{i + 1}</span>
                     {s.name}
                     <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{TYPE_LABEL[s.type] ?? s.type}</span>
                   </p>

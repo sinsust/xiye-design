@@ -298,7 +298,7 @@ function TaskLine({ t, onOpenTask }: { t: ProvenanceOutputTask; onOpenTask?: (id
       <span
         className={
           "ml-auto shrink-0 text-[10px] " +
-          (t.status === "done" ? "text-emerald-500" : t.status === "in_progress" ? "text-blue-500" : "text-muted-foreground")
+          (t.status === "done" ? "text-success" : t.status === "in_progress" ? "text-info" : "text-muted-foreground")
         }
       >
         {t.status === "done" ? "已完成" : t.status === "in_progress" ? "进行中" : "待处理"}

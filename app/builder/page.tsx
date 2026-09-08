@@ -845,8 +845,8 @@ export default function BuilderPage() {
       {/* 两栏主体 + 变体抽屉（点按展开 / 点空白或 Esc 收起 / 侧栏可收起） */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {/* 左：组件清单 + 变体抽屉（点按展开，稳定保持） */}
-        <div ref={leftRegionRef} className="relative">
-        <aside className={["flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-background transition-[width] duration-200", sidebarCollapsed ? "w-12" : "w-60"].join(" ")}>
+        <div ref={leftRegionRef} className="relative flex min-h-0 flex-col">
+        <aside className={["flex min-h-0 flex-1 flex-col overflow-hidden border-r border-border bg-background transition-[width] duration-200", sidebarCollapsed ? "w-12" : "w-60"].join(" ")}>
           <div className="flex items-center justify-between px-3 py-2.5">
             {sidebarCollapsed ? (
               <span className="mx-auto text-xs font-semibold text-muted-foreground">{SKELETON_PAGES.length}</span>
@@ -1017,14 +1017,21 @@ export default function BuilderPage() {
           )}
         </aside>
 
-        {/* M2-C：检查点面板（保存 / 列出 / 回退） */}
-        <BuilderCheckpoints projectId={savedProjectId} />
-
-        {/* A：决策台账卡片（采纳 / 驳回概念决策） */}
-        <DecisionSuggestionCard projectId={savedProjectId} />
+        {/* M2-C + A：检查点 / 决策台账——限高滚动，避免被页面树撑出视口后不可达 */}
+        {!sidebarCollapsed && (
+          <div className="max-h-[50%] shrink-0 overflow-y-auto">
+            <BuilderCheckpoints projectId={savedProjectId} />
+            <DecisionSuggestionCard projectId={savedProjectId} />
+          </div>
+        )}
 
         {/* 变体抽屉（点按打开；点空白 / Esc / 关闭按钮收起） */}
         <div
+          role="dialog"
+          aria-modal={false}
+          aria-labelledby="builder-variant-drawer-title"
+          aria-hidden={!drawerOpen}
+          inert={!drawerOpen ? true : undefined}
           className={[
             "absolute bottom-0 top-0 z-30 flex w-[340px] flex-col overflow-hidden border-r border-border bg-background transition-[transform,opacity] duration-200",
             drawerOpen ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-full opacity-0",
@@ -1034,7 +1041,7 @@ export default function BuilderPage() {
           }}
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
-            <span className="text-xs font-semibold text-muted-foreground">
+            <span id="builder-variant-drawer-title" className="text-xs font-semibold text-muted-foreground">
               {resolveText(activeComponent?.name ?? "")} · 变体（{activeComponent?.variants.length ?? 0}）
             </span>
             <button

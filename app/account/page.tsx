@@ -308,7 +308,7 @@ export default function AccountPage() {
             </div>
           </div>
           {imaBound ? (
-            <span className="shrink-0 rounded-full bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+            <span className="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
               已绑定
             </span>
           ) : (
@@ -464,9 +464,9 @@ export default function AccountPage() {
                 <span
                   className={
                     imaSyncLogs[0].status === "success"
-                      ? "font-medium text-emerald-600"
+                      ? "font-medium text-success"
                       : imaSyncLogs[0].status === "partial"
-                        ? "font-medium text-amber-600"
+                        ? "font-medium text-warning"
                         : "font-medium text-destructive"
                   }
                 >
@@ -515,7 +515,7 @@ export default function AccountPage() {
                           "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
                           isFlow
                             ? "bg-primary/10 text-primary"
-                            : "bg-emerald-600/10 text-emerald-700",
+                            : "bg-success/10 text-success",
                         ].join(" ")}
                       >
                         {isFlow ? "流程草稿" : "搭建工作区"}
@@ -677,7 +677,7 @@ function StylePickerSection() {
       )}
 
       {saved && (
-        <p className="mt-2 text-xs font-medium text-emerald-600">已切换风格，主流程即时生效</p>
+        <p className="mt-2 text-xs font-medium text-success">已切换风格，主流程即时生效</p>
       )}
     </section>
   );

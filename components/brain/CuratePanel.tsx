@@ -187,25 +187,25 @@ export function CuratePanel({
 
       {/* —— 可能过期 —— */}
       {!loading && view && view.stale?.isStale && (
-        <div className="mb-2 rounded-lg border border-amber-200/70 bg-amber-50/60 px-3 py-2">
+        <div className="mb-2 rounded-lg border border-warning/30 bg-warning px-3 py-2">
           <div className="mb-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <CircleAlert className="size-3.5 text-amber-600" />
-            <span className="font-semibold text-amber-800">
+            <CircleAlert className="size-3.5 text-warning" />
+            <span className="font-semibold text-warning">
               {view.stale.reason === "not_referenced"
                 ? "可能已被遗忘（长期未被引用）"
                 : "疑似内容过期（长期未更新）"}
             </span>
-            <span className="ml-auto text-[10px] text-amber-600">
+            <span className="ml-auto text-[10px] text-warning">
               距今约 {view.stale.staleDays} 天
             </span>
           </div>
-          <p className="text-[11px] leading-relaxed text-amber-700">
+          <p className="text-[11px] leading-relaxed text-warning">
             {view.stale.reason === "not_referenced"
               ? "这条笔记超过阈值天数未被其他笔记引用，可能是重要但易被遗忘的知识。"
               : "这条笔记超过阈值天数未更新，建议检查是否需要重新整理或归档。"}
           </p>
           {view.stale.lastDecision ? (
-            <p className="mt-1.5 text-[10px] text-amber-600">已处理：{staleActionLabel(view.stale.lastDecision)}</p>
+            <p className="mt-1.5 text-[10px] text-warning">已处理：{staleActionLabel(view.stale.lastDecision)}</p>
           ) : (
             <div className="mt-2 flex gap-1.5">
               {(
@@ -217,7 +217,7 @@ export function CuratePanel({
               ).map(([action, label]) => (
                 <button
                   key={action}
-                  className="rounded border border-amber-300/70 bg-card px-2 py-0.5 text-[10px] text-amber-800 transition hover:border-amber-500 hover:bg-amber-100 disabled:opacity-50"
+                  className="rounded border border-warning/30 bg-card px-2 py-0.5 text-[10px] text-warning transition hover:border-warning/30 hover:bg-warning/10 disabled:opacity-50"
                   disabled={pendingId === "stale"}
                   onClick={(ev) => {
                     ev.stopPropagation();

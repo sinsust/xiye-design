@@ -208,7 +208,7 @@ export function TableUploader({
 
       {/* 错误 */}
       {error && (
-        <div className="mt-5 flex w-full max-w-md items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 animate-in fade-in">
+        <div className="mt-5 flex w-full max-w-md items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger animate-in fade-in">
           <X className="size-3.5 shrink-0" />
           <span className="break-all">{error}</span>
         </div>

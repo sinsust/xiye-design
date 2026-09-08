@@ -35,7 +35,7 @@ export function toast(message: string, type: ToastType = "info") {
 
 const toneCls: Record<ToastType, string> = {
   success:
-    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    "border-success/30 bg-success/10 text-success dark:text-success",
   error: "border-destructive/30 bg-destructive/10 text-destructive",
   info: "border-border bg-card text-foreground",
 };

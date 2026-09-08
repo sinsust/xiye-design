@@ -128,6 +128,7 @@ export function DecisionSuggestionCard({ projectId }: { projectId: string | null
                   <input
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
+                    aria-label="决策理由"
                     placeholder="理由（可选）"
                     autoFocus
                     className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none placeholder:text-muted-foreground"
@@ -159,7 +160,7 @@ export function DecisionSuggestionCard({ projectId }: { projectId: string | null
                   <button
                     type="button"
                     onClick={() => setActive({ title: s.title, action: "accepted" })}
-                    className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 transition hover:bg-emerald-500/20"
+                    className="inline-flex items-center gap-1 rounded-md bg-success/10 px-2 py-1 text-[11px] font-medium text-success transition hover:bg-success/10"
                   >
                     <Check className="size-3" />
                     采纳
@@ -185,10 +186,10 @@ export function DecisionSuggestionCard({ projectId }: { projectId: string | null
                 className={[
                   "mr-1.5 inline-block rounded px-1 py-px text-[10px] font-medium",
                   l.status === "accepted"
-                    ? "bg-emerald-500/10 text-emerald-600"
+                    ? "bg-success/10 text-success"
                     : l.status === "rejected"
                       ? "bg-rose-500/10 text-rose-600 line-through"
-                      : "bg-amber-500/10 text-amber-600",
+                      : "bg-warning/10 text-warning",
                 ].join(" ")}
               >
                 {STATUS_LABEL[l.status]}

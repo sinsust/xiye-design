@@ -116,7 +116,7 @@ export function ColumnProfilePanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索字段…"
-            className="w-full rounded-lg border border-border/70 bg-muted/30 py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-primary/50 focus:bg-white"
+            className="w-full rounded-lg border border-border/70 bg-muted/30 py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-primary/50 focus:bg-background"
           />
         </div>
         <div className="flex items-center gap-0.5 rounded-lg bg-muted/40 p-0.5">
@@ -126,7 +126,7 @@ export function ColumnProfilePanel({
               onClick={() => setGroup(g)}
               className={
                 "rounded-md px-2 py-1 text-[11px] font-medium transition " +
-                (group === g ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")
+                (group === g ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")
               }
             >
               {GROUP_LABELS[g]}
@@ -176,8 +176,8 @@ export function ColumnProfilePanel({
                           (isSel
                             ? "border-primary/60 bg-primary/5 shadow-sm"
                             : isOpen
-                              ? "border-border bg-white shadow-sm"
-                              : "border-border/70 bg-white hover:border-primary/25")
+                              ? "border-border bg-background shadow-sm"
+                              : "border-border/70 bg-background hover:border-primary/25")
                         }
                       >
                         {/* 概要行（紧凑：高度 ~44px） */}
@@ -320,7 +320,7 @@ function MiniViz({ col }: { col: Col }) {
               key={i}
               className={
                 "flex-1 rounded-t-[2px] transition-all duration-300 " +
-                (col.hasOutliers && i >= col.histogram.length - 2 ? "bg-red-400/70" : "bg-primary/35")
+                (col.hasOutliers && i >= col.histogram.length - 2 ? "bg-danger" : "bg-primary/35")
               }
               style={{ height: `${Math.max(8, Math.round((h.count / max) * 100))}%` }}
               title={`${fmtNum(h.start)}~${fmtNum(h.end)}: ${h.count}`}
@@ -328,7 +328,7 @@ function MiniViz({ col }: { col: Col }) {
           ))}
         </div>
         {col.hasOutliers && (
-          <div className="mt-1 flex items-center gap-1 text-[10px] text-red-600/80">
+          <div className="mt-1 flex items-center gap-1 text-[10px] text-danger/80">
             <AlertTriangle className="size-2.5" />
             检测到 {col.outlierCount} 个异常值
           </div>
@@ -435,7 +435,7 @@ function DetailBody({ col }: { col: Col }) {
               <div className="text-muted-foreground/70">缺失日期</div>
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {col.missingDates.slice(0, 8).map((m, i) => (
-                  <span key={i} className="rounded bg-red-50 px-1.5 py-px text-[10px] text-red-600">
+                  <span key={i} className="rounded bg-danger/10 px-1.5 py-px text-[10px] text-danger">
                     {m}
                   </span>
                 ))}

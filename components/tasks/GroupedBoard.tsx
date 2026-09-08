@@ -183,7 +183,7 @@ export default function GroupedBoard({ groupBy, tasks, projects, openTask, onCyc
                                 setEditingAssign(null);
                                 setAssignDraft("");
                               }}
-                              className="text-emerald-600 transition hover:text-emerald-500"
+                              className="text-success transition hover:text-success"
                               aria-label="保存"
                             >
                               <Check className="size-3.5" />

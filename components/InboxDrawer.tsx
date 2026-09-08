@@ -53,20 +53,20 @@ export interface InboxItem {
 
 const STATUS_META: Record<InboxStatus, { label: string; cls: string }> = {
   pending: { label: "待处理", cls: "bg-muted text-muted-foreground" },
-  processing: { label: "整理中", cls: "bg-amber-500/15 text-amber-600 animate-pulse" },
-  pending_confirmation: { label: "待确认", cls: "bg-indigo-500/15 text-indigo-600" },
-  converted: { label: "已转化", cls: "bg-emerald-500/15 text-emerald-600" },
-  processed: { label: "已处理", cls: "bg-sky-500/15 text-sky-600" },
+  processing: { label: "整理中", cls: "bg-warning/10 text-warning animate-pulse" },
+  pending_confirmation: { label: "待确认", cls: "bg-primary/15 text-primary" },
+  converted: { label: "已转化", cls: "bg-success/10 text-success" },
+  processed: { label: "已处理", cls: "bg-info/10 text-info" },
   dismissed: { label: "已忽略", cls: "bg-muted text-muted-foreground/70" },
-  failed: { label: "处理失败", cls: "bg-red-500/15 text-red-600" },
+  failed: { label: "处理失败", cls: "bg-danger/10 text-danger" },
 };
 
 const INTENT_META: Record<InboxIntent, { icon: string; label: string; cls: string }> = {
-  note: { icon: "📝", label: "笔记", cls: "bg-sky-500/10 text-sky-600" },
-  task: { icon: "📋", label: "任务", cls: "bg-blue-500/10 text-blue-600" },
-  meeting: { icon: "🗓", label: "会议纪要", cls: "bg-violet-500/10 text-violet-600" },
-  snippet: { icon: "💻", label: "代码片段", cls: "bg-emerald-500/10 text-emerald-600" },
-  project: { icon: "📁", label: "项目", cls: "bg-amber-500/10 text-amber-600" },
+  note: { icon: "📝", label: "笔记", cls: "bg-info/10 text-info" },
+  task: { icon: "📋", label: "任务", cls: "bg-info/10 text-info" },
+  meeting: { icon: "🗓", label: "会议纪要", cls: "bg-violet-500/15 text-violet-700 dark:text-violet-300" },
+  snippet: { icon: "💻", label: "代码片段", cls: "bg-success/10 text-success" },
+  project: { icon: "📁", label: "项目", cls: "bg-warning/10 text-warning" },
   unknown: { icon: "❓", label: "待识别", cls: "bg-muted text-muted-foreground" },
 };
 
@@ -318,7 +318,7 @@ export function InboxDrawer({
             <Inbox className="size-4.5 text-primary" />
             收件箱
             {actionableCount > 0 && (
-              <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-600">
+              <span className="rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">
                 {actionableCount} 条待处理
               </span>
             )}
@@ -352,7 +352,7 @@ export function InboxDrawer({
         {lastApplied.length > 0 && (
           <div className="border-b border-border/70 bg-card px-5 py-2.5">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-emerald-600">已收录 {lastApplied.length} 条</span>
+              <span className="text-[11px] font-semibold text-success">已收录 {lastApplied.length} 条</span>
               <button
                 onClick={() => setLastApplied([])}
                 className="text-[11px] text-muted-foreground transition hover:text-foreground"
@@ -367,7 +367,7 @@ export function InboxDrawer({
                     onClick={() => onOpenNote?.(a.noteId)}
                     className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-foreground transition hover:text-primary"
                   >
-                    <FileText className="size-3.5 shrink-0 text-emerald-600" />
+                    <FileText className="size-3.5 shrink-0 text-success" />
                     <span className="truncate">{a.title}</span>
                   </button>
                   <button
@@ -533,15 +533,15 @@ export function InboxDrawer({
                   )}
                   {/* P2-A：状态与去向展示 */}
                   {item.status === "converted" && (item.noteId || (item.outputTaskIds?.length ?? 0) > 0) && (
-                    <div className="mt-2 space-y-1 rounded-md bg-emerald-500/5 px-3 py-2 text-xs">
-                      <div className="text-emerald-700">已转化</div>
+                    <div className="mt-2 space-y-1 rounded-md bg-success/10 px-3 py-2 text-xs">
+                      <div className="text-success">已转化</div>
                       <div className="space-y-0.5">
                         {item.noteId && (
                           <button
                             onClick={() => onOpenNote?.(item.noteId!)}
                             className="flex items-center gap-1.5 text-foreground transition hover:text-primary"
                           >
-                            <FileText className="size-3.5 text-emerald-600" /> → 笔记
+                            <FileText className="size-3.5 text-success" /> → 笔记
                           </button>
                         )}
                         {(item.outputTaskIds?.length ?? 0) > 0 && (
@@ -549,19 +549,19 @@ export function InboxDrawer({
                             onClick={() => onOpenTask?.(item.outputTaskIds![0])}
                             className="flex items-center gap-1.5 text-foreground transition hover:text-primary"
                           >
-                            <ListTodo className="size-3.5 text-emerald-600" /> → {item.outputTaskIds!.length} 项任务
+                            <ListTodo className="size-3.5 text-success" /> → {item.outputTaskIds!.length} 项任务
                           </button>
                         )}
                         {(item.outputReminderIds?.length ?? 0) > 0 && (
                           <span className="flex items-center gap-1.5 text-muted-foreground">
-                            <Bell className="size-3.5 text-emerald-600" /> → {item.outputReminderIds!.length} 个提醒
+                            <Bell className="size-3.5 text-success" /> → {item.outputReminderIds!.length} 个提醒
                           </span>
                         )}
                       </div>
                     </div>
                   )}
                   {item.status === "failed" && (
-                    <div className="mt-2 rounded-md bg-red-500/5 px-3 py-2 text-[11px] text-red-600">
+                    <div className="mt-2 rounded-md bg-danger/10 px-3 py-2 text-[11px] text-danger">
                       {item.failedReason || "处理失败"}，可重试整理
                     </div>
                   )}

@@ -826,7 +826,7 @@ function HeroPreview({ variantId }: { variantId: string }) {
         <p className="pv-in mx-auto mt-1.5 max-w-sm text-xs" style={{ ["--i" as string]: 2, color: "var(--muted-foreground)" }}>加入 50,000+ 团队，用数据驱动每个决策。</p>
         <div className="pv-in mt-4 flex justify-center gap-2" style={{ ["--i" as string]: 3 }}><Btn primary glow>免费注册 →</Btn><Btn>观看演示</Btn></div>
         <div className="pv-in mt-4 flex justify-center gap-3 text-[10px]" style={{ ["--i" as string]: 4, color: "var(--muted-foreground)" }}>
-          <span className="text-amber-400 transition-transform duration-200 hover:scale-110">★★★★★</span><span className="font-semibold" style={{ color: "var(--foreground)" }}>4.9/5</span><span>·</span><span>50k+ 用户</span><span>·</span><span>SOC2 认证</span>
+          <span className="text-warning transition-transform duration-200 hover:scale-110">★★★★★</span><span className="font-semibold" style={{ color: "var(--foreground)" }}>4.9/5</span><span>·</span><span>50k+ 用户</span><span>·</span><span>SOC2 认证</span>
         </div>
       </div>
     );
@@ -2378,7 +2378,7 @@ function PricingPreview({ variantId }: { variantId: string }) {
           <button type="button" onClick={() => setBilling("y")} aria-label="切换计费周期" className="relative inline-flex h-4 w-8 cursor-pointer items-center rounded-full transition-colors" style={{ background: billing === "y" ? "var(--primary)" : "var(--muted-foreground)" }}>
             <span className="absolute size-3 rounded-full bg-white transition-transform duration-200" style={{ transform: billing === "y" ? "translateX(18px)" : "translateX(2px)" }} />
           </button>
-          <span className={"font-semibold transition-opacity " + (billing === "y" ? "" : "opacity-0")}>年付 <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-medium text-green-700">省 20%</span></span>
+          <span className={"font-semibold transition-opacity " + (billing === "y" ? "" : "opacity-0")}>年付 <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] font-medium text-success">省 20%</span></span>
         </div>
         <div className="pv-stagger mx-auto mt-5 grid max-w-md grid-cols-2 gap-3">
           {[
@@ -2499,7 +2499,7 @@ function PricingTiersPreview({ variantId }: { variantId: string }) {
         <div className="pv-in flex items-center justify-center gap-2 text-[10px]" style={{ ["--i" as string]: 0 }}>
           <span style={{ color: "var(--muted-foreground)" }}>月付</span>
           <span className="relative inline-block h-4 w-8 rounded-full" style={{ background: "var(--primary)" }}><span className="absolute left-[18px] top-0.5 size-3 rounded-full bg-white" /></span>
-          <span className="font-semibold">年付 <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] text-green-700">省 20%</span></span>
+          <span className="font-semibold">年付 <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-[9px] text-success">省 20%</span></span>
         </div>
         <div className="pv-stagger mx-auto mt-3 grid max-w-sm grid-cols-3 gap-2">
           {[
@@ -2630,7 +2630,7 @@ function PricingComparePreview({ variantId }: { variantId: string }) {
               {rows.map((r) => (
                 <tr key={r.f} className="border-b border-white/10 transition-colors last:border-0 hover:bg-white/5">
                   <td className="p-2 text-slate-300">{r.f}</td>
-                  {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v === "✓" ? <span className="text-green-400">✓</span> : v === "—" ? <span className="text-slate-600">—</span> : v}</td>)}
+                  {r.v.map((v, i) => <td key={i} className="p-2 text-center">{v === "✓" ? <span className="text-success">✓</span> : v === "—" ? <span className="text-slate-600">—</span> : v}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -5361,7 +5361,7 @@ function ProductCartPreview({ variantId }: { variantId: string }) {
           <p className="mt-1.5 text-xs font-bold">订单摘要</p>
           <div className="mt-2.5 space-y-1.5 text-[10px]">
             {[{ k: "小计", v: "¥" + subtotal }, { k: "运费", v: "免运费" }, { k: "优惠码", v: "-¥" + Math.round(subtotal * 0.1) }].map((r, i) => (
-              <div key={r.k} className="pv-in flex justify-between" style={{ ["--i" as string]: i }}><span style={{ color: "var(--muted-foreground)" }}>{r.k}</span><span className={r.v.startsWith("-") ? "text-green-600" : "font-medium"}>{r.v}</span></div>
+              <div key={r.k} className="pv-in flex justify-between" style={{ ["--i" as string]: i }}><span style={{ color: "var(--muted-foreground)" }}>{r.k}</span><span className={r.v.startsWith("-") ? "text-success" : "font-medium"}>{r.v}</span></div>
             ))}
             <div className="pv-in flex justify-between border-t pt-2 text-xs" style={{ ["--i" as string]: 3, borderColor: "var(--border)" }}><b>合计</b><b>¥{Math.round(subtotal * 0.9)}</b></div>
           </div>
@@ -5781,7 +5781,7 @@ function DocsContentPreview({ variantId }: { variantId: string }) {
       <div className="pv-stagger px-6 py-7">
         <div className="pv-stagger mx-auto max-w-md">
           <div className="pv-in flex items-center gap-2" style={{ ["--i" as string]: 0 }}>
-            <span className="rounded bg-green-600 px-1.5 py-0.5 text-[8px] font-bold text-white">POST</span>
+            <span className="rounded bg-success px-1.5 py-0.5 text-[8px] font-bold text-success-foreground">POST</span>
             <code className="text-[10px] font-semibold">/v1/projects</code>
           </div>
           <table className="pv-in mt-3 w-full overflow-hidden rounded-md border text-left text-[9px]" style={{ ["--i" as string]: 1, borderColor: "var(--border)" }}>

@@ -192,7 +192,7 @@ export default function BatchImportModal({
                 {results.map((r, i) => (
                   <li key={i} className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
                     {r.ok ? (
-                      <Check className="size-3.5 shrink-0 text-emerald-600" />
+                      <Check className="size-3.5 shrink-0 text-success" />
                     ) : (
                       <X className="size-3.5 shrink-0 text-destructive" />
                     )}

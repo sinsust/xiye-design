@@ -124,7 +124,7 @@ export function FlowLeaveGuard() {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
+          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
             <AlertTriangle className="size-4" />
           </div>
           <div className="min-w-0">

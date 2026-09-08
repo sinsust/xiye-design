@@ -46,7 +46,7 @@ export function WeekInsights({ insights }: { insights: DashboardData["insights"]
       {(insights.decayAlerts.length > 0 || insights.strategyReviews.length > 0) && (
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <TrendingUp className="size-4 text-amber-500" /> 衰减提醒
+            <TrendingUp className="size-4 text-warning" /> 衰减提醒
           </div>
           <div className="space-y-1.5">
             {insights.decayAlerts.map((d) => (

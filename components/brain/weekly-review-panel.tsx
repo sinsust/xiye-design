@@ -21,9 +21,9 @@ interface WeeklyReviewPanelProps {
 
 function toneStyle(tone: ReviewItem["tone"]): { dot: string; text: string; wrap: string; label: string } {
   if (tone === "risk")
-    return { dot: "bg-red-500", text: "text-red-600", wrap: "bg-red-500/5 border-red-500/20", label: "风险" };
+    return { dot: "bg-danger", text: "text-danger", wrap: "bg-danger/10 border-danger/30", label: "风险" };
   if (tone === "positive")
-    return { dot: "bg-emerald-500", text: "text-emerald-600", wrap: "bg-emerald-500/5 border-emerald-500/20", label: "成果" };
+    return { dot: "bg-success", text: "text-success", wrap: "bg-success/10 border-success/30", label: "成果" };
   return { dot: "bg-slate-400", text: "text-slate-600", wrap: "bg-slate-500/5 border-slate-500/20", label: "建议" };
 }
 

@@ -29,10 +29,10 @@ const KIND_META: Record<
   NarrativeFindingKind,
   { label: string; cls: string; icon: typeof CheckCircle2 }
 > = {
-  fact: { label: "事实", cls: "border-sky-200 bg-sky-50 text-sky-800", icon: CheckCircle2 },
-  inference: { label: "推断", cls: "border-violet-200 bg-violet-50 text-violet-800", icon: Lightbulb },
-  recommendation: { label: "建议", cls: "border-emerald-200 bg-emerald-50 text-emerald-800", icon: Target },
-  insufficient_data: { label: "数据不足", cls: "border-amber-200 bg-amber-50 text-amber-800", icon: AlertTriangle },
+  fact: { label: "事实", cls: "border-info/30 bg-info/10 text-info", icon: CheckCircle2 },
+  inference: { label: "推断", cls: "border-violet-500/30 bg-violet-500/15 text-violet-800 dark:text-violet-300", icon: Lightbulb },
+  recommendation: { label: "建议", cls: "border-success/30 bg-success/10 text-success", icon: Target },
+  insufficient_data: { label: "数据不足", cls: "border-warning/30 bg-warning/10 text-warning", icon: AlertTriangle },
 };
 
 const PRIORITY_LABEL: Record<string, string> = { high: "高", medium: "中", low: "低" };
@@ -50,7 +50,7 @@ function FindingCard({
     finding.evidenceRefs.find((r) => r.groupKey) ?? finding.evidenceRefs[0];
 
   return (
-    <div className="rounded-xl border border-border/70 bg-white p-3">
+    <div className="rounded-xl border border-border/70 bg-background p-3">
       <div className="flex flex-wrap items-center gap-1.5">
         <span className={"flex items-center gap-1 rounded px-1.5 py-px text-[10px] font-medium " + meta.cls}>
           <Icon className="size-3" />
@@ -68,7 +68,7 @@ function FindingCard({
       <div className="mt-1.5 text-[12px] font-medium text-foreground">{finding.title}</div>
       <div className="mt-0.5 text-[11px] leading-relaxed text-foreground/85">{finding.statement}</div>
       {finding.suggestedAction && (
-        <div className="mt-1.5 rounded-lg bg-emerald-50/70 px-2.5 py-1.5 text-[11px] text-emerald-800">
+        <div className="mt-1.5 rounded-lg bg-success/10 px-2.5 py-1.5 text-[11px] text-success">
           建议行动：{finding.suggestedAction}
         </div>
       )}
@@ -148,7 +148,7 @@ export function AnalysisNarrativePanel({
         {status === "ready" && narrative?.retryable && (
           <button
             onClick={() => void generate(true)}
-            className="flex items-center gap-1 rounded-md border border-border/60 bg-white px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
+            className="flex items-center gap-1 rounded-md border border-border/60 bg-background px-2 py-1 text-[10px] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
           >
             <RefreshCw className="size-3" /> 重新生成
           </button>
@@ -162,14 +162,14 @@ export function AnalysisNarrativePanel({
       )}
 
       {status === "failed" && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-[11px] text-warning">
           <AlertTriangle className="size-3.5 shrink-0" />
           <span className="flex-1 break-all">
             解读生成失败{error ? `：${error}` : ""}。图表、明细与证据不受影响，可稍后重试。
           </span>
           <button
             onClick={() => void generate(true)}
-            className="flex items-center gap-1 text-amber-700 underline"
+            className="flex items-center gap-1 text-warning underline"
           >
             <RefreshCw className="size-3" /> 重试
           </button>

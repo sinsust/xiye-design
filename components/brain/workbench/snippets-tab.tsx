@@ -133,12 +133,12 @@ export function SnippetsTab({
           className={
             "inline-flex items-center gap-1 rounded-[var(--radius)] border px-2 py-1 text-xs transition " +
             (showFavOnly
-              ? "border-amber-400/50 bg-amber-400/10 text-amber-500"
+              ? "border-warning/30 bg-warning/10 text-warning"
               : "border-border text-muted-foreground hover:text-foreground")
           }
           title="仅看收藏"
         >
-          <Star className={"size-3.5 " + (showFavOnly ? "fill-amber-400 text-amber-400" : "")} />
+          <Star className={"size-3.5 " + (showFavOnly ? "fill-amber-400 text-warning" : "")} />
           收藏
         </button>
         <div className="relative ml-auto min-w-0 flex-1">
@@ -210,12 +210,12 @@ export function SnippetsTab({
                       <button
                         className={
                           "inline-flex shrink-0 items-center rounded-[var(--radius)] border border-border px-1.5 py-0.5 text-[11px] transition " +
-                          (fav ? "border-amber-400/50 text-amber-500" : "text-muted-foreground hover:text-foreground")
+                          (fav ? "border-warning/30 text-warning" : "text-muted-foreground hover:text-foreground")
                         }
                         onClick={() => toggleFavorite(s.id)}
                         title={fav ? "取消收藏" : "收藏"}
                       >
-                        <Star className={"size-3 " + (fav ? "fill-amber-400 text-amber-400" : "")} />
+                        <Star className={"size-3 " + (fav ? "fill-amber-400 text-warning" : "")} />
                       </button>
                       {s.codeContent && (
                         <button

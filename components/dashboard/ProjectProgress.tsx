@@ -60,7 +60,7 @@ export function ProjectProgress({
                   <span className="truncate">{p.name}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
-                  <span className={overdue ? "text-red-600" : "text-muted-foreground"}>
+                  <span className={overdue ? "text-danger" : "text-muted-foreground"}>
                     {daysText(p.daysRemaining)}
                   </span>
                   <span className="tabular-nums text-foreground">

@@ -441,9 +441,9 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
         )}
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-2 overflow-hidden xl:grid-cols-[260px_1fr_360px]">
+      <div className="grid min-h-0 flex-1 gap-2 overflow-y-auto xl:grid-cols-[260px_1fr_360px] xl:overflow-hidden">
         {/* 左栏：交付产物清单 */}
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm max-[1279px]:h-auto max-[1279px]:max-h-[70vh]">
           <div className="shrink-0 border-b border-border/30 px-3 py-2">
             <p className="text-sm font-medium text-foreground">交付产物</p>
             <p className="text-[11px] text-muted-foreground">基于协同/搭建阶段真实数据生成</p>
@@ -480,7 +480,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
                             <span
                               className={[
                                 "size-1.5 shrink-0 rounded-full",
-                                report.ok ? "bg-emerald-500" : "bg-amber-500",
+                                report.ok ? "bg-success" : "bg-warning",
                               ].join(" ")}
                             />
                           ) : (
@@ -498,7 +498,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
         </div>
 
         {/* 中栏：生成概览 */}
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm max-[1279px]:h-auto max-[1279px]:max-h-[70vh]">
           <div className="shrink-0 border-b border-border/30 px-4 py-2">
             <p className="text-sm font-medium text-foreground">生成概览</p>
           </div>
@@ -543,8 +543,8 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
                     <ShieldCheck className="size-4 text-primary" />
                     <span className="text-muted-foreground">种子自检</span>
                     <span className="ml-auto flex items-center gap-2 text-xs">
-                      <span className="text-emerald-600">通过 {report.passed}</span>
-                      <span className="text-amber-600">提示 {report.warned}</span>
+                      <span className="text-success">通过 {report.passed}</span>
+                      <span className="text-warning">提示 {report.warned}</span>
                       <span className="text-destructive">失败 {report.failed}</span>
                     </span>
                   </div>
@@ -558,7 +558,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
         </div>
 
         {/* 右栏：产物预览 */}
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-border/70 shadow-sm max-[1279px]:h-auto max-[1279px]:max-h-[70vh]">
           <div className="flex shrink-0 flex-row items-center justify-between border-b border-border/30 px-4 py-2">
             <p className="text-sm font-medium text-foreground">{activeItem.label}</p>
             {previewContent && (
@@ -618,7 +618,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Rocket className="size-4" />
             <span>交付工作台</span>
-            {genState === "done" && <span className="text-emerald-600">已全部就绪</span>}
+            {genState === "done" && <span className="text-success">已全部就绪</span>}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-2" onClick={onBack}>
@@ -785,7 +785,7 @@ function VerifyOverview({ report }: { report: SeedVerifyReport | null }) {
         <span
           className={[
             "ml-auto rounded-full px-2 py-0.5 text-xs font-medium",
-            report.ok ? "bg-primary/10 text-primary" : "bg-amber-100 text-amber-700",
+            report.ok ? "bg-primary/10 text-primary" : "bg-warning/10 text-warning",
           ].join(" ")}
         >
           {report.ok ? "已验证通过" : "需人工查看"}
@@ -793,7 +793,7 @@ function VerifyOverview({ report }: { report: SeedVerifyReport | null }) {
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
         <span className="text-muted-foreground">通过 <span className="font-semibold text-primary">{report.passed}</span></span>
-        <span className="text-muted-foreground">提示 <span className="font-semibold text-amber-600">{report.warned}</span></span>
+        <span className="text-muted-foreground">提示 <span className="font-semibold text-warning">{report.warned}</span></span>
         <span className="text-muted-foreground">失败 <span className="font-semibold text-destructive">{report.failed}</span></span>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -811,7 +811,7 @@ function VerifyOverview({ report }: { report: SeedVerifyReport | null }) {
                   : c.status === "fail"
                     ? "bg-destructive"
                     : c.status === "warn"
-                      ? "bg-amber-500"
+                      ? "bg-warning"
                       : "bg-muted-foreground",
               ].join(" ")}
             >

@@ -178,7 +178,7 @@ export function AnalysisRecommender({
           {/* 取消按钮 */}
           <button
             onClick={cancel}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground/60 transition hover:text-red-600"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground/60 transition hover:text-danger"
           >
             <XCircle className="size-3" />
             取消
@@ -186,10 +186,10 @@ export function AnalysisRecommender({
         </div>
       )}
       {error && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
           <span className="flex-1 break-all">{error}</span>
           <button
-            className="text-amber-700 underline"
+            className="text-warning underline"
             onClick={() => {
               setError("");
               setDimensions([]);
@@ -200,7 +200,7 @@ export function AnalysisRecommender({
           </button>
           {error.includes("未登录") && (
             <button
-              className="rounded bg-amber-200/60 px-2 py-0.5 text-amber-900"
+              className="rounded bg-warning px-2 py-0.5 text-warning"
               onClick={() => location.reload()}
             >
               重新登录
@@ -211,7 +211,7 @@ export function AnalysisRecommender({
 
       {/* 推荐维度卡片 */}
       {!loading && recommendRoute === "local" && dimensions.length > 0 && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] text-sky-800">
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-[11px] text-info">
           <Sparkles className="size-3 shrink-0" />
           AI 线路暂不可用，已用本地规则推荐（仍可正常分析）
         </div>
@@ -227,14 +227,14 @@ export function AnalysisRecommender({
                 "flex items-start gap-3 rounded-xl border px-3.5 py-3 transition-all duration-200 " +
                 (selected.has(i)
                   ? "border-primary/50 bg-primary/5 shadow-sm"
-                  : "border-border/70 bg-white hover:border-primary/25 hover:bg-muted/20")
+                  : "border-border/70 bg-background hover:border-primary/25 hover:bg-muted/20")
               }
             >
               <button
                 onClick={() => toggle(i)}
                 className={
                   "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition " +
-                  (selected.has(i) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white")
+                  (selected.has(i) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background")
                 }
                 aria-label="选择"
               >
@@ -288,7 +288,7 @@ export function AnalysisRecommender({
               if (e.key === "Enter" && query.trim()) onRun([], query.trim());
             }}
             placeholder="例：华东区销售额最高的 5 个区域是哪些？"
-            className="min-w-0 flex-1 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-xs outline-none transition focus:border-primary/50 focus:bg-white"
+            className="min-w-0 flex-1 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-xs outline-none transition focus:border-primary/50 focus:bg-background"
           />
           <button
             onClick={() => query.trim() && onRun([], query.trim())}
@@ -303,7 +303,7 @@ export function AnalysisRecommender({
 
       {/* 底部吸附栏 */}
       {selected.size > 0 && (
-        <div className="sticky bottom-0 mt-5 -mx-5 border-t border-border/60 bg-white/90 px-5 py-3 backdrop-blur animate-in slide-in-from-bottom-2 duration-200">
+        <div className="sticky bottom-0 mt-5 -mx-5 border-t border-border/60 bg-background/90 px-5 py-3 backdrop-blur animate-in slide-in-from-bottom-2 duration-200">
           <button
             onClick={() => {
               const dims = [...selected].sort((a, b) => a - b).map((i) => dimensions[i]);

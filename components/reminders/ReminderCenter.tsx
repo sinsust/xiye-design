@@ -60,8 +60,8 @@ interface RuleSetting {
 }
 
 const PRIORITY_META: Record<NotificationPriority, { label: string; cls: string }> = {
-  high: { label: "高优先级", cls: "text-red-500" },
-  medium: { label: "中优先级", cls: "text-amber-500" },
+  high: { label: "高优先级", cls: "text-danger" },
+  medium: { label: "中优先级", cls: "text-warning" },
   low: { label: "低优先级", cls: "text-muted-foreground" },
 };
 
@@ -382,7 +382,7 @@ export function ReminderCenter({ onNavigate }: ReminderCenterProps) {
       >
         <Bell className="size-[18px]" />
         {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-danger-foreground">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
@@ -516,7 +516,7 @@ function NotificationRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-xs font-medium text-foreground">{n.title}</span>
-            {n.status === "new" && <span className="size-1.5 shrink-0 rounded-full bg-red-500" />}
+            {n.status === "new" && <span className="size-1.5 shrink-0 rounded-full bg-danger" />}
             <span className="ml-auto shrink-0 text-[10px] text-muted-foreground/70">{relTime(n.createdAt)}</span>
           </div>
           {n.detail && <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{n.detail}</div>}
@@ -524,7 +524,7 @@ function NotificationRow({
             {n.reason || `规则触发：${meta.label}`}
           </div>
           {n.status === "snoozed" && n.snoozedUntil != null && (
-            <div className="mt-0.5 text-[10px] text-amber-600">稍后至 {fmtDate(n.snoozedUntil)}</div>
+            <div className="mt-0.5 text-[10px] text-warning">稍后至 {fmtDate(n.snoozedUntil)}</div>
           )}
         </div>
       </button>
@@ -584,7 +584,7 @@ function NotificationList({
   if (!notifications.length) {
     return (
       <div className="flex flex-col items-center gap-1 p-6 text-center">
-        <Check className="size-5 text-emerald-500" />
+        <Check className="size-5 text-success" />
         <p className="text-xs text-muted-foreground">当前没有通知</p>
         {inQuiet && <p className="text-[10px] text-muted-foreground/70">免打扰时段内，仅展示不弹通知</p>}
       </div>
@@ -595,7 +595,7 @@ function NotificationList({
   return (
     <div className="max-h-[400px] overflow-y-auto">
       {inQuiet && (
-        <div className="mx-3 mt-2 rounded-md bg-amber-50 px-2 py-1 text-[10px] text-amber-700">
+        <div className="mx-3 mt-2 rounded-md bg-warning/10 px-2 py-1 text-[10px] text-warning">
           免打扰时段：不弹浏览器通知 · 每日上限 {dailyCap} 条
         </div>
       )}
@@ -770,7 +770,7 @@ function DecayList({
   if (!notes.length) {
     return (
       <div className="flex flex-col items-center gap-1 p-6 text-center">
-        <Check className="size-5 text-emerald-500" />
+        <Check className="size-5 text-success" />
         <p className="text-xs text-muted-foreground">知识库很健康，没有衰减笔记</p>
       </div>
     );

@@ -260,14 +260,14 @@ export default function GanttView({ openTask, onChanged }: GanttViewProps) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6 text-sm text-muted-foreground shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-sm">
         加载甘特图…
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
       {/* 顶部工具栏：缩放 + 未设置日期提示 */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-foreground">📊 甘特图</span>
@@ -300,7 +300,7 @@ export default function GanttView({ openTask, onChanged }: GanttViewProps) {
       ) : (
         <>
           {undatedCount > 0 && (
-            <div className="mb-3 rounded-lg border border-amber-300/50 bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
+            <div className="mb-3 rounded-lg border border-warning/30 bg-warning/10 px-3 py-1.5 text-[11px] text-warning dark:border-warning/30 dark:bg-warning/10 dark:text-warning">
               {undatedCount} 个任务未设置日期，不会显示在甘特图中。可在「任务看板」打开任务详情补充日期。
             </div>
           )}

@@ -87,7 +87,7 @@ export function RecoveryManager() {
           <ShieldAlert className="size-4" />
           恢复与运维
           {items.length > 0 && (
-            <span className="rounded-full bg-red-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-red-600">
+            <span className="rounded-full bg-danger/10 px-1.5 py-0.5 text-[11px] font-semibold text-danger">
               {items.length}
             </span>
           )}
@@ -123,7 +123,7 @@ export function RecoveryManager() {
                       </div>
                       {it.reason && <div className="mt-0.5 line-clamp-1 text-[10px] text-destructive">原因：{it.reason}</div>}
                       {!it.rolledBack && (it.pendingRecovery || it.written.noteId) && (
-                        <div className="mt-0.5 text-[10px] text-amber-600">⚠️ 存在未回滚的部分写入，可先补偿</div>
+                        <div className="mt-0.5 text-[10px] text-warning">⚠️ 存在未回滚的部分写入，可先补偿</div>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1">

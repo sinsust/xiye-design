@@ -103,6 +103,7 @@ export function ProjectIdentity() {
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            aria-label="项目名称"
             onKeyDown={(e) => {
               if (e.key === "Enter") commitEdit();
               if (e.key === "Escape") setEditing(false);
@@ -150,7 +151,7 @@ export function ProjectIdentity() {
           </button>
         </>
       )}
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && <span className="text-xs text-danger">{error}</span>}
     </div>
   );
 }

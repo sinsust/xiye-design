@@ -35,7 +35,7 @@ export function CombineSuggestionCard({
         </div>
         <button
           onClick={onDismiss}
-          className="flex size-5 items-center justify-center rounded-md text-muted-foreground transition hover:bg-white/60 hover:text-foreground"
+          className="flex size-5 items-center justify-center rounded-md text-muted-foreground transition hover:bg-background/60 hover:text-foreground"
           aria-label="关闭组合建议"
         >
           <X className="size-3.5" />
@@ -53,7 +53,7 @@ export function CombineSuggestionCard({
           return (
             <div
               key={i}
-              className="flex items-center gap-3 rounded-lg border border-border/70 bg-white px-3 py-2"
+              className="flex items-center gap-3 rounded-lg border border-border/70 bg-background px-3 py-2"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
@@ -64,8 +64,8 @@ export function CombineSuggestionCard({
                     className={
                       "rounded-full px-1.5 py-px text-[10px] font-medium " +
                       (s.confidence === "high"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-amber-100 text-amber-700")
+                        ? "bg-success/10 text-success"
+                        : "bg-warning/10 text-warning")
                     }
                   >
                     {s.confidence === "high" ? "强关联" : "可能可组合"}

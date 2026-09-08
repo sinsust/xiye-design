@@ -1887,7 +1887,7 @@ export function SecondBrain({
         </div>
       )}
       {imaSyncToast && (
-        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-emerald-600/20 bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-lg">
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-success/30 bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-lg">
           {imaSyncToast}
         </div>
       )}
@@ -2072,7 +2072,7 @@ export function SecondBrain({
               <Inbox className="size-4" />
               <span className="hidden sm:inline">收件箱</span>
               {inboxPending > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-danger-foreground">
                   {inboxPending > 99 ? "99+" : inboxPending}
                 </span>
               )}
@@ -2145,8 +2145,8 @@ export function SecondBrain({
                 <span className="text-sm font-semibold text-foreground">Obsidian 双向同步</span>
                 <span className="truncate text-[10px] text-muted-foreground">本地自托管 · 实时监听 + 手动兜底</span>
                 {obsidianEnabled && (
-                  <span className="ml-1 flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
-                    <span className="size-1.5 rounded-full bg-emerald-500" /> 监听中
+                  <span className="ml-1 flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                    <span className="size-1.5 rounded-full bg-success" /> 监听中
                   </span>
                 )}
                 <ChevronDown
@@ -2182,7 +2182,7 @@ export function SecondBrain({
                         }
                       >
                         <span
-                          className={"size-4 rounded-full bg-white shadow transition-transform " + (obsidianEnabled ? "translate-x-4" : "translate-x-0.5")}
+                          className={"size-4 rounded-full bg-background shadow transition-transform " + (obsidianEnabled ? "translate-x-4" : "translate-x-0.5")}
                         />
                       </button>
                       <span className="text-xs font-medium text-foreground">{obsidianEnabled ? "双向同步已开启" : "双向同步已关闭"}</span>
@@ -2210,11 +2210,11 @@ export function SecondBrain({
 
                   {/* 状态行 */}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-                    <span>状态：{obsidianEnabled ? <span className="text-emerald-600">监听中</span> : <span>已暂停</span>}</span>
+                    <span>状态：{obsidianEnabled ? <span className="text-success">监听中</span> : <span>已暂停</span>}</span>
                     <span>
                       上次同步：{obsidianLastSync ? relativeTime(new Date(obsidianLastSync).getTime()) : "从未"}
                     </span>
-                    {!obsidianVault.trim() && <span className="text-amber-600">未设置 vault 路径，无法同步</span>}
+                    {!obsidianVault.trim() && <span className="text-warning">未设置 vault 路径，无法同步</span>}
                   </div>
 
                   {obsidianMsg && (
@@ -2319,22 +2319,22 @@ export function SecondBrain({
 
             {/* 可恢复草稿（刷新/重登后回来续写） */}
             {recoverPlans.length > 0 && (
-              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-xs text-indigo-800">
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-info/30 bg-info/10 px-4 py-2.5 text-xs text-foreground">
                 <span className="font-medium">✉️ 有 {recoverPlans.length} 条待确认草稿</span>
-                <span className="text-indigo-500/80">（刷新或重新登录后仍可继续编辑确认）</span>
+                <span className="text-info/80">（刷新或重新登录后仍可继续编辑确认）</span>
                 <span className="ml-auto flex items-center gap-1.5">
                   {recoverPlans.slice(0, 3).map((p) => (
                     <button
                       key={p.id}
                       onClick={() => resumePending(p.id)}
                       disabled={resuming}
-                      className="rounded bg-card px-2 py-0.5 font-medium text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:opacity-60"
+                      className="rounded bg-card px-2 py-0.5 font-medium text-info shadow-sm transition hover:bg-info/20 disabled:opacity-60"
                       title={p.rawContent?.slice(0, 60)}
                     >
                       {resuming ? "恢复中…" : "继续编辑第 " + (recoverPlans.length > 1 ? recoverPlans.indexOf(p) + 1 : 1) + " 条"}
                     </button>
                   ))}
-                  {recoverPlans.length > 3 && <span className="text-indigo-500/70">+{recoverPlans.length - 3}</span>}
+                  {recoverPlans.length > 3 && <span className="text-info/70">+{recoverPlans.length - 3}</span>}
                 </span>
               </div>
             )}
@@ -2457,7 +2457,7 @@ export function SecondBrain({
                     <button
                       onClick={() => setBatchConfirmOpen(true)}
                       disabled={batchBusy || selectedIds.size === 0}
-                      className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                      className="rounded-[var(--radius)] border border-danger/30 bg-danger/10 px-2.5 py-1 text-xs text-danger transition hover:bg-danger/20 disabled:opacity-50"
                     >
                       {batchBusy ? "处理中…" : `删除 ${selectedIds.size}`}
                     </button>
@@ -2590,12 +2590,12 @@ export function SecondBrain({
                   采纳前可编辑
                 </span>
                 {wPlanAiUsed ? (
-                  <span className="rounded-[var(--radius)] bg-emerald-500/10 px-2 py-0.5 text-[11px] font-normal text-emerald-600">
+                  <span className="rounded-[var(--radius)] bg-success/10 px-2 py-0.5 text-[11px] font-normal text-success">
                     AI 模型整理
                   </span>
                 ) : (
                   <span
-                    className="rounded-[var(--radius)] bg-amber-500/10 px-2 py-0.5 text-[11px] font-normal text-amber-700"
+                    className="rounded-[var(--radius)] bg-warning/10 px-2 py-0.5 text-[11px] font-normal text-warning"
                     title="未配置 LLM_MODEL_*（API Key / Base URL / Model ID 三者齐备才走 AI），已用本地启发式整理，效果弱于 AI"
                   >
                     本地启发式整理
@@ -2609,14 +2609,14 @@ export function SecondBrain({
 
             {/* 整理失败提示 */}
             {organizeError && (
-              <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
+              <div className="border-b border-warning/30 bg-warning/10 px-5 py-2 text-xs text-warning">
                 整理结果未能保存为待确认计划 —— 你的改动仍在，可直接「采纳并入库」保存，或点左下「重新生成」重试。
               </div>
             )}
 
             {/* 近似重复提示 */}
             {dupWarning && (
-              <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
+              <div className="flex items-center gap-2 border-b border-warning/30 bg-warning/10 px-5 py-2 text-xs text-warning">
                 <span className="flex-1">
                   检测到与已有笔记「{dupWarning.title}」相似（{dupWarning.score}%），建议更新该笔记避免重复积累。
                 </span>
@@ -2629,13 +2629,13 @@ export function SecondBrain({
                       startEdit(n);
                     }
                   }}
-                  className="rounded bg-amber-600/10 px-2 py-0.5 font-medium text-amber-900 transition hover:bg-amber-600/20"
+                  className="rounded bg-warning/10 px-2 py-0.5 font-medium text-warning transition hover:bg-warning/10"
                 >
                   去更新
                 </button>
                 <button
                   onClick={() => setDupWarning(null)}
-                  className="rounded px-1.5 py-0.5 text-amber-700 transition hover:bg-amber-600/10 hover:text-amber-900"
+                  className="rounded px-1.5 py-0.5 text-warning transition hover:bg-warning/10 hover:text-warning"
                 >
                   忽略
                 </button>
@@ -2877,12 +2877,12 @@ export function SecondBrain({
             {/* 底栏操作 */}
             <div className="border-t border-border px-5 pt-3">
               {applyError && (
-                <div className="mb-2 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
+                <div className="mb-2 flex items-center gap-2 rounded-md border border-danger/30 bg-danger/10 px-2.5 py-1.5 text-xs text-danger">
                   <span className="flex-1">保存失败：{(applyError ?? "").slice(0, 160)} —— 你的修改仍在，可直接重试。</span>
                   <button
                     onClick={saveDraft}
                     disabled={saving}
-                    className="shrink-0 rounded bg-red-600 px-2 py-0.5 font-medium text-white transition hover:bg-red-700"
+                    className="shrink-0 rounded bg-danger px-2 py-0.5 font-medium text-danger-foreground transition hover:bg-danger/80"
                   >
                     重试保存
                   </button>

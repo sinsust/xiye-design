@@ -270,7 +270,7 @@ export function SearchPanel({
                     <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">{item.q}</span>
                     {item.semantic === false && (
                       <span
-                        className="shrink-0 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-normal text-amber-700"
+                        className="shrink-0 rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] font-normal text-warning"
                         title="语义向量未启用（未配置 EMBEDDING_ENABLED 或模型不可用），已用关键词匹配"
                       >
                         关键词匹配
@@ -293,7 +293,7 @@ export function SearchPanel({
                     >
                       {savedQa === i ? (
                         <>
-                          <Check className="size-3 text-emerald-500" />
+                          <Check className="size-3 text-success" />
                           已存
                         </>
                       ) : savingQa === i ? (
@@ -341,7 +341,7 @@ export function SearchPanel({
                     <div className="mt-1 flex flex-wrap items-center gap-1">
                       {item.sources.map((s, si) =>
                         s.source === "ima" ? (
-                          <span key={si} className="truncate rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] text-sky-600">{s.title} · ima</span>
+                          <span key={si} className="truncate rounded-full bg-info/10 px-1.5 py-0.5 text-[10px] text-info">{s.title} · ima</span>
                         ) : (
                           <button
                             key={si}

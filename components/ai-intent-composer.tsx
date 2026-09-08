@@ -177,7 +177,7 @@ export function AiIntentComposer({
             {source === "ai" ? "真实 AI" : "本地启发式"}
           </span>
           {!rec.matched && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+            <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
               类型未精确定位，已按工作台推断
             </span>
           )}
