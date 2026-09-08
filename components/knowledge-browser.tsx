@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useEffect, useState, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowUpRight,
@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { KNOWLEDGE_TYPE_META, type KnowledgeEntry } from "@/lib/knowledge-types";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
 
@@ -500,8 +501,8 @@ export function KnowledgeBrowser({
   // 编辑后覆盖式更新的条目（key = type/slug）
   const [patched, setPatched] = useState<Record<string, KnowledgeEntry>>({});
   const [deleted, setDeleted] = useState<Set<string>>(new Set());
-  const [confirmKey, setConfirmKey] = useState<string | null>(null);
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 待确认删除的条目（弹窗二次确认）；null 表示无待删
+  const [pendingDelete, setPendingDelete] = useState<KnowledgeEntry | null>(null);
   // 当前登录用户邮箱：云端共享条目仅「贡献人本人」可见编辑/删除
   const [myEmail, setMyEmail] = useState<string | null>(null);
   // 全局图谱展开态
@@ -526,13 +527,6 @@ export function KnowledgeBrowser({
 
   const keyOf = (e: KnowledgeEntry) => `${e.type}/${e.slug}`;
 
-  // 两步删除确认：首次点击进入「确认删除」态，2.5s 内再点才会真正删除
-  const askDelete = (key: string) => {
-    setConfirmKey(key);
-    if (confirmTimer.current) clearTimeout(confirmTimer.current);
-    confirmTimer.current = setTimeout(() => setConfirmKey(null), 2500);
-  };
-
   const doDelete = async (e: KnowledgeEntry) => {
     const key = keyOf(e);
     try {
@@ -545,16 +539,11 @@ export function KnowledgeBrowser({
       setExtra((prev) => prev.filter((x) => keyOf(x) !== key));
       if (open && keyOf(open) === key) setOpen(null);
     } finally {
-      setConfirmKey(null);
-      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+      setPendingDelete(null);
     }
   };
 
-  const onDeleteClick = (e: KnowledgeEntry) => {
-    const key = keyOf(e);
-    if (confirmKey === key) doDelete(e);
-    else askDelete(key);
-  };
+  const onDeleteClick = (e: KnowledgeEntry) => setPendingDelete(e);
 
   const onSaved = (e: KnowledgeEntry, mode: "add" | "edit") => {
     if (mode === "add") setExtra((prev) => [e, ...prev]);
@@ -753,16 +742,12 @@ export function KnowledgeBrowser({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={
-                        confirmKey === keyOf(e)
-                          ? "text-destructive"
-                          : "text-muted-foreground hover:text-destructive"
-                      }
+                      className="text-muted-foreground hover:text-destructive"
                       onClick={() => onDeleteClick(e)}
                       title="删除这条记录（云端共享条目将一并移除）"
                       aria-label="删除条目"
                     >
-                      {confirmKey === keyOf(e) ? "确认删除" : <Trash2 className="size-3.5" />}
+                      {<Trash2 className="size-3.5" />}
                     </Button>
                   </>
                 )}
@@ -810,16 +795,12 @@ export function KnowledgeBrowser({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={
-                          confirmKey === keyOf(open)
-                            ? "text-destructive"
-                            : "text-muted-foreground hover:text-destructive"
-                        }
+                        className="text-muted-foreground hover:text-destructive"
                         onClick={() => onDeleteClick(open)}
                         title="删除这条记录（云端共享条目将一并移除）"
                         aria-label="删除条目"
                       >
-                        {confirmKey === keyOf(open) ? "确认删除" : <Trash2 className="size-4" />}
+                        {<Trash2 className="size-4" />}
                       </Button>
                     </>
                   )}
@@ -960,6 +941,35 @@ export function KnowledgeBrowser({
           document.body,
         )}
 
+      {/* 删除确认弹窗（统一二次确认样式） */}
+      {pendingDelete && (
+        <ConfirmDialog
+          open
+          onClose={() => setPendingDelete(null)}
+          onConfirm={() => doDelete(pendingDelete)}
+          title={
+            <span className="flex items-center gap-2">
+              <Trash2 className="size-4 text-destructive" /> 删除这条记录？
+            </span>
+          }
+          body={
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
+                <p className="line-clamp-2 text-sm font-medium text-foreground">
+                  {pendingDelete.name}
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {KNOWLEDGE_TYPE_META.find((m) => m.id === pendingDelete.type)?.label ?? pendingDelete.type} ·{" "}
+                  {pendingDelete.slug}
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                该记录将一并从云端共享库移除，<span className="text-destructive">不可撤销</span>。
+              </p>
+            </div>
+          }
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, ArrowLeft, Trash2, Check, X, LayoutDashboard } from "lucide-react";
 import MilestoneView from "@/components/MilestoneView";
 import { ProjectWorkbench } from "@/components/brain/projects/ProjectWorkbench";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "@/components/ui/toast";
 
 type TaskStatus = "todo" | "in_progress" | "done";
@@ -173,9 +174,10 @@ export default function ProjectPanel({ openTask, onTasksChanged, initialProjectI
     }
   };
 
+  const [archiveConfirm, setArchiveConfirm] = useState(false);
+
   const archiveProject = async () => {
     if (!selectedId) return;
-    if (!window.confirm("归档该项目？关联任务将从项目中解绑（不删除任务）。")) return;
     setBusy(true);
     try {
       await fetch(`/api/brain/projects/${selectedId}`, { method: "DELETE" });
@@ -273,11 +275,33 @@ export default function ProjectPanel({ openTask, onTasksChanged, initialProjectI
                   {selected.daysRemaining < 0 ? `已逾期 ${-selected.daysRemaining} 天` : `剩余 ${selected.daysRemaining} 天`}
                 </span>
               )}
-              <button onClick={archiveProject} disabled={busy} className="ml-auto inline-flex items-center gap-1 rounded-md text-destructive transition hover:bg-destructive/10 px-1.5 py-0.5">
+              <button onClick={() => setArchiveConfirm(true)} disabled={busy} className="ml-auto inline-flex items-center gap-1 rounded-md text-destructive transition hover:bg-destructive/10 px-1.5 py-0.5">
                 <Trash2 className="size-3" /> 归档
               </button>
             </div>
           </div>
+
+          {/* 归档确认弹窗（统一二次确认样式） */}
+          <ConfirmDialog
+            open={archiveConfirm}
+            onClose={() => setArchiveConfirm(false)}
+            onConfirm={() => void archiveProject()}
+            title={
+              <span className="flex items-center gap-2 text-sm">
+                <Trash2 className="size-4 text-destructive" /> 归档这个项目？
+              </span>
+            }
+            body={
+              <div className="space-y-3">
+                <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
+                  <p className="line-clamp-2 text-sm font-medium text-foreground">{selected.name}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  归档后关联任务将从项目中解绑（<span className="text-foreground">不删除任务</span>）。
+                </p>
+              </div>
+            }
+          />
         </div>
 
         {/* 进度 + 任务 */}

@@ -195,11 +195,19 @@ if (isPg) {
     role text not null,
     name text not null,
     avatar_url text,
+    style_id text,
     created_at integer not null,
     updated_at integer not null,
     primary key (user_id, role),
     foreign key (user_id) references users(id) on delete cascade
   );`);
+  // 存量库补列：早期 agent_settings 建表缺 style_id，CREATE IF NOT EXISTS 不会为已存在表加列，
+  // 导致 PUT /api/agents 写 styleId 报 no such column。重复执行列已存在会抛错，故 try/catch 吞掉。
+  try {
+    sqlite.exec(`alter table agent_settings add column style_id text`);
+  } catch {
+    /* 列已存在则忽略 */
+  }
   // F1-A 流程操作幂等台账：同 (user, project, operationId, operationType) 只落一次。
   sqlite.exec(`create table if not exists flow_op_ledger (
     id text primary key,

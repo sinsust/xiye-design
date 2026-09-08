@@ -1,4 +1,3 @@
-import { ClipboardList, Check, RotateCcw, Trash2 } from "lucide-react";
 import {
   STRATEGY_COLOR,
   STRATEGY_LABEL,
@@ -6,6 +5,9 @@ import {
   nowDateStr,
   formatDueDate,
 } from "../brain-utils";
+import { useState } from "react";
+import { Trash2, ClipboardList, RotateCcw } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { BrainStrategy, BrainTask } from "@/lib/brain-db";
 
 export interface StrategiesTabProps {
@@ -15,8 +17,6 @@ export interface StrategiesTabProps {
   strategyTaskStats: Map<string, { total: number; done: number }>;
   tasks: BrainTask[];
   cycleStrategyStatus: (id: string) => Promise<void>;
-  confirmDeleteStrategy: string | null;
-  setConfirmDeleteStrategy: (value: string | null) => void;
   deleteStrategy: (id: string) => Promise<void>;
 }
 
@@ -27,10 +27,10 @@ export function StrategiesTab({
   strategyTaskStats,
   tasks,
   cycleStrategyStatus,
-  confirmDeleteStrategy,
-  setConfirmDeleteStrategy,
   deleteStrategy,
 }: StrategiesTabProps) {
+  // 待确认删除的策略（弹窗二次确认）
+  const [pendingDelete, setPendingDelete] = useState<BrainStrategy | null>(null);
   return (
     <div className="mt-3">
       {strategies.length === 0 ? (
@@ -80,20 +80,11 @@ export function StrategiesTab({
                       <RotateCcw className="size-3.5" />
                     </button>
                     <button
-                      onClick={() =>
-                        confirmDeleteStrategy === s.id
-                          ? deleteStrategy(s.id)
-                          : setConfirmDeleteStrategy(s.id)
-                      }
-                      title={confirmDeleteStrategy === s.id ? "确认删除" : "删除策略"}
-                      className={
-                        "rounded-[var(--radius)] p-1.5 transition " +
-                        (confirmDeleteStrategy === s.id
-                          ? "bg-destructive/10 text-destructive"
-                          : "text-muted-foreground hover:bg-destructive/10 hover:text-destructive")
-                      }
+                      onClick={() => setPendingDelete(s)}
+                      title="删除策略"
+                      className="rounded-[var(--radius)] p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
                     >
-                      {confirmDeleteStrategy === s.id ? <Check className="size-3.5" /> : <Trash2 className="size-3.5" />}
+                      <Trash2 className="size-3.5" />
                     </button>
                   </div>
                 </div>
@@ -136,6 +127,33 @@ export function StrategiesTab({
             );
           })}
         </div>
+      )}
+
+      {/* 删除策略确认弹窗（统一二次确认样式） */}
+      {pendingDelete && (
+        <ConfirmDialog
+          open
+          onClose={() => setPendingDelete(null)}
+          onConfirm={() => {
+            void deleteStrategy(pendingDelete.id);
+            setPendingDelete(null);
+          }}
+          title={
+            <span className="flex items-center gap-2 text-sm">
+              <Trash2 className="size-4 text-destructive" /> 删除这个策略？
+            </span>
+          }
+          body={
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
+                <p className="line-clamp-2 text-sm font-medium text-foreground">{pendingDelete.title}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                删除后关联任务仍会保留（其策略归属将被清空），<span className="text-destructive">该操作不可撤销</span>。
+              </p>
+            </div>
+          }
+        />
       )}
     </div>
   );

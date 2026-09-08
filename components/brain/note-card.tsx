@@ -14,6 +14,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CopyButton } from "@/components/ui/copy-button";
 import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 import { CuratePanel } from "@/components/brain/CuratePanel";
@@ -40,7 +41,6 @@ export function NoteCard({
   strategies,
   versions,
   expanded,
-  confirmDelete,
   copiedCode,
   onToggle,
   onEdit,
@@ -58,7 +58,6 @@ export function NoteCard({
   strategies: BrainStrategy[];
   versions: BrainNote[];
   expanded: boolean;
-  confirmDelete: boolean;
   copiedCode: string | null;
   onToggle: () => void;
   onEdit: () => void;
@@ -74,6 +73,8 @@ export function NoteCard({
   onSelectChange?: (id: string, checked: boolean) => void;
 }) {
   const openCount = tasks.filter((t) => t.status !== "done").length;
+  // 删除采用真正的二次确认弹窗（此前是“再点一次”的内联两段式，不像确认）
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // 本地版本切换：点圆点查看历史/其它版本内容；null 表示看最新（链首）
   const [viewVersion, setViewVersion] = useState<BrainNote | null>(null);
   // P2-3：标签默认只露前 3 个，点「+N」展开全量
@@ -171,20 +172,15 @@ export function NoteCard({
             <Pencil className="size-3.5" />
           </button>
           <button
-            className={
-              "rounded-[var(--radius)] p-1.5 transition " +
-              (confirmDelete
-                ? "bg-destructive/10 text-destructive"
-                : "text-muted-foreground hover:bg-destructive/10 hover:text-destructive")
-            }
+            className="rounded-[var(--radius)] p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
             onClick={(ev) => {
               ev.stopPropagation();
-              onDeletePress();
+              setConfirmOpen(true);
             }}
-            aria-label={confirmDelete ? "确认删除" : "删除"}
-            title={confirmDelete ? "再点一次确认删除" : "删除"}
+            aria-label="删除"
+            title="删除"
           >
-            {confirmDelete ? <Check className="size-3.5" /> : <Trash2 className="size-3.5" />}
+            <Trash2 className="size-3.5" />
           </button>
         </span>
       </div>
@@ -471,6 +467,34 @@ export function NoteCard({
           </Button>
         </div>
       )}
+
+      {/* 删除确认弹窗：真正的二次确认，明确展示将删除的内容与不可撤销提示 */}
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onDeletePress();
+        }}
+        title={
+          <span className="flex items-center gap-2">
+            <Trash2 className="size-4 text-destructive" /> 删除这条知识？
+          </span>
+        }
+        body={
+          <div className="space-y-3">
+            <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
+              <p className="line-clamp-2 text-sm font-medium text-foreground">{cur.title}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {cur.category || "随手记"} · {relativeTime(cur.createdAt)}
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              删除后该知识及其结构化拆解、关联会被移除，<span className="text-destructive">无法恢复</span>。
+            </p>
+          </div>
+        }
+      />
     </div>
   );
 }

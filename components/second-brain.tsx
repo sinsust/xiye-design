@@ -23,9 +23,11 @@ import {
   Target,
   ChevronDown,
   Network,
+  Trash2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { TableAnalysisPage } from "@/components/table/TableAnalysisPage";
 import { ImaImportModal } from "@/components/ImaImportModal";
@@ -181,8 +183,6 @@ export function SecondBrain({
   // 编辑弹窗正文预览/编辑切换
   const [editPreview, setEditPreview] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 任务看板
   const [tasks, setTasks] = useState<BrainTask[]>([]);
   const loadTasks = useCallback(async () => {
@@ -738,7 +738,6 @@ export function SecondBrain({
     return m;
   }, [tasks]);
   // 删除策略（关联任务 strategyId 置空，不删任务）
-  const [confirmDeleteStrategy, setConfirmDeleteStrategy] = useState<string | null>(null);
   const deleteStrategy = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/brain/strategies?id=${id}`, { method: "DELETE" });
@@ -749,7 +748,6 @@ export function SecondBrain({
     } catch {
       toast("策略删除失败", "error");
     }
-    setConfirmDeleteStrategy(null);
   }, [loadTasks]);
   // 看板过滤后的任务：全部 / 指定策略（对所有分组生效）
   const boardTasks = useMemo(() => {
@@ -1085,9 +1083,12 @@ export function SecondBrain({
     setSelectedIds(new Set());
   }, []);
 
-  const batchDelete = useCallback(async () => {
+  const [batchConfirmOpen, setBatchConfirmOpen] = useState(false);
+
+  // 批量删除：先弹统一二次确认，确认后再执行
+  const confirmBatchDelete = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`确认删除选中的 ${selectedIds.size} 条笔记？此操作不可撤销。`)) return;
+    setBatchConfirmOpen(false);
     setBatchBusy(true);
     try {
       await Promise.all(
@@ -1823,16 +1824,9 @@ export function SecondBrain({
     }
   };
 
-  const requestDelete = (id: string) => {
-    setConfirmDelete(id);
-    if (deleteTimer.current) clearTimeout(deleteTimer.current);
-    deleteTimer.current = setTimeout(() => setConfirmDelete(null), 2500);
-  };
-
   const doDelete = async (id: string) => {
     const res = await fetch(`/api/brain/notes?id=${id}`, { method: "DELETE" });
     if (res.ok) setNotes((prev) => prev.filter((n) => n.id !== id));
-    setConfirmDelete(null);
   };
 
   const graphEntries = useMemo(() => asGraphEntries(notes), [notes]);
@@ -2282,8 +2276,6 @@ export function SecondBrain({
                   strategyTaskStats={strategyTaskStats}
                   tasks={tasks}
                   cycleStrategyStatus={cycleStrategyStatus}
-                  confirmDeleteStrategy={confirmDeleteStrategy}
-                  setConfirmDeleteStrategy={setConfirmDeleteStrategy}
                   deleteStrategy={deleteStrategy}
                 />
               ) : workTab === "kanban" ? (
@@ -2463,7 +2455,7 @@ export function SecondBrain({
                       {batchBusy ? "处理中…" : "批量加标签"}
                     </button>
                     <button
-                      onClick={batchDelete}
+                      onClick={() => setBatchConfirmOpen(true)}
                       disabled={batchBusy || selectedIds.size === 0}
                       className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-2.5 py-1 text-xs text-red-600 transition hover:bg-red-100 disabled:opacity-50"
                     >
@@ -2472,6 +2464,30 @@ export function SecondBrain({
                   </span>
                 </div>
               )}
+
+              {/* 批量删除确认弹窗（统一二次确认样式） */}
+              <ConfirmDialog
+                open={batchConfirmOpen}
+                onClose={() => setBatchConfirmOpen(false)}
+                onConfirm={() => void confirmBatchDelete()}
+                title={
+                  <span className="flex items-center gap-2 text-sm">
+                    <Trash2 className="size-4 text-destructive" /> 删除选中的笔记？
+                  </span>
+                }
+                body={
+                  <div className="space-y-3">
+                    <p className="text-sm text-foreground">
+                      将删除当前选中的 <span className="font-semibold text-destructive">{selectedIds.size}</span> 条知识，
+                      包括各自的结构化拆解与关联。
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      此操作<span className="text-destructive">不可撤销</span>。
+                    </p>
+                  </div>
+                }
+                busy={batchBusy}
+              />
 
               <div className="px-5 pb-5 pt-3">
                 {notesHydrating ? (
@@ -2497,7 +2513,6 @@ export function SecondBrain({
                         strategies={strategiesByNote.get(n.id) ?? []}
                         versions={versionsByNote[n.id] ?? []}
                         expanded={expanded === n.id}
-                        confirmDelete={confirmDelete === n.id}
                         selectable={selectMode}
                         selected={selectedIds.has(n.id)}
                         onSelectChange={toggleSelect}
@@ -2519,9 +2534,7 @@ export function SecondBrain({
                           setExpanded(null);
                         }}
                         onEdit={() => startEdit(n)}
-                        onDeletePress={() =>
-                          confirmDelete === n.id ? doDelete(n.id) : requestDelete(n.id)
-                        }
+                        onDeletePress={() => doDelete(n.id)}
                         onToggleTask={(id, done) => toggleTaskDone(id, done)}
                         onUpgrade={() => {
                           setUpgradeTarget(n);

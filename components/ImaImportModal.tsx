@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { X, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { BrainNote } from "@/lib/brain-db";
 
 interface ImaHit {
@@ -35,6 +36,7 @@ export function ImaImportModal({
   const [loading, setLoading] = useState(false);
   const [importingId, setImportingId] = useState("");
   const [importError, setImportError] = useState("");
+  const [unbindOpen, setUnbindOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -138,11 +140,11 @@ export function ImaImportModal({
   }
 
   async function doUnbind() {
-    if (!confirm("确定解绑 ima 凭证？已导入第二大脑的条目仍会保留。")) return;
     await fetch("/api/account/ima", { method: "DELETE" });
     setBound(false);
     setKbs([]);
     setHits([]);
+    setUnbindOpen(false);
   }
 
   return (
@@ -221,7 +223,7 @@ export function ImaImportModal({
                   variant="ghost"
                   size="sm"
                   className="text-muted-foreground hover:text-destructive"
-                  onClick={doUnbind}
+                  onClick={() => setUnbindOpen(true)}
                 >
                   <Trash2 className="size-3.5" /> 解绑
                 </Button>
@@ -296,6 +298,23 @@ export function ImaImportModal({
           )}
         </div>
       </div>
+
+      {/* 解绑确认弹窗（统一二次确认样式） */}
+      <ConfirmDialog
+        open={unbindOpen}
+        onClose={() => setUnbindOpen(false)}
+        onConfirm={() => void doUnbind()}
+        title={
+          <span className="flex items-center gap-2 text-sm">
+            <Trash2 className="size-4 text-destructive" /> 解绑 ima 凭证？
+          </span>
+        }
+        description={
+          <p className="text-xs text-muted-foreground">
+            解绑后需要重新授权；已导入第二大脑的条目仍会保留。
+          </p>
+        }
+      />
     </div>
   );
 }

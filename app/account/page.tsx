@@ -608,6 +608,8 @@ function StylePickerSection() {
       <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
         {AGENT_STYLE_LIST.map((s) => {
           const active = s.id === style.id;
+          const checking = pending === s.id;
+          const highlighted = active || checking;
           return (
             <button
               key={s.id}
@@ -615,12 +617,12 @@ function StylePickerSection() {
               onClick={() => (active ? undefined : setPending(s.id))}
               className={[
                 "flex items-center gap-3 rounded-xl border p-3 text-left transition",
-                active
+                highlighted
                   ? "border-transparent ring-2 ring-offset-1"
                   : "border-border hover:border-primary/40",
               ].join(" ")}
               style={
-                active
+                highlighted
                   ? { boxShadow: `0 0 0 2px ${s.accent}`, backgroundColor: `${s.accent}0f` }
                   : undefined
               }
@@ -640,6 +642,14 @@ function StylePickerSection() {
                       style={{ backgroundColor: s.accent, color: "#fff" }}
                     >
                       使用中
+                    </span>
+                  )}
+                  {checking && (
+                    <span
+                      className="rounded-full border px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{ color: s.accent, borderColor: s.accent }}
+                    >
+                      待确认
                     </span>
                   )}
                 </span>

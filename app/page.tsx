@@ -503,12 +503,12 @@ function StyleCard({
   style,
   active,
   onSelect,
-  onTryOn,
+  onToggleTryOn,
 }: {
   style: VisualStyle;
   active: boolean;
   onSelect: (s: VisualStyle, rect?: DOMRect) => void;
-  onTryOn: (s: VisualStyle) => void;
+  onToggleTryOn: (s: VisualStyle) => void;
 }) {
   const p = style.palette;
   const ink = contrastText(p.accent);
@@ -561,12 +561,20 @@ function StyleCard({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onTryOn(style);
+              onToggleTryOn(style);
             }}
-            className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100"
-            style={{ background: `color-mix(in srgb, ${p.accent} 12%, transparent)`, color: ink }}
+            className={[
+              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-opacity",
+              "opacity-0 group-hover:opacity-100",
+              active ? "shadow-sm" : "",
+            ].join(" ")}
+            style={{
+              background: `color-mix(in srgb, ${p.accent} 12%, transparent)`,
+              color: ink,
+            }}
           >
-            整页试穿
+            {active ? <X className="size-3" /> : <Shirt className="size-3" />}
+            {active ? "退出试穿" : "整页试穿"}
           </button>
         </div>
       </div>
@@ -810,7 +818,8 @@ export default function Home() {
                   style={style}
                   active={tryOn?.id === style.id}
                   onSelect={(s, rect) => setActive({ style: s, rect })}
-                  onTryOn={setTryOn}
+                  // 卡片按钮为切换：当前卡片试穿中则点它退出，否则进入试穿
+                  onToggleTryOn={(s) => setTryOn(tryOn?.id === s.id ? null : s)}
                 />
               ))}
             </div>
@@ -826,14 +835,18 @@ export default function Home() {
           style={active.style}
           anchorRect={active.rect}
           onClose={() => setActive(null)}
-          onTryOn={setTryOn}
+          onTryOn={(s) => {
+            // 关闭当前弹窗再进入试穿，否则高层的弹窗遮罩会把底部退出胶囊盖住导致无法恢复
+            setActive(null);
+            setTryOn(s);
+          }}
           onApply={applyAndGo}
         />
       )}
 
-      {/* 试穿中的浮动胶囊 */}
+      {/* 试穿中的浮动胶囊（层级高于任何弹窗，保证随时可退出） */}
       {tryOn && (
-        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2">
+        <div className="fixed bottom-5 left-1/2 z-[70] -translate-x-1/2">
           <div
             className={[
               "flex items-center gap-2 rounded-full border px-2 py-1 shadow-lg backdrop-blur sm:gap-3 sm:px-3",
