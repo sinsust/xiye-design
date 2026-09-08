@@ -14,7 +14,7 @@ import {
   listBrainProjects,
   listBrainProcessingPlans,
   listBrainInboxItems,
-  listBrainNotes,
+  listBrainNoteMetas,
   listBrainNotifications,
   type BrainTask,
   type BrainProject,
@@ -30,6 +30,10 @@ import {
   type NotificationInput,
 } from "./brain-notification";
 import { genId } from "./id";
+import { getCached } from "@/lib/brain-cache";
+
+// P2.3：主动简报扫描的服务端缓存 TTL（5 分钟），与提醒同源策略（见 brain-reminder.ts）。
+const BRIEF_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // ---------------- 规则集中配置 ----------------
 
@@ -232,7 +236,7 @@ async function loadData(userId: string, now: number): Promise<CandidateData> {
     listBrainProjects(userId),
     listBrainProcessingPlans(userId, ["pending_confirmation"]),
     listBrainInboxItems(userId, "pending"),
-    listBrainNotes(userId),
+    listBrainNoteMetas(userId),
     listDueLearningReviews(userId, now),
   ]);
 
@@ -556,8 +560,10 @@ export async function getProactiveBrief(
   now = Date.now(),
 ): Promise<ProactiveBriefItem[]> {
   const { weekKey } = computeWeekBounds(now);
-  const [data, prefs, todayRows, recentKeys] = await Promise.all([
-    loadData(userId, now),
+  // P2.3：loadData 的多表全量扫描加 userId 级短 TTL 缓存（默认 5min），
+  // 避免主动简报每次挂载都重扫；buildCandidates 仍用实时 now 计算，保证时效。
+  const data = await getCached(`brief:${userId}`, BRIEF_CACHE_TTL_MS, () => loadData(userId, now));
+  const [prefs, todayRows, recentKeys] = await Promise.all([
     loadPreferences(userId, weekKey),
     listTodayState(userId, now),
     listRecentBriefKeys(userId, now),

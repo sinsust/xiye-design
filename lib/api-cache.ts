@@ -67,3 +67,15 @@ export async function cachedGetJson<T = unknown>(
   if (res.ok && data !== null) write(key, data, ttlMs);
   return data;
 }
+
+/** 同步读取会话缓存：首次渲染可直接用缓存初始化，避免“回到页面”先闪骨架。 */
+export function readCachedJsonSync<T = unknown>(url: string): T | null {
+  const key = `${scopeKey()}::${url}`;
+  return read<T>(key);
+}
+
+/** 数据变更后主动失效，避免下一轮读回 30s 内的旧快照。 */
+export function clearCachedJson(url: string): void {
+  const key = `${scopeKey()}::${url}`;
+  store.delete(key);
+}

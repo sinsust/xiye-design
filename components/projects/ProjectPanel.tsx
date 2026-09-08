@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus, ArrowLeft, Trash2, Check, X, LayoutDashboard } from "lucide-react";
 import MilestoneView from "@/components/MilestoneView";
 import { ProjectWorkbench } from "@/components/brain/projects/ProjectWorkbench";
+import { toast } from "@/components/ui/toast";
 
 type TaskStatus = "todo" | "in_progress" | "done";
 interface TaskLite {
@@ -136,15 +137,20 @@ export default function ProjectPanel({ openTask, onTasksChanged, initialProjectI
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description: nDesc, color: nColor, dueDate: nDue || null }),
       });
+      const d = await res.json().catch(() => null);
       if (res.ok) {
-        const d = await res.json();
         setShowNew(false);
         setNName(""); setNDesc(""); setNDue(""); setNColor(PALETTE[0]);
         await loadProjects();
         if (d?.project?.id) setSelectedId(d.project.id);
+        toast(`项目「${name}」已创建`, "success");
+      } else {
+        // 之前这里静默吞掉失败，导致「按创建无反应」无任何提示。
+        const msg = d?.error === "unauthorized" ? "登录已过期，请重新登录" : d?.message || `创建失败（${res.status}）`;
+        toast(msg, "error");
       }
     } catch {
-      /* 忽略 */
+      toast("网络异常，创建失败", "error");
     } finally {
       setBusy(false);
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BookmarkPlus,
   BookOpen,
@@ -27,6 +27,8 @@ interface TodayCard {
   noteTitle: string;
   noteCategory: string;
   nextTs: number;
+  noteSummary: string;
+  noteContentPreview: string;
 }
 interface RecentNoteMeta {
   id: string;
@@ -59,10 +61,41 @@ interface AskSource {
   relevance?: number;
 }
 
+/* ═══ 标签配色：系统标签固定色 + 自定义标签哈希确定性分配 ═══ */
+const TAG_PALETTE = [
+  { bg: "bg-blue-50/80", text: "text-blue-700", ring: "ring-blue-200/60" },   // 0 工作
+  { bg: "bg-amber-50/80", text: "text-amber-700", ring: "ring-amber-200/60" }, // 1 阅读
+  { bg: "bg-rose-50/80", text: "text-rose-600", ring: "ring-rose-200/60" },    // 2 随手记
+  { bg: "bg-slate-100/80", text: "text-slate-600", ring: "ring-slate-200/60" },// 3 文档
+  { bg: "bg-emerald-50/80", text: "text-emerald-700", ring: "ring-emerald-200/60" }, // 4 技术
+  { bg: "bg-violet-50/80", text: "text-violet-700", ring: "ring-violet-200/60" }, // 5 待办
+  { bg: "bg-purple-50/80", text: "text-purple-700", ring: "ring-purple-200/60" }, // 6 学习
+  { bg: "bg-cyan-50/80", text: "text-cyan-700", ring: "ring-cyan-200/60" },     // 7 灵感
+  { bg: "bg-teal-50/80", text: "text-teal-700", ring: "ring-teal-200/60" },     // 8 问答
+  { bg: "bg-orange-50/80", text: "text-orange-700", ring: "ring-orange-200/60" },// 9 自定义兜底
+] as const;
+
+const SYSTEM_TAG_MAP: Record<string, number> = {
+  工作: 0, 阅读读: 1, 阅读: 1, 随手记: 2, 文档: 3,
+  技术: 4, 待办: 5, 学习: 6, 灵感: 7, 问答: 8,
+};
+
+function tagStyle(tag: string): (typeof TAG_PALETTE)[number] {
+  const idx = SYSTEM_TAG_MAP[tag];
+  if (idx !== undefined) return TAG_PALETTE[idx];
+  // 哈希确定性：同一标签每次颜色一致
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = ((h << 5) - h + tag.charCodeAt(i)) | 0;
+  return TAG_PALETTE[Math.abs(h) % TAG_PALETTE.length];
+}
+
 export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }) {
   const [data, setData] = useState<TodayResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // 已有内容时二次刷新不清空整页：让最近记录/复习保持可见，等新响应回来再替换。
+  const dataRef = useRef<TodayResponse | null>(null);
+  const loadToken = useRef(0);
 
   // 顶部即时收录
   const [batchText, setBatchText] = useState("");
@@ -72,6 +105,13 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
 
   // 复习动作中
   const [busyReview, setBusyReview] = useState<string | null>(null);
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+  const toggleReview = (id: string) =>
+    setExpandedReviews((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   // 周摘要
   const [weeklyLoading, setWeeklyLoading] = useState(false);
@@ -89,23 +129,48 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
   // 笔记详情弹层
   const [openNote, setOpenNote] = useState<RecentNoteMeta | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async (silent = false) => {
+    const token = ++loadToken.current;
+    const hadData = dataRef.current !== null;
+    if (!hadData || !silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const res = await fetch("/api/brain/today");
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "加载今日空间失败");
+      if (token !== loadToken.current) return;
       setData(json as TodayResponse);
+      dataRef.current = json as TodayResponse;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "加载今日空间失败");
+      if (token !== loadToken.current) return;
+      if (!dataRef.current) setError(e instanceof Error ? e.message : "加载今日空间失败");
     } finally {
-      setLoading(false);
+      if (token !== loadToken.current) return;
+      if (!dataRef.current || !silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    load();
+    void load();
+  }, [load]);
+
+  // 从完整看板/抽屉操作回来时静默刷新，不整页闪骨架。
+  useEffect(() => {
+    const refresh = () => void load(true);
+    const onFocus = () => {
+      if (document.visibilityState === "visible") void load(true);
+    };
+    window.addEventListener("brain:today-refresh", refresh);
+    window.addEventListener("brain:dashboard-refresh", refresh);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      loadToken.current += 1;
+      window.removeEventListener("brain:today-refresh", refresh);
+      window.removeEventListener("brain:dashboard-refresh", refresh);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [load]);
 
   // —— 顶部即时收录：默认 auto-apply 入库（决策 15/16）——
@@ -132,7 +197,10 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
         : [];
       setReceipt((prev) => [...applied, ...prev].slice(0, 6));
       setBatchText("");
-      await load();
+      await load(true);
+      // AI 整理已转后台（保存优先，决策 15 v2）：延迟刷新两次拉取整理增强结果
+      setTimeout(() => { void load(true); }, 6000);
+      setTimeout(() => { void load(true); }, 15000);
     } catch (e) {
       setComposeError(e instanceof Error ? e.message : "收录失败");
     } finally {
@@ -154,7 +222,7 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
     setBusyReview(id);
     try {
       await fetch(`/api/brain/reviews?id=${encodeURIComponent(id)}&action=${action}`, { method: "POST" });
-      await load();
+      await load(true);
     } finally {
       setBusyReview(null);
     }
@@ -167,7 +235,7 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
-      await load();
+      await load(true);
     } finally {
       setBusyReview(null);
     }
@@ -182,7 +250,7 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ at: Date.now() }),
       });
-      await load();
+      await load(true);
     } finally {
       setWeeklyLoading(false);
     }
@@ -237,7 +305,7 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
       if (res.ok) {
         setSavedAsk(true);
         window.setTimeout(() => setSavedAsk(false), 2000);
-        await load();
+        await load(true);
       }
     } catch {
       /* 保存失败静默，用户可重试 */
@@ -312,7 +380,10 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
             {loading ? (
               <SkeletonRows rows={3} className="py-1" />
             ) : data && data.recentNotes.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">还没有记录，从上方「随手记」开始吧</p>
+              <div className="flex min-h-[180px] flex-col items-center justify-center py-6 text-center">
+                <BookOpen className="mb-2 size-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">还没有记录，从上方「随手记」开始吧</p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {data?.recentNotes.map((n) => (
@@ -340,11 +411,14 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
                       )}
                       {n.tags.length > 0 && (
                         <div className="mt-1 flex flex-wrap items-center gap-1">
-                          {n.tags.slice(0, 3).map((t) => (
-                            <span key={t} className="rounded bg-muted/60 px-1 py-px text-[10px] text-muted-foreground">
-                              #{t}
-                            </span>
-                          ))}
+                          {n.tags.slice(0, 3).map((t) => {
+                            const s = tagStyle(t);
+                            return (
+                              <span key={t} className={`rounded-md ${s.bg} px-1.5 py-px text-[10px] font-medium ring-1 ring-inset ${s.ring} ${s.text}`}>
+                                #{t}
+                              </span>
+                            );
+                          })}
                           {n.tags.length > 3 && (
                             <span className="text-[10px] text-muted-foreground">+{n.tags.length - 3}</span>
                           )}
@@ -376,20 +450,37 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
               <p className="py-4 text-center text-xs text-muted-foreground">今天没有待复习</p>
             ) : (
               <div className="space-y-2">
-                {data?.todayReviews.map((c) => (
-                  <div key={c.reviewId} className="rounded-lg border border-border bg-background px-3 py-2.5">
+                {data?.todayReviews.map((c) => {
+                  const accent = c.kind === "sm2" ? "border-l-sky-400" : "border-l-violet-400";
+                  const badge = c.kind === "sm2" ? "bg-sky-500/10 text-sky-600" : "bg-violet-500/10 text-violet-600";
+                  const preview = c.noteSummary || c.noteContentPreview;
+                  const expanded = expandedReviews.has(c.reviewId);
+                  return (
+                  <div key={c.reviewId} className={`rounded-lg border border-border border-l-2 ${accent} bg-background px-3 py-2.5`}>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={
-                          "rounded-full px-2 py-0.5 text-[11px] font-medium " +
-                          (c.kind === "sm2" ? "bg-sky-500/10 text-sky-600" : "bg-violet-500/10 text-violet-600")
-                        }
-                      >
+                      <span className={"rounded-full px-2 py-0.5 text-[11px] font-medium " + badge}>
                         {c.kind === "sm2" ? "间隔复习" : "学习复习"}
                       </span>
                       {c.noteCategory && <span className="text-[11px] text-muted-foreground">{c.noteCategory}</span>}
                     </div>
-                    <span className="mt-1 block truncate text-sm font-medium text-foreground">{c.noteTitle}</span>
+                    <span className="mt-1 block text-sm font-medium text-foreground">{c.noteTitle}</span>
+                    {/* 复习内容预览：让「复习的是啥」一目了然 */}
+                    {preview ? (
+                      <button
+                        onClick={() => toggleReview(c.reviewId)}
+                        className="mt-1.5 block w-full text-left"
+                      >
+                        <p className={"text-[11px] leading-relaxed text-muted-foreground " + (expanded ? "" : "line-clamp-2")}>
+                          {preview}
+                        </p>
+                        <span className="mt-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-primary">
+                          <BookOpen className="size-3" />
+                          {expanded ? "收起内容" : "查看复习内容"}
+                        </span>
+                      </button>
+                    ) : (
+                      <p className="mt-1.5 text-[11px] text-muted-foreground/60">该笔记暂无正文/摘要</p>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {c.kind === "sm2" ? (
                         <>
@@ -417,7 +508,8 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
@@ -527,10 +619,10 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
       {openNote && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenNote(null)}>
           <div
-            className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-2xl"
+            className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-3 flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-2 px-5 pt-5">
               <div>
                 {openNote.category && <span className="rounded-full bg-muted px-1.5 py-px text-[11px] text-muted-foreground">{openNote.category}</span>}
                 <h3 className="mt-1 text-base font-semibold text-foreground">{openNote.title}</h3>
@@ -540,12 +632,15 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
               </button>
             </div>
             {openNote.tags.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                {openNote.tags.map((t) => (
-                  <span key={t} className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
-                    {t}
-                  </span>
-                ))}
+              <div className="flex flex-wrap gap-1.5 px-5 pt-2">
+                {openNote.tags.map((t) => {
+                  const s = tagStyle(t);
+                  return (
+                    <span key={t} className={`rounded-full ${s.bg} px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${s.ring} ${s.text}`}>
+                      #{t}
+                    </span>
+                  );
+                })}
               </div>
             )}
             <NoteDetail note={openNote} />
@@ -558,12 +653,16 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
 
 // —— 详情弹层：原文 + AI 结构化整理 分层渲染 ——
 function StructList({ title, items }: { title: string; items: string[] }) {
-  if (!items.length) return null;
+  // 历史脏数据兜底：AI 曾把对象项误转成 "[object Object]" 字面量入库，这类伪文本过滤掉
+  const clean = items.filter(
+    (it) => it && !/^\[object (Object|Undefined)\]$/.test(it.trim()),
+  );
+  if (!clean.length) return null;
   return (
     <div>
       <div className="mb-1.5 text-xs font-medium text-foreground">{title}</div>
       <ul className="space-y-1">
-        {items.map((it, i) => (
+        {clean.map((it, i) => (
           <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-foreground/90">
             <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary/60" />
             <span className="flex-1">{it}</span>
@@ -585,6 +684,57 @@ function NoteDetail({ note }: { note: RecentNoteMeta }) {
     }
   }, [note.struct]);
 
+  // 有 AI 整理才展示 Tab 切换；否则只显示原文。
+  const [tab, setTab] = useState<"raw" | "ai">("raw");
+  const hasAi = !!struct;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {hasAi && (
+        <div className="mt-3 flex items-center justify-between border-b border-border bg-muted/30 px-5 py-2" role="tablist" aria-label="笔记查看模式">
+          <div className="inline-flex rounded-lg bg-muted/60 p-0.5">
+            {(["raw", "ai"] as const).map((key) => {
+              const active = tab === key;
+              const Icon = key === "raw" ? NotebookPen : Sparkles;
+              return (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(key)}
+                  className={
+                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition " +
+                    (active
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  <Icon className="size-3.5" />
+                  {key === "raw" ? "原文" : "AI 整理"}
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-[11px] text-muted-foreground">
+            {tab === "raw" ? "用户原始输入" : "AI 结构化整理"}
+          </span>
+        </div>
+      )}
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-5">
+        {tab === "raw" ? (
+          <RawView note={note} />
+        ) : struct ? (
+          <AiView struct={struct} />
+        ) : (
+          <p className="text-xs text-muted-foreground">该记录暂未生成结构化整理。</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RawView({ note }: { note: RecentNoteMeta }) {
   const copyRaw = async () => {
     try {
       await navigator.clipboard.writeText(note.content);
@@ -592,52 +742,55 @@ function NoteDetail({ note }: { note: RecentNoteMeta }) {
       /* 忽略：剪贴板不可用时静默 */
     }
   };
+  return (
+    <div className="space-y-3">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          完整原文
+        </span>
+        <button
+          onClick={copyRaw}
+          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition hover:text-foreground"
+          aria-label="复制原文"
+        >
+          <Copy className="size-3" /> 复制
+        </button>
+      </div>
+      <p className="whitespace-pre-wrap rounded-lg bg-muted/40 p-4 text-sm leading-relaxed text-foreground">
+        {note.content || "（原文为空）"}
+      </p>
+    </div>
+  );
+}
 
+function AiView({ struct }: { struct: OrganizedNote }) {
   return (
     <div className="space-y-4">
-      {/* 原文：用户当初的输入，完整保留 */}
-      <section>
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">原文</span>
-          <button
-            onClick={copyRaw}
-            className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition hover:text-foreground"
-            aria-label="复制原文"
-          >
-            <Copy className="size-3" /> 复制
-          </button>
-        </div>
-        <p className="whitespace-pre-wrap rounded-lg bg-muted/40 p-3 text-sm leading-relaxed text-foreground">
-          {note.content || "（原文为空）"}
-        </p>
-      </section>
-
-      {/* AI 整理：基于原文结构化抽离的结果 */}
-      {struct ? (
-        <section className="space-y-3 border-t border-border pt-3">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">AI 整理</span>
-          {struct.summary && <p className="text-sm leading-relaxed text-foreground/90">{struct.summary}</p>}
-          <StructList title="要点" items={struct.keyPoints?.map((k) => k.point) ?? []} />
-          <StructList title="灵感 / 联想" items={struct.insights ?? []} />
-          <StructList title="待探究" items={struct.openQuestions ?? []} />
-          {struct.problemDomains?.length ? (
-            <div>
-              <div className="mb-1.5 text-xs font-medium text-foreground">问题域</div>
-              <div className="space-y-2">
-                {struct.problemDomains.map((d, i) => (
-                  <div key={i} className="rounded-lg border border-border bg-background p-2.5">
-                    <div className="text-sm font-medium text-foreground">{d.domain}</div>
-                    {d.status && <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{d.status}</p>}
-                    {d.conclusion && <p className="mt-0.5 text-xs leading-relaxed text-foreground/90">{d.conclusion}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
+      {struct.summary && (
+        <section>
+          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            摘要
+          </div>
+          <p className="text-sm leading-relaxed text-foreground/90">{struct.summary}</p>
         </section>
-      ) : (
-        <p className="border-t border-border pt-3 text-xs text-muted-foreground">该记录暂未生成结构化整理。</p>
       )}
+      <StructList title="要点" items={struct.keyPoints?.map((k) => k.point) ?? []} />
+      <StructList title="灵感 / 联想" items={struct.insights ?? []} />
+      <StructList title="待探究" items={struct.openQuestions ?? []} />
+      {struct.problemDomains?.length ? (
+        <section>
+          <div className="mb-1.5 text-xs font-medium text-foreground">问题域</div>
+          <div className="space-y-2">
+            {struct.problemDomains.map((d, i) => (
+              <div key={i} className="rounded-lg border border-border bg-background p-3">
+                <div className="text-sm font-medium text-foreground">{d.domain}</div>
+                {d.status && <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{d.status}</p>}
+                {d.conclusion && <p className="mt-0.5 text-xs leading-relaxed text-foreground/90">{d.conclusion}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

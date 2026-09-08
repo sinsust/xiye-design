@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, FileText, Layers, ListTodo, Bell, FolderKanban, Sparkles } from "lucide-react";
 import { CopyButton } from "@/components/ui/copy-button";
+import { readBrainCache, writeBrainCache } from "@/lib/brain-client-cache";
 import type {
   ProvenanceViewModel,
   ProvenanceOutputNote,
@@ -67,19 +68,29 @@ export function ProvenancePanel({
       setView(null);
       return;
     }
-    setLoading(true);
-    setError("");
     const params = new URLSearchParams();
     if (anchor.noteId) params.set("noteId", anchor.noteId);
     if (anchor.taskId) params.set("taskId", anchor.taskId);
     if (anchor.reminderId) params.set("reminderId", anchor.reminderId);
     if (anchor.inboxId) params.set("inboxId", anchor.inboxId);
     if (anchor.planId) params.set("planId", anchor.planId);
+    const cacheKey = `prov:${params.toString()}`;
+    // 命中前端缓存（60s）直接渲染，避免重复昂贵查询
+    const cached = readBrainCache<ProvenanceViewModel>(cacheKey);
+    if (cached) {
+      setView(cached);
+      setError(cached.found ? "" : "未找到关联的来源或产出");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError("");
     fetch(`/api/brain/provenance?${params.toString()}`)
       .then((r) => r.json())
       .then((d) => {
         if (disposed) return;
         setView(d);
+        writeBrainCache(cacheKey, d);
         if (!d?.found) setError("未找到关联的来源或产出");
       })
       .catch(() => {

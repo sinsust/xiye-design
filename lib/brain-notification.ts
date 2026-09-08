@@ -298,6 +298,29 @@ export async function getNotificationCenter(
 }
 
 /**
+ * P3#3：只读拉取通知中心 —— 不触发任何扫描/写库，仅返回已生成的通知 + 未读 + 免打扰状态。
+ * 供 GET /api/brain/notifications 使用，把「扫描+写库」副作用从 GET 拆出（改由 POST {action:"scan"} 显式触发），
+ * 避免 GET 被浏览器/代理缓存语义污染。
+ */
+export async function getNotificationCenterReadonly(
+  userId: string,
+  now = Date.now(),
+): Promise<{
+  notifications: BrainNotification[];
+  unread: number;
+  inQuietHours: boolean;
+  today: string;
+  dailyCap: number;
+}> {
+  const notifications = await listBrainNotifications(userId, { limit: 50 });
+  const unread = await countUnreadBrainNotifications(userId);
+  const settings = await import("./brain-reminder").then((m) => m.getReminderSettings(userId));
+  const inQuietHours = isInQuietHours(settings.quietHoursStart, settings.quietHoursEnd, new Date(now));
+  const today = new Date(now).toISOString().slice(0, 10);
+  return { notifications, unread, inQuietHours, today, dailyCap: NOTIFICATION_DAILY_CAP };
+}
+
+/**
  * 通知动作（状态机）。严格隔离：非本人返回 null。
  *  - read    → status=read
  *  - unread  → status=new（撤消已读）

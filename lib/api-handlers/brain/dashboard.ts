@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import {
-  listBrainNotes,
+  listBrainNoteMetas,
   listBrainTasks,
   listBrainStrategies,
   listBrainProjects,
@@ -9,7 +9,6 @@ import {
   listBrainInboxItems,
   listBrainProcessingPlans,
   type BrainTask,
-  type BrainNote,
   type BrainStrategy,
   type BrainProject,
 } from "@/lib/brain-db";
@@ -51,7 +50,7 @@ export async function GET() {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const [notes, tasks, strategies, reviews, inbox, projects, plans] = await Promise.all([
-    listBrainNotes(user.sub),
+    listBrainNoteMetas(user.sub),
     listBrainTasks(user.sub),
     listBrainStrategies(user.sub),
     listPendingBrainReviews(user.sub),

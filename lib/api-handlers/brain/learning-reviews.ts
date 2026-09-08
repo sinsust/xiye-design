@@ -34,7 +34,10 @@ export async function GET(req: NextRequest) {
     const upcoming = all
       .filter((r) => r.status === "active" && r.nextReviewAt > now)
       .sort((a, b) => a.nextReviewAt - b.nextReviewAt);
-    return NextResponse.json({ due, upcoming });
+    return NextResponse.json(
+      { due, upcoming },
+      { headers: { "Cache-Control": "private, max-age=15" } },
+    );
   } catch (err) {
     console.error("learning reviews get failed:", err);
     return NextResponse.json({ error: "learning_reviews_failed" }, { status: 500 });

@@ -6,6 +6,7 @@ import {
   Brain,
   Check,
   Code2,
+  FileText,
   FileUp,
   FolderKanban,
   Home,
@@ -13,8 +14,10 @@ import {
   ListTodo,
   Loader2,
   PenLine,
+  RefreshCw,
   RotateCcw,
   Search,
+  SlidersHorizontal,
   Sparkles,
   Table2,
   Target,
@@ -23,12 +26,12 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SkeletonRows } from "@/components/ui/skeleton";
 import { TableAnalysisPage } from "@/components/table/TableAnalysisPage";
 import { ImaImportModal } from "@/components/ImaImportModal";
 import BatchImportModal from "@/components/BatchImportModal";
 import { MarkdownView } from "@/components/MarkdownView";
 import { ReminderCenter } from "@/components/reminders/ReminderCenter";
-import { TodayAssistantPanel } from "@/components/dashboard/TodayAssistantPanel";
 import { InboxDrawer } from "@/components/InboxDrawer";
 import TaskDetailDrawer from "@/components/tasks/TaskDetailDrawer";
 import ProjectPanel from "@/components/projects/ProjectPanel";
@@ -71,24 +74,70 @@ import {
   nowDateStr,
   inputCls,
 } from "./brain/brain-utils";
-import { cachedGetJson } from "@/lib/api-cache";
+import { cachedGetJson, clearCachedJson } from "@/lib/api-cache";
 import { LLMRouteBadge } from "@/components/LLMRouteBadge";
+import type { BrainDeepLink } from "@/components/brain/brain-home";
 
-export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
-  const [notes, setNotes] = useState<BrainNote[]>(initial);
+export function SecondBrain({
+  notes: initial,
+  initialDeepLink,
+}: {
+  notes?: BrainNote[];
+  initialDeepLink?: BrainDeepLink | null;
+}) {
+  // 无服务端预取时先显示加载态，避免“还没数据就显示空状态”的假空屏。
+  const [notes, setNotes] = useState<BrainNote[]>(initial ?? []);
+  const [notesHydrating, setNotesHydrating] = useState(() => initial == null);
+  // P2.1：全量笔记改为服务端游标分页，避免一次性返回全部导致响应膨胀
+  const NOTES_PAGE_SIZE = 50;
+  const [notesCursor, setNotesCursor] = useState<string | null>(null);
+  const [notesHasMore, setNotesHasMore] = useState(false);
+  const [notesLoadingMore, setNotesLoadingMore] = useState(false);
+  const [activeDeepLink, setActiveDeepLink] = useState<BrainDeepLink | null>(initialDeepLink ?? null);
 
-  // 看板新鲜度修复：进入看板时客户端重拉全量笔记，覆盖服务端预取快照，
-  // 使「今日空间」即时收录的新记录在看板立即可见（不再停留在页面加载时的旧快照）。
+  // P2.1：笔记改为服务端游标分页。挂载/刷新拉取首页（内联于下方 effect 与 refreshAll），
+  // 「加载更多」增量追加，避免一次性返回全量。
+  const loadMoreNotes = useCallback(async () => {
+    if (!notesCursor || notesLoadingMore) return;
+    setNotesLoadingMore(true);
+    try {
+      const res = await fetch(
+        `/api/brain/notes?limit=${NOTES_PAGE_SIZE}&cursor=${encodeURIComponent(notesCursor)}`,
+      );
+      if (!res.ok) return;
+      const json = await res.json();
+      if (Array.isArray(json.notes)) {
+        setNotes((prev) => [...prev, ...(json.notes as BrainNote[])]);
+        setNotesCursor(json.nextCursor ?? null);
+        setNotesHasMore(Boolean(json.hasMore));
+      }
+    } catch {
+      /* 加载失败保留现有列表 */
+    } finally {
+      setNotesLoadingMore(false);
+    }
+  }, [notesCursor, notesLoadingMore]);
+
+  // 完整看板首次挂载/深度链接进入时拉取首页笔记；今日空间新增记录由此保持一致。
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch("/api/brain/notes");
-        if (!res.ok) return;
+        const res = await fetch(`/api/brain/notes?limit=${NOTES_PAGE_SIZE}`);
+        if (!res.ok) {
+          if (alive) setNotesHydrating(false);
+          return;
+        }
         const json = await res.json();
-        if (alive && Array.isArray(json.notes)) setNotes(json.notes as BrainNote[]);
+        if (alive && Array.isArray(json.notes)) {
+          setNotes(json.notes as BrainNote[]);
+          setNotesCursor(json.nextCursor ?? null);
+          setNotesHasMore(Boolean(json.hasMore));
+          setNotesHydrating(false);
+        }
       } catch {
         /* 拉取失败则保留服务端快照 */
+        if (alive) setNotesHydrating(false);
       }
     })();
     return () => {
@@ -166,6 +215,48 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       toast("任务状态更新失败", "error");
     }
   }, [tasks]);
+  // —— 拖拽换状态 / 显式设任意状态：直接 PUT 目标 status（不循环），供看板拖拽与三态直达使用 ——
+  const setTaskStatus = useCallback(async (id: string, status: BrainTaskStatus) => {
+    try {
+      const res = await fetch(`/api/brain/tasks?id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.task) {
+        setTasks((prev) => prev.map((t) => (t.id === id ? data.task : t)));
+      } else {
+        toast("任务状态更新失败", "error");
+      }
+    } catch {
+      toast("任务状态更新失败", "error");
+    }
+  }, []);
+  // —— 指派 / 修改负责人：assignee 可传名字字符串，传 null 或空串表示取消分配 ——
+  const assignTask = useCallback(async (id: string, assignee: string | null) => {
+    try {
+      const res = await fetch(`/api/brain/tasks?id=${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignee: assignee && assignee.trim() ? assignee.trim() : null }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.task) {
+        setTasks((prev) => prev.map((t) => (t.id === id ? data.task : t)));
+        toast(assignee && assignee.trim() ? `负责人已设为 ${assignee.trim()}` : "已取消负责人", "success");
+      } else {
+        toast("负责人更新失败", "error");
+      }
+    } catch {
+      toast("负责人更新失败", "error");
+    }
+  }, []);
+  // 已出现的负责人（去重），供详情抽屉 / 看板指派做 datalist 建议
+  const assigneeOptions = useMemo(
+    () => [...new Set(tasks.map((t) => t.assignee?.trim()).filter(Boolean) as string[])],
+    [tasks],
+  );
   // 笔记卡片内直接勾选完成 / 取消完成
   const toggleTaskDone = useCallback(async (id: string, done: boolean) => {
     try {
@@ -320,14 +411,126 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
       /* 忽略 */
     }
   }, []);
+  // 代码片段收藏（本地持久，跨端同步需后端字段，当前事务池不支持 DDL 暂未加）
+  const FAV_KEY = "xiye:brain:snippet-favs";
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = window.localStorage.getItem(FAV_KEY);
+      return raw ? new Set<string>(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const toggleFavorite = useCallback((id: string) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        window.localStorage.setItem(FAV_KEY, JSON.stringify([...next]));
+      } catch {
+        /* 忽略 */
+      }
+      return next;
+    });
+  }, []);
+  const [showFavOnly, setShowFavOnly] = useState(false);
 
   // ---------- ima 自动增量同步（打开页面 >24h 触发后台同步） ----------
   const [imaSyncAuto, setImaSyncAuto] = useState(false);
   const [imaSyncToast, setImaSyncToast] = useState<string | null>(null);
+
+  // ---------- Obsidian 双向同步设置（本地自托管：实时 watch + 手动兜底） ----------
+  const [obsidianOpen, setObsidianOpen] = useState(false);
+  const [obsidianVault, setObsidianVault] = useState("");
+  const [obsidianEnabled, setObsidianEnabled] = useState(false);
+  const [obsidianLastSync, setObsidianLastSync] = useState<string | null>(null);
+  const [obsidianSaving, setObsidianSaving] = useState(false);
+  const [obsidianSyncing, setObsidianSyncing] = useState(false);
+  const [obsidianMsg, setObsidianMsg] = useState<string | null>(null);
+  const loadObsidianConfig = useCallback(async () => {
+    try {
+      const data = await cachedGetJson<{
+        config: { vaultPath: string; enabled: boolean; lastSyncedAt: string | null };
+      }>("/api/brain/obsidian/config");
+      if (data?.config) {
+        setObsidianVault(data.config.vaultPath ?? "");
+        setObsidianEnabled(Boolean(data.config.enabled));
+        setObsidianLastSync(data.config.lastSyncedAt ?? null);
+      }
+    } catch {
+      /* 忽略：未登录或网络异常时保留默认空态 */
+    }
+  }, []);
+  useEffect(() => {
+    loadObsidianConfig();
+  }, [loadObsidianConfig]);
+  const saveObsidianConfig = useCallback(async () => {
+    if (obsidianSaving) return;
+    setObsidianSaving(true);
+    setObsidianMsg(null);
+    try {
+      const res = await fetch("/api/brain/obsidian/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vaultPath: obsidianVault.trim(), enabled: obsidianEnabled }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) {
+        const detail = data?.detail ?? "";
+        setObsidianMsg(
+          data?.error === "vault_invalid"
+            ? `路径无效：${detail}`
+            : data?.error === "watch_failed"
+              ? `监听启动失败：${detail}`
+              : "保存失败，请重试"
+        );
+      } else {
+        setObsidianMsg(obsidianEnabled ? "已保存并开启实时监听" : "已保存（同步已暂停）");
+        loadObsidianConfig();
+      }
+    } catch {
+      setObsidianMsg("保存失败，请重试");
+    } finally {
+      setObsidianSaving(false);
+    }
+  }, [obsidianSaving, obsidianVault, obsidianEnabled, loadObsidianConfig]);
+  const manualObsidianSync = useCallback(async () => {
+    if (obsidianSyncing || !obsidianVault.trim()) return;
+    setObsidianSyncing(true);
+    setObsidianMsg(null);
+    try {
+      const res = await fetch("/api/brain/obsidian/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || data?.ok == null) {
+        const detail = data?.detail ?? data?.error ?? "";
+        setObsidianMsg(
+          data?.error === "unauthorized"
+            ? "请先登录后再同步"
+            : `同步失败：${detail || "请检查 vault 路径是否正确且目录存在"}`
+        );
+      } else {
+        setObsidianMsg(`同步完成：本次处理 ${data.processed ?? 0} 个文件`);
+        loadObsidianConfig();
+      }
+    } catch {
+      setObsidianMsg("同步失败，请检查 vault 路径是否正确");
+    } finally {
+      setObsidianSyncing(false);
+    }
+  }, [obsidianSyncing, obsidianVault, loadObsidianConfig]);
   const refreshAll = useCallback(async () => {
     try {
-      const data = await cachedGetJson<{ notes?: BrainNote[] }>("/api/brain/notes");
-      if (Array.isArray(data.notes)) setNotes(data.notes);
+      const res = await fetch(`/api/brain/notes?limit=${NOTES_PAGE_SIZE}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.notes)) {
+          setNotes(json.notes as BrainNote[]);
+          setNotesCursor(json.nextCursor ?? null);
+          setNotesHasMore(Boolean(json.hasMore));
+        }
+      }
     } catch {
       toast("笔记加载失败", "error");
     }
@@ -418,17 +621,38 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
 
   // ---------- 版本演化 ----------
   const [versionsByNote, setVersionsByNote] = useState<Record<string, BrainNote[]>>({});
-  const loadVersions = useCallback(async (noteId: string) => {
-    try {
-      const res = await fetch(`/api/brain/notes/${noteId}/versions`);
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.versions)) {
-        setVersionsByNote((prev) => ({ ...prev, [noteId]: data.versions }));
+  // 版本回溯直接基于已在手的所有笔记内存组链，不再每次请求后端全库：
+  // 笔记列表本就包含全部版本，点击圆点应立即看到旧版标题/摘要/原文。
+  const loadVersions = useCallback(
+    (noteId: string) => {
+      const byId = new Map(notes.map((n) => [n.id, n]));
+      let cur = byId.get(noteId) ?? null;
+      if (!cur) return;
+      // 先回到初版，再从初版沿 parentId 一路取到最新，保证从任意一张旧卡进入都能看到完整时间线。
+      while (cur.parentId) {
+        const parent = byId.get(cur.parentId);
+        if (!parent) break;
+        cur = parent;
       }
-    } catch {
-      /* 忽略 */
-    }
-  }, []);
+      const childrenByParent = new Map<string, BrainNote[]>();
+      for (const n of notes) {
+        if (!n.parentId) continue;
+        const arr = childrenByParent.get(n.parentId) ?? [];
+        arr.push(n);
+        childrenByParent.set(n.parentId, arr);
+      }
+      const chain: BrainNote[] = [];
+      const seen = new Set<string>();
+      while (cur && !seen.has(cur.id)) {
+        seen.add(cur.id);
+        chain.push(cur);
+        const next: BrainNote | undefined = (childrenByParent.get(cur.id) ?? []).sort((a, b) => a.version - b.version)[0];
+        cur = next ?? null;
+      }
+      if (chain.length) setVersionsByNote((prev) => ({ ...prev, [noteId]: chain }));
+    },
+    [notes],
+  );
   const [upgradeTarget, setUpgradeTarget] = useState<BrainNote | null>(null);
   const [upgradeTitle, setUpgradeTitle] = useState("");
   const [upgradeContent, setUpgradeContent] = useState("");
@@ -668,6 +892,27 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [batchBusy, setBatchBusy] = useState(false);
   // 大脑工作台二级 Tab（记一笔 / 任务看板）
   const [workTab, setWorkTab] = useState<"input" | "ask" | "kanban" | "strategies" | "snippets" | "projects" | "table" | "review">("input");
+  // P1-3：高级工具折叠（任务/项目/策略/片段/数据引擎/复盘收纳进下拉，首页默认只留 首页/记一笔）
+  const [advOpen, setAdvOpen] = useState(false);
+  const advRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!advOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (advRef.current && !advRef.current.contains(e.target as Node)) setAdvOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [advOpen]);
+
+  // P1-3：收纳进折叠「高级工具」的二级工具（首页常显仅留 首页/记一笔）
+  const ADV_TOOL_TABS = [
+    { v: "kanban" as const, label: "任务看板", icon: ListTodo },
+    { v: "projects" as const, label: "项目", icon: FolderKanban },
+    { v: "strategies" as const, label: "策略", icon: Target },
+    { v: "snippets" as const, label: "代码片段", icon: Code2 },
+    { v: "table" as const, label: "数据引擎", icon: Table2 },
+    { v: "review" as const, label: "复盘", icon: RotateCcw },
+  ];
   // 最近活跃流是否全部展开
   const [activityShowAll, setActivityShowAll] = useState(false);
   // —— 第九阶段：顶层视图（首页=今日助理面板 / 工作台）+ 收件箱抽屉 ——
@@ -679,13 +924,45 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   const [kanbanGroup, setKanbanGroup] = useState<"status" | "project" | "milestone" | "assignee" | "strategy">("status");
   const [kanbanView, setKanbanView] = useState<"board" | "gantt">("board");
   const [projects, setProjects] = useState<{ id: string; name: string; color: string }[]>([]);
+
+  // 深度链接处理：从「今天值得关注」的打开任务/查看项目等按钮跳转过来时，
+  // 自动切到对应 tab 并打开目标对象（仅首次挂载时生效）。
+  useEffect(() => {
+    if (!activeDeepLink) return;
+    const dl = activeDeepLink;
+    switch (dl.type) {
+      case "task":
+        setTopView("workbench");
+        setWorkTab("kanban");
+        setDetailTaskId(dl.id);
+        break;
+      case "project":
+        setTopView("workbench");
+        setWorkTab("projects");
+        break;
+      case "plan":
+        setTopView("workbench");
+        setWorkTab("input");
+        break;
+      case "note":
+        setTopView("dashboard"); /* 笔记在首页知识概览区域展示，暂无单笔记详情路由 */
+        break;
+      case "review":
+        setTopView("workbench");
+        setWorkTab("review");
+        break;
+    }
+    setActiveDeepLink(null); /* 消费完毕,避免重复触发 */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // —— 第十一阶段：每日助理点项目卡片 → 跳转项目详情 ——
   const [openProjectId, setOpenProjectId] = useState<string | null>(null);
   const loadProjects = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/projects");
-      const data = await res.json();
-      if (res.ok && Array.isArray(data.projects)) {
+      const data = await cachedGetJson<{ projects?: { id: string; name: string; color: string }[] }>(
+        "/api/brain/projects",
+      );
+      if (Array.isArray(data.projects)) {
         setProjects(data.projects.map((p: { id: string; name: string; color: string }) => ({ id: p.id, name: p.name, color: p.color })));
       }
     } catch {
@@ -695,12 +972,6 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
-  // 监听复习/任务变更 → 刷新面板
-  useEffect(() => {
-    const h = () => window.dispatchEvent(new Event("brain:data-changed"));
-    window.addEventListener("brain:dashboard-refresh", h);
-    return () => window.removeEventListener("brain:dashboard-refresh", h);
-  }, []);
   // 顶部视图切换：切到工作台时找到对应二级 Tab，否则回记一笔
   const gotoTop = (v: "dashboard" | "workbench", tab?: typeof workTab) => {
     if (v === "workbench" && tab) setWorkTab(tab);
@@ -787,10 +1058,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   }, [deferredSearch, notes, tasks, strategies, snippetFiltered]);
 
   const filteredNotes = useMemo(() => {
+    // P3#2：主列表只展示有效（非归档）笔记版本，避免同一知识多版本重复计数卡
+    const active = notes.filter((n) => !n.superseded);
     const bySource =
       sourceFilter === "all"
-        ? notes
-        : notes.filter((n) => (n.source === "ima" ? "ima" : "manual") === sourceFilter);
+        ? active
+        : active.filter((n) => (n.source === "ima" ? "ima" : "manual") === sourceFilter);
     const byCategory =
       listFilter === "全部" ? bySource : bySource.filter((n) => (n.category || "随手记") === listFilter);
     // P2-3：标签过滤（点击笔记卡上的 #标签 触发）
@@ -1025,6 +1298,47 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
     }
   };
 
+  /** 直接入库（保存优先）：原文毫秒级落库立即返回，AI 整理转后台回写增强，不等「整理中」 */
+  const quickSave = async () => {
+    const t = text.trim();
+    if (!t) return;
+    setOrganizing(true);
+    setApplyError(null);
+    try {
+      const res = await fetch("/api/brain/inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ rawContent: t }], autoApply: true }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.items?.[0]?.noteId) throw new Error(data?.error || "save_failed");
+      setText("");
+      setRaw("");
+      setWorkspaceOpen(false);
+      toast("已收录，AI 整理在后台进行", "success");
+      // 延迟刷新两次拉取后台整理结果（绕过 30s GET 缓存，直接请求首页分页）
+      for (const delay of [8000, 18000]) {
+        setTimeout(() => {
+          void fetch(`/api/brain/notes?limit=${NOTES_PAGE_SIZE}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => {
+              if (Array.isArray(d?.notes)) {
+                setNotes(d.notes as BrainNote[]);
+                setNotesCursor(d.nextCursor ?? null);
+                setNotesHasMore(Boolean(d.hasMore));
+              }
+            })
+            .catch(() => {});
+          loadTasks();
+        }, delay);
+      }
+    } catch {
+      toast("入库失败，请重试", "error");
+    } finally {
+      setOrganizing(false);
+    }
+  };
+
   /** 把草稿写入工作台表单并打开 */
   const fillDraft = (d: OrganizedDraft) => {
     setWTitle(d.title || d.summary.slice(0, 30));
@@ -1170,6 +1484,28 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
   useEffect(() => {
     refreshPendingPlans();
   }, [refreshPendingPlans]);
+
+  // 从今日空间/抽屉变更后回来时，先失效 30s 内存缓存再静默刷新，避免旧快照残留。
+  useEffect(() => {
+    const refresh = () => {
+      for (const url of [
+        "/api/brain/notes",
+        "/api/brain/tasks",
+        "/api/brain/strategies",
+        "/api/brain/snippets",
+        "/api/brain/reviews",
+        "/api/brain/plans",
+        "/api/brain/projects",
+      ]) {
+        clearCachedJson(url);
+      }
+      void refreshAll();
+      void loadProjects();
+      void refreshPendingPlans();
+    };
+    window.addEventListener("brain:dashboard-refresh", refresh);
+    return () => window.removeEventListener("brain:dashboard-refresh", refresh);
+  }, [loadProjects, refreshAll, refreshPendingPlans]);
 
   // P5-A：从产品流程「沉淀到第二大脑」跳转进来（/brain?tab=workbench&plan=<id>），自动续写该待确认计划
   useEffect(() => {
@@ -1541,6 +1877,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
         taskId={detailTaskId}
         onClose={() => setDetailTaskId(null)}
         onChanged={loadTasks}
+        assigneeOptions={assigneeOptions}
         onOpenPlanPreview={(planId, planBody) => {
           // new_issue 结果 → 调起既有 StructPreview 确认待确认处理计划
           setDetailTaskId(null);
@@ -1615,17 +1952,12 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
           </span>
         </div>
 
-        {/* 顶部导航：首页（默认）/ 知识沉淀 / 任务看板 / 策略 / 代码片段 + 收件箱 */}
+        {/* 顶部导航：常显 首页 / 记一笔；高级工具收纳进折叠「高级工具 ▾」 */}
         <div className="mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border/60 bg-card/70 px-2 py-1.5 shadow-lg shadow-primary/5 backdrop-blur-md">
+          {/* 常显入口：首页 / 记一笔 */}
           {[
             { v: "dashboard" as const, label: "首页", icon: Home },
             { v: "input" as const, label: "记一笔", icon: PenLine },
-            { v: "kanban" as const, label: "任务看板", icon: ListTodo },
-            { v: "projects" as const, label: "项目", icon: FolderKanban },
-            { v: "strategies" as const, label: "策略", icon: Target },
-            { v: "snippets" as const, label: "代码片段", icon: Code2 },
-            { v: "table" as const, label: "数据引擎", icon: Table2 },
-            { v: "review" as const, label: "复盘", icon: RotateCcw },
           ].map((i) => {
             const active = topView === "dashboard" ? i.v === "dashboard" : i.v === workTab;
             return (
@@ -1644,24 +1976,67 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 )}
                 <i.icon className="size-4" />
                 <span className="hidden sm:inline">{i.label}</span>
-                {i.v === "kanban" && taskCounts.todo + taskCounts.in_progress > 0 && (
-                  <span className="rounded-full bg-gradient-to-r from-primary to-primary/80 px-1.5 py-px text-[10px] font-semibold text-primary-foreground shadow-sm">
-                    {taskCounts.todo + taskCounts.in_progress}
-                  </span>
-                )}
-                {i.v === "strategies" && strategies.length > 0 && (
-                  <span className="rounded-full bg-gradient-to-r from-primary to-primary/80 px-1.5 py-px text-[10px] font-semibold text-primary-foreground shadow-sm">
-                    {strategies.length}
-                  </span>
-                )}
-                {i.v === "snippets" && snippetFiltered.length > 0 && (
-                  <span className="rounded-full bg-gradient-to-r from-primary to-primary/80 px-1.5 py-px text-[10px] font-semibold text-primary-foreground shadow-sm">
-                    {snippetFiltered.length}
-                  </span>
-                )}
               </button>
             );
           })}
+
+          {/* 高级工具折叠 */}
+          <div ref={advRef} className="relative">
+            <button
+              onClick={() => setAdvOpen((v) => !v)}
+              className={
+                "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition " +
+                (ADV_TOOL_TABS.some((t) => t.v === workTab)
+                  ? "text-primary"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground")
+              }
+            >
+              {ADV_TOOL_TABS.some((t) => t.v === workTab) && (
+                <span className="absolute inset-0 -z-10 rounded-lg bg-gradient-to-r from-primary/14 to-primary/6 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_30%,transparent)]" />
+              )}
+              <SlidersHorizontal className="size-4" />
+              <span className="hidden sm:inline">高级工具</span>
+              <ChevronDown className={"size-3.5 transition " + (advOpen ? "rotate-180" : "")} />
+            </button>
+            {advOpen && (
+              <div className="absolute left-0 top-full z-30 mt-1 w-44 rounded-xl border border-border/60 bg-popover p-1 shadow-xl">
+                {ADV_TOOL_TABS.map((i) => {
+                  const active = i.v === workTab;
+                  return (
+                    <button
+                      key={i.v}
+                      onClick={() => {
+                        setAdvOpen(false);
+                        gotoTop("workbench", i.v);
+                      }}
+                      className={
+                        "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium transition " +
+                        (active ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted/70")
+                      }
+                    >
+                      <i.icon className="size-4" />
+                      <span>{i.label}</span>
+                      {i.v === "kanban" && taskCounts.todo + taskCounts.in_progress > 0 && (
+                        <span className="ml-auto rounded-full bg-gradient-to-r from-primary to-primary/80 px-1.5 py-px text-[10px] font-semibold text-primary-foreground shadow-sm">
+                          {taskCounts.todo + taskCounts.in_progress}
+                        </span>
+                      )}
+                      {i.v === "strategies" && strategies.length > 0 && (
+                        <span className="ml-auto rounded-full bg-gradient-to-r from-primary to-primary/80 px-1.5 py-px text-[10px] font-semibold text-primary-foreground shadow-sm">
+                          {strategies.length}
+                        </span>
+                      )}
+                      {i.v === "snippets" && snippets.length > 0 && (
+                        <span className="ml-auto rounded-full bg-gradient-to-r from-primary to-primary/80 px-1.5 py-px text-[10px] font-semibold text-primary-foreground shadow-sm">
+                          {snippets.length}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
           <div className="ml-auto flex items-center gap-2">
             <div ref={searchWrapRef} className="relative">
               <button
@@ -1713,27 +2088,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
 
         {topView === "dashboard" ? (
           <div key="view-dashboard" className="animate-in fade-in duration-200 ease-out">
-            <TodayAssistantPanel
-              quickBusy={organizing}
-              onQuickOrganize={(content) => {
-                gotoTop("workbench", "input");
-                organize(content);
-              }}
-              onOpenTask={(id) => {
-                setDetailTaskId(id);
-                gotoTop("workbench", "kanban");
-              }}
-              onConfirmPlan={resumePending}
-              onOpenProject={(id) => {
-                setOpenProjectId(id);
-                gotoTop("workbench", "projects");
-              }}
-              onOpenNote={(id) => {
-                gotoTop("workbench", "input");
-                jumpToNote(id);
-              }}
-              onProcessInbox={() => setInboxOpen(true)}
-            />
+            {/* P1-1：完整看板首页不再复刻「今日」入口（问候/简报/优先/待确认/复习），今日空间为唯一轻量入口；重活进顶部「高级工具 ▾」 */}
             <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <button
                 type="button"
@@ -1783,6 +2138,102 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                 />
               )}
             </div>
+
+            {/* ============ Obsidian 双向同步设置 ============ */}
+            <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <button
+                type="button"
+                onClick={() => setObsidianOpen((v) => !v)}
+                className="flex w-full items-center gap-2 px-5 py-3.5 text-left transition hover:bg-muted/30"
+                aria-expanded={obsidianOpen}
+              >
+                <FileText className="size-4 shrink-0 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Obsidian 双向同步</span>
+                <span className="truncate text-[10px] text-muted-foreground">本地自托管 · 实时监听 + 手动兜底</span>
+                {obsidianEnabled && (
+                  <span className="ml-1 flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+                    <span className="size-1.5 rounded-full bg-emerald-500" /> 监听中
+                  </span>
+                )}
+                <ChevronDown
+                  className={"ml-auto size-4 shrink-0 text-muted-foreground transition-transform " + (obsidianOpen ? "" : "-rotate-90")}
+                />
+              </button>
+              {obsidianOpen && (
+                <div className="space-y-4 px-5 pb-5 pt-1">
+                  {/* Vault 路径输入 */}
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vault 路径</label>
+                    <input
+                      value={obsidianVault}
+                      onChange={(ev) => setObsidianVault(ev.target.value)}
+                      placeholder="例如 /Users/you/Documents/obsidian-vault"
+                      className={inputCls + " mt-1.5 font-mono text-xs"}
+                    />
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      本地 Obsidian 仓库的绝对路径，xiye 会在其中读写 .md 笔记（文件名 = 标题 + 短 id）。
+                    </p>
+                  </div>
+
+                  {/* 总开关 + 保存 + 立即同步 */}
+                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        role="switch"
+                        aria-checked={obsidianEnabled}
+                        onClick={() => setObsidianEnabled((v) => !v)}
+                        className={
+                          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition " +
+                          (obsidianEnabled ? "bg-primary" : "bg-muted-foreground/30")
+                        }
+                      >
+                        <span
+                          className={"size-4 rounded-full bg-white shadow transition-transform " + (obsidianEnabled ? "translate-x-4" : "translate-x-0.5")}
+                        />
+                      </button>
+                      <span className="text-xs font-medium text-foreground">{obsidianEnabled ? "双向同步已开启" : "双向同步已关闭"}</span>
+                    </div>
+
+                    <button
+                      onClick={manualObsidianSync}
+                      disabled={obsidianSyncing || !obsidianVault.trim()}
+                      className="ml-auto inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+                      title={obsidianVault.trim() ? "扫描 vault 中全部 .md 并入库" : "请先填写 vault 路径"}
+                    >
+                      {obsidianSyncing ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+                      {obsidianSyncing ? "同步中…" : "立即同步"}
+                    </button>
+
+                    <button
+                      onClick={saveObsidianConfig}
+                      disabled={obsidianSaving}
+                      className="inline-flex items-center gap-1.5 rounded-[var(--radius)] bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                    >
+                      {obsidianSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                      {obsidianSaving ? "保存中…" : "保存设置"}
+                    </button>
+                  </div>
+
+                  {/* 状态行 */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                    <span>状态：{obsidianEnabled ? <span className="text-emerald-600">监听中</span> : <span>已暂停</span>}</span>
+                    <span>
+                      上次同步：{obsidianLastSync ? relativeTime(new Date(obsidianLastSync).getTime()) : "从未"}
+                    </span>
+                    {!obsidianVault.trim() && <span className="text-amber-600">未设置 vault 路径，无法同步</span>}
+                  </div>
+
+                  {obsidianMsg && (
+                    <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-foreground">{obsidianMsg}</div>
+                  )}
+
+                  <p className="text-[10px] leading-relaxed text-muted-foreground">
+                    冲突策略：最后写入优先。xiye 新建 / 编辑笔记会自动写回 .md；在 Obsidian 中改 .md 也会被实时捕获回 xiye。关联笔记以{" "}
+                    <code className="rounded bg-muted px-1">[[wikilink]]</code> 双向转换。
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         ) : workTab === "projects" ? (
           <div key="view-projects" className="animate-in fade-in duration-200 ease-out">
@@ -1808,15 +2259,20 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
 {workTab === "snippets" ? (
                 <SnippetsTab
+                  snippets={snippets}
                   snippetLang={snippetLang}
                   setSnippetLang={setSnippetLang}
                   snippetQuery={snippetQuery}
                   setSnippetQuery={setSnippetQuery}
-                  snippetFiltered={snippetFiltered}
+                  favoriteIds={favoriteIds}
+                  toggleFavorite={toggleFavorite}
+                  showFavOnly={showFavOnly}
+                  setShowFavOnly={setShowFavOnly}
                   expandedSnippet={expandedSnippet}
                   setExpandedSnippet={setExpandedSnippet}
                   copiedCode={copiedCode}
                   copyCode={copyCode}
+                  jumpToNote={jumpToNote}
                 />
               ) : workTab === "strategies" ? (
                 <StrategiesTab
@@ -1847,6 +2303,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                   boardTasks={boardTasks}
                   overdueTasks={overdueTasks}
                   cycleTask={cycleTask}
+                  setTaskStatus={setTaskStatus}
+                  assignTask={assignTask}
+                  assigneeOptions={assigneeOptions}
                   setDetailTaskId={setDetailTaskId}
                   loadTasks={loadTasks}
                   loadProjects={loadProjects}
@@ -1857,6 +2316,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                   setText={setText}
                   organize={organize}
                   organizing={organizing}
+                  quickSave={quickSave}
                   placeholders={PLACEHOLDERS}
                   placeholderIndex={phIdx}
                   setBatchOpen={setBatchOpen}
@@ -1904,7 +2364,10 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               )}
               <div className="flex flex-wrap items-center gap-2 px-5 pt-4">
                 <h2 className="text-sm font-semibold text-foreground">知识沉淀</h2>
-                <span className="text-xs text-muted-foreground">{filteredNotes.length}/{notes.length}</span>
+                <span className="text-xs text-muted-foreground">
+                  {filteredNotes.length} 条匹配 · 已加载 {notes.length}
+                  {notesHasMore ? "（更多可加载）" : ""}
+                </span>
                 {/* 来源过滤：全部 / 手动 / ima */}
                 <div className="flex overflow-hidden rounded-md border border-border text-xs">
                   {[
@@ -2011,7 +2474,9 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
               )}
 
               <div className="px-5 pb-5 pt-3">
-                {filteredNotes.length === 0 ? (
+                {notesHydrating ? (
+                  <SkeletonRows rows={3} />
+                ) : filteredNotes.length === 0 ? (
                   <div className="py-10 text-center text-sm text-muted-foreground">
                     {tagFilter
                       ? `没有带 #${tagFilter} 标签的笔记。`
@@ -2069,6 +2534,18 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
                       />
                       </div>
                     ))}
+                    {notesHasMore && (
+                      <div className="col-span-full flex justify-center pt-1">
+                        <button
+                          type="button"
+                          onClick={loadMoreNotes}
+                          disabled={notesLoadingMore}
+                          className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground disabled:opacity-50"
+                        >
+                          {notesLoadingMore ? "加载中…" : `加载更多（已加载 ${notes.length} 条）`}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -2388,7 +2865,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             <div className="border-t border-border px-5 pt-3">
               {applyError && (
                 <div className="mb-2 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700">
-                  <span className="flex-1">保存失败：{applyError} —— 你的修改仍在，可直接重试。</span>
+                  <span className="flex-1">保存失败：{(applyError ?? "").slice(0, 160)} —— 你的修改仍在，可直接重试。</span>
                   <button
                     onClick={saveDraft}
                     disabled={saving}
@@ -2429,7 +2906,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             role="dialog"
             aria-modal="true"
             aria-label="编辑笔记"
-            className="flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
+            className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
@@ -2519,7 +2996,7 @@ export function SecondBrain({ notes: initial }: { notes: BrainNote[] }) {
             role="dialog"
             aria-modal="true"
             aria-label="升级为新版"
-            className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
+            className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-border px-5 py-3">

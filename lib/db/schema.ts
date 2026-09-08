@@ -114,6 +114,19 @@ export const userImaConfig = sqliteTable("user_ima_config", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+// Obsidian 双向同步配置（每用户一行，按 userId 隔离）。
+// vaultPath 为本地 vault 绝对路径；enabled 为双向同步总开关；lastSyncedAt 为最近一次同步游标。
+export const userObsidianConfig = sqliteTable("user_obsidian_config", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  vaultPath: text("vault_path").notNull().default(""),
+  enabled: integer("enabled").notNull().default(0),
+  lastSyncedAt: text("last_synced_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 // 飞书自建应用 OAuth 凭证（每用户一行，按 userId 隔离）。
 // accessTokenEnc / refreshTokenEnc 为 AES-256-GCM 加密后的密文，明文不出服务端、不落 log。
 export const userFeishuConfig = sqliteTable("user_feishu_config", {

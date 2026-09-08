@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
   }
   try {
     const view = await buildProvenance(user.sub as string, input);
-    return NextResponse.json(view);
+    // 来源链路基于已存数据，30s 内不变；加短时缓存避免详情页每次打开都重跑串行 DB 查询
+    return NextResponse.json(view, {
+      headers: { "Cache-Control": "private, max-age=30" },
+    });
   } catch (err) {
     console.error("brain provenance failed:", err);
     return NextResponse.json({ error: "load_failed" }, { status: 500 });

@@ -64,8 +64,22 @@ export function snippetPreview(code: string, lines = 5): string {
   return arr.slice(0, lines).join("\n");
 }
 
-/** 极简语法高亮：把代码转成 React 节点（字符串/注释/关键词/函数/数字） */
-export function highlightCode(code: string): ReactNode {
+/**
+ * 极简语法高亮：把代码转成 React 节点。
+ * - 无 query：关键词 / 字符串 / 注释 / 数字 token 着色。
+ * - 有 query：在原文上高亮命中词（不区分大小写），便于代码库内搜索定位。
+ */
+export function highlightCode(code: string, query?: string): ReactNode {
+  if (query && query.trim()) {
+    const q = query.trim();
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const parts = code.split(new RegExp(`(${escaped})`, "gi"));
+    return parts.map((p, i) =>
+      p.toLowerCase() === q.toLowerCase()
+        ? <mark key={i} className="rounded-sm bg-primary/30 px-0.5 text-foreground">{p}</mark>
+        : <span key={i}>{p}</span>,
+    );
+  }
   const tokens = code
     .split(/(\s+|"[^"]*"|'[^']*'|#.*$|\/\/.*$|[-+*\/%<>=!&|^]+|\b\d+(?:\.\d+)?\b|[,:{}\[\]()])/gm)
     .filter((t) => t !== "");

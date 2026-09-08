@@ -6,11 +6,13 @@ import type { OrganizedNote } from "./brain-organizer";
 import { embed, buildListableText } from "./embedding";
 import {
   insertBrainNote,
+  updateBrainNote,
   insertBrainTasks,
   insertBrainStrategies,
   insertBrainReview,
   getBrainInboxItem,
   updateBrainInboxItem,
+  getBrainNote,
   type BrainInboxItem,
   type BrainInboxIntent,
   type BrainTaskPriority,
@@ -192,6 +194,85 @@ export async function applyOrganizedToNote(
   }
 
   return { ok: true, noteId: note.id, createdTasks, createdStrategies };
+}
+
+/**
+ * 后台整理回写：笔记已先以原文快速落库（保存优先），AI 整理完成后
+ * 用整理结果增强这条笔记（标题/分类/摘要/标签/struct/向量），并按意图补建任务/策略。
+ * 与 applyOrganizedToNote 的资产落地逻辑保持一致，只是把「insert 笔记」换成「update 回写」。
+ * 失败仅打日志——原文已保存，整理增强丢了不影响数据完整性，用户可手动重整理。
+ */
+export async function enrichNoteWithOrganized(
+  userId: string,
+  noteId: string,
+  rawContent: string,
+  organized: Partial<OrganizedNote>,
+  intent: BrainInboxIntent,
+): Promise<void> {
+  const title = (organized.title || rawContent.slice(0, 50)).slice(0, 200);
+  const category = organized.category || "未分类";
+  const tags = organized.tags ?? [];
+  const isSnippet = intent === "snippet";
+
+  // P3#1：后台整理回写前先校验笔记仍然存在且尚未被 AI 整理过（struct 仍为空）。
+  // ① 若用户在后台整理完成前删除了该笔记 → 直接中止，避免补建「孤儿」任务/策略；
+  // ② 若已经 enrich 过（struct 非空）则视为幂等跳过，避免重复整理重复建任务。
+  const existing = await getBrainNote(userId, noteId);
+  if (!existing || existing.struct) return;
+
+  try {
+    const vec = await embed(
+      buildListableText({ title, content: organized.codeContent || rawContent, summary: organized.summary ?? "", tags }),
+    ).catch(() => null);
+    await updateBrainNote(userId, noteId, {
+      title,
+      category,
+      summary: organized.summary ?? "",
+      tags,
+      related: organized.related ?? [],
+      isSnippet,
+      language: isSnippet ? (organized.language ?? null) : null,
+      codeContent: isSnippet ? (organized.codeContent ?? rawContent) : null,
+      embedding: vec ? JSON.stringify(vec) : undefined,
+      struct: JSON.stringify(organized).slice(0, 20000),
+    });
+  } catch (err) {
+    console.error("[inbox-process] enrich note failed:", err);
+    return;
+  }
+
+  // 按意图补建任务/策略（与 applyOrganizedToNote 同规则）
+  try {
+    let created: { id: string }[] = [];
+    const strats = (organized.strategies ?? []).slice(0, 8);
+    if ((intent === "meeting" || intent === "project") && strats.length) {
+      created = await insertBrainStrategies(
+        userId,
+        strats.map((s) => ({ noteId, title: (s.title ?? "").slice(0, 200), description: s.description ?? "" })),
+      );
+    }
+    const actionItems = organized.actionItems ?? [];
+    if (intent === "meeting" || intent === "project" || intent === "task") {
+      const tasks =
+        actionItems.length > 0
+          ? actionItems.slice(0, 12).map((t) => ({
+              noteId,
+              title: (t.text ?? "").slice(0, 40),
+              dueDate: t.dueDate ?? null,
+              priority: toPriority(t.priority),
+              strategyId:
+                intent !== "task" && typeof t.strategyIndex === "number" && t.strategyIndex >= 0 && t.strategyIndex < created.length
+                  ? created[t.strategyIndex].id
+                  : null,
+            }))
+          : intent === "task"
+            ? [{ noteId, title: title.slice(0, 40), dueDate: null, priority: "medium" as BrainTaskPriority, strategyId: null }]
+            : [];
+      if (tasks.length) await insertBrainTasks(userId, tasks);
+    }
+  } catch (err) {
+    console.error("[inbox-process] enrich assets failed:", err);
+  }
 }
 
 /**

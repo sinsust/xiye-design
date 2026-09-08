@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X, Plus, Send, Check, ArrowRight, ArrowUp, ArrowDown, Loader2 } from "lucide-react";
+import { X, Plus, Send, Check, ArrowRight, ArrowUp, ArrowDown, Loader2, UserPlus } from "lucide-react";
 import TaskTimeline from "@/components/tasks/TaskTimeline";
 import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 
@@ -9,7 +9,6 @@ type TaskStatus = "todo" | "in_progress" | "done";
 
 const STATUS_LABEL: Record<TaskStatus, string> = { todo: "待处理", in_progress: "进行中", done: "已完成" };
 const STATUS_DOT: Record<TaskStatus, string> = { todo: "#94a3b8", in_progress: "#f59e0b", done: "#22c55e" };
-const STATUS_NEXT: Record<TaskStatus, TaskStatus> = { todo: "in_progress", in_progress: "done", done: "todo" };
 
 interface SubTask {
   id: string;
@@ -89,9 +88,11 @@ export interface TaskDetailDrawerProps {
   onChanged: () => void;
   /** P3-B：new_issue 结果 → 打开既有 StructPreview 确认一条待确认处理计划 */
   onOpenPlanPreview?: (planId: string, body: unknown) => void;
+  /** 已出现过的负责人名单（去重），供指派负责人时 datalist 建议 */
+  assigneeOptions?: string[];
 }
 
-export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPlanPreview }: TaskDetailDrawerProps) {
+export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPlanPreview, assigneeOptions }: TaskDetailDrawerProps) {
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(false);
   const [subInput, setSubInput] = useState("");
@@ -111,6 +112,9 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
   const [organizePayload, setOrganizePayload] = useState<{ content: string; source: string } | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
   const [planError, setPlanError] = useState(false);
+  // —— 负责人编辑 ——
+  const [editAssignee, setEditAssignee] = useState(false);
+  const [assigneeDraft, setAssigneeDraft] = useState("");
 
   const load = useCallback(async (id: string) => {
     setLoading(true);
@@ -138,6 +142,8 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
       setOutcomeStatus("resolved");
       setOutcomeSummary("");
       setOutcomeDetail("");
+      setEditAssignee(false);
+      setAssigneeDraft("");
       return;
     }
     load(taskId);
@@ -164,8 +170,15 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
     }
   };
 
-  const cycleStatus = () => {
-    if (data) patch({ status: STATUS_NEXT[data.task.status] });
+  // 直接设任意状态（不再循环）：点 待办/进行中/完结 即到位
+  const setStatus = (status: TaskStatus) => {
+    if (data && data.task.status !== status) patch({ status });
+  };
+  const saveAssignee = async () => {
+    const v = assigneeDraft.trim();
+    await patch({ assignee: v ? v : null });
+    setEditAssignee(false);
+    setAssigneeDraft("");
   };
 
   const addSubtask = async () => {
@@ -353,11 +366,46 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
                   里程碑：{data.task.milestone}
                 </span>
               )}
-              {data?.task.assignee && (
-                <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                  负责人：{data.task.assignee}
+              {/* 负责人：点击可指派/修改 */}
+              {editAssignee ? (
+                <span className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-card px-1.5 py-0.5">
+                  <UserPlus className="size-3 text-primary" />
+                  <input
+                    autoFocus
+                    value={assigneeDraft}
+                    onChange={(e) => setAssigneeDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveAssignee();
+                      if (e.key === "Escape") { setEditAssignee(false); setAssigneeDraft(""); }
+                    }}
+                    list="task-assignee-dl"
+                    placeholder="负责人名字"
+                    className="w-24 bg-transparent text-[11px] text-foreground outline-none placeholder:text-muted-foreground/60"
+                    aria-label="指派负责人"
+                  />
+                  <button onClick={saveAssignee} disabled={busy} className="text-emerald-600 transition hover:text-emerald-500" aria-label="保存负责人">
+                    <Check className="size-3.5" />
+                  </button>
+                  <button onClick={() => { setEditAssignee(false); setAssigneeDraft(""); }} className="text-muted-foreground transition hover:text-foreground" aria-label="取消">
+                    <X className="size-3.5" />
+                  </button>
                 </span>
+              ) : (
+                <button
+                  onClick={() => { setEditAssignee(true); setAssigneeDraft(data?.task.assignee ?? ""); }}
+                  className="group inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground transition hover:border hover:border-primary/40 hover:text-foreground"
+                  title={data?.task.assignee ? "点击修改负责人" : "点击指派负责人"}
+                >
+                  <UserPlus className="size-3" />
+                  {data?.task.assignee ? `负责人：${data.task.assignee}` : "指派负责人"}
+                </button>
               )}
+              {/* datalist 建议：出现过的负责人 */}
+              <datalist id="task-assignee-dl">
+                {(assigneeOptions ?? []).map((a) => (
+                  <option key={a} value={a} />
+                ))}
+              </datalist>
             </div>
           </div>
           <button onClick={onClose} className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground">
@@ -384,17 +432,32 @@ export default function TaskDetailDrawer({ taskId, onClose, onChanged, onOpenPla
 
           {view === "detail" && (
           <>
-          {/* 状态 + 截止 */}
-          <div className="flex items-center justify-between rounded-xl border border-border p-3">
-            <button
-              onClick={cycleStatus}
-              disabled={busy}
-              className="inline-flex items-center gap-2 rounded-lg bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-primary/10"
-            >
-              <span className="size-2 rounded-full" style={{ background: STATUS_DOT[data?.task.status ?? "todo"] }} />
-              {data ? STATUS_LABEL[data.task.status] : "…"} <ArrowRight className="size-3" />
-            </button>
-            <span className="text-xs text-muted-foreground">
+          {/* 状态（三态直达）+ 截止 */}
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-border p-3">
+            <div className="inline-flex rounded-lg bg-muted/50 p-0.5" role="tablist" aria-label="任务状态">
+              {(["todo", "in_progress", "done"] as TaskStatus[]).map((s) => {
+                const active = data?.task.status === s;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setStatus(s)}
+                    disabled={busy}
+                    role="tab"
+                    aria-selected={active}
+                    className={
+                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition " +
+                      (active
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground")
+                    }
+                  >
+                    <span className="size-1.5 rounded-full" style={{ background: STATUS_DOT[s] }} />
+                    {STATUS_LABEL[s]}
+                  </button>
+                );
+              })}
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground">
               截止：{data?.task.dueDate ? fmtDate(data.task.dueDate) : "未设置"}
             </span>
           </div>

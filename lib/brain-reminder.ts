@@ -2,7 +2,6 @@ import { and, eq, gte } from "drizzle-orm";
 import { db, brainReminderRules, brainReminderLog, brainNoteAccessLog } from "@/lib/db";
 import {
   listBrainTasks,
-  listBrainNotes,
   listBrainNoteMetas,
   listPendingBrainReviews,
   listBrainInboxItems,
@@ -11,6 +10,11 @@ import {
 } from "@/lib/brain-db";
 import type { BrainNoteMeta } from "@/lib/brain-db";
 import { genId } from "@/lib/id";
+import { getCached } from "@/lib/brain-cache";
+
+// P2.3：提醒扫描的服务端缓存 TTL（5 分钟）。审计建议「每日一次快照」，但提醒依赖今天/明天到期等时效字段，
+// 故采用分钟级 TTL：既消除每次挂载重扫，又不让到期/新任务延迟超 24h。
+const REMINDER_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export const REMINDER_TYPES = [
   "task_overdue",
@@ -237,13 +241,20 @@ export async function checkReminders(userId: string): Promise<{
   const inQuietHours = isInQuietHours(settings.quietHoursStart, settings.quietHoursEnd);
 
   try {
-    const [tasks, notes, reviews, inbox, strategies] = await Promise.all([
-      listBrainTasks(userId),
-      listBrainNotes(userId),
-      listPendingBrainReviews(userId),
-      listBrainInboxItems(userId, "pending"),
-      listBrainStrategies(userId),
-    ]);
+    // P2.3：5 张表的全量扫描加 userId 级短 TTL 缓存（默认 5min），
+    // 避免通知中心/提醒中心每次挂载都重扫；下游触发逻辑仍实时计算，保证「今天到期」时效性。
+    const [tasks, notes, reviews, inbox, strategies] = await getCached(
+      `reminders:${userId}`,
+      REMINDER_CACHE_TTL_MS,
+      async () =>
+        Promise.all([
+          listBrainTasks(userId),
+          listBrainNoteMetas(userId),
+          listPendingBrainReviews(userId),
+          listBrainInboxItems(userId, "pending"),
+          listBrainStrategies(userId),
+        ]),
+    );
 
     const noteTitle = new Map(notes.map((n) => [n.id, n.title || "(无标题)"]));
     const trunc = (s: string, n = 24) => (s.length > n ? s.slice(0, n) + "…" : s);

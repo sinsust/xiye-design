@@ -14,10 +14,10 @@ import {
 import {
   getBrainProcessingPlan,
   getBrainNote,
-  listBrainTasks,
-  listBrainStrategies,
-  listPendingBrainReminderItems,
+  getBrainReminderItem,
   getBrainProject,
+  getBrainStrategy,
+  getBrainTaskById,
 } from "@/lib/brain-db";
 
 export const runtime = "nodejs";
@@ -122,16 +122,18 @@ async function resolveProduced(
   userId: string,
   plan: Awaited<ReturnType<typeof getBrainProcessingPlan>> & object,
 ) {
-  const tasks = await listBrainTasks(userId);
-  const reminders = await listPendingBrainReminderItems(userId);
-  const project = plan?.projectId ? await getBrainProject(userId, plan.projectId) : null;
+  const ids = (arr: string[] | undefined) => [...new Set(arr ?? [])];
+  const [tasks, strategies, reminders, project] = await Promise.all([
+    Promise.all(ids(plan.taskIds).map((id) => getBrainTaskById(userId, id))),
+    Promise.all(ids(plan.strategyIds).map((id) => getBrainStrategy(userId, id))),
+    Promise.all(ids(plan.reminderIds).map((id) => getBrainReminderItem(userId, id))),
+    plan?.projectId ? getBrainProject(userId, plan.projectId) : Promise.resolve(null),
+  ]);
   return {
     note: plan?.noteId ? await getBrainNote(userId, plan.noteId) : null,
-    tasks: tasks.filter((t) => (plan?.taskIds ?? []).includes(t.id)),
-    strategies: plan?.strategyIds?.length
-      ? (await listBrainStrategies(userId)).filter((s) => (plan.strategyIds ?? []).includes(s.id))
-      : [],
-    reminders: reminders.filter((r) => (plan?.reminderIds ?? []).includes(r.id) || r.planId === plan?.id),
+    tasks: tasks.filter(Boolean),
+    strategies: strategies.filter(Boolean),
+    reminders: reminders.filter(Boolean),
     project,
   };
 }

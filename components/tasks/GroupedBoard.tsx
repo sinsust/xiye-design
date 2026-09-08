@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { ArrowRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowRight, Check, UserPlus, X } from "lucide-react";
 
 type TaskStatus = "todo" | "in_progress" | "done";
 type GroupBy = "status" | "project" | "milestone" | "assignee";
@@ -42,13 +42,21 @@ export interface GroupedBoardProps {
   projects: ProjectLite[];
   openTask: (id: string) => void;
   onCycle: (id: string) => void;
+  /** 指派 / 清除负责人（改后父级刷新，卡片会按人重新归组） */
+  onAssign?: (id: string, assignee: string | null) => void;
+  /** 已出现过的负责人名单（去重），供 datalist 建议 */
+  assigneeOptions?: string[];
 }
 
-export default function GroupedBoard({ groupBy, tasks, projects, openTask, onCycle }: GroupedBoardProps) {
+export default function GroupedBoard({ groupBy, tasks, projects, openTask, onCycle, onAssign, assigneeOptions }: GroupedBoardProps) {
   const projectName = useMemo(() => {
     const m = new Map(projects.map((p) => [p.id, p]));
     return (id: string | null) => (id ? m.get(id) : undefined);
   }, [projects]);
+
+  // 负责人指派编辑（某张卡片的指派输入框是否展开）
+  const [editingAssign, setEditingAssign] = useState<string | null>(null);
+  const [assignDraft, setAssignDraft] = useState("");
 
   const groups = useMemo(() => {
     const map = new Map<string, { key: string; color: string | null; tasks: GroupTask[] }>();
@@ -82,6 +90,12 @@ export default function GroupedBoard({ groupBy, tasks, projects, openTask, onCyc
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-1">
+      {/* 负责人建议 datalist */}
+      <datalist id="gb-assignee-dl">
+        {(assigneeOptions ?? []).map((a) => (
+          <option key={a} value={a} />
+        ))}
+      </datalist>
       {groups.length === 0 ? (
         <div className="w-full rounded-xl border border-dashed border-border/60 py-10 text-center text-xs text-muted-foreground">
           没有任务可按此维度分组
@@ -108,6 +122,7 @@ export default function GroupedBoard({ groupBy, tasks, projects, openTask, onCyc
                 )}
                 {g.tasks.map((t) => {
                   const overdue = t.status !== "done" && !!t.dueDate && t.dueDate < today;
+                  const isEditing = editingAssign === t.id;
                   return (
                     <div key={t.id} className="group relative cursor-pointer rounded-lg border border-border bg-card p-2.5 pl-3.5 shadow-sm transition hover:border-primary/30"
                       onClick={() => openTask(t.id)}>
@@ -130,6 +145,71 @@ export default function GroupedBoard({ groupBy, tasks, projects, openTask, onCyc
                         <div className={"text-[10px] " + (overdue ? "font-medium text-destructive" : "text-muted-foreground")}>
                           {overdue ? "⚠ " : ""}{fmtDate(t.dueDate)}{overdue ? " 已过期" : ""}
                         </div>
+                      )}
+                      {/* 负责人：展示 + 指派/修改（onAssign 存在时可用） */}
+                      {onAssign && (
+                        isEditing ? (
+                          <div
+                            className="mt-1.5 flex items-center gap-1 rounded-md border border-primary/40 bg-card px-1.5 py-0.5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <UserPlus className="size-3 shrink-0 text-primary" />
+                            <input
+                              autoFocus
+                              value={assignDraft}
+                              onChange={(e) => setAssignDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.stopPropagation();
+                                  onAssign(t.id, assignDraft.trim() || null);
+                                  setEditingAssign(null);
+                                  setAssignDraft("");
+                                }
+                                if (e.key === "Escape") {
+                                  e.stopPropagation();
+                                  setEditingAssign(null);
+                                  setAssignDraft("");
+                                }
+                              }}
+                              list="gb-assignee-dl"
+                              placeholder="负责人名字"
+                              className="w-20 min-w-0 bg-transparent text-[11px] text-foreground outline-none placeholder:text-muted-foreground/60"
+                              aria-label="指派负责人"
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAssign(t.id, assignDraft.trim() || null);
+                                setEditingAssign(null);
+                                setAssignDraft("");
+                              }}
+                              className="text-emerald-600 transition hover:text-emerald-500"
+                              aria-label="保存"
+                            >
+                              <Check className="size-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setEditingAssign(null); setAssignDraft(""); }}
+                              className="text-muted-foreground transition hover:text-foreground"
+                              aria-label="取消"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingAssign(t.id);
+                              setAssignDraft(t.assignee ?? "");
+                            }}
+                            className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition hover:border hover:border-primary/40 hover:text-foreground"
+                            title={t.assignee ? "点击修改负责人" : "点击指派负责人"}
+                          >
+                            <UserPlus className="size-3 shrink-0" />
+                            <span className="truncate">{t.assignee ? `负责人：${t.assignee}` : "指派负责人"}</span>
+                          </button>
+                        )
                       )}
                     </div>
                   );

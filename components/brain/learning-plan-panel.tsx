@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, Loader2, Pause, Play, Trash2 } from "lucide-react";
+import { readBrainCache, writeBrainCache, clearBrainCache } from "@/lib/brain-client-cache";
 
 interface ReviewState {
   id: string;
@@ -38,22 +39,37 @@ export function LearningPlanPanel({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(
-        `/api/brain/learning-reviews?noteId=${encodeURIComponent(noteId)}`,
-      );
-      const d = await res.json();
-      if (res.ok) setReview(d?.review ?? null);
-      else setError(d?.error || "加载失败");
-    } catch {
-      setError("学习计划加载失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [noteId]);
+  const load = useCallback(
+    async (force?: boolean) => {
+      const cacheKey = `lr:${noteId}`;
+      if (!force) {
+        const cached = readBrainCache<ReviewState | null>(cacheKey);
+        if (cached !== null) {
+          setReview(cached);
+          setLoading(false);
+          setError("");
+          return;
+        }
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(
+          `/api/brain/learning-reviews?noteId=${encodeURIComponent(noteId)}`,
+        );
+        const d = await res.json();
+        if (res.ok) {
+          setReview(d?.review ?? null);
+          writeBrainCache(cacheKey, d?.review ?? null);
+        } else setError(d?.error || "加载失败");
+      } catch {
+        setError("学习计划加载失败");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [noteId],
+  );
 
   useEffect(() => {
     load();
@@ -68,14 +84,15 @@ export function LearningPlanPanel({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        await load();
+        clearBrainCache(`lr:${noteId}`);
+        await load(true);
       } catch {
         /* 忽略 */
       } finally {
         setBusy(false);
       }
     },
-    [load],
+    [load, noteId],
   );
 
   const remove = useCallback(async () => {
@@ -85,7 +102,8 @@ export function LearningPlanPanel({
         `/api/brain/learning-reviews?noteId=${encodeURIComponent(noteId)}`,
         { method: "DELETE" },
       );
-      await load();
+      clearBrainCache(`lr:${noteId}`);
+      await load(true);
     } catch {
       /* 忽略 */
     } finally {
@@ -129,7 +147,7 @@ export function LearningPlanPanel({
       {error && (
         <div className="flex items-center gap-2 py-1.5 text-[11px] text-destructive">
           {error}
-          <button onClick={load} className="font-medium underline">
+          <button onClick={() => load()} className="font-medium underline">
             重试
           </button>
         </div>

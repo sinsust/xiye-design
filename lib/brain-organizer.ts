@@ -607,6 +607,49 @@ export function findDuplicateNote(
   return best;
 }
 
+/**
+ * 把 AI 返回的"字符串数组"字段规整为干净字符串列表。
+ * 模型偶发把某项输出成对象（如 {point}/{text}/{idea}），若直接 String() 会落库成
+ * 无意义的 "[object Object]"。这里：字符串→trim；对象→取常用文本字段第一个非空；伪文本丢弃。
+ */
+function cleanStringList(
+  v: unknown,
+  pickKeys: string[] = ["point", "text", "title", "idea", "content", "body", "name", "label"],
+): string[] {
+  if (!Array.isArray(v)) return [];
+  const out: string[] = [];
+  for (const it of v) {
+    if (it == null) continue;
+    let s = "";
+    if (typeof it === "string") s = it;
+    else if (typeof it === "object") {
+      const o = it as Record<string, unknown>;
+      for (const k of pickKeys) {
+        const val = o[k];
+        if (typeof val === "string" && val.trim()) {
+          s = val;
+          break;
+        }
+      }
+      // 无已知文本键的对象：尝试最可能承载语义的字段，仍无则跳过
+      if (!s) {
+        for (const k of Object.keys(o)) {
+          const val = o[k];
+          if (typeof val === "string" && val.trim() && val.trim().length > 1) {
+            s = val;
+            break;
+          }
+        }
+      }
+    }
+    s = s.trim();
+    // 丢弃 "被 String() 污染的占位文本" / 纯符号 / 空串
+    if (!s || /^\[object (Object|Undefined)\]$/.test(s) || /^[{}[\],;:()'"`\s]+$/.test(s)) continue;
+    out.push(s.slice(0, 80));
+  }
+  return out.slice(0, 10);
+}
+
 function parseOrganized(raw: string): Partial<OrganizedNote> {
   const cleaned = raw
     .replace(/```json/gi, "")
@@ -614,8 +657,7 @@ function parseOrganized(raw: string): Partial<OrganizedNote> {
     .trim();
   try {
     const obj = JSON.parse(cleaned) as Record<string, unknown>;
-    const arr = (v: unknown): string[] =>
-      Array.isArray(v) ? v.map(String).filter(Boolean).slice(0, 8) : [];
+    const arr = (v: unknown): string[] => cleanStringList(v);
     const actionItems: OrganizedNote["actionItems"] = Array.isArray(obj.actionItems)
       ? obj.actionItems
           .map((it: unknown) => {
@@ -678,12 +720,9 @@ function parseOrganized(raw: string): Partial<OrganizedNote> {
           .filter((s) => s.angle)
           .slice(0, 8)
       : [];
-    const attendees: string[] = Array.isArray(obj.attendees)
-      ? obj.attendees.map(String).filter(Boolean).slice(0, 12)
-      : [];
-    const openQuestions: string[] = Array.isArray(obj.openQuestions)
-      ? obj.openQuestions.map(String).filter(Boolean).slice(0, 10)
-      : [];
+    const attendees: string[] = cleanStringList(obj.attendees);
+    const openQuestions: string[] = cleanStringList(obj.openQuestions);
+    const insights: string[] = cleanStringList(obj.insights);
     const strategies: OrganizedNote["strategies"] = Array.isArray(obj.strategies)
       ? obj.strategies
           .map((s: unknown) => {
@@ -696,9 +735,7 @@ function parseOrganized(raw: string): Partial<OrganizedNote> {
           .filter((s) => s.title)
           .slice(0, 5)
       : [];
-    const decisions: string[] = Array.isArray(obj.decisions)
-      ? obj.decisions.map(String).filter(Boolean).slice(0, 8)
-      : [];
+    const decisions: string[] = cleanStringList(obj.decisions);
     const isSnippet: boolean = obj.isSnippet === true;
     const language =
       typeof obj.language === "string" && obj.language.trim() ? obj.language.trim().toLowerCase() : "";
@@ -736,9 +773,7 @@ function parseOrganized(raw: string): Partial<OrganizedNote> {
             .filter((k) => k.point)
             .slice(0, 12)
         : undefined,
-      insights: Array.isArray(obj.insights)
-        ? obj.insights.map(String).filter(Boolean).slice(0, 10)
-        : undefined,
+      insights: insights.length ? insights : undefined,
       isSnippet,
       language,
       codeContent,

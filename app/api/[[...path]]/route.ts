@@ -6,7 +6,8 @@ import * as m0 from "@/lib/api-handlers/other/account/ima";
 import * as m1 from "@/lib/api-handlers/other/agents";
 import * as m2 from "@/lib/api-handlers/other/component-source";
 import * as m3 from "@/lib/api-handlers/other/skill-content";
-import * as m4 from "@/lib/api-handlers/other/user/preferences";
+import * as m4 from "@/lib/api-handlers/other/component-zip";
+import * as m5 from "@/lib/api-handlers/other/user/preferences";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,8 +23,9 @@ const ROUTES: RouteDef[] = [
   { key: "account/ima", methods: { GET: m0.GET as HandlerFn, PUT: m0.PUT as HandlerFn, DELETE: m0.DELETE as HandlerFn } },
   { key: "agents", methods: { GET: m1.GET as HandlerFn, PUT: m1.PUT as HandlerFn } },
   { key: "component-source", methods: { GET: m2.GET as HandlerFn } },
+  { key: "component-zip", methods: { GET: m4.GET as HandlerFn } },
   { key: "skill-content", methods: { GET: m3.GET as HandlerFn } },
-  { key: "user/preferences", methods: { GET: m4.GET as HandlerFn, PUT: m4.PUT as HandlerFn } },
+  { key: "user/preferences", methods: { GET: m5.GET as HandlerFn, PUT: m5.PUT as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

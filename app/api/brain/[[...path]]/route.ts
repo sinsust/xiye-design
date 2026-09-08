@@ -60,6 +60,9 @@ import * as m51 from "@/lib/api-handlers/brain/organize-save";
 // 再跑 migrate-api-catchall.mjs 会清空本组所有 handler，故此后台新增路由直接二者在此登记。
 import * as m54 from "@/lib/api-handlers/brain/today";
 import * as m55 from "@/lib/api-handlers/brain/ima/write";
+import * as m56 from "@/lib/api-handlers/brain/parse";
+import * as m57 from "@/lib/api-handlers/brain/obsidian/config";
+import * as m58 from "@/lib/api-handlers/brain/obsidian/sync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -128,6 +131,9 @@ const ROUTES: RouteDef[] = [
   { key: "weekly-review", methods: { GET: m50.GET as HandlerFn, POST: m50.POST as HandlerFn } },
   { key: "today", methods: { GET: m54.GET as HandlerFn } },
   { key: "ima/write", methods: { POST: m55.POST as HandlerFn } },
+  { key: "parse", methods: { POST: m56.POST as HandlerFn } },
+  { key: "obsidian/config", methods: { GET: m57.GET as HandlerFn, PUT: m57.PUT as HandlerFn } },
+  { key: "obsidian/sync", methods: { POST: m58.POST as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

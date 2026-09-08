@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import {
   listPendingBrainReviews,
-  listBrainNotes,
+  listBrainNoteMetas,
   completeBrainReview,
   skipBrainReview,
   type BrainReview,
@@ -30,7 +30,7 @@ export async function GET() {
 
   const [pending, notes] = await Promise.all([
     listPendingBrainReviews(user.sub),
-    listBrainNotes(user.sub),
+    listBrainNoteMetas(user.sub),
   ]);
   const noteMap = new Map(notes.map((n) => [n.id, n]));
   const nowIso = new Date().toISOString();

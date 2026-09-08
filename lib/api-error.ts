@@ -49,3 +49,22 @@ export function safeDetail(err: unknown, fallback = "内部错误"): string {
   if (out.length > MAX_DETAIL_LEN) out = `${out.slice(0, MAX_DETAIL_LEN)}…`;
   return out;
 }
+
+/**
+ * 把保存/写入类异常收敛成「一句用户能读懂的话」，替代 drizzle 原始
+ * "Failed query: insert into ... params: ..." 千字大报错直出 UI。
+ * 完整错误仍由调用方 console.error 留在服务端日志。
+ */
+export function compactSaveError(err: unknown, fallback = "保存失败：数据库写入异常，请稍后重试"): string {
+  const msg = err instanceof Error ? err.message : typeof err === "string" ? err : "";
+  if (!msg) return fallback;
+  const col = msg.match(/column\s+"?([A-Za-z_][\w.]*)"?\s+does not exist/i);
+  if (col) return `数据库缺列「${col[1]}」，需执行 schema 修复（重启服务可自动补列）`;
+  const rel = msg.match(/relation\s+"([^"]+)"\s+does not exist/i);
+  if (rel) return `数据表「${rel[1]}」不存在，需执行 schema 修复（重启服务可自动补表）`;
+  if (/duplicate key|unique constraint/i.test(msg)) return "内容重复：已有相同记录，请勿重复提交";
+  if (/violates foreign key/i.test(msg)) return "关联数据不存在（可能已被删除），请刷新后重试";
+  if (/connect|ECONNREFUSED|ETIMEDOUT|timeout/i.test(msg)) return "数据库连接失败或超时，请稍后重试";
+  const out = msg.replace(/[\r\n]+/g, " ").trim();
+  return out.length > 120 ? `${out.slice(0, 120)}…` : out || fallback;
+}

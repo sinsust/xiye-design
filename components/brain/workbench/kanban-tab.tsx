@@ -1,4 +1,6 @@
-import { Columns3, LayoutList } from "lucide-react";
+import { useState } from "react";
+import type { DragEvent } from "react";
+import { Columns3, GripVertical, LayoutList } from "lucide-react";
 import GanttView from "@/components/GanttView";
 import GroupedBoard from "@/components/tasks/GroupedBoard";
 import {
@@ -27,6 +29,12 @@ export interface KanbanTabProps {
   boardTasks: BrainTask[];
   overdueTasks: BrainTask[];
   cycleTask: (id: string) => Promise<void>;
+  /** 直接设任意状态（拖拽 / 三态直达用，不循环） */
+  setTaskStatus: (id: string, status: BrainTaskStatus) => Promise<void>;
+  /** 指派 / 清除负责人 */
+  assignTask: (id: string, assignee: string | null) => Promise<void>;
+  /** 已出现过的负责人名单（去重），供指派时 datalist 建议 */
+  assigneeOptions: string[];
   setDetailTaskId: (id: string | null) => void;
   loadTasks: () => Promise<void>;
   loadProjects: () => Promise<void>;
@@ -48,10 +56,32 @@ export function KanbanTab({
   boardTasks,
   overdueTasks,
   cycleTask,
+  setTaskStatus,
+  assignTask,
+  assigneeOptions,
   setDetailTaskId,
   loadTasks,
   loadProjects,
 }: KanbanTabProps) {
+  // —— 看板拖拽换状态（仅"按状态"三列视图启用）——
+  const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [dropOver, setDropOver] = useState<BrainTaskStatus | null>(null);
+
+  const onDragStartTask = (e: DragEvent, id: string) => {
+    setDragTaskId(id);
+    e.dataTransfer.effectAllowed = "move";
+    // 需设置数据才能在部分浏览器触发 drop（Firefox 必须有）
+    e.dataTransfer.setData("text/plain", id);
+  };
+  const onDropToCol = async (st: BrainTaskStatus) => {
+    if (dragTaskId) {
+      const cur = boardTasks.find((t) => t.id === dragTaskId);
+      if (cur && cur.status !== st) await setTaskStatus(dragTaskId, st);
+    }
+    setDragTaskId(null);
+    setDropOver(null);
+  };
+
   return (
     <div className="mt-3">
       {/* 看板 / 甘特图 视图切换 */}
@@ -203,8 +233,35 @@ export function KanbanTab({
                       PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
                       a.createdAt - b.createdAt,
                   );
+                const isOver = dropOver === st;
                 return (
-                  <div key={st} className="rounded-[var(--radius)] border border-border bg-muted/20 p-3">
+                  <div
+                    key={st}
+                    onDragOver={(e) => {
+                      if (dragTaskId) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                        if (dropOver !== st) setDropOver(st);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (dropOver === st) setDropOver(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      onDropToCol(st);
+                    }}
+                    onDragEnd={() => {
+                      setDragTaskId(null);
+                      setDropOver(null);
+                    }}
+                    className={
+                      "rounded-[var(--radius)] border p-3 transition-colors " +
+                      (isOver
+                        ? "border-primary/60 bg-primary/5 ring-1 ring-primary/30"
+                        : "border-border bg-muted/20")
+                    }
+                  >
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-semibold text-foreground">{STATUS_LABEL[st]}</span>
                       <span className="rounded-full bg-card px-1.5 py-px text-[10px] font-medium text-muted-foreground">
@@ -214,7 +271,7 @@ export function KanbanTab({
                     <div className="space-y-2">
                       {col.length === 0 && (
                         <div className="rounded-[var(--radius)] border border-dashed border-border/60 py-5 text-center text-[11px] text-muted-foreground">
-                          暂无
+                          {dragTaskId ? "松手放入此列" : "暂无"}
                         </div>
                       )}
                       {col.map((t) => (
@@ -225,6 +282,8 @@ export function KanbanTab({
                           strategyName={strategyMap.get(t.strategyId ?? "")?.title}
                           onCycle={() => cycleTask(t.id)}
                           onOpen={() => setDetailTaskId(t.id)}
+                          draggable
+                          onDragStart={onDragStartTask}
                         />
                       ))}
                     </div>
@@ -241,6 +300,8 @@ export function KanbanTab({
               projects={projects}
               openTask={(id) => setDetailTaskId(id)}
               onCycle={cycleTask}
+              onAssign={assignTask}
+              assigneeOptions={assigneeOptions}
             />
           )}
 

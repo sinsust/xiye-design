@@ -9,7 +9,9 @@ export function StructPreview({ d, onActionItemsChange }: { d: StructViewData; o
   const type = d.type || "jotting";
   const ai = d.actionItems ?? [];
   const kp = d.keyPoints ?? [];
-  const ins = d.insights ?? [];
+  const ins = (d.insights ?? []).filter(
+    (x) => x && !/^\[object (Object|Undefined)\]$/.test(String(x).trim()),
+  ) as string[];
   const has =
     (d.attendees?.length || 0) +
     (d.metrics?.length || 0) +

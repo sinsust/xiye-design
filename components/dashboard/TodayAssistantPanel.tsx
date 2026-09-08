@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import type { TodayBrief, TodayPriorityItem } from "@/lib/brain-priority";
+import { cachedGetJson, clearCachedJson, readCachedJsonSync } from "@/lib/api-cache";
 import { TodayPriorityList } from "./today-priority-list";
 import { PendingPlanList } from "./pending-plan-list";
 import { DueSoonList } from "./due-soon-list";
@@ -23,29 +24,44 @@ export interface TodayAssistantPanelProps {
 }
 
 export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
-  const [brief, setBrief] = useState<TodayBrief | null>(null);
-  const [loading, setLoading] = useState(true);
+  const briefCacheUrl = "/api/brain/dashboard";
+  const cachedBrief = readCachedJsonSync<{ brief?: TodayBrief | null }>(briefCacheUrl)?.brief ?? null;
+  const [brief, setBrief] = useState<TodayBrief | null>(cachedBrief);
+  const [loading, setLoading] = useState(cachedBrief == null);
   const [error, setError] = useState("");
+  const briefRef = useRef<TodayBrief | null>(cachedBrief);
   // 次要关注（复习 / 快到期 / 项目风险 / 恢复草稿）默认折起，收敛首页堆叠
   const [showMore, setShowMore] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async (force = false) => {
+    if (force) clearCachedJson(briefCacheUrl);
+    const had = briefRef.current != null;
+    if (!had) {
+      setLoading(true);
+      setError("");
+    }
     try {
-      const res = await fetch("/api/brain/dashboard");
-      const d = await res.json();
-      if (res.ok) setBrief(d?.brief ?? null);
+      const d = await cachedGetJson<{ brief?: TodayBrief | null; error?: string }>(briefCacheUrl);
+      if (d?.brief) {
+        setBrief(d.brief);
+        briefRef.current = d.brief;
+      }
       else setError(d?.error || "加载失败");
     } catch {
       setError("今日简报加载失败");
     } finally {
-      setLoading(false);
+      if (!briefRef.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     load();
+  }, [load]);
+  // 今日空间/抽屉操作后，隐藏中的看板也在后台静默同步，再次显示时不必整页等待。
+  useEffect(() => {
+    const refresh = () => void load(true);
+    window.addEventListener("brain:dashboard-refresh", refresh);
+    return () => window.removeEventListener("brain:dashboard-refresh", refresh);
   }, [load]);
 
   const title = brief?.headline.pendingPlans || brief?.headline.overdueTasks || false;
@@ -90,7 +106,7 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
             </p>
           </div>
           <button
-            onClick={load}
+            onClick={() => load(true)}
             disabled={loading}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
@@ -108,7 +124,7 @@ export function TodayAssistantPanel(props: TodayAssistantPanelProps) {
       {error && !brief && (
         <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
           {error}
-          <button onClick={load} className="ml-3 text-xs font-medium underline">
+          <button onClick={() => load(true)} className="ml-3 text-xs font-medium underline">
             重试
           </button>
         </div>

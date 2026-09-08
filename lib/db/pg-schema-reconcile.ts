@@ -29,6 +29,13 @@ CREATE TABLE IF NOT EXISTS brain_projects (
   updated_at bigint NOT NULL
 );
 CREATE INDEX IF NOT EXISTS brain_projects_user_id_idx ON brain_projects(user_id);
+-- P3-A：brain_projects 若建表早于 priority/objective 引入，CREATE IF NOT EXISTS 不会补列，
+-- 需显式 ALTER 自愈（缺列会令 list/project workbench 全崩）。幂等，重复执行零副作用。
+ALTER TABLE brain_projects ADD COLUMN IF NOT EXISTS priority text NOT NULL DEFAULT 'medium';
+ALTER TABLE brain_projects ADD COLUMN IF NOT EXISTS objective text;
+ALTER TABLE brain_projects ADD COLUMN IF NOT EXISTS color text NOT NULL DEFAULT '#3B82F6';
+ALTER TABLE brain_projects ADD COLUMN IF NOT EXISTS start_date text;
+ALTER TABLE brain_projects ADD COLUMN IF NOT EXISTS due_date text;
 
 -- brain_strategies（被 brain_tasks.strategy_id 引用，先建）
 CREATE TABLE IF NOT EXISTS brain_strategies (
@@ -98,6 +105,14 @@ CREATE TABLE IF NOT EXISTS brain_inbox_items (
 CREATE INDEX IF NOT EXISTS brain_inbox_items_user_id_idx ON brain_inbox_items(user_id);
 CREATE INDEX IF NOT EXISTS brain_inbox_items_status_idx ON brain_inbox_items(user_id, status);
 CREATE INDEX IF NOT EXISTS brain_inbox_items_plan_id_idx ON brain_inbox_items(user_id, processing_plan_id);
+-- P2-A：brain_inbox_items 若建表早于「来源/产出链路」字段引入，CREATE IF NOT EXISTS 不会补列，
+-- 需显式 ALTER 自愈（缺列会令 inbox/notifications 查询全崩）。幂等。
+ALTER TABLE brain_inbox_items ADD COLUMN IF NOT EXISTS processing_plan_id text;
+ALTER TABLE brain_inbox_items ADD COLUMN IF NOT EXISTS output_task_ids text;
+ALTER TABLE brain_inbox_items ADD COLUMN IF NOT EXISTS output_reminder_ids text;
+ALTER TABLE brain_inbox_items ADD COLUMN IF NOT EXISTS output_project_id text;
+ALTER TABLE brain_inbox_items ADD COLUMN IF NOT EXISTS converted_at bigint;
+ALTER TABLE brain_inbox_items ADD COLUMN IF NOT EXISTS failed_reason text;
 
 -- brain_task_timeline
 CREATE TABLE IF NOT EXISTS brain_task_timeline (
@@ -211,6 +226,16 @@ ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_rel_path text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_note_id text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_synced_at text;
 
+-- obsidian 双向同步配置（每用户一行）
+CREATE TABLE IF NOT EXISTS user_obsidian_config (
+  user_id text PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  vault_path text NOT NULL DEFAULT '',
+  enabled integer NOT NULL DEFAULT 0,
+  last_synced_at text,
+  created_at bigint NOT NULL,
+  updated_at bigint NOT NULL
+);
+
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS archived integer NOT NULL DEFAULT 0;
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS strategy_id text REFERENCES brain_strategies(id) ON DELETE SET NULL;
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS project_id text REFERENCES brain_projects(id) ON DELETE SET NULL;
@@ -223,6 +248,11 @@ ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS estimated_hours double precisio
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS actual_hours double precision;
 
 ALTER TABLE brain_processing_plans ADD COLUMN IF NOT EXISTS archived_at bigint;
+
+-- P2.4 复合索引：支撑「按用户的有序分页(created_at)」与「按 user_id+note_id 定向查询」
+-- 幂等，重复执行零副作用；整段 reconcile 由 try/catch 包裹，事务池(6543)下 DDL 失败仅告警不阻断。
+CREATE INDEX IF NOT EXISTS brain_notes_user_created_idx ON brain_notes(user_id, created_at);
+CREATE INDEX IF NOT EXISTS brain_processing_plans_user_note_idx ON brain_processing_plans(user_id, note_id);
 
 -- ===== 限流持久化（批次2 P1 #3）：Vercel 启动幂等补齐 =====
 -- 仅建表；原子 RPC check_rate_limit 由 migration 0010 提供（reconcile 按分号切分，
@@ -263,21 +293,38 @@ CREATE TABLE IF NOT EXISTS decision_ledger (
 CREATE UNIQUE INDEX IF NOT EXISTS decision_ledger_project_title_idx ON decision_ledger (project_id, title);
 `;
 
-/**
- * 在 pg 客户端上幂等补齐第二大脑 schema。
- * @param client postgres-js 客户端（由 lib/db/index.ts 传入）
- */
-export async function reconcilePgSchema(client: {
-  unsafe: (sql: string, params?: any[]) => Promise<any>;
+// 全局单例：保证整个 Node 进程（含 dev 模式 HMR 反复 reload 模块）只跑一次 schema reconcile。
+// 否则每次热更新都重跑 ~80 条 DDL，瞬间打满 Supabase 连接池（pool_size=15），
+// 触发 EMAXCONNSESSION，连带 getSessionUser 等所有查询被阻塞。
+const PG_RECONCILE_GLOBAL_KEY = "__xiye_pg_reconcile_done__";
+
+export function reconcilePgSchema(client: {
+  unsafe: (sql: string, params?: any[], opts?: any) => Promise<any>;
+}): Promise<void> {
+  const g = globalThis as any;
+  if (g[PG_RECONCILE_GLOBAL_KEY]) return g[PG_RECONCILE_GLOBAL_KEY] as Promise<void>;
+  const p = runReconcileStatements(client).catch((err) => {
+    // 整体失败才清标记，允许下次启动重试；单条失败已在内部 swallowed。
+    console.error("[db] pg schema reconcile failed (non-fatal):", (err as Error)?.message);
+    g[PG_RECONCILE_GLOBAL_KEY] = null;
+    throw err;
+  });
+  g[PG_RECONCILE_GLOBAL_KEY] = p;
+  return p;
+}
+
+async function runReconcileStatements(client: {
+  unsafe: (sql: string, params?: any[], opts?: any) => Promise<any>;
 }): Promise<void> {
   const statements = PG_RECONCILE_SQL.split(";")
     .map((s) => s.trim())
     .filter(Boolean);
   for (const stmt of statements) {
     try {
-      await client.unsafe(stmt);
+      // 单条加超时，避免某条 DDL（如 DISABLE RLS 权限校验）在 session mode 下长时间挂起占死连接。
+      await client.unsafe(stmt, [], { timeout: 8000 });
     } catch (err) {
-      // 单条失败不阻断其余；常见：列/表已存在（IF NOT EXISTS 之外的竞态）、权限不足。
+      // 单条失败不阻断其余；常见：列/表已存在（竞态）、权限不足。
       console.warn("[db:reconcile] skipped statement:", stmt.slice(0, 80), "->", (err as Error)?.message);
     }
   }

@@ -12,6 +12,7 @@ import {
   ScanSearch,
   Sparkles,
 } from "lucide-react";
+import { readBrainCache, writeBrainCache, clearBrainCache } from "@/lib/brain-client-cache";
 
 type CurationStatus = "suggested" | "confirmed" | "ignored";
 type BrainCurateView = {
@@ -63,26 +64,42 @@ export function CuratePanel({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const load = useCallback(() => {
-    let disposed = false;
-    setLoading(true);
-    setError("");
-    fetch(`/api/brain/curate?noteId=${encodeURIComponent(noteId)}`)
-      .then((r) => r.json())
-      .then((d: BrainCurateView) => {
-        if (disposed) return;
-        setView(d);
-      })
-      .catch(() => {
-        if (!disposed) setError("加载整理信息失败");
-      })
-      .finally(() => {
-        if (!disposed) setLoading(false);
-      });
-    return () => {
-      disposed = true;
-    };
-  }, [noteId]);
+  const load = useCallback(
+    (force?: boolean) => {
+      let disposed = false;
+      const cacheKey = `curate:${noteId}`;
+      if (!force) {
+        const cached = readBrainCache<BrainCurateView>(cacheKey);
+        if (cached) {
+          setView(cached);
+          setLoading(false);
+          setError("");
+          return () => {
+            disposed = true;
+          };
+        }
+      }
+      setLoading(true);
+      setError("");
+      fetch(`/api/brain/curate?noteId=${encodeURIComponent(noteId)}`)
+        .then((r) => r.json())
+        .then((d: BrainCurateView) => {
+          if (disposed) return;
+          setView(d);
+          writeBrainCache(cacheKey, d);
+        })
+        .catch(() => {
+          if (!disposed) setError("加载整理信息失败");
+        })
+        .finally(() => {
+          if (!disposed) setLoading(false);
+        });
+      return () => {
+        disposed = true;
+      };
+    },
+    [noteId],
+  );
 
   useEffect(load, [load]);
 
@@ -100,7 +117,8 @@ export function CuratePanel({
           setError(d.error === "scan_failed" ? "扫描失败，请稍后重试" : d.error);
           return;
         }
-        load();
+        clearBrainCache(`curate:${noteId}`);
+        load(true);
       })
       .catch(() => setError("扫描失败，请稍后重试"))
       .finally(() => setScanning(false));
@@ -120,8 +138,9 @@ export function CuratePanel({
         setError(kind === "stale" ? "处理失败，请稍后重试" : "操作失败，请稍后重试");
         return;
       }
-      load();
       onChanged?.(kind);
+      clearBrainCache(`curate:${noteId}`);
+      load(true);
     } catch {
       setError("网络异常，操作未完成");
     } finally {

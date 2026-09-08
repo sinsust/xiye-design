@@ -134,6 +134,19 @@ export const userImaConfig = pgTable("user_ima_config", {
   updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 });
 
+// Obsidian 双向同步配置（pg 镜像，按 userId 隔离）。
+// vaultPath 为本地 vault 绝对路径；enabled 为双向同步总开关；lastSyncedAt 为最近一次同步游标。
+export const userObsidianConfig = pgTable("user_obsidian_config", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  vaultPath: text("vault_path").notNull().default(""),
+  enabled: integer("enabled").notNull().default(0),
+  lastSyncedAt: text("last_synced_at"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+});
+
 // 飞书自建应用 OAuth 凭证（pg 镜像，按 userId 隔离，token 加密存储）。
 export const userFeishuConfig = pgTable("user_feishu_config", {
   userId: text("user_id")

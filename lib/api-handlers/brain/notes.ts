@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import {
   listBrainNotes,
+  listBrainNotesPaginated,
   getBrainNote,
   insertBrainNote,
   updateBrainNote,
@@ -42,10 +43,21 @@ async function embedOne(
   return embed(buildListableText({ title, content, summary, tags }));
 }
 
-// GET /api/brain/notes  → 当前用户全部私有笔记
-export async function GET() {
+// GET /api/brain/notes  → 当前用户私有笔记
+// P2.1：支持 ?limit=&cursor= 服务端分页，返回 { notes, nextCursor, hasMore }；
+// 不传 limit 时回退为全量返回（兼容其它仍依赖全量列表的调用方）。
+export async function GET(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const limitParam = req.nextUrl.searchParams.get("limit");
+  const cursor = req.nextUrl.searchParams.get("cursor");
+  if (limitParam) {
+    const limit = Number(limitParam);
+    if (!Number.isNaN(limit) && limit > 0) {
+      const page = await listBrainNotesPaginated(user.sub, { limit, cursor });
+      return NextResponse.json(page);
+    }
+  }
   const notes = await listBrainNotes(user.sub);
   return NextResponse.json({ notes });
 }

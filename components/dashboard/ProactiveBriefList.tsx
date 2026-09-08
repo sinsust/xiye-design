@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, ChevronDown, EyeOff, Loader2, RefreshCw, Sparkles, SquareArrowOutUpRight } from "lucide-react";
+import { cachedGetJson, clearCachedJson, readCachedJsonSync } from "@/lib/api-cache";
 
 // P4-C：主动风险简报（"今天值得关注"推送层）前端区块。
 // 最多展示 3 张卡片；无主动建议时保持轻量。控制动作：立即处理 / 明天提醒 / 本周静默 / 忽略。
@@ -52,8 +53,11 @@ export interface ProactiveBriefListProps {
 
 export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = {}) {
   const router = useRouter();
-  const [items, setItems] = useState<ProactiveBriefItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const briefCacheUrl = "/api/brain/active-brief";
+  const cachedItems = readCachedJsonSync<{ items?: ProactiveBriefItem[] }>(briefCacheUrl)?.items ?? [];
+  const [items, setItems] = useState<ProactiveBriefItem[]>(cachedItems);
+  const [loading, setLoading] = useState(cachedItems.length === 0);
+  const itemsRef = useRef<ProactiveBriefItem[]>(cachedItems);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -61,14 +65,17 @@ export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = 
   // 方案B：卡片点击原地展开内联详情（不跳页），避免「只能看标题的通知条」无意义
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+  const load = useCallback(async (silent = false, force = false) => {
+    if (force) clearCachedJson(briefCacheUrl);
+    const had = itemsRef.current.length > 0;
+    if (!silent && !had) setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/brain/active-brief");
-      const d = await res.json();
-      if (res.ok) setItems(Array.isArray(d?.items) ? d.items : []);
-      else setError(d?.error || "加载失败");
+      const d = await cachedGetJson<{ items?: ProactiveBriefItem[]; error?: string }>(briefCacheUrl);
+      if (Array.isArray(d?.items)) {
+        setItems(d.items);
+        itemsRef.current = d.items;
+      } else setError(d?.error || "加载失败");
     } catch {
       setError("主动建议加载失败");
     } finally {
@@ -106,7 +113,7 @@ export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = 
         return; // 保留卡片，待用户重试
       } finally {
         setBusyId(null);
-        await load(true);
+        await load(true, true);
       }
       setActionError(null);
     },
@@ -139,7 +146,7 @@ export function ProactiveBriefList({ onConfirmPlan }: ProactiveBriefListProps = 
           </span>
         )}
         <button
-          onClick={() => load()}
+          onClick={() => load(false, true)}
           disabled={loading}
           className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground transition hover:text-foreground"
           aria-label="刷新主动建议"

@@ -7,6 +7,8 @@ import {
   getBrainInboxItem,
   getBrainInboxItemsByPlanId,
   getBrainNote,
+  getBrainProcessingPlan,
+  getBrainProcessingPlanByNoteId,
   getBrainProject,
   getBrainReminderItem,
   getBrainTaskById,
@@ -76,16 +78,14 @@ async function findPlanByNote(
   userId: string,
   noteId: string,
 ): Promise<BrainProcessingPlan | null> {
-  const plans = await listBrainProcessingPlans(userId, undefined, true);
-  return plans.find((p) => p.noteId === noteId) ?? null;
+  return getBrainProcessingPlanByNoteId(userId, noteId);
 }
 
 async function getPlanById(
   userId: string,
   planId: string,
 ): Promise<BrainProcessingPlan | null> {
-  const plans = await listBrainProcessingPlans(userId, undefined, true);
-  return plans.find((p) => p.id === planId) ?? null;
+  return getBrainProcessingPlan(userId, planId);
 }
 
 async function findPlanByTask(
@@ -144,7 +144,9 @@ export async function buildProvenance(
     } else if (input.taskId) {
       const task = await getBrainTaskById(userId, input.taskId);
       if (!task) return empty();
-      plan = await findPlanByTask(userId, input.taskId);
+      // 优先按任务来源笔记直接反查，避免每条任务都触发“全量计划列表”扫描。
+      if (task.noteId) plan = await findPlanByNote(userId, task.noteId);
+      if (!plan) plan = await findPlanByTask(userId, input.taskId);
       if (plan) inbox = (await getBrainInboxItemsByPlanId(userId, plan.id))[0] ?? null;
       const usedNoteId = plan?.noteId ?? task.noteId;
       if (usedNoteId) {

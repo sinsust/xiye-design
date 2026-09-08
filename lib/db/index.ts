@@ -56,6 +56,7 @@ let brainProactiveActions: any;
 let brainNotifications: any;
 let userPreferences: any;
 let userImaConfig: any;
+let userObsidianConfig: any;
 let userFeishuConfig: any;
 let flowOpLedger: any;
 let projectCheckpoints: any;
@@ -70,7 +71,14 @@ if (isPg) {
     import("postgres"),
     import("./schema.pg"),
   ]);
-  const client = postgresMod.default(DATABASE_URL, { prepare: false });
+  // 全局单例 client：dev 模式 HMR 反复 reload 模块时复用同一连接池，
+  // 避免每次热更新都 new 一个 postgres 客户端叠加连接，最终打满 Supabase 15 连接池。
+  const g = globalThis as any;
+  let client = g.__xiye_pg_client__ as ReturnType<typeof postgresMod.default> | undefined;
+  if (!client) {
+    client = postgresMod.default(DATABASE_URL, { prepare: false, max: 8 });
+    g.__xiye_pg_client__ = client;
+  }
   db = drizzle(client, { schema: schemaPg });
   users = schemaPg.users;
   projects = schemaPg.projects;
@@ -103,6 +111,7 @@ if (isPg) {
   brainNotifications = schemaPg.brainNotifications;
   userPreferences = schemaPg.userPreferences;
   userImaConfig = schemaPg.userImaConfig;
+  userObsidianConfig = schemaPg.userObsidianConfig;
   userFeishuConfig = schemaPg.userFeishuConfig;
   flowOpLedger = schemaPg.flowOpLedger;
   privateDataAudit = schemaPg.privateDataAudit;
@@ -765,6 +774,7 @@ if (isPg) {
   brainNotifications = schemaSqlite.brainNotifications;
   userPreferences = schemaSqlite.userPreferences;
   userImaConfig = schemaSqlite.userImaConfig;
+  userObsidianConfig = schemaSqlite.userObsidianConfig;
   userFeishuConfig = schemaSqlite.userFeishuConfig;
   flowOpLedger = schemaSqlite.flowOpLedger;
   projectCheckpoints = schemaSqlite.projectCheckpoints;
@@ -774,4 +784,4 @@ if (isPg) {
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, privateData, privateDataAudit, decisionLedger, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userObsidianConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, privateData, privateDataAudit, decisionLedger, schema };

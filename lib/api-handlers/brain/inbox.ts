@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import {
   insertBrainInboxItems,
@@ -9,7 +9,7 @@ import {
   type NewBrainInboxItem,
 } from "@/lib/brain-db";
 import { organizeNote, deriveIntentFromOrganizedNote, type IntentVerdict } from "@/lib/brain-organizer";
-import { applyOrganizedToNote } from "@/lib/inbox-process";
+import { applyOrganizedToNote, enrichNoteWithOrganized } from "@/lib/inbox-process";
 import { safeDetail } from "@/lib/api-error";
 
 export const runtime = "nodejs";
@@ -32,9 +32,9 @@ function todayStart(): number {
 
 // POST /api/brain/inbox
 // body: { items: [{ rawContent }], autoApply?: boolean }
-// 决策 15：默认 autoApply=true——对每条跑一次完整 AI 整理（organizeNote），即时落库为正式笔记
-// （applyOrganizedToNote），不再停留在待确认缓冲；前端可撤销（DELETE /api/brain/notes）。
-// autoApply=false 保留旧"先预览后落库"队列（高级工具内可选）。
+// 决策 15（v2，保存优先）：autoApply=true 时先把原文毫秒级落库为正式笔记立即返回，
+// AI 整理（organizeNote，秒级~十秒级）放 after() 后台跑，完成后回写增强笔记并按意图补建任务/策略。
+// 用户不再对着「入库中/整理中」干等。autoApply=false 保留旧"先预览后落库"队列（高级工具内可选）。
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -46,44 +46,44 @@ export async function POST(req: NextRequest) {
     const existing = await listBrainNotes(user.sub).catch(() => []);
 
     if (autoApply) {
-      const applied: (InboxPreview & { id: string; noteId: string })[] = [];
+      const applied: (InboxPreview & { id: string; noteId: string; organizing: boolean })[] = [];
+      const bgJobs: Promise<void>[] = [];
       for (const it of items) {
         const raw = typeof it?.rawContent === "string" ? it.rawContent.trim() : "";
         if (!raw) continue;
-        try {
-          const organized = await organizeNote(raw, existing);
-          const verdict: IntentVerdict = deriveIntentFromOrganizedNote(raw, organized);
-          const res = await applyOrganizedToNote(user.sub, {
-            rawContent: raw,
-            title: organized.title || undefined,
-            category: organized.category || undefined,
-            tags: organized.tags ?? [],
-            intent: verdict.intent,
-            organized,
-          });
-          if (!res.ok || !res.noteId) {
-            console.error("[inbox] auto-apply failed:", res.error);
-            continue;
-          }
-          applied.push({
-            id: res.noteId,
-            noteId: res.noteId,
-            rawContent: raw,
-            intent: verdict.intent,
-            confidence: verdict.confidence,
-            suggestedTitle: organized.title || raw.slice(0, 50),
-            suggestedCategory: organized.category || "未分类",
-            suggestedTags: organized.tags ?? [],
-          });
-        } catch (err) {
-          console.error("[inbox] organize failed:", err);
-          // 降级：仍落一条原文笔记（决策 16 兜底，避免丢输入），不阻断
-          const res = await applyOrganizedToNote(user.sub, { rawContent: raw, intent: "unknown" as BrainInboxIntent, organized: null }).catch(() => null);
-          if (res?.noteId) {
-            applied.push({ id: res.noteId, noteId: res.noteId, rawContent: raw, intent: "unknown", confidence: 0 });
-          }
+        // 1) 保存优先：原文笔记立即落库（无 LLM，毫秒级）；intent 暂记 note，后台整理后再升级
+        const res = await applyOrganizedToNote(user.sub, { rawContent: raw, intent: "note", organized: null });
+        if (!res.ok || !res.noteId) {
+          console.error("[inbox] quick save failed:", res.error);
+          continue;
         }
+        applied.push({
+          id: res.noteId,
+          noteId: res.noteId,
+          rawContent: raw,
+          intent: "note",
+          confidence: 0,
+          suggestedTitle: raw.slice(0, 50),
+          suggestedCategory: "未分类",
+          suggestedTags: [],
+          organizing: true,
+        });
+        // 2) AI 整理转后台：完成后回写增强笔记 + 补建任务/策略
+        const noteId = res.noteId;
+        bgJobs.push(
+          (async () => {
+            try {
+              const organized = await organizeNote(raw, existing);
+              const verdict: IntentVerdict = deriveIntentFromOrganizedNote(raw, organized);
+              await enrichNoteWithOrganized(user.sub, noteId, raw, organized, verdict.intent);
+            } catch (err) {
+              console.error("[inbox] background organize failed:", err);
+            }
+          })(),
+        );
       }
+      // 响应先行，后台整理在响应结束后继续执行（Next after()；本地 dev 与 Vercel 均支持）
+      if (bgJobs.length) after(() => Promise.allSettled(bgJobs));
       const all = await listBrainInboxItems(user.sub).catch(() => []);
       return NextResponse.json({
         autoApply: true,

@@ -177,6 +177,7 @@ const SOURCE_LABEL: Record<BrainNote["source"], string> = {
   clip: "剪藏",
   voice: "语音",
   ima: "IMA 同步",
+  obsidian: "Obsidian 同步",
 };
 
 const MILESTONE_DEFAULT = "__no_milestone__";

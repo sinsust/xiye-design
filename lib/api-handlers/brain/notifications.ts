@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import {
   getNotificationCenter,
+  getNotificationCenterReadonly,
   applyNotificationAction,
   applyNotificationBatch,
   markAllNotificationsRead,
@@ -16,7 +17,8 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
     const at = Number(req.nextUrl.searchParams.get("at") || Date.now()) || Date.now();
-    const data = await getNotificationCenter(user.sub, at);
+    // P3#3：GET 仅读已生成的通知，不再扫描/写库。扫描改由 POST {action:"scan"} 显式触发。
+    const data = await getNotificationCenterReadonly(user.sub, at);
     return NextResponse.json(data);
   } catch (err) {
     console.error("notifications get failed:", err);
@@ -34,6 +36,14 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => null)) ?? {};
     const action = body.action;
+
+    // P3#3：显式触发扫描并入队（原本藏在 GET 里带写库副作用）。返回完整中心数据供前端刷新。
+    if (action === "scan") {
+      const at = Number(req.nextUrl.searchParams.get("at") || body.at || Date.now()) || Date.now();
+      const data = await getNotificationCenter(user.sub, at);
+      return NextResponse.json(data);
+    }
+
     if (!isAction(action)) {
       return NextResponse.json({ error: "invalid_action" }, { status: 400 });
     }

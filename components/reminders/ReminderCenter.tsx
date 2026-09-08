@@ -33,7 +33,6 @@ import { ProvenancePanel } from "@/components/brain/ProvenancePanel";
 import type { ReminderType } from "@/lib/brain-reminder";
 import { fetchSession } from "@/lib/auth-session";
 import { AUTH_CHANGED_EVENT } from "@/lib/auth-events";
-
 // —— 通知中心数据（与 /api/brain/notifications 对齐）——
 type NotificationStatus = "new" | "read" | "deferred" | "snoozed" | "done" | "ignored";
 type NotificationPriority = "high" | "medium" | "low";
@@ -149,10 +148,16 @@ export function ReminderCenter({ onNavigate }: ReminderCenterProps) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/brain/notifications");
+      // P3#3：改为 POST {action:"scan"} 显式触发扫描（GET 已变只读，不再带写库副作用）。
+      const res = await fetch("/api/brain/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "scan" }),
+      });
       if (!res.ok) return;
       const d = await res.json();
-      const list: NotificationItem[] = Array.isArray(d.notifications) ? d.notifications : [];
+      if (!d || !Array.isArray(d.notifications)) return;
+      const list: NotificationItem[] = d.notifications;
       setNotifications(list);
       setUnread(d.unread ?? 0);
       setInQuiet(d.inQuietHours ?? false);

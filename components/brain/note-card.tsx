@@ -297,10 +297,18 @@ export function NoteCard({
             />
           </button>
           {showAnalysis && (
-            <div className="space-y-2 px-3 pb-3 [&>*]:overflow-hidden [&>*]:rounded-[var(--radius)]">
-              <ProvenancePanel anchor={{ noteId: note.id }} title="来源与关联" />
-              {!note.superseded && <CuratePanel noteId={note.id} />}
-              <LearningPlanPanel noteId={note.id} noteSuperseded={note.superseded} />
+            <div className="space-y-2 px-3 pb-3">
+              <div className="overflow-hidden rounded-[var(--radius)] border-l-2 border-l-sky-400">
+                <ProvenancePanel anchor={{ noteId: note.id }} title="来源与关联" />
+              </div>
+              {!note.superseded && (
+                <div className="overflow-hidden rounded-[var(--radius)] border-l-2 border-l-amber-400">
+                  <CuratePanel noteId={note.id} />
+                </div>
+              )}
+              <div className="overflow-hidden rounded-[var(--radius)] border-l-2 border-l-emerald-400">
+                <LearningPlanPanel noteId={note.id} noteSuperseded={note.superseded} />
+              </div>
             </div>
           )}
         </div>

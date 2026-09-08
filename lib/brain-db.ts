@@ -2,10 +2,11 @@
 // 与 knowledge-db（云端共享技能库）不同，这里按 userId 硬隔离，仅本人可见。
 
 import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainNotifications } from "@/lib/db";
-import { eq, and, desc, asc, isNull, inArray, gte, lt } from "drizzle-orm";
+import { eq, and, or, desc, asc, isNull, inArray, gte, lt } from "drizzle-orm";
 import { randomSuffix } from "./id";
+import { onNoteInserted, onNoteUpdated, onNoteDeleted } from "@/lib/obsidian-sync";
 
-export type BrainSource = "text" | "file" | "clip" | "voice" | "ima";
+export type BrainSource = "text" | "file" | "clip" | "voice" | "ima" | "obsidian";
 
 export type BrainTaskStatus = "todo" | "in_progress" | "done";
 export type BrainTaskPriority = "high" | "medium" | "low";
@@ -63,6 +64,11 @@ export interface BrainNote {
   // ima 增量同步：来源文档唯一标识 + 最近一次同步时间
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  // obsidian 直连溯源（决策 13/14）：双向同步时回填的 vault 路径 / 相对路径 / 文件名(id) / 最近同步时间
+  obsidianVault: string | null;
+  obsidianRelPath: string | null;
+  obsidianNoteId: string | null;
+  obsidianSyncedAt: string | null;
   // AI 整理完整结构化结果（OrganizedNote 的 JSON 字符串）；null 表示未整理
   struct: string | null;
   createdAt: number;
@@ -110,6 +116,10 @@ interface BrainRow {
   embedding: string | null;
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  obsidianVault: string | null;
+  obsidianRelPath: string | null;
+  obsidianNoteId: string | null;
+  obsidianSyncedAt: string | null;
   struct: string | null;
   createdAt: number;
   updatedAt: number;
@@ -145,6 +155,10 @@ function toNote(r: BrainRow): BrainNote {
     embedding: r.embedding ?? null,
     imaDocId: r.imaDocId ?? null,
     imaSyncedAt: r.imaSyncedAt ?? null,
+    obsidianVault: r.obsidianVault ?? null,
+    obsidianRelPath: r.obsidianRelPath ?? null,
+    obsidianNoteId: r.obsidianNoteId ?? null,
+    obsidianSyncedAt: r.obsidianSyncedAt ?? null,
     struct: r.struct ?? null,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
@@ -188,6 +202,72 @@ export async function listBrainNotes(userId: string): Promise<BrainNote[]> {
   }
 }
 
+/** 游标分页版 listBrainNotes：按 (createdAt, id) 倒序，避免一次性返回全量导致响应线性膨胀。 */
+export interface BrainNotePage {
+  notes: BrainNote[];
+  /** 下一页游标，格式 `${createdAt}:${id}`；无更多时为 null */
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export async function listBrainNotesPaginated(
+  userId: string,
+  opts: { limit?: number; cursor?: string | null } = {},
+): Promise<BrainNotePage> {
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+  try {
+    const conditions = [eq(brainNotes.userId, userId)];
+    if (opts.cursor) {
+      const [createdAtStr, id] = opts.cursor.split(":");
+      const createdAt = Number(createdAtStr);
+      if (!Number.isNaN(createdAt) && id) {
+        // (createdAt, id) < (cursorCreatedAt, cursorId) 的等价组合条件（与倒序一致）
+        conditions.push(
+          or(
+            lt(brainNotes.createdAt, createdAt),
+            and(eq(brainNotes.createdAt, createdAt), lt(brainNotes.id, id)),
+          )!,
+        );
+      }
+    }
+    const rows = (await db
+      .select({
+        id: brainNotes.id,
+        userId: brainNotes.userId,
+        source: brainNotes.source,
+        title: brainNotes.title,
+        content: brainNotes.content,
+        category: brainNotes.category,
+        summary: brainNotes.summary,
+        tags: brainNotes.tags,
+        related: brainNotes.related,
+        parentId: brainNotes.parentId,
+        version: brainNotes.version,
+        superseded: brainNotes.superseded,
+        isSnippet: brainNotes.isSnippet,
+        language: brainNotes.language,
+        codeContent: brainNotes.codeContent,
+        imaDocId: brainNotes.imaDocId,
+        imaSyncedAt: brainNotes.imaSyncedAt,
+        struct: brainNotes.struct,
+        createdAt: brainNotes.createdAt,
+        updatedAt: brainNotes.updatedAt,
+      })
+      .from(brainNotes)
+      .where(and(...conditions))
+      .orderBy(desc(brainNotes.createdAt), desc(brainNotes.id))
+      .limit(limit + 1)) as unknown as BrainRow[];
+    const hasMore = rows.length > limit;
+    const page = rows.slice(0, limit).map(toNote);
+    const last = page[page.length - 1];
+    const nextCursor = hasMore && last ? `${last.createdAt}:${last.id}` : null;
+    return { notes: page, nextCursor, hasMore };
+  } catch (err) {
+    console.error("[brain-db] list paginated failed:", err);
+    return { notes: [], nextCursor: null, hasMore: false };
+  }
+}
+
 // 轻量投影：剔除 content/struct/embedding/codeContent 大字段，供通知中心轮询等只需元数据的场景。
 export async function listBrainNoteMetas(userId: string): Promise<BrainNoteMeta[]> {
   try {
@@ -217,6 +297,42 @@ export async function listBrainNoteMetas(userId: string): Promise<BrainNoteMeta[
     return rows.map(toNoteMeta);
   } catch (err) {
     console.error("[brain-db] list metas failed:", err);
+    return [];
+  }
+}
+
+/** 只取指定笔记的完整正文/struct（避免今日空间每次都整表搬运全文）。 */
+export async function listBrainNotesByIds(userId: string, ids: string[]): Promise<BrainNote[]> {
+  if (!ids.length) return [];
+  try {
+    const rows = (await db
+      .select({
+        id: brainNotes.id,
+        userId: brainNotes.userId,
+        source: brainNotes.source,
+        title: brainNotes.title,
+        content: brainNotes.content,
+        category: brainNotes.category,
+        summary: brainNotes.summary,
+        tags: brainNotes.tags,
+        related: brainNotes.related,
+        parentId: brainNotes.parentId,
+        version: brainNotes.version,
+        superseded: brainNotes.superseded,
+        isSnippet: brainNotes.isSnippet,
+        language: brainNotes.language,
+        codeContent: brainNotes.codeContent,
+        imaDocId: brainNotes.imaDocId,
+        imaSyncedAt: brainNotes.imaSyncedAt,
+        struct: brainNotes.struct,
+        createdAt: brainNotes.createdAt,
+        updatedAt: brainNotes.updatedAt,
+      })
+      .from(brainNotes)
+      .where(and(eq(brainNotes.userId, userId), inArray(brainNotes.id, ids)))) as unknown as BrainRow[];
+    return rows.map(toNote);
+  } catch (err) {
+    console.error("[brain-db] list by ids failed:", err);
     return [];
   }
 }
@@ -279,7 +395,31 @@ export async function getBrainNote(
   }
 }
 
+/**
+ * 按 parentId 取直属子笔记（版本链下行方向）。线性版本链下最多 1 条，
+ * 取最新一条。供 listNoteVersions 沿链向下回溯，避免全表扫描。
+ */
+export async function getBrainChildNote(
+  userId: string,
+  parentId: string,
+): Promise<BrainNote | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainNotes)
+      .where(and(eq(brainNotes.userId, userId), eq(brainNotes.parentId, parentId)))
+      .orderBy(desc(brainNotes.createdAt))
+      .limit(1)) as BrainRow[];
+    return rows[0] ? toNote(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get child note failed:", err);
+    return null;
+  }
+}
+
 export type NewBrainNote = {
+  // 可选：指定 id（Obsidian 导入复用稳定 id，避免文件分裂）；缺省则自动生成 bn-*
+  id?: string;
   source: BrainSource;
   title?: string;
   content: string;
@@ -308,7 +448,7 @@ export async function insertBrainNote(
   row: NewBrainNote,
 ): Promise<BrainNote> {
   const now = Date.now();
-  const id = `bn-${now.toString(36)}-${randomSuffix()}`;
+  const id = row.id ?? `bn-${now.toString(36)}-${randomSuffix()}`;
   await db.insert(brainNotes).values({
     id,
     userId,
@@ -333,6 +473,7 @@ export async function insertBrainNote(
     updatedAt: now,
   });
   const inserted = await getBrainNote(userId, id);
+  if (inserted) onNoteInserted(inserted);
   return inserted ?? {
     id,
     userId,
@@ -352,6 +493,10 @@ export async function insertBrainNote(
     embedding: row.embedding ?? null,
     imaDocId: row.imaDocId ?? null,
     imaSyncedAt: row.imaSyncedAt ?? null,
+    obsidianVault: null,
+    obsidianRelPath: null,
+    obsidianNoteId: null,
+    obsidianSyncedAt: null,
     struct: row.struct ?? null,
     createdAt: now,
     updatedAt: now,
@@ -371,6 +516,8 @@ export type UpdateBrainNote = Partial<
     | "imaSyncedAt"
     | "codeContent"
     | "struct"
+    | "isSnippet"
+    | "language"
   >
 >;
 
@@ -390,6 +537,8 @@ export async function updateBrainNote(
     imaSyncedAt: patch.imaSyncedAt === undefined ? undefined : (patch.imaSyncedAt ?? null),
     codeContent: patch.codeContent === undefined ? undefined : (patch.codeContent ?? null),
     struct: patch.struct === undefined ? undefined : (patch.struct ?? null),
+    isSnippet: patch.isSnippet === undefined ? undefined : (patch.isSnippet ? 1 : 0),
+    language: patch.language === undefined ? undefined : (patch.language ?? null),
     updatedAt: Date.now(),
   };
   for (const k of Object.keys(set)) {
@@ -399,14 +548,18 @@ export async function updateBrainNote(
     .update(brainNotes)
     .set(set)
     .where(and(eq(brainNotes.id, id), eq(brainNotes.userId, userId)));
-  return getBrainNote(userId, id);
+  const updated = await getBrainNote(userId, id);
+  if (updated) onNoteUpdated(updated);
+  return updated;
 }
 
 export async function deleteBrainNote(userId: string, id: string): Promise<boolean> {
+  const toRemove = await getBrainNote(userId, id);
   try {
     await db
       .delete(brainNotes)
       .where(and(eq(brainNotes.id, id), eq(brainNotes.userId, userId)));
+    if (toRemove) onNoteDeleted(toRemove);
     return true;
   } catch (err) {
     console.error("[brain-db] delete failed:", err);
@@ -1513,20 +1666,40 @@ export async function upgradeBrainNote(
 }
 
 /** 版本链：从某条笔记沿 parentId 向上追溯到初版，按版本号升序返回。 */
+/**
+ * 版本链：从某条笔记沿 parentId 向上追溯到初版，再向下到最新，返回「初版 → 最新」。
+ * P2.2：原实现对全量 listBrainNotes 做内存组链（每调用一次全表扫描），
+ * 改为先 getBrainNote 定位起点，再沿 parentId 做定向点查（上溯根 + 下行子），
+ * 查询次数 = 链长量级，且均为 (user_id, id/parent_id) 索引命中，避免全表扫描。
+ */
 export async function listNoteVersions(
   userId: string,
   id: string,
 ): Promise<BrainNote[]> {
   try {
-    const all = await listBrainNotes(userId);
-    const byId = new Map(all.map((n) => [n.id, n]));
-    const chain: BrainNote[] = [];
-    let cur = byId.get(id) ?? null;
-    const seen = new Set<string>();
-    while (cur && !seen.has(cur.id)) {
-      seen.add(cur.id);
-      chain.unshift(cur); // 从最新向前回溯，插入头部得到"初版 → 最新"顺序
-      cur = cur.parentId ? (byId.get(cur.parentId) ?? null) : null;
+    const start = await getBrainNote(userId, id);
+    if (!start) return [];
+    const seen = new Set<string>([start.id]);
+    const chain: BrainNote[] = [start];
+
+    // 上溯：沿 parentId 到根（初版）
+    let cur = start;
+    while (cur.parentId && !seen.has(cur.parentId)) {
+      const parent = await getBrainNote(userId, cur.parentId);
+      if (!parent) break;
+      chain.unshift(parent); // 头部插入得到"初版 → 当前"顺序
+      seen.add(parent.id);
+      cur = parent;
+    }
+
+    // 下行：从链尾（已加载的最新节点）沿 parentId 找到其子笔记，直到链尾
+    cur = chain[chain.length - 1];
+    while (true) {
+      const child = await getBrainChildNote(userId, cur.id);
+      if (!child || seen.has(child.id)) break;
+      chain.push(child);
+      seen.add(child.id);
+      cur = child;
     }
     return chain;
   } catch (err) {
@@ -1568,6 +1741,29 @@ export async function findBrainNoteByImaDocId(
     return list.find((n) => !n.superseded) ?? list[0];
   } catch (err) {
     console.error("[brain-db] find by ima doc failed:", err);
+    return null;
+  }
+}
+
+/**
+ * 按 obsidian 溯源 id 查笔记（双向同步去重用）。
+ * obsidianNoteId 即 .md frontmatter 里的 xiye note id，或纯 Obsidian 文件派生的稳定 id。
+ */
+export async function findBrainNoteByObsidianNoteId(
+  userId: string,
+  noteId: string,
+): Promise<BrainNote | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainNotes)
+      .where(and(eq(brainNotes.userId, userId), eq(brainNotes.obsidianNoteId, noteId)))
+      .orderBy(desc(brainNotes.updatedAt))) as BrainRow[];
+    if (!rows.length) return null;
+    const list = rows.map(toNote);
+    return list.find((n) => !n.superseded) ?? list[0];
+  } catch (err) {
+    console.error("[brain-db] find by obsidian note failed:", err);
     return null;
   }
 }
@@ -2004,6 +2200,25 @@ export async function getBrainProcessingPlan(
     return rows[0] ? toPlan(rows[0]) : null;
   } catch (err) {
     console.error("[brain-db] get plan failed:", err);
+    return null;
+  }
+}
+
+/** 按产出笔记反查关联的处理计划（同一笔记只取最近一条，供来源/产出回溯）。 */
+export async function getBrainProcessingPlanByNoteId(
+  userId: string,
+  noteId: string,
+): Promise<BrainProcessingPlan | null> {
+  try {
+    const rows = (await db
+      .select()
+      .from(brainProcessingPlans)
+      .where(and(eq(brainProcessingPlans.userId, userId), eq(brainProcessingPlans.noteId, noteId)))
+      .orderBy(desc(brainProcessingPlans.createdAt))
+      .limit(1)) as PlanRow[];
+    return rows[0] ? toPlan(rows[0]) : null;
+  } catch (err) {
+    console.error("[brain-db] get plan by note failed:", err);
     return null;
   }
 }

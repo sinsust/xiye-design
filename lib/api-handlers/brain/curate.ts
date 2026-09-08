@@ -14,7 +14,9 @@ export async function GET(req: NextRequest) {
   if (!noteId) return NextResponse.json({ error: "note_required" }, { status: 400 });
   try {
     const view = await getCurateView(user.sub as string, noteId);
-    return NextResponse.json(view);
+    return NextResponse.json(view, {
+      headers: { "Cache-Control": "private, max-age=30" },
+    });
   } catch (err) {
     console.error("brain curate view failed:", err);
     return NextResponse.json({ error: "load_failed" }, { status: 500 });

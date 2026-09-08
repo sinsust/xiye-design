@@ -32,6 +32,7 @@ import {
   type NoteType,
 } from "./brain-organizer";
 import { embed, buildListableText } from "./embedding";
+import { compactSaveError } from "./api-error";
 
 // ---------------- ProcessingPlan 协议 ----------------
 
@@ -330,7 +331,8 @@ export async function organizeInboxToPlan(
     });
     return { ok: true, plan, body, duplicate };
   } catch (err) {
-    const reason = err instanceof Error ? err.message : "AI 整理失败";
+    console.error("[brain-plan] organize failed:", err);
+    const reason = compactSaveError(err, "AI 整理失败");
     await updateBrainInboxItem(userId, inboxId, { status: "failed", failedReason: reason });
     return { ok: false, error: "organize_failed", duplicate: null };
   }
@@ -614,7 +616,8 @@ export async function applyProcessingPlan(
     return { ok: true, note, strategyIds: createdStrategyIds, taskIds: createdTaskIds, reminderIds: createdReminderIds, plan: updated };
   } catch (err) {
     console.error("[brain-plan] apply failed:", err);
-    return fail("apply_failed", err instanceof Error ? err.message : "写入过程发生未知错误");
+    // 收敛为一句人话返回前端；完整报错留在服务端日志（err 上一行已打）
+    return fail("apply_failed", compactSaveError(err));
   }
 }
 
