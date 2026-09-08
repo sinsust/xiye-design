@@ -1,0 +1,90 @@
+/*
+label: 自然绿
+value: nature-green
+生机绿(#059669) 主色 + 柠檬绿(#84CC16) 辅色，清新健康。
+*/
+
+:root[data-theme-preset="nature-green"] {
+  --radius: 0.625rem;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.06 155);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.06 155);
+  --primary: oklch(0.65 0.16 165);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.78 0.19 118);
+  --secondary-foreground: oklch(0.2 0.05 155);
+  --muted: oklch(0.955 0.02 150);
+  --muted-foreground: oklch(0.55 0.08 155);
+  --accent: oklch(1 0 0);
+  --accent-foreground: oklch(0.25 0.06 155);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --border: oklch(0.96 0.028 151);
+  --input: oklch(0.9 0.03 151);
+  --ring: oklch(0.65 0.16 165);
+  --chart-1: oklch(0.65 0.16 165);
+  --chart-2: oklch(0.78 0.19 118);
+  --chart-3: oklch(0.7 0.12 135);
+  --chart-4: oklch(0.85 0.11 110);
+  --chart-5: oklch(0.6 0.09 175);
+  --sidebar: oklch(0.986 0.008 150);
+  --sidebar-foreground: oklch(0.25 0.06 155);
+  --sidebar-primary: oklch(0.65 0.16 165);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.02 150);
+  --sidebar-accent-foreground: oklch(0.3 0.07 155);
+  --sidebar-border: oklch(0.94 0.03 151);
+  --sidebar-ring: oklch(0.65 0.16 165);
+  --background: oklch(0.986 0.008 150);
+  --foreground: oklch(0.25 0.06 155);
+  --shadow-2xs: 0px 0px 0px 0px hsl(155 30% 10% / 0.03);
+  --shadow-xs: 0px 0px 0px 0px hsl(155 30% 10% / 0.03);
+  --shadow-sm: 0px 0px 0px 0px hsl(155 30% 10% / 0.05), 0px 1px 2px -1px hsl(155 30% 10% / 0.05);
+  --shadow: 0px 0px 0px 0px hsl(155 30% 10% / 0.05), 0px 1px 2px -1px hsl(155 30% 10% / 0.05);
+  --shadow-md: 0px 0px 0px 0px hsl(155 30% 10% / 0.05), 0px 2px 4px -1px hsl(155 30% 10% / 0.05);
+  --shadow-lg: 0px 0px 0px 0px hsl(155 30% 10% / 0.05), 0px 4px 6px -1px hsl(155 30% 10% / 0.05);
+  --shadow-xl: 0px 0px 0px 0px hsl(155 30% 10% / 0.05), 0px 8px 10px -1px hsl(155 30% 10% / 0.05);
+  --shadow-2xl: 0px 0px 0px 0px hsl(155 30% 10% / 0.13);
+}
+
+.dark:root[data-theme-preset="nature-green"] {
+  --background: oklch(0.18 0.05 155);
+  --foreground: oklch(0.95 0.02 150);
+  --card: oklch(0.22 0.045 155);
+  --card-foreground: oklch(0.95 0.02 150);
+  --popover: oklch(0.22 0.045 155);
+  --popover-foreground: oklch(0.95 0.02 150);
+  --primary: oklch(0.72 0.15 165);
+  --primary-foreground: oklch(0.18 0.05 155);
+  --secondary: oklch(0.76 0.17 118);
+  --secondary-foreground: oklch(0.2 0.05 155);
+  --muted: oklch(0.26 0.04 155);
+  --muted-foreground: oklch(0.7 0.08 150);
+  --accent: oklch(0.28 0.045 155);
+  --accent-foreground: oklch(0.95 0.02 150);
+  --destructive: oklch(0.7106 0.1661 22.2162);
+  --border: oklch(0.3 0.05 155);
+  --input: oklch(0.34 0.05 155);
+  --ring: oklch(0.72 0.15 165);
+  --chart-1: oklch(0.72 0.15 165);
+  --chart-2: oklch(0.76 0.17 118);
+  --chart-3: oklch(0.78 0.11 135);
+  --chart-4: oklch(0.82 0.1 110);
+  --chart-5: oklch(0.68 0.09 175);
+  --sidebar: oklch(0.18 0.05 155);
+  --sidebar-foreground: oklch(0.95 0.02 150);
+  --sidebar-primary: oklch(0.72 0.15 165);
+  --sidebar-primary-foreground: oklch(0.18 0.05 155);
+  --sidebar-accent: oklch(0.24 0.045 155);
+  --sidebar-accent-foreground: oklch(0.9 0.02 150);
+  --sidebar-border: oklch(0.34 0.05 155);
+  --sidebar-ring: oklch(0.72 0.15 165);
+  --shadow-2xs: 0px 0px 0px 0px hsl(155 30% 90% / 0.04);
+  --shadow-xs: 0px 0px 0px 0px hsl(155 30% 90% / 0.04);
+  --shadow-sm: 0px 0px 0px 0px hsl(155 30% 90% / 0.05), 0px 1px 2px -1px hsl(155 30% 90% / 0.05);
+  --shadow: 0px 0px 0px 0px hsl(155 30% 90% / 0.05), 0px 1px 2px -1px hsl(155 30% 90% / 0.05);
+  --shadow-md: 0px 0px 0px 0px hsl(155 30% 90% / 0.05), 0px 2px 4px -1px hsl(155 30% 90% / 0.05);
+  --shadow-lg: 0px 0px 0px 0px hsl(155 30% 90% / 0.05), 0px 4px 6px -1px hsl(155 30% 90% / 0.05);
+  --shadow-xl: 0px 0px 0px 0px hsl(155 30% 90% / 0.05), 0px 8px 10px -1px hsl(155 30% 90% / 0.05);
+  --shadow-2xl: 0px 0px 0px 0px hsl(155 30% 90% / 0.13);
+}

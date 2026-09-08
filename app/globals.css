@@ -12,6 +12,7 @@
 @import "./styles/presets/claude.css";
 @import "./styles/presets/amethyst-haze.css";
 @import "./styles/presets/t3-chat.css";
+@import "./styles/presets/nature-green.css";
 
 @custom-variant dark (&:is(.dark *));
 

@@ -1,0 +1,161 @@
+/* 甘特图视觉覆盖：中文表头/表格/tooltip 自有样式 + 库 SVG 网格/日历 scoped 美化
+   （库内部用 CSS Modules 哈希类名，以下用 .gantt-cn 作用域 + 高优先级选择器覆盖，构建锁定无副作用） */
+
+/* ===== 自定义任务列表表头（名称 / 开始 / 结束） ===== */
+.gantt-cn-header {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  box-sizing: border-box;
+}
+.gantt-cn-header-cell {
+  padding: 0 10px;
+  font-weight: 600;
+  color: #334155;
+  font-size: 12px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+.gantt-cn-header-sep {
+  width: 1px;
+  background: #e2e8f0;
+  flex: 0 0 auto;
+}
+
+/* ===== 自定义任务列表表格 ===== */
+.gantt-cn-table {
+  width: 100%;
+}
+.gantt-cn-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  box-sizing: border-box;
+}
+.gantt-cn-row:hover {
+  background: #f8fafc;
+}
+.gantt-cn-cell {
+  padding: 0 10px;
+  color: #475569;
+  font-size: 12px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gantt-cn-name {
+  gap: 4px;
+}
+.gantt-cn-expander {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 9px;
+  user-select: none;
+  flex: 0 0 auto;
+}
+.gantt-cn-expander-empty {
+  width: 9px;
+  flex: 0 0 auto;
+}
+.gantt-cn-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== 自定义悬停提示 ===== */
+.gantt-cn-tooltip {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+.gantt-cn-tooltip-title {
+  font-size: 14px;
+  color: #0f172a;
+}
+.gantt-cn-tooltip-line {
+  font-size: 12px;
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+/* ===== 库 SVG 网格 / 日历 scoped 美化（浅色） ===== */
+.gantt-cn ._2dZTy {
+  fill: #fbfcfd;
+}
+.gantt-cn ._2dZTy:nth-child(even) {
+  fill: #f6f8fa;
+}
+.gantt-cn ._3rUKi,
+.gantt-cn ._RuwuK,
+.gantt-cn ._1rLuZ {
+  stroke: #eef1f4;
+}
+.gantt-cn ._9w8d5 {
+  fill: #475569;
+}
+.gantt-cn ._2q1Kt {
+  fill: #64748b;
+}
+.gantt-cn ._35nLX {
+  fill: #ffffff;
+  stroke: #e2e8f0;
+}
+
+/* ===== 深色主题 ===== */
+.dark .gantt-cn-header {
+  background: #0f172a;
+  border-bottom-color: #1e293b;
+}
+.dark .gantt-cn-header-cell {
+  color: #e2e8f0;
+}
+.dark .gantt-cn-header-sep {
+  background: #1e293b;
+}
+.dark .gantt-cn-row {
+  border-bottom-color: #1e293b;
+}
+.dark .gantt-cn-row:hover {
+  background: #111c2e;
+}
+.dark .gantt-cn-cell {
+  color: #cbd5e1;
+}
+.dark .gantt-cn-tooltip {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+.dark .gantt-cn-tooltip-title {
+  color: #f1f5f9;
+}
+.dark .gantt-cn-tooltip-line {
+  color: #94a3b8;
+}
+.dark .gantt-cn ._2dZTy {
+  fill: #0f172a;
+}
+.dark .gantt-cn ._2dZTy:nth-child(even) {
+  fill: #111c2e;
+}
+.dark .gantt-cn ._3rUKi,
+.dark .gantt-cn ._RuwuK,
+.dark .gantt-cn ._1rLuZ {
+  stroke: #1e293b;
+}
+.dark .gantt-cn ._9w8d5 {
+  fill: #cbd5e1;
+}
+.dark .gantt-cn ._2q1Kt {
+  fill: #94a3b8;
+}
+.dark .gantt-cn ._35nLX {
+  fill: #1e293b;
+  stroke: #334155;
+}
