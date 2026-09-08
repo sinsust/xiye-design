@@ -20,16 +20,6 @@ import { SkeletonRows } from "@/components/ui/skeleton";
 import type { OrganizedNote } from "@/lib/brain-organizer";
 
 // —— 与 GET /api/brain/today 响应对齐的本地类型 ——
-interface TodayCard {
-  kind: "sm2" | "learning";
-  reviewId: string;
-  noteId: string;
-  noteTitle: string;
-  noteCategory: string;
-  nextTs: number;
-  noteSummary: string;
-  noteContentPreview: string;
-}
 interface RecentNoteMeta {
   id: string;
   title: string;
@@ -49,7 +39,6 @@ interface WeeklySummary {
   updatedAt: number;
 }
 interface TodayResponse {
-  todayReviews: TodayCard[];
   recentNotes: RecentNoteMeta[];
   weeklySummary: WeeklySummary | null;
 }
@@ -102,16 +91,6 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
   const [composing, setComposing] = useState(false);
   const [composeError, setComposeError] = useState("");
   const [receipt, setReceipt] = useState<{ noteId: string; title: string }[]>([]);
-
-  // 复习动作中
-  const [busyReview, setBusyReview] = useState<string | null>(null);
-  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
-  const toggleReview = (id: string) =>
-    setExpandedReviews((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
 
   // 周摘要
   const [weeklyLoading, setWeeklyLoading] = useState(false);
@@ -214,30 +193,6 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
       setReceipt((prev) => prev.filter((a) => a.noteId !== noteId));
     } catch {
       /* 忽略 */
-    }
-  };
-
-  // —— 复习动作 ——
-  const actSm2 = async (id: string, action: "complete" | "skip") => {
-    setBusyReview(id);
-    try {
-      await fetch(`/api/brain/reviews?id=${encodeURIComponent(id)}&action=${action}`, { method: "POST" });
-      await load(true);
-    } finally {
-      setBusyReview(null);
-    }
-  };
-  const actLearning = async (id: string, action: "mastered" | "not_sure" | "snooze") => {
-    setBusyReview(id);
-    try {
-      await fetch(`/api/brain/learning-reviews/${encodeURIComponent(id)}/action`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      await load(true);
-    } finally {
-      setBusyReview(null);
     }
   };
 
@@ -435,85 +390,6 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
 
         {/* ═══ 右栏（1/3）═══ */}
         <div className="space-y-5">
-          {/* —— 今日复习 —— */}
-          <section className="rounded-xl border border-border bg-card p-4">
-            <div className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-foreground">
-              <RefreshCw className="size-4 text-primary" />
-              今日复习
-              {data && data.todayReviews.length > 0 && (
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{data.todayReviews.length}</span>
-              )}
-            </div>
-            {loading ? (
-              <SkeletonRows rows={2} className="py-1" />
-            ) : data && data.todayReviews.length === 0 ? (
-              <p className="py-4 text-center text-xs text-muted-foreground">今天没有待复习</p>
-            ) : (
-              <div className="space-y-2">
-                {data?.todayReviews.map((c) => {
-                  const accent = c.kind === "sm2" ? "border-l-sky-400" : "border-l-violet-400";
-                  const badge = c.kind === "sm2" ? "bg-info/10 text-info dark:text-info" : "bg-violet-500/15 text-violet-700 dark:text-violet-300";
-                  const preview = c.noteSummary || c.noteContentPreview;
-                  const expanded = expandedReviews.has(c.reviewId);
-                  return (
-                  <div key={c.reviewId} className={`rounded-lg border border-border border-l-2 ${accent} bg-background px-3 py-2.5`}>
-                    <div className="flex items-center gap-2">
-                      <span className={"rounded-full px-2 py-0.5 text-[11px] font-medium " + badge}>
-                        {c.kind === "sm2" ? "间隔复习" : "学习复习"}
-                      </span>
-                      {c.noteCategory && <span className="text-[11px] text-muted-foreground">{c.noteCategory}</span>}
-                    </div>
-                    <span className="mt-1 block text-sm font-medium text-foreground">{c.noteTitle}</span>
-                    {/* 复习内容预览：让「复习的是啥」一目了然 */}
-                    {preview ? (
-                      <button
-                        onClick={() => toggleReview(c.reviewId)}
-                        className="mt-1.5 block w-full text-left"
-                      >
-                        <p className={"text-[11px] leading-relaxed text-muted-foreground " + (expanded ? "" : "line-clamp-2")}>
-                          {preview}
-                        </p>
-                        <span className="mt-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-primary">
-                          <BookOpen className="size-3" />
-                          {expanded ? "收起内容" : "查看复习内容"}
-                        </span>
-                      </button>
-                    ) : (
-                      <p className="mt-1.5 text-[11px] text-muted-foreground/60">该笔记暂无正文/摘要</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {c.kind === "sm2" ? (
-                        <>
-                          <Button size="sm" disabled={busyReview === c.reviewId} onClick={() => actSm2(c.reviewId, "complete")}>
-                            {busyReview === c.reviewId ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-                            已复习
-                          </Button>
-                          <Button size="sm" variant="outline" disabled={busyReview === c.reviewId} onClick={() => actSm2(c.reviewId, "skip")}>
-                            跳过
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button size="sm" disabled={busyReview === c.reviewId} onClick={() => actLearning(c.reviewId, "mastered")}>
-                            {busyReview === c.reviewId ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-                            掌握
-                          </Button>
-                          <Button size="sm" variant="outline" disabled={busyReview === c.reviewId} onClick={() => actLearning(c.reviewId, "not_sure")}>
-                            模糊
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-muted-foreground" disabled={busyReview === c.reviewId} onClick={() => actLearning(c.reviewId, "snooze")}>
-                            延后
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
           {/* —— 本周摘要 —— */}
           <section className="rounded-xl border border-border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">

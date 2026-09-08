@@ -8,7 +8,6 @@ import {
   insertBrainNote,
   insertBrainStrategies,
   insertBrainTasks,
-  insertBrainReview,
   insertBrainReminderItems,
   deleteBrainNote,
   deleteBrainReminderItem,
@@ -595,15 +594,7 @@ export async function applyProcessingPlan(
     createdReminderIds = createdReminders.map((c) => c.id);
     mark("reminders");
 
-    // 5) 复习记录（1 天后）
-    await insertBrainReview(userId, {
-      noteId: createdNoteId,
-      nextReviewAt: new Date(Date.now() + 86400_000).toISOString(),
-      interval: 1,
-      easeFactor: 2.5,
-      reviewCount: 0,
-    });
-    mark("review");
+    // 注：间隔复习功能已移除，不再生成 brain_review 记录。
 
     // 6) 审计：回写 plan 状态与产出对象 ID
     await updateBrainProcessingPlan(userId, plan.id, {

@@ -3,7 +3,6 @@ import { db, brainReminderRules, brainReminderLog, brainNoteAccessLog } from "@/
 import {
   listBrainTasks,
   listBrainNoteMetas,
-  listPendingBrainReviews,
   listBrainInboxItems,
   listBrainStrategies,
   listPendingBrainReminderItems,
@@ -241,16 +240,16 @@ export async function checkReminders(userId: string): Promise<{
   const inQuietHours = isInQuietHours(settings.quietHoursStart, settings.quietHoursEnd);
 
   try {
-    // P2.3：5 张表的全量扫描加 userId 级短 TTL 缓存（默认 5min），
+    // P2.3：多表全量扫描加 userId 级短 TTL 缓存（默认 5min），
     // 避免通知中心/提醒中心每次挂载都重扫；下游触发逻辑仍实时计算，保证「今天到期」时效性。
-    const [tasks, notes, reviews, inbox, strategies] = await getCached(
+    // 注：间隔复习功能已移除，不再扫描 brain_reviews。
+    const [tasks, notes, inbox, strategies] = await getCached(
       `reminders:${userId}`,
       REMINDER_CACHE_TTL_MS,
       async () =>
         Promise.all([
           listBrainTasks(userId),
           listBrainNoteMetas(userId),
-          listPendingBrainReviews(userId),
           listBrainInboxItems(userId, "pending"),
           listBrainStrategies(userId),
         ]),
@@ -283,20 +282,6 @@ export async function checkReminders(userId: string): Promise<{
           title: `${soon.length} 个任务明天到期`,
           detail: soon.slice(0, 3).map((t) => trunc(t.title)).join("、"),
           link: "/brain?tab=tasks",
-        });
-      }
-    }
-
-    // —— review_due：复习记录今天到期 ——
-    if (enabled.get("review_due")) {
-      const dueReviews = reviews.filter((r) => r.nextReviewAt.slice(0, 10) <= today || r.nextReviewAt <= new Date(now).toISOString());
-      const pendingToday = dueReviews.filter((r) => r.nextReviewAt.slice(0, 10) <= today).slice(0, 12);
-      if (pendingToday.length) {
-        triggers.push({
-          type: "review_due",
-          title: `${pendingToday.length} 条笔记待复习`,
-          detail: pendingToday.slice(0, 3).map((r) => trunc(noteTitle.get(r.noteId) || "(笔记已删除)")).join("、"),
-          link: "/brain?tab=reviews",
         });
       }
     }

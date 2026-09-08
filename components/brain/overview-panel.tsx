@@ -12,14 +12,13 @@ import {
   ListPlus,
   Loader2,
   Network,
-  RotateCcw,
   Tags,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { KnowledgeGraph } from "@/components/knowledge-graph";
 import type { LearningTopic } from "@/lib/brain-path";
-import { catColor, nextInHours, relativeTime, SOURCE_ICON } from "./brain-utils";
+import { catColor, relativeTime, SOURCE_ICON } from "./brain-utils";
 
 const OUTCOME_LABEL: Record<string, string> = {
   resolved: "已解决",
@@ -54,17 +53,6 @@ export interface OverviewNoteDigest {
   version: number;
   isSnippet: boolean;
   superseded: boolean;
-}
-
-interface OverviewDueReview {
-  id: string;
-  noteId: string;
-  nextReviewAt: string;
-  interval: number;
-  easeFactor: number;
-  reviewCount: number;
-  noteTitle: string;
-  noteCategory: string;
 }
 
 interface OverviewReport {
@@ -105,10 +93,6 @@ export interface OverviewPanelProps {
   activity: OverviewActivityItem[];
   activityShowAll: boolean;
   setActivityShowAll: (value: boolean | ((prev: boolean) => boolean)) => void;
-  dueReviews: OverviewDueReview[];
-  doReview: (id: string, action: "complete" | "skip") => void;
-  reviewingId: string | null;
-  nextReview: { noteTitle: string; nextReviewAt: string } | null;
   report: OverviewReport | null;
   reportError: boolean;
   generateReport: () => void;
@@ -135,10 +119,6 @@ export function OverviewPanel(props: OverviewPanelProps) {
     activity,
     activityShowAll,
     setActivityShowAll,
-    dueReviews,
-    doReview,
-    reviewingId,
-    nextReview,
     report,
     reportError,
     generateReport,
@@ -323,78 +303,6 @@ export function OverviewPanel(props: OverviewPanelProps) {
               {activityShowAll ? "收起" : `查看更多（${activity.length - 3} 条）`}
             </button>
           )}
-        </div>
-
-        {/* 复习提醒（间隔复习/遗忘曲线） */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <RotateCcw className="size-3.5" />
-            </span>
-            <h2 className="text-sm font-semibold text-foreground">今日待复习</h2>
-            {dueReviews.length > 0 && (
-              <span className="ml-auto rounded-full bg-destructive px-1.5 py-px text-[10px] font-semibold text-white">
-                {dueReviews.length}
-              </span>
-            )}
-          </div>
-
-          <div className="mt-3">
-            {dueReviews.length === 0 ? (
-              <p className="text-xs text-muted-foreground">今天没有需要复习的笔记</p>
-            ) : (
-              <ul className="space-y-2">
-                {dueReviews.map((r) => (
-                  <li key={r.id} className="rounded-[var(--radius)] border border-border/70 bg-muted/20 p-2.5">
-                    {onOpenNote ? (
-                      <button
-                        type="button"
-                        onClick={() => onOpenNote(r.noteId)}
-                        className="block w-full truncate rounded text-left text-xs font-medium text-foreground transition hover:text-primary"
-                        title="打开这条笔记"
-                      >
-                        {r.noteTitle}
-                      </button>
-                    ) : (
-                      <div className="truncate text-xs font-medium text-foreground">{r.noteTitle}</div>
-                    )}
-                    <div className="mt-0.5 text-[11px] text-muted-foreground">
-                      第 {r.reviewCount + 1} 次复习 · 间隔 {r.interval} 天
-                    </div>
-                    <div className="mt-1.5 flex items-center gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-[11px]"
-                        onClick={() => doReview(r.id, "complete")}
-                        disabled={reviewingId === r.id}
-                      >
-                        <Check className="size-3" />
-                        已复习
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-[11px]"
-                        onClick={() => doReview(r.id, "skip")}
-                        disabled={reviewingId === r.id}
-                      >
-                        跳过
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="mt-3 border-t border-border/70 pt-2 text-[11px] text-muted-foreground">
-            {nextReview
-              ? `下次复习：${nextInHours(nextReview.nextReviewAt)}${nextReview.noteTitle ? ` · ${nextReview.noteTitle}` : ""}`
-              : dueReviews.length > 0
-                ? "今日已排期，复习后自动重新排期"
-                : "写入笔记后按遗忘曲线自动排期"}
-          </div>
         </div>
 
         {/* 本周周报（独立一行，全宽） */}

@@ -293,48 +293,6 @@ export function SecondBrain({
     () => tasks.filter((t) => t.status !== "done" && t.dueDate && t.dueDate < nowDateStr()),
     [tasks],
   );
-  // 间隔复习提醒
-  interface DueReview {
-    id: string;
-    noteId: string;
-    nextReviewAt: string;
-    interval: number;
-    easeFactor: number;
-    reviewCount: number;
-    noteTitle: string;
-    noteCategory: string;
-  }
-  const [dueReviews, setDueReviews] = useState<DueReview[]>([]);
-  const [nextReview, setNextReview] = useState<{ noteTitle: string; nextReviewAt: string } | null>(null);
-  const [reviewingId, setReviewingId] = useState<string | null>(null);
-  const loadReviews = useCallback(async () => {
-    try {
-      const data = await cachedGetJson<{ due?: DueReview[]; next?: { noteTitle: string; nextReviewAt: string } | null }>("/api/brain/reviews");
-      if (Array.isArray(data.due)) {
-        setDueReviews(data.due);
-        setNextReview(data.next ?? null);
-      }
-    } catch {
-      toast("复习加载失败", "error");
-    }
-  }, []);
-  useEffect(() => {
-    loadReviews();
-  }, [loadReviews]);
-  const doReview = useCallback(async (id: string, action: "complete" | "skip") => {
-    setReviewingId(id);
-    try {
-      const res = await fetch(`/api/brain/reviews?id=${id}&action=${action}`, { method: "POST" });
-      if (res.ok) {
-        await loadReviews();
-        loadTasks(); // 归档 done 任务后刷新看板
-      }
-    } catch {
-      toast("复习操作失败", "error");
-    } finally {
-      setReviewingId(null);
-    }
-  }, [loadReviews, loadTasks]);
   // 策略管理
   const [strategies, setStrategies] = useState<BrainStrategy[]>([]);
   const [expandedStrategy, setExpandedStrategy] = useState<string | null>(null);
@@ -537,8 +495,7 @@ export function SecondBrain({
     loadTasks();
     loadStrategies();
     loadSnippets();
-    loadReviews();
-  }, [loadTasks, loadStrategies, loadSnippets, loadReviews]);
+  }, [loadTasks, loadStrategies, loadSnippets]);
   // 打开页面时：已绑定 ima 且距上次同步 >24h（从未同步过则首次即同步）→ 后台自动增量同步
   useEffect(() => {
     let cancelled = false;
@@ -985,7 +942,6 @@ export function SecondBrain({
       const t = tabMatch[1];
       if (t === "tasks") gotoTop("workbench", "kanban");
       else if (t === "review") gotoTop("workbench", "review");
-      else if (t === "reviews") gotoTop("dashboard"); // 间隔复习 UI 在首页「待复习」
       else if (t === "strategies") gotoTop("workbench", "strategies");
       else if (t === "projects") {
         if (projectMatch) setOpenProjectId(decodeURIComponent(projectMatch[1]));
@@ -2092,7 +2048,7 @@ export function SecondBrain({
               >
                 <Network className="size-4 shrink-0 text-primary" />
                 <span className="text-sm font-semibold text-foreground">知识概览</span>
-                <span className="truncate text-[10px] text-muted-foreground">知识厚度 · 活跃 · 待复习 · 周报 · 图谱 · 学习路径</span>
+                <span className="truncate text-[10px] text-muted-foreground">知识厚度 · 活跃 · 周报 · 图谱 · 学习路径</span>
                 <ChevronDown
                   className={"ml-auto size-4 shrink-0 text-muted-foreground transition-transform " + (knowledgeOpen ? "" : "-rotate-90")}
                 />
@@ -2103,10 +2059,6 @@ export function SecondBrain({
                   activity={activity}
                   activityShowAll={activityShowAll}
                   setActivityShowAll={setActivityShowAll}
-                  dueReviews={dueReviews}
-                  doReview={doReview}
-                  reviewingId={reviewingId}
-                  nextReview={nextReview}
                   report={report}
                   reportError={reportError}
                   generateReport={generateReport}
