@@ -56,7 +56,8 @@ const nextConfig: NextConfig = {
     // - https://api.dicebear.com：角色头像的在线兜底（AgentAvatar 的 stage-1 回退），不加会被 CSP 拦成图标
     // - https://*.supabase.co：头像若走 Supabase Storage 托管（人设同步到云端时的外链图）
     // - https://picsum.photos / https://imagedelivery.net：既有占位/交付图域名，保留
-    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net https://api.dicebear.com https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src ${scriptSrc}; connect-src 'self'`;
+    // - https://images.unsplash.com：Originkit 动效组件默认素材图（如 spotlight-frames 板条展示图）
+    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net https://api.dicebear.com https://*.supabase.co https://images.unsplash.com; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src ${scriptSrc}; connect-src 'self'`;
     return [
       {
         source: "/:path*",

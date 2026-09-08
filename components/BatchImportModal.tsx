@@ -100,7 +100,7 @@ export default function BatchImportModal({
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-white shadow-2xl"
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-3">

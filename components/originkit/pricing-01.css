@@ -1,0 +1,11 @@
+/* pricing-01 — Switzer (section-private; breakpoints live in originkit-section-theme) */
+@font-face {
+  font-family: "Switzer";
+  src: url("/originkit/pricing-01/switzer.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@theme {
+  --font-switzer: "Switzer", Inter, ui-sans-serif, sans-serif;
+}

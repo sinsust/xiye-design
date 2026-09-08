@@ -50,6 +50,9 @@ const FlashlightText = dynamic(() => import("@/components/originkit/ui/spotlight
 const RingGallery = dynamic(() => import("@/components/originkit/ring-gallery").then((m) => m.RingGallery), { loading: PreviewLoading });
 const Smooth3DSlideshow = dynamic(() => import("@/components/originkit/coverflow-gallery/ui/coverflowgallery"), { loading: PreviewLoading });
 const RoundCarousel = dynamic(() => import("@/components/originkit/round-carousel/ui/roundcarousel"), { loading: PreviewLoading });
+const SpotlightFrames = dynamic(() => import("@/components/originkit/ui/spotlight-frames"), { loading: PreviewLoading });
+const ImageGrid = dynamic(() => import("@/components/originkit/ui/image-grid"), { loading: PreviewLoading });
+const HoverImageReveal = dynamic(() => import("@/components/originkit/ui/hover-image-reveal"), { loading: PreviewLoading });
 import ShinyPill from "@/components/originkit/ui/shiny-pill";
 const WaterButton = dynamic(() => import("@/components/originkit/ui/water-button"), { loading: PreviewLoading });
 import KeycapButton from "@/components/originkit/ui/keycap-button";
@@ -58,6 +61,7 @@ import ButtonResource from "@/components/originkit/ui/button-resource";
 const Hero36 = dynamic(() => import("@/components/originkit/hero-36"), { loading: PreviewLoading });
 const Hero19 = dynamic(() => import("@/components/originkit/hero-19"), { loading: PreviewLoading });
 const Hero04 = dynamic(() => import("@/components/originkit/hero-04"), { loading: PreviewLoading });
+const Pricing01 = dynamic(() => import("@/components/originkit/pricing-01"), { loading: PreviewLoading });
 import OutstandHero from "@/components/originkit/outstand/hero";
 import OutstandPricing from "@/components/originkit/outstand/pricing";
 import OutstandFaq from "@/components/originkit/outstand/faq";
@@ -860,6 +864,23 @@ export default function ComponentLibraryPage() {
 
   const usageCode = useMemo(() => buildUsageCode(comp, settings), [comp, settings]);
 
+  // 多文件组件（含相对导入/素材）需下载完整包 zip 才有意义；单文件直接用「复制源码」。
+  const multiFile = sourcePathFor(comp.id).length > 1;
+  const [pkgBusy, setPkgBusy] = useState(false);
+  const handleDownloadPackage = async () => {
+    try {
+      setPkgBusy(true);
+      const r = await fetch(`/api/component-zip?id=${encodeURIComponent(comp.id)}`);
+      if (!r.ok) throw new Error("下载失败");
+      const blob = await r.blob();
+      downloadBlob(blob, `${comp.id}-package.zip`);
+    } catch {
+      window.alert("完整包下载失败，请稍后重试");
+    } finally {
+      setPkgBusy(false);
+    }
+  };
+
   const handleCopySource = async () => {
     try {
       await navigator.clipboard.writeText(sourceCode || usageCode);
@@ -1498,6 +1519,17 @@ export default function ComponentLibraryPage() {
                 </>
               )}
             </div>
+            {multiFile && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadPackage}
+                disabled={pkgBusy}
+              >
+                <Download className="size-3.5" />
+                {pkgBusy ? "打包中…" : "下载完整包"}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -1688,6 +1720,64 @@ export default function ComponentLibraryPage() {
                 </div>
               )}
 
+              {comp.id === "spotlight-frames" && (
+                <div className="flex h-[440px] w-full items-center justify-center overflow-hidden py-4">
+                  <div className="h-full w-full">
+                    <SpotlightFrames
+                      background={String(settings.bg ?? "#0f0f0f")}
+                      startIndex={Number(settings.startIndex ?? 6)}
+                      trigger={String(settings.trigger ?? "auto") as any}
+                      track={{
+                        collapsedWidth: Number(settings.collapsedWidth ?? 80),
+                        expandedWidth: Number(settings.expandedWidth ?? 400),
+                        gap: Number(settings.gap ?? 2),
+                      }}
+                      panel={{
+                        height: Number(settings.height ?? 400),
+                        dim: Number(settings.dim ?? 0),
+                      }}
+                      selector={{
+                        box: settings.box !== "off",
+                        lines: settings.lines !== "off",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "image-grid" && (
+                <div className="flex h-[440px] w-full items-center justify-center overflow-hidden">
+                  <div className="h-full w-full">
+                    <ImageGrid
+                      cell={Number(settings.cell ?? 103)}
+                      cardSize={Number(settings.cardSize ?? 40)}
+                      magnify={Number(settings.magnify ?? 8)}
+                      radius={Number(settings.radius ?? 240)}
+                      drain={Number(settings.drain ?? 10)}
+                      assemble={settings.assemble !== "off"}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "hover-image-reveal" && (
+                <div className="flex h-[440px] w-full items-center justify-center overflow-hidden py-4">
+                  <div className="h-full w-full">
+                    <HoverImageReveal
+                      font={{ fontSize: Number(settings.fontSize ?? 61) }}
+                      textColor={String(settings.textColor ?? "#FFFFFF")}
+                      dimColor={String(settings.dimColor ?? "#51565A")}
+                      align={String(settings.align ?? "center") as any}
+                      rowGap={Number(settings.rowGap ?? 30)}
+                      imageWidth={Number(settings.imageWidth ?? 300)}
+                      imageHeight={Number(settings.imageHeight ?? 400)}
+                      rounded={Number(settings.rounded ?? 16)}
+                      backgroundColor={String(settings.bg ?? "#000000")}
+                    />
+                  </div>
+                </div>
+              )}
+
               {comp.id === "shiny-pill" && (
                 <div className="flex min-h-[20rem] w-full items-center justify-center overflow-hidden bg-[#0c0c0f] px-6 py-10">
                   <ShinyPill
@@ -1798,6 +1888,12 @@ export default function ComponentLibraryPage() {
               {comp.id === "hero-04" && (
                 <WidePreviewFrame>
                   <Hero04 />
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "pricing-01" && (
+                <WidePreviewFrame>
+                  <Pricing01 />
                 </WidePreviewFrame>
               )}
 

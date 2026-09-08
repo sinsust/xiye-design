@@ -41,3 +41,9 @@
   --font-instrument-serif: "Instrument Serif", Inter, ui-sans-serif, sans-serif;
   --font-tight: "Inter Tight", Inter, ui-sans-serif, sans-serif;
 }
+
+/* originkit:pricing-01 */
+/* components/originkit/pricing-01.css */
+@theme {
+  --font-switzer: "Switzer", Inter, ui-sans-serif, sans-serif;
+}

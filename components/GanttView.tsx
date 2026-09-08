@@ -201,7 +201,8 @@ export default function GanttView({ openTask, onChanged }: GanttViewProps) {
             }}
             onExpanderClick={handleDateChangeNoop}
             todayColor="#EF4444"
-            barFill={70}
+            rowHeight={64}
+            barFill={52}
             columnWidth={viewMode === ViewMode.Month ? 240 : viewMode === ViewMode.Week ? 60 : 40}
             listCellWidth="160px"
           />
