@@ -3,7 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { db, userObsidianConfig } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { markdownToNote, fileNameForNote } from "@/lib/obsidian-md";
+import { markdownToNote, resolveFileNameForNote } from "@/lib/obsidian-md";
 import { syncingPaths } from "@/lib/obsidian-sync";
 import {
   getBrainNote,
@@ -42,6 +42,11 @@ function state() {
   }
   return g.__xiyeObsidianWatch;
 }
+
+// 模块顶层即刷新 handler（不能只在 startObsidianWatch 里刷新）：
+// dev HMR 重求值本模块时，存活的旧 watcher 必须立即切换到新处理逻辑，
+// 否则旧闭包会按旧格式处理新格式文件，产生重复笔记/错误重命名。
+state().handler = (abs, userId, vaultDir) => processFile(abs, userId, vaultDir);
 
 function hashRel(rel: string): string {
   return createHash("sha1").update(rel).digest("hex").slice(0, 12);
@@ -162,14 +167,14 @@ function scheduleProcess(abs: string, userId: string, vaultDir: string): void {
 }
 
 /** 文件名对齐：若当前 .md 文件名非 xiye 预期（如纯 Obsidian 新建文件），重命名为预期名，避免孤儿文件。
- *  返回对齐后的最终绝对路径（未重命名则原样返回）。 */
+ *  返回对齐后的最终绝对路径（未重命名则原样返回）。
+ *  预期名经 resolveFileNameForNote 冲突解析：目标被占用时自动落到消歧名，不再删除既有文件。 */
 async function alignFileName(note: BrainNote, abs: string, vaultDir: string): Promise<string> {
-  const expected = fileNameForNote(note);
+  const expected = resolveFileNameForNote(vaultDir, note);
   if (path.basename(abs) === expected) return abs;
   const expectedAbs = path.join(vaultDir, expected);
   syncingPaths.add(expectedAbs);
   try {
-    if (fs.existsSync(expectedAbs)) fs.unlinkSync(expectedAbs);
     fs.renameSync(abs, expectedAbs);
     return expectedAbs;
   } catch (e) {
@@ -223,16 +228,18 @@ async function processFile(abs: string, userId: string, vaultDir: string): Promi
     // 冲突：最后写入优先（.md mtime vs xiye updatedAt）
     if (stat.mtimeMs <= existing.updatedAt) return existing;
     const updated = await updateBrainNote(userId, existing.id, {
-      title: meta.title || existing.title,
+      // 新格式无 frontmatter title：以文件名为准（用户在 Obsidian 重命名 = 改标题）
+      title: meta.title || path.basename(abs, ".md") || existing.title,
       content: meta.content,
       category: meta.category || existing.category,
-      tags: meta.tags,
+      // 精简格式可能不写 tags/struct：空值不覆盖 xiye 侧已有数据
+      tags: meta.tags.length ? meta.tags : (existing.tags ?? []),
       related: meta.related,
-      struct: meta.struct,
+      struct: meta.struct || existing.struct,
       // 溯源字段：obsidian-sync 的更新/删除写回依赖 vault + noteId
       obsidianVault: vaultDir,
       obsidianRelPath: relDirOf(vaultDir, abs),
-      obsidianNoteId: meta.obsidianNoteId || path.basename(abs, ".md"),
+      obsidianNoteId: path.basename(abs, ".md"),
       obsidianSyncedAt: nowIso,
     });
     if (!updated) return null;
@@ -253,7 +260,8 @@ async function processFile(abs: string, userId: string, vaultDir: string): Promi
   const draft = {
     id: targetId ?? undefined,
     source: "obsidian" as const,
-    title: meta.title || "未命名笔记",
+    // 纯 Obsidian 新文件无 title 元数据：用文件名（Obsidian 中文件名即标题）
+    title: meta.title || path.basename(abs, ".md").replace(/-[0-9a-f]{6,12}$/i, "") || "未命名笔记",
     content: meta.content,
     category: meta.category,
     tags: meta.tags,
@@ -261,7 +269,7 @@ async function processFile(abs: string, userId: string, vaultDir: string): Promi
     struct: meta.struct,
     obsidianVault: vaultDir,
     obsidianRelPath: relDirOf(vaultDir, abs),
-    obsidianNoteId: meta.obsidianNoteId || path.basename(abs, ".md"),
+    obsidianNoteId: path.basename(abs, ".md"),
     obsidianSyncedAt: nowIso,
   };
   let inserted: BrainNote | null;

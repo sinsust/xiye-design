@@ -1,9 +1,13 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { BrainNote } from "@/lib/brain-db";
 import type { OrganizedNote, ActionItem, MetricItem, ProblemDomain, StrategyAngle } from "@/lib/brain-organizer";
 
 // xiye ↔ Obsidian Markdown 互转。
-// 设计：frontmatter 存元数据（含 obsidianNoteId 做精确溯源）；正文为原始 content；
-// related 与 Obsidian [[wikilink]] 双向字符串互转；完整 struct JSON 藏在 HTML 注释里保证往返无损。
+// 设计原则：vault 里的文件是给用户看的 —— frontmatter 只保留对用户有意义/同步必需的最小集
+//（xiyeId 定位锚 + tags 原生标签），xiye 内部字段（category/source/xiyeType/时间戳）一律不写，
+// 同步所需元数据全部落在 DB（obsidianVault/obsidianRelPath/obsidianNoteId）与文件名里。
+// 正文为原始 content；related 转为 [[wikilink]]；AI 结构化结论以可见 callout 呈现（不再藏 JSON 注释）。
 
 export interface ObsidianNoteMeta {
   title: string;
@@ -22,11 +26,25 @@ export interface ObsidianNoteMeta {
 const STRUCT_OPEN = "<!-- xiye-struct";
 const STRUCT_CLOSE = "-->";
 
-/** 文件名：标题+短id，如「需求评审-a1b2c3d4.md」，永不重名且人类可读 */
-export function fileNameForNote(note: { id: string; title: string }): string {
+function sanitizeBase(title: string): string {
+  return (title || "untitled").replace(/[\\/:*?"<>|]/g, "_").trim().slice(0, 80) || "untitled";
+}
+
+/** 解析最终文件名：默认纯标题（如「需求评审.md」）；
+ *  仅当同名文件已被其他笔记占用时才追加短 id 消歧（如「需求评审-a1b2c3d4.md」）。 */
+export function resolveFileNameForNote(dir: string, note: { id: string; title: string }): string {
+  const candidate = `${sanitizeBase(note.title)}.md`;
+  const abs = path.join(dir, candidate);
+  if (!fs.existsSync(abs)) return candidate;
+  try {
+    // 已有同名文件：属于本笔记则直接复用，否则消歧
+    const head = fs.readFileSync(abs, "utf8").slice(0, 500);
+    if (head.includes(`xiyeId: ${note.id}`) || head.includes(`obsidianNoteId: ${note.id}`)) return candidate;
+  } catch {
+    /* 读取失败按占用处理，走消歧 */
+  }
   const short = note.id.split("-").pop() || note.id;
-  const base = (note.title || "untitled").replace(/[\\/:*?"<>|]/g, "_").trim().slice(0, 80) || "untitled";
-  return `${base}-${short}.md`;
+  return `${sanitizeBase(note.title)}-${short}.md`;
 }
 
 function escapeScalar(v: string): string {
@@ -38,7 +56,8 @@ function toYamlFrontmatter(meta: Record<string, unknown>): string {
   for (const [k, v] of Object.entries(meta)) {
     if (v === undefined || v === null) continue;
     if (Array.isArray(v)) {
-      lines.push(`${k}: ${v.length ? "[" + v.map((x) => escapeScalar(String(x))).join(", ") + "]" : "[]"}`);
+      if (!v.length) continue; // 空数组不写，减少属性面板噪音
+      lines.push(`${k}: [${v.map((x) => escapeScalar(String(x))).join(", ")}]`);
     } else if (typeof v === "number" || typeof v === "boolean") {
       lines.push(`${k}: ${v}`);
     } else {
@@ -118,16 +137,9 @@ function structToMarkdown(struct: OrganizedNote): string {
 
 export function noteToMarkdown(note: BrainNote): string {
   const parsed = note.struct ? safeParse(note.struct) : null;
-  const meta: Record<string, unknown> = {
-    title: note.title,
-    category: note.category,
-    tags: note.tags ?? [],
-    createdAt: note.createdAt,
-    updatedAt: note.updatedAt,
-    obsidianNoteId: note.id,
-    source: note.source,
-    xiyeType: parsed?.type ?? "",
-  };
+  // frontmatter 最小集：xiyeId（双向同步定位锚）+ tags（Obsidian 原生标签，非空才写）
+  const meta: Record<string, unknown> = { xiyeId: note.id };
+  if (note.tags?.length) meta.tags = note.tags;
   const parts: string[] = [toYamlFrontmatter(meta), ""];
   if (note.content) parts.push(note.content);
 
@@ -138,7 +150,7 @@ export function noteToMarkdown(note: BrainNote): string {
   if (note.struct) {
     const summary = parsed ? structToMarkdown(parsed) : "";
     if (summary) parts.push("", summary);
-    parts.push("", STRUCT_OPEN, note.struct, STRUCT_CLOSE);
+    // 不再写入 struct JSON 注释：结构化结果保留在 xiye 库中，vault 只呈现可读 callout
   }
   return parts.join("\n") + "\n";
 }
@@ -146,7 +158,7 @@ export function noteToMarkdown(note: BrainNote): string {
 export function markdownToNote(md: string): ObsidianNoteMeta {
   const { meta, body } = parseFrontmatter(md);
 
-  // 隐藏 struct JSON
+  // struct JSON（仅旧格式文件有；新格式不再写入，读取兼容保留）
   let struct: string | null = null;
   const sm = md.match(/<!-- xiye-struct\s*\n([\s\S]*?)\n-->/);
   if (sm) struct = sm[1].trim();
@@ -165,6 +177,14 @@ export function markdownToNote(md: string): ObsidianNoteMeta {
     .replace(/##\s*关联笔记[\s\S]*?(?=\n<!-- |$)/g, "")
     .trim();
 
+  // 定位锚：新格式 xiyeId（= xiye 主键）；兼容旧格式 obsidianNoteId（= 文件名 stem）
+  const anchor =
+    typeof meta.xiyeId === "string" && meta.xiyeId
+      ? meta.xiyeId
+      : typeof meta.obsidianNoteId === "string"
+        ? meta.obsidianNoteId
+        : "";
+
   return {
     title: typeof meta.title === "string" ? meta.title : "",
     category: typeof meta.category === "string" ? meta.category : "",
@@ -174,7 +194,7 @@ export function markdownToNote(md: string): ObsidianNoteMeta {
     struct,
     source: typeof meta.source === "string" ? meta.source : "obsidian",
     xiyeType: typeof meta.xiyeType === "string" ? meta.xiyeType : "",
-    obsidianNoteId: typeof meta.obsidianNoteId === "string" ? meta.obsidianNoteId : "",
+    obsidianNoteId: anchor,
     createdAt: typeof meta.createdAt === "number" ? meta.createdAt : Date.now(),
     updatedAt: typeof meta.updatedAt === "number" ? meta.updatedAt : Date.now(),
   };

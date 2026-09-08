@@ -2,13 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { db, userObsidianConfig, brainNotes } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { noteToMarkdown, fileNameForNote } from "@/lib/obsidian-md";
+import { noteToMarkdown, resolveFileNameForNote } from "@/lib/obsidian-md";
 import type { BrainNote } from "@/lib/brain-db";
 
 // xiye → Obsidian 写回 + 删除。Obsidian → xiye 监听见 lib/obsidian-watch.ts（批 4）。
 // 循环防护：xiye 写 .md 前把绝对路径加入 syncingPaths，watch 端忽略该路径的变更事件。
+// syncingPaths 挂 globalThis：dev HMR 重载本模块时新旧实例必须共享同一份，
+// 否则 watcher（旧实例）看不到 writeOne（新实例）的保护标记，循环防护失效。
 
-export const syncingPaths = new Set<string>();
+const gSync = globalThis as typeof globalThis & {
+  __xiyeObsidianSyncing?: Set<string>;
+};
+
+export const syncingPaths: Set<string> = (gSync.__xiyeObsidianSyncing ??= new Set());
 
 async function getConfig(userId: string) {
   const rows = await db
@@ -27,8 +33,26 @@ async function writeOne(note: BrainNote): Promise<void> {
   const vault = cfg.vaultPath;
   const rel = note.obsidianRelPath || "";
   const dir = rel ? path.join(vault, rel) : vault;
-  const fileName = fileNameForNote(note);
+  const fileName = resolveFileNameForNote(dir, note);
   const abs = path.join(dir, fileName);
+  const stem = fileName.replace(/\.md$/, "");
+
+  // 旧命名迁移：上次同步用的是「标题-短id.md」旧格式文件名，重命名到新名后再全量重写为精简格式。
+  // 旧文件不清理会变成孤儿（DB 已指向新名）。
+  const legacyStem = note.obsidianNoteId || "";
+  if (legacyStem && legacyStem !== stem) {
+    const legacyAbs = path.join(dir, `${legacyStem}.md`);
+    if (fs.existsSync(legacyAbs)) {
+      syncingPaths.add(legacyAbs);
+      try {
+        fs.renameSync(legacyAbs, abs);
+      } catch (e) {
+        console.error("[obsidian] legacy rename failed:", legacyAbs, e);
+      } finally {
+        setTimeout(() => syncingPaths.delete(legacyAbs), 1500);
+      }
+    }
+  }
 
   fs.mkdirSync(dir, { recursive: true });
   syncingPaths.add(abs);
@@ -48,7 +72,7 @@ async function writeOne(note: BrainNote): Promise<void> {
     .set({
       obsidianVault: vault,
       obsidianRelPath: rel,
-      obsidianNoteId: fileName.replace(/\.md$/, ""),
+      obsidianNoteId: stem,
       obsidianSyncedAt: nowIso,
     })
     .where(eq(brainNotes.id, note.id));
