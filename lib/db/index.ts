@@ -299,6 +299,7 @@ if (isPg) {
   for (const col of [
     `alter table brain_notes add column ima_doc_id text`,
     `alter table brain_notes add column ima_synced_at text`,
+    `alter table brain_notes add column ima_note_id text`,
   ]) {
     try {
       sqlite.exec(col);

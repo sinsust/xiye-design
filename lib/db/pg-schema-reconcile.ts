@@ -219,6 +219,7 @@ ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS code_content text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS embedding text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS ima_doc_id text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS ima_synced_at text;
+ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS ima_note_id text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS struct text;
 -- obsidian 直连溯源（决策 13/14，桌面壳前仅预留列，不做 watcher/写回）
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_vault text;
@@ -235,6 +236,10 @@ CREATE TABLE IF NOT EXISTS user_obsidian_config (
   created_at bigint NOT NULL,
   updated_at bigint NOT NULL
 );
+
+-- 多文件夹归档：默认落盘目录 + 分类 → 子目录映射
+ALTER TABLE user_obsidian_config ADD COLUMN IF NOT EXISTS default_folder text NOT NULL DEFAULT '';
+ALTER TABLE user_obsidian_config ADD COLUMN IF NOT EXISTS category_folder_map text NOT NULL DEFAULT '{}';
 
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS archived integer NOT NULL DEFAULT 0;
 ALTER TABLE brain_tasks ADD COLUMN IF NOT EXISTS strategy_id text REFERENCES brain_strategies(id) ON DELETE SET NULL;

@@ -64,6 +64,7 @@ export interface BrainNote {
   // ima 增量同步：来源文档唯一标识 + 最近一次同步时间
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  imaNoteId: string | null;
   // obsidian 直连溯源（决策 13/14）：双向同步时回填的 vault 路径 / 相对路径 / 文件名(id) / 最近同步时间
   obsidianVault: string | null;
   obsidianRelPath: string | null;
@@ -93,6 +94,7 @@ export interface BrainNoteMeta {
   language: string | null;
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  imaNoteId: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -116,6 +118,7 @@ interface BrainRow {
   embedding: string | null;
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  imaNoteId: string | null;
   obsidianVault: string | null;
   obsidianRelPath: string | null;
   obsidianNoteId: string | null;
@@ -155,6 +158,7 @@ function toNote(r: BrainRow): BrainNote {
     embedding: r.embedding ?? null,
     imaDocId: r.imaDocId ?? null,
     imaSyncedAt: r.imaSyncedAt ?? null,
+    imaNoteId: r.imaNoteId ?? null,
     obsidianVault: r.obsidianVault ?? null,
     obsidianRelPath: r.obsidianRelPath ?? null,
     obsidianNoteId: r.obsidianNoteId ?? null,
@@ -188,6 +192,7 @@ export async function listBrainNotes(userId: string): Promise<BrainNote[]> {
         codeContent: brainNotes.codeContent,
         imaDocId: brainNotes.imaDocId,
         imaSyncedAt: brainNotes.imaSyncedAt,
+        imaNoteId: brainNotes.imaNoteId,
         struct: brainNotes.struct,
         // Obsidian 溯源列：缺了它们，列表返回的 note.obsidianVault/noteId 恒为 null，
         // UI 无法标记「已同步到 Obsidian」，删除/回写也拿不到 vault 定位信息。
@@ -255,6 +260,7 @@ export async function listBrainNotesPaginated(
         codeContent: brainNotes.codeContent,
         imaDocId: brainNotes.imaDocId,
         imaSyncedAt: brainNotes.imaSyncedAt,
+        imaNoteId: brainNotes.imaNoteId,
         struct: brainNotes.struct,
         obsidianVault: brainNotes.obsidianVault,
         obsidianRelPath: brainNotes.obsidianRelPath,
@@ -298,6 +304,7 @@ export async function listBrainNoteMetas(userId: string): Promise<BrainNoteMeta[
         language: brainNotes.language,
         imaDocId: brainNotes.imaDocId,
         imaSyncedAt: brainNotes.imaSyncedAt,
+        imaNoteId: brainNotes.imaNoteId,
         createdAt: brainNotes.createdAt,
         updatedAt: brainNotes.updatedAt,
       })
@@ -334,6 +341,7 @@ export async function listBrainNotesByIds(userId: string, ids: string[]): Promis
         codeContent: brainNotes.codeContent,
         imaDocId: brainNotes.imaDocId,
         imaSyncedAt: brainNotes.imaSyncedAt,
+        imaNoteId: brainNotes.imaNoteId,
         struct: brainNotes.struct,
         obsidianVault: brainNotes.obsidianVault,
         obsidianRelPath: brainNotes.obsidianRelPath,
@@ -367,6 +375,7 @@ interface BrainRowMeta {
   language: string | null;
   imaDocId: string | null;
   imaSyncedAt: string | null;
+  imaNoteId: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -388,6 +397,7 @@ function toNoteMeta(r: BrainRowMeta): BrainNoteMeta {
     language: r.language ?? null,
     imaDocId: r.imaDocId ?? null,
     imaSyncedAt: r.imaSyncedAt ?? null,
+    imaNoteId: r.imaNoteId ?? null,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   };
@@ -453,6 +463,7 @@ export type NewBrainNote = {
   // ima 增量同步字段
   imaDocId?: string | null;
   imaSyncedAt?: string | null;
+  imaNoteId?: string | null;
   // AI 整理完整结构化结果（JSON 字符串）；可选，落库/回填写入
   struct?: string | null;
   // Obsidian 直连溯源（obsidian-sync 的更新/删除写回依赖 vault + noteId，
@@ -489,6 +500,7 @@ export async function insertBrainNote(
     embedding: row.embedding ?? null,
     imaDocId: row.imaDocId ?? null,
     imaSyncedAt: row.imaSyncedAt ?? null,
+    imaNoteId: row.imaNoteId ?? null,
     struct: row.struct ?? null,
     obsidianVault: row.obsidianVault ?? null,
     obsidianRelPath: row.obsidianRelPath ?? null,
@@ -518,6 +530,7 @@ export async function insertBrainNote(
     embedding: row.embedding ?? null,
     imaDocId: row.imaDocId ?? null,
     imaSyncedAt: row.imaSyncedAt ?? null,
+    imaNoteId: row.imaNoteId ?? null,
     obsidianVault: null,
     obsidianRelPath: null,
     obsidianNoteId: null,
@@ -539,6 +552,7 @@ export type UpdateBrainNote = Partial<
     | "related"
     | "embedding"
     | "imaSyncedAt"
+    | "imaNoteId"
     | "codeContent"
     | "struct"
     | "isSnippet"
@@ -564,6 +578,7 @@ export async function updateBrainNote(
     related: patch.related ? JSON.stringify(patch.related) : patch.related === undefined ? undefined : null,
     embedding: patch.embedding === undefined ? undefined : (patch.embedding ?? null),
     imaSyncedAt: patch.imaSyncedAt === undefined ? undefined : (patch.imaSyncedAt ?? null),
+    imaNoteId: patch.imaNoteId === undefined ? undefined : (patch.imaNoteId ?? null),
     codeContent: patch.codeContent === undefined ? undefined : (patch.codeContent ?? null),
     struct: patch.struct === undefined ? undefined : (patch.struct ?? null),
     isSnippet: patch.isSnippet === undefined ? undefined : (patch.isSnippet ? 1 : 0),
@@ -1702,6 +1717,7 @@ export async function upgradeBrainNote(
     // 版本演化仍是同一 ima 来源文档，保留 imaDocId 以便增量同步去重
     imaDocId: old.imaDocId,
     imaSyncedAt: old.imaSyncedAt,
+    imaNoteId: old.imaNoteId,
   };
   const created = await insertBrainNote(userId, newNote);
   // 旧版归档

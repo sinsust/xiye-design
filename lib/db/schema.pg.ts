@@ -141,6 +141,10 @@ export const userObsidianConfig = pgTable("user_obsidian_config", {
     .primaryKey()
     .references(() => users.id, { onDelete: "cascade" }),
   vaultPath: text("vault_path").notNull().default(""),
+  // xiye 新建/导出的笔记默认落到此子目录（相对 vault 根，如 "xiye"）；空 = vault 根
+  defaultFolder: text("default_folder").notNull().default(""),
+  // 分类 → 子目录映射（JSON: { "工作": "01-工作", "学习": "02-学习" }）；空对象 = 不启用映射
+  categoryFolderMap: text("category_folder_map").notNull().default("{}"),
   enabled: integer("enabled").notNull().default(0),
   lastSyncedAt: text("last_synced_at"),
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
@@ -184,6 +188,8 @@ export const brainNotes = pgTable(
     embedding: text("embedding"),
     imaDocId: text("ima_doc_id"),
     imaSyncedAt: text("ima_synced_at"),
+    // 写回 ima 后落在 ima 侧的笔记 id（import_doc 返回的 note_id），供后续 append_doc 追加定位
+    imaNoteId: text("ima_note_id"),
     // obsidian 直连溯源（决策 13/14，桌面壳前仅预留列，不做 watcher/写回）
     obsidianVault: text("obsidian_vault"),
     obsidianRelPath: text("obsidian_rel_path"),
