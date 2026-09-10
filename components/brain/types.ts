@@ -43,6 +43,13 @@ export interface BrainNote {
   codeContent: string | null;
   // AI 整理完整结构化结果（OrganizedNote JSON 字符串）；null 表示未整理
   struct: string | null;
+  // 写回 ima 后落在 ima 侧的笔记 id；有值表示已写过，再点即追加
+  imaNoteId?: string | null;
+  // Obsidian 溯源：vault 根目录绝对路径 + 相对目录 + 文件名 stem。
+  // 三者齐全才能拼出可打开的绝对文件路径（缺任一即为「尚未同步到 vault」）。
+  obsidianVault?: string | null;
+  obsidianRelPath?: string | null;
+  obsidianNoteId?: string | null;
   createdAt: number;
   updatedAt: number;
 }

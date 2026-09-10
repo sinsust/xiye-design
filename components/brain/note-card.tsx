@@ -5,7 +5,10 @@ import {
   Check,
   ChevronDown,
   ClipboardList,
+  CloudUpload,
   Copy,
+  ExternalLink,
+  Loader2,
   Pencil,
   RotateCcw,
   Sparkles,
@@ -49,6 +52,9 @@ export function NoteCard({
   onUpgrade,
   onCopyCode,
   onTagClick,
+  onWriteIma,
+  imaWriting,
+  obsidianHref,
   selectable,
   selected,
   onSelectChange,
@@ -67,6 +73,15 @@ export function NoteCard({
   onCopyCode: (code: string, id: string) => void;
   /** P2-3：点标签按该标签过滤 */
   onTagClick?: (tag: string) => void;
+  /** 写回 ima（未绑定 ima 时不传，按钮不出现） */
+  onWriteIma?: (note: BrainNote) => void;
+  /** 正在写回 ima：按钮转圈 + 禁用防连点 */
+  imaWriting?: boolean;
+  /**
+   * 用 Obsidian 打开本条笔记的 `obsidian://` 链接。
+   * null/undefined 表示这条还没同步到 vault（此时按钮不渲染）。
+   */
+  obsidianHref?: string | null;
   /** P3-3：批量选择模式 */
   selectable?: boolean;
   selected?: boolean;
@@ -171,6 +186,48 @@ export function NoteCard({
           >
             <Pencil className="size-3.5" />
           </button>
+          {onWriteIma && (
+            <button
+              className={
+                "rounded-[var(--radius)] p-1.5 transition hover:bg-primary/10 hover:text-primary " +
+                (imaWriting
+                  ? "text-primary"
+                  : note.imaNoteId
+                    ? "text-primary"
+                    : "text-muted-foreground")
+              }
+              onClick={(ev) => {
+                ev.stopPropagation();
+                if (!imaWriting) onWriteIma(note);
+              }}
+              disabled={imaWriting}
+              aria-label={note.imaNoteId ? "追加到 ima" : "写回 ima"}
+              title={
+                imaWriting
+                  ? "正在写入 ima…"
+                  : note.imaNoteId
+                    ? "追加到 ima（已写入过，追加到同一篇）"
+                    : "写回 ima（新建一篇笔记）"
+              }
+            >
+              {imaWriting ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <CloudUpload className="size-3.5" />
+              )}
+            </button>
+          )}
+          {obsidianHref && (
+            <a
+              href={obsidianHref}
+              onClick={(ev) => ev.stopPropagation()}
+              className="rounded-[var(--radius)] p-1.5 text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+              aria-label="用 Obsidian 打开"
+              title="用 Obsidian 打开此文件"
+            >
+              <ExternalLink className="size-3.5" />
+            </a>
+          )}
           <button
             className="rounded-[var(--radius)] p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
             onClick={(ev) => {

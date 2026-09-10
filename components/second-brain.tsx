@@ -5,6 +5,7 @@ import { Toaster, toast } from "./ui/toast";
 import {
   Brain,
   Check,
+  Cloud,
   Code2,
   FileText,
   FileUp,
@@ -14,6 +15,7 @@ import {
   ListTodo,
   Loader2,
   PenLine,
+  Plus,
   RefreshCw,
   RotateCcw,
   Search,
@@ -24,6 +26,7 @@ import {
   ChevronDown,
   Network,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,6 +69,11 @@ import { SnippetsTab } from "./brain/workbench/snippets-tab";
 import { StrategiesTab } from "./brain/workbench/strategies-tab";
 import { KanbanTab } from "./brain/workbench/kanban-tab";
 import { InputTab } from "./brain/workbench/input-tab";
+
+// 映射编辑器行内输入：无框静音态（bg-muted），focus 才亮边框——避免整列输入框边框糊成一面墙
+const mapInputCls =
+  "min-w-0 rounded-[var(--radius)] border border-transparent bg-muted/50 px-2 py-1 text-[11px] leading-none text-foreground outline-none transition placeholder:text-muted-foreground/50 hover:bg-muted focus:border-primary focus:bg-card";
+
 import {
   STATUS_NEXT,
   STRATEGY_NEXT,
@@ -398,6 +406,10 @@ export function SecondBrain({
   // ---------- ima 自动增量同步（打开页面 >24h 触发后台同步） ----------
   const [imaSyncAuto, setImaSyncAuto] = useState(false);
   const [imaSyncToast, setImaSyncToast] = useState<string | null>(null);
+  // ima 是否已绑定（未绑定不展示「写回 ima」入口，避免点了才知道用不了）
+  const [imaBound, setImaBound] = useState(false);
+  // 正在写回 ima 的笔记 id（按钮转圈 + 防连点）
+  const [imaWritingId, setImaWritingId] = useState<string | null>(null);
 
   // ---------- Obsidian 双向同步设置（本地自托管：实时 watch + 手动兜底） ----------
   const [obsidianOpen, setObsidianOpen] = useState(false);
@@ -407,18 +419,47 @@ export function SecondBrain({
   const [obsidianSaving, setObsidianSaving] = useState(false);
   const [obsidianSyncing, setObsidianSyncing] = useState(false);
   const [obsidianMsg, setObsidianMsg] = useState<string | null>(null);
+  // 多文件夹归档：默认目录 + 分类 → 子目录映射
+  const [obsidianDefaultFolder, setObsidianDefaultFolder] = useState("");
+  const [obsidianFolderMap, setObsidianFolderMap] = useState<{ category: string; folder: string }[]>([]);
+  const [obsidianCategories, setObsidianCategories] = useState<string[]>([]);
+  const [obsidianVaultFolders, setObsidianVaultFolders] = useState<string[]>([]);
+  const [obsidianUnsynced, setObsidianUnsynced] = useState(0);
+  const [obsidianExporting, setObsidianExporting] = useState(false);
   const loadObsidianConfig = useCallback(async () => {
     try {
       const data = await cachedGetJson<{
-        config: { vaultPath: string; enabled: boolean; lastSyncedAt: string | null };
+        config: {
+          vaultPath: string;
+          enabled: boolean;
+          defaultFolder?: string;
+          categoryFolderMap?: Record<string, string>;
+          lastSyncedAt: string | null;
+        };
+        categories?: string[];
+        unsyncedCount?: number;
       }>("/api/brain/obsidian/config");
       if (data?.config) {
         setObsidianVault(data.config.vaultPath ?? "");
         setObsidianEnabled(Boolean(data.config.enabled));
         setObsidianLastSync(data.config.lastSyncedAt ?? null);
+        setObsidianDefaultFolder(data.config.defaultFolder ?? "");
+        const map = data.config.categoryFolderMap ?? {};
+        setObsidianFolderMap(Object.entries(map).map(([category, folder]) => ({ category, folder })));
       }
+      setObsidianCategories(Array.isArray(data?.categories) ? data.categories : []);
+      setObsidianUnsynced(typeof data?.unsyncedCount === "number" ? data.unsyncedCount : 0);
     } catch {
       /* 忽略：未登录或网络异常时保留默认空态 */
+    }
+  }, []);
+  // vault 已有子文件夹（映射编辑器下拉补全用）
+  const loadObsidianFolders = useCallback(async () => {
+    try {
+      const data = await cachedGetJson<{ folders?: string[] }>("/api/brain/obsidian/folders");
+      setObsidianVaultFolders(Array.isArray(data?.folders) ? data.folders : []);
+    } catch {
+      setObsidianVaultFolders([]);
     }
   }, []);
   useEffect(() => {
@@ -432,7 +473,16 @@ export function SecondBrain({
       const res = await fetch("/api/brain/obsidian/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vaultPath: obsidianVault.trim(), enabled: obsidianEnabled }),
+        body: JSON.stringify({
+          vaultPath: obsidianVault.trim(),
+          enabled: obsidianEnabled,
+          defaultFolder: obsidianDefaultFolder.trim(),
+          categoryFolderMap: Object.fromEntries(
+            obsidianFolderMap
+              .filter((m) => m.category.trim() && m.folder.trim())
+              .map((m) => [m.category.trim(), m.folder.trim()]),
+          ),
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data?.ok) {
@@ -453,7 +503,35 @@ export function SecondBrain({
     } finally {
       setObsidianSaving(false);
     }
-  }, [obsidianSaving, obsidianVault, obsidianEnabled, loadObsidianConfig]);
+  }, [obsidianSaving, obsidianVault, obsidianEnabled, obsidianDefaultFolder, obsidianFolderMap, loadObsidianConfig]);
+  /** 批量导出「从未同步过」的笔记到 vault */
+  const exportObsidian = useCallback(async () => {
+    if (obsidianExporting || !obsidianVault.trim()) return;
+    setObsidianExporting(true);
+    setObsidianMsg(null);
+    try {
+      const res = await fetch("/api/brain/obsidian/export", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) {
+        setObsidianMsg(`导出失败：${data?.detail ?? data?.error ?? "请检查 vault 路径"}`);
+      } else {
+        const byFolder = (data.byFolder ?? {}) as Record<string, number>;
+        const detail = Object.entries(byFolder)
+          .map(([f, n]) => `${f} ${n} 条`)
+          .join("、");
+        setObsidianMsg(
+          data.exported > 0
+            ? `已导出 ${data.exported} 条${detail ? `（${detail}）` : ""}；跳过 ${data.skipped ?? 0} 条（已在 vault 中）`
+            : `没有需要导出的笔记（${data.skipped ?? 0} 条已在 vault 中）`,
+        );
+        loadObsidianConfig();
+      }
+    } catch {
+      setObsidianMsg("导出失败，请检查 vault 路径");
+    } finally {
+      setObsidianExporting(false);
+    }
+  }, [obsidianExporting, obsidianVault, loadObsidianConfig]);
   const manualObsidianSync = useCallback(async () => {
     if (obsidianSyncing || !obsidianVault.trim()) return;
     setObsidianSyncing(true);
@@ -509,6 +587,7 @@ export function SecondBrain({
       } catch {
         bound = false;
       }
+      if (!cancelled) setImaBound(bound);
       if (cancelled || !bound) return;
 
       let needSync = false;
@@ -1785,6 +1864,61 @@ export function SecondBrain({
     if (res.ok) setNotes((prev) => prev.filter((n) => n.id !== id));
   };
 
+  /**
+   * 拼「用 Obsidian 打开」的官方 URI：obsidian://open?path=<绝对路径>
+   * 路径 = vault 根 + 相对目录 + 文件名 stem + .md（与 lib/obsidian-sync.ts 落盘规则一致）。
+   * 三要素缺一即表示该笔记还没同步到 vault，返回 null → 卡片不渲染按钮。
+   * 分隔符跟随 vault 自身的风格（Windows 反斜杠 / POSIX 斜杠），避免跨平台拼错。
+   */
+  const obsidianOpenHref = (n: BrainNote): string | null => {
+    const vault = n.obsidianVault?.trim();
+    const stem = n.obsidianNoteId?.trim();
+    if (!vault || !stem) return null;
+    const sep = vault.includes("\\") ? "\\" : "/";
+    const rel = (n.obsidianRelPath ?? "")
+      .trim()
+      .replace(/^[\\/]+|[\\/]+$/g, "")
+      .replace(/[\\/]+/g, sep);
+    const full = rel ? `${vault}${sep}${rel}${sep}${stem}.md` : `${vault}${sep}${stem}.md`;
+    return `obsidian://open?path=${encodeURIComponent(full)}`;
+  };
+
+  // 写回 ima：已写过（有 imaNoteId 映射）走追加，否则在 ima 新建一篇并记下 note_id
+  const writeNoteToIma = async (n: BrainNote) => {
+    if (imaWritingId) return;
+    setImaWritingId(n.id);
+    try {
+      const res = await fetch("/api/brain/ima/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ xiyeNoteId: n.id }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || data?.ok === false) {
+        const hints: Record<string, string> = {
+          ima_not_configured: "还没绑定 ima，先在「从 ima 导入」里绑定凭证",
+          note_not_found: "这条笔记已不存在",
+          no_ima_note_mapping: "这条笔记还没写回过 ima",
+        };
+        toast(
+          hints[data?.error ?? ""] ?? `写回失败：${data?.detail ?? data?.error ?? res.status}`,
+          "error",
+        );
+        return;
+      }
+      if (data?.noteId) {
+        setNotes((prev) =>
+          prev.map((x) => (x.id === n.id ? { ...x, imaNoteId: data.noteId } : x)),
+        );
+      }
+      toast(data?.appended ? "已追加到 ima 笔记" : "已写入 ima", "success");
+    } catch {
+      toast("写回 ima 失败", "error");
+    } finally {
+      setImaWritingId(null);
+    }
+  };
+
   const graphEntries = useMemo(() => asGraphEntries(notes), [notes]);
   const centerEntry = useMemo(() => {
     if (!expanded) return undefined;
@@ -1987,6 +2121,13 @@ export function SecondBrain({
               </div>
             )}
           </div>
+          <button
+            onClick={() => setImaOpen(true)}
+            className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+          >
+            <Cloud className="size-4" />
+            <span className="hidden sm:inline">从 ima 导入</span>
+          </button>
           <div className="ml-auto flex items-center gap-2">
             <div ref={searchWrapRef} className="relative">
               <button
@@ -2089,7 +2230,11 @@ export function SecondBrain({
             <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <button
                 type="button"
-                onClick={() => setObsidianOpen((v) => !v)}
+                onClick={() => {
+                  const next = !obsidianOpen;
+                  setObsidianOpen(next);
+                  if (next) void loadObsidianFolders();
+                }}
                 className="flex w-full items-center gap-2 px-5 py-3.5 text-left transition hover:bg-muted/30"
                 aria-expanded={obsidianOpen}
               >
@@ -2117,11 +2262,102 @@ export function SecondBrain({
                       className={inputCls + " mt-1.5 font-mono text-xs"}
                     />
                     <p className="mt-1 text-[10px] text-muted-foreground">
-                      本地 Obsidian 仓库的绝对路径，xiye 会在其中读写 .md 笔记（文件名 = 标题 + 短 id）。
+                      本地 Obsidian 仓库的绝对路径，xiye 会在其中读写 .md 笔记（文件名 = 标题）。
                     </p>
                   </div>
 
-                  {/* 总开关 + 保存 + 立即同步 */}
+                  {/* 归档目录：默认目录 + 分类映射 */}
+                  <div className="rounded-xl border border-border bg-muted/20 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium text-foreground">新建笔记默认目录</span>
+                      <input
+                        value={obsidianDefaultFolder}
+                        onChange={(ev) => setObsidianDefaultFolder(ev.target.value)}
+                        placeholder="留空 = 存到 vault 根目录"
+                        list="xiye-vault-folders"
+                        aria-label="新建笔记默认目录"
+                        className={mapInputCls + " w-56 max-w-full font-mono"}
+                      />
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      从 Obsidian 导入的笔记始终写回它原来的文件夹（你在 Obsidian 里拖动位置后会自动记住）。
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium text-foreground">分类 → 文件夹</span>
+                      {obsidianFolderMap.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground">{obsidianFolderMap.length} 条</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setObsidianFolderMap((prev) => [...prev, { category: "", folder: "" }])}
+                        className="ml-auto inline-flex items-center gap-1 rounded-[var(--radius)] px-1.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      >
+                        <Plus className="size-3" /> 添加
+                      </button>
+                    </div>
+                    {obsidianFolderMap.length === 0 ? (
+                      <p className="mt-1.5 text-[10px] text-muted-foreground">
+                        未配置。分类匹配不到的笔记会落到上面的默认目录。
+                      </p>
+                    ) : (
+                      <div className="mt-1.5 grid grid-cols-1 gap-x-6 gap-y-0.5 md:grid-cols-2">
+                        {obsidianFolderMap.map((m, i) => (
+                          <div
+                            key={i}
+                            className="group flex items-center gap-1.5 rounded-[var(--radius)] py-0.5 transition hover:bg-muted/30"
+                          >
+                            <input
+                              value={m.category}
+                              onChange={(ev) =>
+                                setObsidianFolderMap((prev) =>
+                                  prev.map((x, j) => (j === i ? { ...x, category: ev.target.value } : x)),
+                                )
+                              }
+                              placeholder="分类"
+                              list="xiye-note-categories"
+                              aria-label={`第 ${i + 1} 行的分类`}
+                              className={mapInputCls + " w-20 shrink-0"}
+                            />
+                            <span className="shrink-0 text-[11px] text-muted-foreground/60">→</span>
+                            <input
+                              value={m.folder}
+                              onChange={(ev) =>
+                                setObsidianFolderMap((prev) =>
+                                  prev.map((x, j) => (j === i ? { ...x, folder: ev.target.value } : x)),
+                                )
+                              }
+                              placeholder="文件夹"
+                              list="xiye-vault-folders"
+                              aria-label={`第 ${i + 1} 行的目标文件夹`}
+                              className={mapInputCls + " min-w-0 flex-1 font-mono"}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setObsidianFolderMap((prev) => prev.filter((_, j) => j !== i))}
+                              aria-label={`删除第 ${i + 1} 行映射`}
+                              className="shrink-0 rounded p-1 text-muted-foreground/40 transition hover:bg-destructive/10 hover:text-destructive group-hover:text-muted-foreground/70"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* 下拉候选：已有分类 + vault 现有文件夹，避免手输拼错 */}
+                    <datalist id="xiye-note-categories">
+                      {obsidianCategories.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                    <datalist id="xiye-vault-folders">
+                      {obsidianVaultFolders.map((f) => (
+                        <option key={f} value={f} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  {/* 总开关 + 保存 + 导出 + 立即同步 */}
                   <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/20 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button
@@ -2139,6 +2375,22 @@ export function SecondBrain({
                       </button>
                       <span className="text-xs font-medium text-foreground">{obsidianEnabled ? "双向同步已开启" : "双向同步已关闭"}</span>
                     </div>
+
+                    <button
+                      onClick={exportObsidian}
+                      disabled={obsidianExporting || !obsidianVault.trim() || obsidianUnsynced === 0}
+                      className="ml-auto inline-flex items-center gap-1.5 rounded-[var(--radius)] border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                      title={
+                        !obsidianVault.trim()
+                          ? "请先填写 vault 路径并保存"
+                          : obsidianUnsynced === 0
+                            ? "没有尚未同步的笔记"
+                            : `导出 ${obsidianUnsynced} 条尚未同步的笔记到 vault`
+                      }
+                    >
+                      {obsidianExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                      {obsidianExporting ? "导出中…" : `导出到 vault${obsidianUnsynced > 0 ? `（${obsidianUnsynced}）` : ""}`}
+                    </button>
 
                     <button
                       onClick={manualObsidianSync}
@@ -2487,6 +2739,9 @@ export function SecondBrain({
                         }}
                         onEdit={() => startEdit(n)}
                         onDeletePress={() => doDelete(n.id)}
+                        onWriteIma={imaBound ? writeNoteToIma : undefined}
+                        imaWriting={imaWritingId === n.id}
+                        obsidianHref={obsidianOpenHref(n)}
                         onToggleTask={(id, done) => toggleTaskDone(id, done)}
                         onUpgrade={() => {
                           setUpgradeTarget(n);

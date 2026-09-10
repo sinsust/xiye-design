@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +20,13 @@ interface ConfirmDialogProps {
   busy?: boolean;
 }
 
-/** 统一的二次确认弹窗（深色遮罩 + 毛玻璃 + 居中卡片）。删除等不可撤销操作默认红色确认按钮。 */
+/**
+ * 统一的二次确认弹窗（遮罩 + 居中卡片）。删除等不可撤销操作默认红色确认按钮。
+ *
+ * 必须用 createPortal 渲染到 body：调用方多在卡片列表内（note-card 等），
+ * 外层的 content-visibility / contain / will-change:transform 会让 position:fixed
+ * 相对卡片容器定位并被裁剪——弹窗会「内联」挤在卡片之间（已踩坑，勿回退）。
+ */
 export function ConfirmDialog({
   open,
   onClose,
@@ -32,14 +39,25 @@ export function ConfirmDialog({
   confirmVariant = "destructive",
   busy = false,
 }: ConfirmDialogProps) {
-  if (!open) return null;
-  return (
+  // portal 目标是 document.body，仅在客户端挂载后渲染，避免 SSR/hydration 不匹配
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // ESC 关闭走全局监听：portal 后焦点不在弹窗内，挂容器上的 onKeyDown 收不到
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open || !mounted) return null;
+  return createPortal(
     <div
       className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={onClose}
-      onKeyDown={(ev) => {
-        if (ev.key === "Escape") onClose();
-      }}
     >
       <div
         role="dialog"
@@ -68,6 +86,7 @@ export function ConfirmDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
