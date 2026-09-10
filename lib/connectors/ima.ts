@@ -6,6 +6,7 @@ import {
   getMediaInfo,
   createImaNote,
   appendImaNote,
+  imaWriteNoteId,
   type ImaCredentials,
 } from "@/lib/ima";
 import { getImaConfig } from "@/lib/ima-config";
@@ -116,7 +117,8 @@ ${valid.map((c) => `### ${c.title}\n${c.text}`).join("\n\n")}`;
       const out = await (action === "append"
         ? appendImaNote(c, noteId ?? "", content)
         : createImaNote(c, { content, title, kbId }));
-      return { ok: true, noteId: (out as any)?.id, noteUrl: (out as any)?.url };
+      // 实测返回 data.note_id；早期读 out.id 恒为 undefined，导致写回成功却存不下定位 id
+      return { ok: true, noteId: imaWriteNoteId(out) ?? undefined, noteUrl: (out as any)?.url };
     } catch (err) {
       return { ok: false, degraded: true, detail: err instanceof Error ? err.message : "ima_write_failed" };
     }

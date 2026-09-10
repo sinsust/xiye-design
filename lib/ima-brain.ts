@@ -8,7 +8,6 @@ import {
   insertBrainNote,
   insertBrainTasks,
   insertBrainStrategies,
-  insertBrainReview,
   updateBrainNote,
   listBrainNotes,
   type BrainNote,
@@ -30,7 +29,6 @@ export interface ImaImportResult {
   createdStrategies: number;
 }
 
-const DAY_MS = 86400_000;
 type OrganizedLike = Pick<
   OrganizedNote,
   | "title"
@@ -178,19 +176,7 @@ export async function importImaNote(
     console.error("[ima-brain] insert tasks failed:", err);
   }
 
-  // 与 /api/brain/notes 一致：初始复习记录（1 天后，完整 SM-2 结构：interval/easeFactor/reviewCount）
-  try {
-    await insertBrainReview(userId, {
-      noteId: note.id,
-      nextReviewAt: new Date(Date.now() + DAY_MS).toISOString(),
-      interval: 1,
-      easeFactor: 2.5,
-      reviewCount: 0,
-    });
-  } catch (err) {
-    console.error("[ima-brain] insert review failed:", err);
-  }
-
+  // 复习功能已移除（M4 重构），ima 导入不再写 brain_reviews。
   return { note, degraded, createdTasks, createdStrategies: createdStrategies.length };
 }
 
