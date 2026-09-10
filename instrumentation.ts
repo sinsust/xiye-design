@@ -13,7 +13,25 @@ export async function register(): Promise<void> {
 
   try {
     const { startObsidianWatch } = await import("@/lib/obsidian-watch");
-    const res = await startObsidianWatch();
+    // 超时保护：register() 是 server 启动的前置 await，一旦 DB 不可达/连接池耗尽，
+    // startObsidianWatch 会一直挂着等待连接 —— try/catch 拦不住 hang，整个 server 会
+    // 处于「端口在听但所有请求无响应」的状态。这里给 10s 上限，超时先放行启动，
+    // watcher 若后续成功仍会自行生效（它内部先 stop 再建，不会重复监听）。
+    const res = await Promise.race([
+      // import 必须一并纳入超时：@/lib/obsidian-watch 会连带加载 lib/db，
+      // 而 lib/db 有 top-level await（建连/建表），DB 不可达时卡在 import 而非函数调用。
+      (async () => {
+        const { startObsidianWatch } = await import("@/lib/obsidian-watch");
+        return startObsidianWatch();
+      })(),
+      new Promise<{ ok: boolean; error?: string; watching: number }>((resolve) => {
+        const t = setTimeout(
+          () => resolve({ ok: false, error: "autostart 超时（10s），DB 可能不可达或连接池已满", watching: 0 }),
+          10_000,
+        );
+        t.unref?.();
+      }),
+    ]);
     if (res.watching > 0) {
       console.log(`[instrumentation] obsidian watch started: ${res.watching} vault(s)`);
     } else {

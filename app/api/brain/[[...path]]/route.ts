@@ -63,6 +63,8 @@ import * as m55 from "@/lib/api-handlers/brain/ima/write";
 import * as m56 from "@/lib/api-handlers/brain/parse";
 import * as m57 from "@/lib/api-handlers/brain/obsidian/config";
 import * as m58 from "@/lib/api-handlers/brain/obsidian/sync";
+import * as m59 from "@/lib/api-handlers/brain/obsidian/export";
+import * as m60 from "@/lib/api-handlers/brain/obsidian/folders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -134,6 +136,8 @@ const ROUTES: RouteDef[] = [
   { key: "parse", methods: { POST: m56.POST as HandlerFn } },
   { key: "obsidian/config", methods: { GET: m57.GET as HandlerFn, PUT: m57.PUT as HandlerFn } },
   { key: "obsidian/sync", methods: { POST: m58.POST as HandlerFn } },
+  { key: "obsidian/export", methods: { POST: m59.POST as HandlerFn } },
+  { key: "obsidian/folders", methods: { GET: m60.GET as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

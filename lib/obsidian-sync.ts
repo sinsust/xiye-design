@@ -3,6 +3,7 @@ import path from "node:path";
 import { db, userObsidianConfig, brainNotes } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { noteToMarkdown, resolveFileNameForNote } from "@/lib/obsidian-md";
+import { listBrainNotes } from "@/lib/brain-db";
 import type { BrainNote } from "@/lib/brain-db";
 
 // xiye → Obsidian 写回 + 删除。Obsidian → xiye 监听见 lib/obsidian-watch.ts（批 4）。
@@ -25,13 +26,67 @@ async function getConfig(userId: string) {
   return rows[0] ?? null;
 }
 
-async function writeOne(note: BrainNote): Promise<void> {
+type ObsidianCfg = Awaited<ReturnType<typeof getConfig>>;
+
+/** 解析分类 → 子目录映射（容错：坏 JSON 视作未配置） */
+function parseFolderMap(raw: string | null | undefined): Record<string, string> {
+  if (!raw) return {};
+  try {
+    const obj = JSON.parse(raw) as unknown;
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return {};
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if (typeof v === "string" && v.trim()) out[k.trim()] = v.trim();
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** 安全子目录：去掉绝对路径/盘符/.. 等越界写法，只保留相对安全段 */
+function sanitizeRelDir(input: string): string {
+  const cleaned = input
+    .replace(/\\/g, "/")
+    .split("/")
+    .map((s) => s.trim())
+    .filter((s) => s && s !== "." && s !== "..")
+    // Windows 文件名非法字符
+    .map((s) => s.replace(/[<>:"|?*]/g, ""))
+    .filter(Boolean)
+    .join("/");
+  // 防绝对路径（/foo 或 C:/foo）与盘符
+  return cleaned.replace(/^[a-zA-Z]:/, "").replace(/^\/+/, "");
+}
+
+/**
+ * 决定一条笔记应落在 vault 的哪个子目录（相对 vault 根）。
+ * 优先级：
+ *  ① 来源目录 —— 从 Obsidian 导入的笔记，尊重用户在 Obsidian 里手动整理的位置（拖动后自动记忆）
+ *  ② 分类映射 —— category 命中映射表（大小写/空格不敏感）
+ *  ③ 默认目录 —— cfg.defaultFolder（如 "xiye"）
+ *  ④ vault 根
+ */
+export function resolveTargetFolder(note: BrainNote, cfg: ObsidianCfg): string {
+  if (note.obsidianRelPath && note.obsidianRelPath.trim()) {
+    return sanitizeRelDir(note.obsidianRelPath);
+  }
+  const map = parseFolderMap(cfg?.categoryFolderMap);
+  const cat = (note.category || "").trim();
+  if (cat) {
+    const hit = map[cat] ?? map[Object.keys(map).find((k) => k.toLowerCase() === cat.toLowerCase()) ?? ""];
+    if (hit) return sanitizeRelDir(hit);
+  }
+  return sanitizeRelDir(cfg?.defaultFolder || "");
+}
+
+async function writeOne(note: BrainNote, cfgOverride?: ObsidianCfg): Promise<void> {
   if (!note.userId) return;
-  const cfg = await getConfig(note.userId);
+  const cfg = cfgOverride !== undefined ? cfgOverride : await getConfig(note.userId);
   if (!cfg || !cfg.enabled || !cfg.vaultPath) return;
 
   const vault = cfg.vaultPath;
-  const rel = note.obsidianRelPath || "";
+  const rel = resolveTargetFolder(note, cfg);
   const dir = rel ? path.join(vault, rel) : vault;
   const fileName = resolveFileNameForNote(dir, note);
   const abs = path.join(dir, fileName);
@@ -104,4 +159,51 @@ export function onNoteUpdated(note: BrainNote): void {
 /** 笔记删除前调用（传入删除前查到的完整 note，含 obsidian 溯源列） */
 export function onNoteDeleted(note: BrainNote): void {
   void removeOne(note).catch((e) => console.error("[obsidian] delete sync failed:", e));
+}
+
+export interface ExportResult {
+  ok: boolean;
+  error?: string;
+  exported: number;
+  skipped: number;
+  failed: number;
+  byFolder: Record<string, number>;
+}
+
+/**
+ * 批量导出「从未同步过」的笔记到 vault。
+ * 已在 vault 里的（obsidianVault/obsidianNoteId 非空）一律跳过——
+ * 避免覆盖用户在 Obsidian 侧的手动修改。
+ */
+export async function exportUnsyncedNotes(userId: string): Promise<ExportResult> {
+  const empty: ExportResult = { ok: false, exported: 0, skipped: 0, failed: 0, byFolder: {} };
+  const cfg = await getConfig(userId);
+  if (!cfg || !cfg.enabled || !cfg.vaultPath) {
+    return { ...empty, error: "尚未启用 Obsidian 同步或未配置 vault 路径" };
+  }
+  try {
+    fs.accessSync(cfg.vaultPath, fs.constants.W_OK);
+  } catch {
+    return { ...empty, error: `无法写入 vault 目录：${cfg.vaultPath}` };
+  }
+
+  const notes = await listBrainNotes(userId);
+  const pending = notes.filter((n) => !n.obsidianVault && !n.obsidianNoteId);
+  const byFolder: Record<string, number> = {};
+  let exported = 0;
+  let failed = 0;
+
+  for (const note of pending) {
+    try {
+      const folder = resolveTargetFolder(note, cfg) || "（vault 根目录）";
+      await writeOne(note, cfg);
+      byFolder[folder] = (byFolder[folder] ?? 0) + 1;
+      exported++;
+    } catch (e) {
+      failed++;
+      console.error("[obsidian] export failed:", note.id, e);
+    }
+  }
+
+  return { ok: true, exported, skipped: notes.length - pending.length, failed, byFolder };
 }
