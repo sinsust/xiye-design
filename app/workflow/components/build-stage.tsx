@@ -22,6 +22,7 @@ import {
 import { PAGE_ICON_BY_ID } from "@/lib/page-icons";
 import { fetchSiteCopyOverride } from "@/lib/site-copy";
 import { Button } from "@/components/ui/button";
+import { LocalDraftHint } from "@/components/workflow/local-draft-hint";
 import {
   SKELETON_PAGES,
   SKELETON_PAGE_MAP,
@@ -746,6 +747,8 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2">
+      {/* C3：匿名（本地草稿）透明提示 */}
+      <LocalDraftHint />
       <Workspace cols="300px minmax(0,1fr) 340px" left={left} center={center} right={right} />
       <div className="shrink-0 rounded-2xl bg-muted/30 px-3 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">

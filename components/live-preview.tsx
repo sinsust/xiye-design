@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VisualStyle } from "@/data/visual-styles";
 import type { BlueprintEntry, DesignSystem } from "@/lib/store/flow-store";
 import { resolveStyleVars } from "@/lib/style-resolver";
@@ -45,7 +45,7 @@ export function LivePreview({
     return Array.from(map.entries());
   }, [blueprint]);
 
-  const generate = () => {
+  const generate = useCallback(() => {
     const html = renderRef.current?.innerHTML ?? "";
     setSrcDoc(
       buildPreviewDoc({
@@ -54,13 +54,15 @@ export function LivePreview({
         bridgeCss: designTokenBridgeCss(designSystem),
       }),
     );
-  };
+  }, [style, designSystem]);
 
-  // 挂载即生成一次（隐藏渲染源已就绪）
+  // 蓝图 / 风格 / 设计系统变化时自动重生成预览（B1）。
+  // 隐藏渲染源是 React 子节点，其 innerHTML 需等本次提交完成才反映新 props，
+  // 故 effect 内用短延时 + rAF 兜一帧再读；顺带抑制切风格时的高频重排。
   useEffect(() => {
-    generate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const id = window.setTimeout(() => requestAnimationFrame(generate), 120);
+    return () => window.clearTimeout(id);
+  }, [generate, blueprint]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">

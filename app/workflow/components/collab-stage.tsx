@@ -117,8 +117,10 @@ import {
   flowError,
   flowErrorUserMessage,
   newRequestId,
+  readFlowFallback,
   type FlowAIError,
 } from "@/lib/flow-ai-types";
+import { AiFallbackBadge } from "@/components/ai-fallback-badge";
 
 /* ------------------------------------------------------------------ */
 /* 状态推导：基于对话深度 + 会诊结果，给出合理的专家状态 */
@@ -560,6 +562,10 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   const [conversationBlocked, setConversationBlocked] = useState(false);
   // F0-A：会诊自身的失败错误；主失败时专家面板不得伪装「已完成」
   const [panelError, setPanelError] = useState<FlowAIError | null>(null);
+  // B4：本轮会诊 / 概念同步是否走了启发式兜底（取自响应 flowMeta.fallbackUsed），
+  // 用于显式标注「规则产出 ≠ 模型结论」，避免用户误判内容可信度。
+  const [panelFallback, setPanelFallback] = useState(false);
+  const [briefFallback, setBriefFallback] = useState(false);
   const productBrief = useFlowStore((s) => s.productBrief);
   const setPanelOutput = useFlowStore((s) => s.setPanelOutput);
   const rounds = messages.filter((m) => m.role === "user").length;
@@ -621,12 +627,13 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
           (typeof window !== "undefined"
             ? (new URLSearchParams(window.location.search).get("pid") ?? "")
             : "");
-        await syncConcept({
+        const r = await syncConcept({
           messages,
           prev: useFlowStore.getState().conceptBrief,
           projectId: pid,
           setBrief: setConceptBrief,
         });
+        setBriefFallback(r.fallbackUsed);
         lastSyncedCountRef.current = messages.length;
       } finally {
         conceptSyncingRef.current = false;
@@ -1242,6 +1249,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
               phase: "collab",
             }),
         );
+        setPanelFallback(false);
         return;
       }
       // 用户已在会诊期间重置会话：丢弃迟到结果，不写入
@@ -1265,6 +1273,8 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
       lastConsultedRef.current = messages.length;
       setPanelAgents(next);
       setPanelError(null);
+      // B4：透出本次会诊是否走启发式兜底（服务端 flowMeta.fallbackUsed）
+      setPanelFallback(readFlowFallback(data));
       // 写入 store，供 refine 方案完善阶段跨阶段复用
       setPanelOutput(
         (Object.keys(next) as AgentId[]).reduce((acc, id) => {
@@ -1276,6 +1286,7 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
     } catch {
       setPanelAgents((prev) => prev);
       setPanelError(flowError("provider_unavailable", { operation: "panel", phase: "collab" }));
+      setPanelFallback(false);
     } finally {
       setConsulting(false);
     }
@@ -1288,6 +1299,8 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
       lastConsultedRef.current = 0;
       setNeedsConsult(false);
       setConversationBlocked(false);
+      setPanelFallback(false);
+      setBriefFallback(false);
       setPanelError(null);
       return;
     }
@@ -1309,6 +1322,12 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       {/* F1-A + F2-A 合并状态条：产品创意 PRD 决策 + 产品蓝图，一行展示 */}
+      {briefFallback && (
+        <div className="flex items-center gap-1.5 px-0.5">
+          <AiFallbackBadge />
+          <span className="text-[11px] text-muted-foreground">初版方案由本地规则生成，未调用 AI 模型。</span>
+        </div>
+      )}
       <ConceptBlueprintBar
         brief={conceptBrief}
         readiness={readiness}
@@ -1471,6 +1490,14 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
             {panelIsStale && !panelError && (
               <div className="flex items-center gap-1.5 rounded-xl border border-dashed border-border bg-background px-3 py-1.5 text-[11px] text-muted-foreground">
                 <Clock className="size-3.5" /> 以下为上一轮建议，当前仍在等待新一轮会诊。
+              </div>
+            )}
+            {panelFallback && !consulting && (
+              <div className="flex items-center gap-1.5 px-0.5">
+                <AiFallbackBadge />
+                <span className="text-[11px] text-muted-foreground">
+                  本轮专家建议由本地规则生成，未调用 AI 模型。
+                </span>
               </div>
             )}
             <ExpertStrip agents={agentsForRender} active={activeRole} onSelect={setActiveRole} bubbles={bubbles} />

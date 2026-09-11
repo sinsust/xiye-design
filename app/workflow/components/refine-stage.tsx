@@ -14,7 +14,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { refineOverallProgress } from "@/lib/flow-refine-gate";
 import { useFlowStore, type AgentOutput } from "@/lib/store/flow-store";
+import { LocalDraftHint } from "@/components/workflow/local-draft-hint";
 import { useShallow } from "zustand/react/shallow";
 import { buildPrdMdForState } from "@/lib/project-generator";
 import { AGENT_PROFILES, type AgentId } from "../agents";
@@ -27,8 +29,10 @@ import {
   extractFlowError,
   flowError,
   flowErrorUserMessage,
+  readFlowFallback,
   type FlowAIError,
 } from "@/lib/flow-ai-types";
+import { AiFallbackBadge } from "@/components/ai-fallback-badge";
 
 type ViewId = "all" | "pm" | "designer" | "architect" | "guard";
 
@@ -113,6 +117,8 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
   const [consulting, setConsulting] = useState(false);
   // F0-A：会诊失败错误（主调用失败时专家不伪装已完成）
   const [panelError, setPanelError] = useState<FlowAIError | null>(null);
+  // B4：本轮会诊是否走启发式兜底（取自响应 flowMeta.fallbackUsed）
+  const [panelFallback, setPanelFallback] = useState(false);
 
   const techName = TECH_STACKS.find((t) => t.id === techStackId)?.name ?? (techStackId ?? "未选择");
   const styleName = VISUAL_STYLES.find((v) => v.id === visualStyleId)?.name ?? (visualStyleId ?? "未选择");
@@ -150,6 +156,7 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
               phase: "refine",
             }),
         );
+        setPanelFallback(false);
         return;
       }
       const next: Record<AgentId, AgentPanelState> = { ...DEFAULT_PANEL };
@@ -158,6 +165,7 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
       }
       setPanelAgents(next);
       setPanelError(null);
+      setPanelFallback(readFlowFallback(data));
       setPanelOutput(
         (Object.keys(next) as AgentId[]).reduce((acc, id) => {
           const s = next[id];
@@ -167,6 +175,7 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
       );
     } catch {
       setPanelError(flowError("provider_unavailable", { operation: "panel", phase: "refine" }));
+      setPanelFallback(false);
     } finally {
       setConsulting(false);
     }
@@ -183,10 +192,18 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
     [productBrief, visualStyleId, techStackId, panelAgents],
   );
 
-  const overallProgress = useMemo(() => {
-    const vals = Object.values(completeness);
-    return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
-  }, [completeness]);
+  // C2 门禁统一：完善度计算走共享函数（lib/flow-refine-gate.ts），
+  // 与 workflow 页面门禁同一判据，消除两处规则漂移
+  const overallProgress = useMemo(
+    () =>
+      refineOverallProgress({
+        productBrief,
+        visualStyle: visualStyleId,
+        techStack: techStackId,
+        panelOutput,
+      }),
+    [productBrief, visualStyleId, techStackId, panelOutput],
+  );
 
   // 会诊期间：全部视图专家卡显示正在思考；失败时：不伪装「已完成」
   const displayAgents = useMemo<Record<AgentId, AgentPanelState>>(() => {
@@ -272,6 +289,8 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+      {/* C3：匿名（本地草稿）透明提示——后续自动生成链路会跳过，先告知并给解锁入口 */}
+      <LocalDraftHint />
       {/* 顶部专家 Tab 条 */}
       <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-border/30 pb-1">
         {VIEW_TABS.map((v) => (
@@ -291,6 +310,14 @@ export function RefineStage({ onAdvance, onBack }: { onAdvance: () => void; onBa
 
       {/* 进入引导：缺口驱动，告诉用户从哪开始调 */}
       <GuideBar needs={needs} onGoto={(v) => setActiveView(v)} />
+
+      {/* B4：会诊降级态（未命中模型，走本地规则）*/}
+      {panelFallback && !consulting && !panelError && (
+        <div className="flex shrink-0 items-center gap-1.5 px-0.5">
+          <AiFallbackBadge />
+          <span className="text-[11px] text-muted-foreground">本轮专家建议由本地规则生成，未调用 AI 模型。</span>
+        </div>
+      )}
 
       {/* F0-A：会诊失败态 */}
       {panelError && (

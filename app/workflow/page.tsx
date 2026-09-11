@@ -16,11 +16,13 @@
  *   刷新、flow 内部跳转、/builder、外部链接一律不弹
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Brain, Save } from "lucide-react";
+import Link from "next/link";
+import { Brain, FolderOpen, Info, Package, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildFlowSedimentPayload, hasFlowConclusions } from "@/lib/flow-sediment";
+import { refineOverallProgress } from "@/lib/flow-refine-gate";
 import { STEP_DEFS, type StepDef } from "./steps";
 import { StepBar } from "./components/step-bar";
 import { CollabStage } from "./components/collab-stage";
@@ -35,7 +37,7 @@ const ACTIVE_TO_CURRENT_STEP: number[] = [1, 3, 2, 4]; // active 0..3 → curren
 const CURRENT_STEP_TO_ACTIVE: Record<number, number> = { 1: 0, 2: 2, 3: 1, 4: 3 };
 const CURRENT_STEP_TO_STEP_ID: Record<number, string> = { 1: "collab", 2: "build", 3: "refine", 4: "deliver" };
 import { useFlowStore } from "@/lib/store/flow-store";
-import { coerceConceptBrief } from "@/lib/flow-concept";
+import { coerceConceptBrief, getConceptReadiness } from "@/lib/flow-concept";
 import { useAgentsStore } from "./agents-store";
 
 /** 点击导航到这些顶层区域时才触发保存守卫（离开 flow） */
@@ -46,6 +48,9 @@ const STAY_PREFIXES = ["/workflow", "/builder"];
 export default function FlowV2Page() {
   const [active, setActive] = useState(0);
   const [done, setDone] = useState<Set<number>>(new Set());
+  // A1 阶段门禁：到达过的最远阶段下标（可自由回跳不回锁）+ 被门禁拦截时的原因提示
+  const [maxReached, setMaxReached] = useState(0);
+  const [gateMsg, setGateMsg] = useState<string | null>(null);
   const didInitRef = useRef(false);
 
   // 从 ?step= 恢复当前步骤：放在 effect 里而非 useState 初始化，
@@ -56,12 +61,18 @@ export default function FlowV2Page() {
     const id = new URLSearchParams(window.location.search).get("step");
     if (id) {
       const idx = STEP_DEFS.findIndex((s) => s.id === id);
-      if (idx >= 0) setActive(idx);
+      if (idx >= 0) {
+        setActive(idx);
+        setMaxReached(idx);
+      }
     } else {
       // 无显式 step 参数：从持久化的 store.currentStep（1..4）反推阶段，刷新/重开可续
       const cs = useFlowStore.getState().currentStep ?? 1;
       const map = CURRENT_STEP_TO_ACTIVE;
-      setActive(map[Math.min(4, Math.max(1, cs))] ?? 0);
+      const idx = map[Math.min(4, Math.max(1, cs))] ?? 0;
+      setActive(idx);
+      // 深链/续作恢复视为「曾到达」，避免恢复后的阶段条被门禁锁死
+      setMaxReached(idx);
     }
   }, []);
 
@@ -139,6 +150,37 @@ export default function FlowV2Page() {
     projectName || pageBlueprint?.length || productBrief?.description || productBrief?.vision,
   );
 
+  // —— A1 阶段门禁：进入某阶段需其前一阶段产出非空（PRD「流程清晰」）——
+  // 已到达过的阶段（reachedTo）自由回跳、不回锁；门禁只拦「没到达过的前进方向」。
+  const conceptBrief = useFlowStore((s) => s.conceptBrief);
+  const techStack = useFlowStore((s) => s.techStack);
+  const visualStyle = useFlowStore((s) => s.visualStyle);
+  const panelOutput = useFlowStore((s) => s.panelOutput);
+  const gates = useMemo(() => {
+    // 与 collab 阶段自身按钮同一判据（getConceptReadiness().canProceed），避免两处规则不一致
+    const briefReady = getConceptReadiness(conceptBrief).canProceed;
+    // C2 门禁统一：refine 的「下一步」要求完善度 ≥80%（refine-stage 内部判据），
+    // 这里用同一函数（lib/flow-refine-gate.ts）计算，堵住「步骤条绕过门禁」的口子
+    const refineReady =
+      Boolean(techStack) &&
+      Boolean(visualStyle) &&
+      refineOverallProgress({ productBrief, visualStyle, techStack, panelOutput }) >= 80;
+    const buildReady = pageBlueprint.length > 0;
+    return [
+      { ok: true, reason: "" },
+      { ok: briefReady, reason: "「产品创意」还有待确认项，先把方案收敛完整，再进入「方案落地」。" },
+      { ok: briefReady && refineReady, reason: "先在「方案落地」确认技术栈与视觉风格、完善度达 80%（可运行一次会诊补齐），再进入「页面搭建」。" },
+      { ok: briefReady && refineReady && buildReady, reason: "「页面搭建」还没有页面蓝图，先搭好至少一个页面，再进入「交付逻辑」。" },
+    ];
+  }, [conceptBrief, techStack, visualStyle, pageBlueprint, productBrief, panelOutput]);
+  const reachedTo = Math.max(maxReached, active);
+
+  // —— C4：产物库入口 ——
+  // 中间产物（蓝图/会诊/交付件）的查看入口此前只在 collab 阶段 JSX 内，
+  // 进 refine/build/deliver 后想回看必须退回流。这里给一个常驻下拉，跨阶段可达。
+  const deliverArtifacts = useFlowStore((s) => s.deliverArtifacts);
+  const [artifactOpen, setArtifactOpen] = useState(false);
+
   // —— P5-A：沉淀到第二大脑 ——
   // 只要有已确认结论即可用；点击 → 提取结论 → organize 生成待确认计划 → 跳脑机调起确认。
   const [sedimenting, setSedimenting] = useState(false);
@@ -198,19 +240,31 @@ export default function FlowV2Page() {
     });
   }, []);
 
+  /** 能否进入某阶段：已到达过（i <= reachedTo）放行；否则看该阶段门禁。 */
+  const canEnter = useCallback(
+    (i: number) => i <= reachedTo || (gates[i]?.ok ?? false),
+    [reachedTo, gates],
+  );
+
   const goTo = useCallback(
     (i: number) => {
+      if (i < 0 || i >= STEP_DEFS.length || i === active) return;
+      if (!canEnter(i)) {
+        // 跳步拦截：不静默失败，给出「缺什么」的原因
+        setGateMsg(gates[i]?.reason || "请先完成当前阶段");
+        return;
+      }
       if (i < active) markDone(i);
+      else markDone(active);
       setActive(i);
+      setMaxReached((m) => (m > i ? m : i));
+      setGateMsg(null);
     },
-    [active, markDone],
+    [active, canEnter, gates, markDone],
   );
 
   const onPrev = useCallback(() => setActive((a) => Math.max(0, a - 1)), []);
-  const onNext = useCallback(() => {
-    markDone(active);
-    setActive((a) => Math.min(STEP_DEFS.length - 1, a + 1));
-  }, [active, markDone]);
+  const onNext = useCallback(() => goTo(active + 1), [active, goTo]);
 
   /** 保存当前流程快照到「我的项目」（未登录先引导登录） */
   const saveProject = useCallback(async (): Promise<"ok" | "unauthed" | "fail"> => {
@@ -396,7 +450,63 @@ export default function FlowV2Page() {
           ) : null}
         </div>
         <div className="min-w-0 flex-1">
-          <StepBar active={active} done={done} onJump={goTo} />
+          <StepBar active={active} done={done} onJump={goTo} maxReached={reachedTo} />
+        </div>
+        {/* C4：产物库——跨阶段回看中间产物的常驻入口 */}
+        <div className="relative shrink-0">
+          <Button
+            size="icon"
+            variant="outline"
+            aria-label="产物库"
+            aria-expanded={artifactOpen}
+            title="产物库：查看各阶段已生成的中间产物"
+            onClick={() => setArtifactOpen((o) => !o)}
+          >
+            <Package className="size-4" />
+          </Button>
+          {artifactOpen && (
+            <>
+              <button
+                type="button"
+                aria-label="关闭产物库"
+                className="fixed inset-0 z-40 cursor-default"
+                onClick={() => setArtifactOpen(false)}
+              />
+              <div className="absolute right-0 top-10 z-50 w-72 rounded-xl border border-border bg-card p-3 shadow-xl">
+                <p className="mb-2 text-xs font-semibold text-foreground">产物库</p>
+                <ul className="space-y-1">
+                  <ArtifactRow
+                    label="方案会诊产出"
+                    desc="完善度面板 · guard 检查"
+                    ready={Boolean(panelOutput)}
+                    onJump={() => { setArtifactOpen(false); goTo(1); }}
+                  />
+                  <ArtifactRow
+                    label="页面蓝图"
+                    desc={pageBlueprint.length > 0 ? `${pageBlueprint.length} 个页面` : "未生成"}
+                    ready={pageBlueprint.length > 0}
+                    onJump={() => { setArtifactOpen(false); goTo(2); }}
+                  />
+                  <ArtifactRow
+                    label="交付产物"
+                    desc="交付阶段生成的文件包"
+                    ready={Boolean(deliverArtifacts)}
+                    onJump={() => { setArtifactOpen(false); goTo(3); }}
+                  />
+                  <li>
+                    <Link
+                      href="/account"
+                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    >
+                      <FolderOpen className="size-3.5 shrink-0" />
+                      <span className="flex-1">已保存项目</span>
+                      <span aria-hidden>→</span>
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </>
+          )}
         </div>
         <Button
           size="icon"
@@ -420,6 +530,25 @@ export default function FlowV2Page() {
           <Save className="size-4" />
         </Button>
       </div>
+
+      {/* A1：跳步被门禁拦截时，说明「缺什么」，不静默失败 */}
+      {gateMsg && (
+        <div
+          role="status"
+          className="flex shrink-0 items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning"
+        >
+          <Info className="size-3.5 shrink-0" />
+          <span className="min-w-0 flex-1">{gateMsg}</span>
+          <button
+            type="button"
+            onClick={() => setGateMsg(null)}
+            aria-label="关闭提示"
+            className="shrink-0 rounded p-0.5 transition hover:bg-warning/20"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
 
       {STEP_DEFS.map((s, i) => (
         <div key={s.id} className={i === active ? "flex min-h-0 flex-1 flex-col" : "hidden"}>
@@ -445,5 +574,44 @@ export default function FlowV2Page() {
       {saveMsg && <div className="pointer-events-none fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-foreground px-3 py-1.5 text-xs text-background shadow-lg">{saveMsg}</div>}
       {sedimentError && <div className="pointer-events-none fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-destructive px-3 py-1.5 text-xs text-white shadow-lg">{sedimentError}</div>}
     </div>
+  );
+}
+/** 产物库下拉的行：已生成 → 可点击跳到对应阶段；未生成 → 置灰展示 */
+function ArtifactRow({
+  label,
+  desc,
+  ready,
+  onJump,
+}: {
+  label: string;
+  desc: string;
+  ready: boolean;
+  onJump: () => void;
+}) {
+  return (
+    <li>
+      {ready ? (
+        <button
+          type="button"
+          onClick={onJump}
+          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs hover:bg-muted/50"
+        >
+          <span className="flex-1">
+            <span className="block font-medium text-foreground">{label}</span>
+            <span className="block text-muted-foreground">{desc}</span>
+          </span>
+          <span className="shrink-0 text-muted-foreground" aria-hidden>
+            →
+          </span>
+        </button>
+      ) : (
+        <div className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs opacity-50">
+          <span className="flex-1">
+            <span className="block font-medium text-foreground">{label}</span>
+            <span className="block text-muted-foreground">未生成</span>
+          </span>
+        </div>
+      )}
+    </li>
   );
 }

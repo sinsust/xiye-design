@@ -21,9 +21,14 @@ interface StepBarProps {
   active: number;
   done: Set<number>;
   onJump: (index: number) => void;
+  /**
+   * 已到达过的最远阶段下标：≤ 该下标的阶段可自由回跳（A1 门禁只拦「未到达过的前进方向」）。
+   * 未到达的阶段仍可点击——由上游 goTo 决定放行或给出「缺什么」的原因提示。
+   */
+  maxReached: number;
 }
 
-export function StepBar({ active, done, onJump }: StepBarProps) {
+export function StepBar({ active, done, onJump, maxReached }: StepBarProps) {
   return (
     <nav
       aria-label="流程步骤"
@@ -33,19 +38,19 @@ export function StepBar({ active, done, onJump }: StepBarProps) {
         const Icon = STEP_ICONS[step.id];
         const isActive = i === active;
         const isDone = done.has(i) && !isActive;
-        const reachable = i <= active || done.has(i);
+        const reachable = i <= maxReached;
         return (
           <div key={step.id} className="flex min-w-fit flex-1 items-center">
             <button
               type="button"
-              onClick={() => reachable && onJump(i)}
-              disabled={!reachable}
+              onClick={() => onJump(i)}
+              aria-disabled={!reachable}
               className={[
                 "group flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-left transition-colors",
-                reachable ? "cursor-pointer hover:bg-muted/60" : "cursor-not-allowed opacity-60",
+                reachable ? "cursor-pointer hover:bg-muted/60" : "cursor-help opacity-60 hover:bg-muted/40",
                 isActive ? "bg-primary/10" : "",
               ].join(" ")}
-              title={step.desc}
+              title={reachable ? step.desc : `${step.label}：需先完成前一阶段`}
             >
               <span
                 className={[

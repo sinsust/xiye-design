@@ -202,6 +202,13 @@ export function extractFlowError(json: unknown): FlowAIError | null {
   };
 }
 
+/** 从任意响应体稳健读取「是否命中降级兜底」（启发式 / 历史建议）。缺 meta 或字段一律视为 false。 */
+export function readFlowFallback(json: unknown): boolean {
+  if (!json || typeof json !== "object") return false;
+  const meta = (json as Record<string, unknown>).flowMeta as Record<string, unknown> | undefined;
+  return meta?.fallbackUsed === true;
+}
+
 /** 前端直接从 FlowAIError 取用户可读文案（若为空给默认兜底） */
 export function flowErrorUserMessage(err: FlowAIError | null | undefined, fallback = "出现了一点问题，请重试。"): string {
   if (!err) return fallback;

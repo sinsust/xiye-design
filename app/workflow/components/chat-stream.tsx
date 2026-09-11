@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useFlowStore } from "@/lib/store/flow-store";
 import { personaPayload, useCurrentStyle } from "../agents-store";
 import {
@@ -30,8 +31,10 @@ import {
   flowError,
   flowErrorUserMessage,
   newRequestId,
+  readFlowFallback,
   type FlowAIError,
 } from "@/lib/flow-ai-types";
+import { AiFallbackBadge } from "@/components/ai-fallback-badge";
 
 const SAMPLES = [
   "AI 周报助手：自动汇总 PR 与故障风险",
@@ -73,6 +76,8 @@ export function ChatStream({
   // F0-A：当前操作的统一错误（含 requestId）；失败态据此渲染而非伪造 assistant
   const [opError, setOpError] = useState<FlowAIError | null>(null);
   const [cancelled, setCancelled] = useState(false);
+  // B4：本轮对话是否走启发式兜底（取自响应 flowMeta.fallbackUsed）
+  const [opFallback, setOpFallback] = useState(false);
   const startedRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const style = useCurrentStyle();
@@ -252,6 +257,7 @@ export function ChatStream({
               phase: "dialog",
             }),
         );
+        setOpFallback(false);
         return;
       }
       const payload = data as { reply: string; branches?: Branch[]; brief?: ProductBrief | null };
@@ -263,14 +269,18 @@ export function ChatStream({
       setMessages([...next, assistant]);
       const bf = payload.brief;
       setBrief(bf ?? currentBrief);
+      // B4：透出本轮是否走启发式兜底（服务端 flowMeta.fallbackUsed）
+      setOpFallback(readFlowFallback(data));
     } catch (e) {
       if ((e as Error)?.name === "AbortError") {
         // 用户取消：停止 loading，不给成功也不给失败
         setCancelled(true);
         setOpError(null);
+        setOpFallback(false);
         return;
       }
       setOpError(flowError("provider_unavailable", { operation: "discover", phase: "dialog" }));
+      setOpFallback(false);
     } finally {
       setThinking(false);
     }
@@ -293,6 +303,7 @@ export function ChatStream({
     const first: DiscoverMessage = { role: "user", content: t };
     setMessages([first]);
     setBrief(null);
+    setOpFallback(false);
     void runDiscover([first], null, "new");
   };
 
@@ -316,7 +327,21 @@ export function ChatStream({
     void runDiscover(next, brief, "new");
   };
 
-  const reset = () => {
+  const reset = async () => {
+    // P0-5：已有访谈/产物时先二次确认——zustand persist 会把清空写回 localStorage，误触不可恢复
+    const st = useFlowStore.getState();
+    const hasContent =
+      messages.length > 0 || brief || st.productBrief || st.panelOutput || st.deliverArtifacts;
+    if (hasContent) {
+      const ok = await confirmDialog({
+        title: "重置对话",
+        description:
+          "将清空当前访谈与全部已生成产物（产品创意 / 蓝图 / 交付件），此操作不可撤销。",
+        confirmText: "清空重来",
+        confirmVariant: "destructive",
+      });
+      if (!ok) return;
+    }
     abortRef.current?.abort();
     abortRef.current = null;
     opIdRef.current = "";
@@ -445,6 +470,16 @@ export function ChatStream({
             <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-border bg-background px-3.5 py-3 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin text-primary" />
               {consulting ? style.consultingText : `${style.moderatorTitle}正在思考…`}
+            </div>
+          </div>
+        )}
+
+        {/* B4：降级提示（本轮未命中模型，走本地规则）*/}
+        {opFallback && !opError && !thinking && (
+          <div className="flex justify-start">
+            <div className="inline-flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-border bg-card px-3.5 py-2.5 text-xs text-muted-foreground">
+              <AiFallbackBadge />
+              本轮由本地规则生成，未调用 AI 模型。
             </div>
           </div>
         )}

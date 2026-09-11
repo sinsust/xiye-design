@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { LocalDraftHint } from "@/components/workflow/local-draft-hint";
 import { useFlowStore, type FlowState } from "@/lib/store/flow-store";
 import { useShallow } from "zustand/react/shallow";
 import { useSkeletonStore } from "@/lib/skeleton-store";
@@ -373,6 +374,8 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+      {/* C3：匿名（本地草稿）透明提示 */}
+      <LocalDraftHint />
       {/* AI 开工向导：单行紧凑，讲清「下载→解压→AI打开→贴提示词」 */}
       <div className="shrink-0 rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-3 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">

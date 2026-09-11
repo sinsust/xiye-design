@@ -16,7 +16,7 @@ import {
   getConceptReadiness,
   mergeConceptBrief,
 } from "@/lib/flow-concept";
-import { newRequestId } from "@/lib/flow-ai-types";
+import { newRequestId, readFlowFallback } from "@/lib/flow-ai-types";
 
 interface SyncOptions {
   messages: DiscoverMessage[];
@@ -64,23 +64,26 @@ function ensureQuestions(brief: ProductConceptBrief): ProductConceptBrief {
 
 /**
  * 一轮对话结束后的概念同步：更新 store 中的 conceptBrief（面板随之刷新）。
- * 返回是否成功（供调用方决定是否展示同步态）。
+ * 返回 ok（供调用方决定是否展示同步态）与 fallbackUsed（本次是否走启发式兜底，
+ * 供 UI 显示「启发式兜底」角标 —— 本地无项目路径同样算兜底）。
  */
-export async function syncConcept(opts: SyncOptions): Promise<boolean> {
+export async function syncConcept(
+  opts: SyncOptions,
+): Promise<{ ok: boolean; fallbackUsed: boolean }> {
   const { messages, prev, projectId, setBrief, signal } = opts;
-  if (!messages.some((m) => m.role === "user")) return false;
+  if (!messages.some((m) => m.role === "user")) return { ok: false, fallbackUsed: false };
   const inputs = messagesToConceptInputs(messages);
   const operation = prev ? "update_concept_brief" : "build_concept_brief";
 
-  const apply = (next: ProductConceptBrief | null) => {
+  const apply = (next: ProductConceptBrief | null, fallbackUsed = false) => {
     setBrief(next);
-    return Boolean(next);
+    return { ok: Boolean(next), fallbackUsed };
   };
 
   if (!projectId) {
-    // 尚无保存项目：本地启发式（不调网络，保证可用性）
+    // 尚无保存项目：本地启发式（不调网络，保证可用性）→ 明确标记为兜底
     const local = buildConceptLocal(inputs, prev);
-    return apply(local);
+    return apply(local, true);
   }
 
   try {
@@ -100,12 +103,12 @@ export async function syncConcept(opts: SyncOptions): Promise<boolean> {
     const briefOut = data?.data?.brief as ProductConceptBrief | undefined;
     if (!res.ok || !briefOut) {
       // 失败保留旧 Brief（F0-A）
-      return apply(prev);
+      return apply(prev, false);
     }
-    return apply(briefOut);
+    return apply(briefOut, readFlowFallback(data));
   } catch {
     // 网络 / 取消：保留旧值
-    return apply(prev);
+    return apply(prev, false);
   }
 }
 
