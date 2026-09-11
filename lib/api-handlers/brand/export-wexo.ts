@@ -3,12 +3,18 @@
 // 一并打包。图片在整站 HTML 中已由前端改写为相对路径 images/...。
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { requireUser } from "@/lib/auth-guard";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { makeZip } from "@/lib/server-zip";
 import { collectFilePaths } from "@/lib/brand-pack";
 
 export async function POST(req: NextRequest) {
+  // 整站导出属登录后功能（仅 /components 内的 WexoStudio 调用）；
+  // 防伪造/过期 cookie 绕过 proxy 门禁，把服务端资源当打包器滥用。
+  const { res } = await requireUser();
+  if (res) return res;
+
   if (!await rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }

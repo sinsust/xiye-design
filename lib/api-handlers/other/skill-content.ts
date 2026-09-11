@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import path from "path";
 import { SKILL_CATALOG } from "@/data/skill-catalog";
+import { requireUser } from "@/lib/auth-guard";
 
 // 读取本地 skill 仓库中某个 skill 的 SKILL.md 原文，供知识库页面「查看」弹窗展示。
 // 仅允许读取已在 SKILL_CATALOG 中登记、且位于仓库合法路径内的文件，防目录穿越。
@@ -12,6 +13,10 @@ export const runtime = "nodejs";
 const SKILL_REPO_ROOT = process.env.SKILL_REPO_ROOT ?? "";
 
 export async function GET(req: NextRequest) {
+  // skill 文档展示仅限登录用户；防伪造/过期 cookie 绕过 proxy 门禁直读本地仓库。
+  const { res } = await requireUser();
+  if (res) return res;
+
   const id = req.nextUrl.searchParams.get("id");
   if (!id) {
     return NextResponse.json({ ok: false, error: "缺少 id" }, { status: 400 });
