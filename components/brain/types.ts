@@ -1,14 +1,13 @@
 import type { BrainTaskPriority } from "@/lib/brain-db";
 import type { BrainTask, BrainStrategy } from "@/lib/brain-db";
 
+// 来源定义与标签复用 lib 的纯逻辑模块（与后端 ask.ts 同源），避免前后端两处定义漂移
+import type { AskSource } from "@/lib/brain-ask-source";
+
 export type AskMode = "local" | "ima" | "mixed";
-export interface AskSourceItem {
-  noteId: string;
-  title: string;
-  source: "local" | "ima";
-  sourceName?: string;
-  relevance?: number;
-}
+export type AskSourceKind = AskSource["source"];
+export type AskSourceItem = AskSource;
+export { ASK_SOURCE_LABEL } from "@/lib/brain-ask-source";
 export interface QaItem {
   q: string;
   a: string;
@@ -60,6 +59,8 @@ export interface OrganizedActionItem {
   dueDate: string | null;
   priority: BrainTaskPriority;
   strategyIndex?: number;
+  /** 所属主题下的子策略下标；只属于主题整体时为空 */
+  strategySubIndex?: number;
   // P0：是否为此任务创建一条独立提醒（确认写入时生效）
   makeReminder?: boolean;
 }
@@ -88,7 +89,13 @@ export interface OrganizedDraft {
   related: string[];
   relatedReason: string;
   actionItems: OrganizedActionItem[];
-  strategies: { title: string; description: string }[];
+  /** 策略主题：目标状态 + 取舍判断 + 其下子策略 */
+  strategies: {
+    title: string;
+    goal: string;
+    rationale: string;
+    subStrategies: { title: string; description: string }[];
+  }[];
   decisions: string[];
   attendees: string[];
   metrics: OrganizedMetric[];

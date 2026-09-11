@@ -6,9 +6,10 @@ import { after } from "next/server";
 import {
   listBrainNotes,
   insertBrainNote,
-  insertBrainStrategies,
+  insertStrategyTree,
   insertBrainTasks,
   insertBrainReminderItems,
+  insertBrainReview,
   deleteBrainNote,
   deleteBrainReminderItem,
   insertBrainProcessingPlan,
@@ -30,6 +31,7 @@ import {
   findDuplicateNote,
   type OrganizedNote,
   type NoteType,
+  type StrategyTheme,
 } from "./brain-organizer";
 import { embed, buildListableText } from "./embedding";
 import { compactSaveError } from "./api-error";
@@ -47,6 +49,8 @@ export interface ProcessingTask {
   dueDate: string | null;
   priority: BrainTaskPriority;
   strategyIndex?: number;
+  /** 该任务所属主题下的子策略下标；只属于主题整体时为空 */
+  strategySubIndex?: number;
   // 用户勾选：确认时是否为此任务创建一条独立提醒
   makeReminder?: boolean;
 }
@@ -78,7 +82,7 @@ export interface ProcessingNoteBody {
   metrics: { label: string; value: string }[];
   problemDomains: { domain: string; status: string; conclusion: string }[];
   openQuestions: string[];
-  strategies: { title: string; description: string }[];
+  strategies: StrategyTheme[];
   strategy: { angle: string; logic: string }[];
   relatedReason: string;
   rewritten: string;
@@ -184,6 +188,7 @@ export function buildProcessingPlanBody(
     dueDate: a.dueDate ?? null,
     priority: a.priority ?? "medium",
     strategyIndex: a.strategyIndex,
+    strategySubIndex: a.strategySubIndex,
     // 带明确截止日期或命中时间线索的任务，默认建议创建提醒（用户可在确认前取消）
     makeReminder: Boolean(a.dueDate),
   }));
@@ -376,8 +381,12 @@ function toNewTask(
   t: ProcessingTask,
   strategyIndexMap: Map<number, string>,
   projectId: string | null,
+  subIndexMap?: Map<string, string>,
 ): NewBrainTask {
-  const strategyId = typeof t.strategyIndex === "number" ? strategyIndexMap.get(t.strategyIndex) ?? null : null;
+  const ti = typeof t.strategyIndex === "number" ? t.strategyIndex : -1;
+  const si = typeof t.strategySubIndex === "number" ? t.strategySubIndex : -1;
+  const subId = ti >= 0 && si >= 0 ? subIndexMap?.get(`${ti}:${si}`) ?? null : null;
+  const strategyId = ti >= 0 ? subId ?? strategyIndexMap.get(ti) ?? null : null;
   return {
     noteId,
     title: cap(t.title, 40),
@@ -536,25 +545,29 @@ export async function applyProcessingPlan(
     mark("note");
     if (!createdNoteId) return fail("save_note_failed", "笔记写入失败");
 
-    // 2) 策略
-    const strats = final.note.strategies ?? [];
-    const createdStrategies = strats.length
-      ? await insertBrainStrategies(
-          userId,
-          strats.map((s) => ({ noteId: createdNoteId as string, title: cap(s.title, 200), description: cap(s.description, 1000) })),
-        )
-      : [];
-    createdStrategyIds = createdStrategies.map((s) => s.id);
+    // 2) 策略：主题 → 子策略两层
+    const strats = (final.note.strategies ?? []).slice(0, 2);
+    const tree = await insertStrategyTree(userId, createdNoteId as string, strats);
+    createdStrategyIds = tree.themeIds.filter(Boolean) as string[];
     mark("strats");
+    // 任务优先挂子策略：strategyIndex 取主题、strategySubIndex 取该主题下的子策略
     const strategyIndexMap = new Map<number, string>();
-    createdStrategies.forEach((s, idx) => strategyIndexMap.set(idx, s.id));
+    tree.themeIds.forEach((id, idx) => {
+      if (id) strategyIndexMap.set(idx, id);
+    });
+    const subIndexMap = new Map<string, string>();
+    tree.subIds.forEach((subs, ti) => {
+      subs.forEach((id, si) => {
+        if (id) subIndexMap.set(`${ti}:${si}`, id);
+      });
+    });
 
     // 3) 确认的任务（含项目关联 / 负责人 / 截止 / 优先级）
     const tasks = final.suggestedTasks.filter((t) => t.title.trim());
     if (tasks.length) {
       const created = await insertBrainTasks(
         userId,
-        tasks.map((t) => toNewTask(createdNoteId as string, t, strategyIndexMap, projectId)),
+        tasks.map((t) => toNewTask(createdNoteId as string, t, strategyIndexMap, projectId, subIndexMap)),
       );
       createdTaskIds = created.map((t) => t.id);
     }
@@ -594,7 +607,15 @@ export async function applyProcessingPlan(
     createdReminderIds = createdReminders.map((c) => c.id);
     mark("reminders");
 
-    // 注：间隔复习功能已移除，不再生成 brain_review 记录。
+    // 5) 复习记录（1 天后首刷），进入今日空间的间隔复习流（PRD §7.4）
+    await insertBrainReview(userId, {
+      noteId: createdNoteId,
+      nextReviewAt: new Date(Date.now() + 86400_000).toISOString(),
+      interval: 1,
+      easeFactor: 2.5,
+      reviewCount: 0,
+    });
+    mark("review");
 
     // 6) 审计：回写 plan 状态与产出对象 ID
     await updateBrainProcessingPlan(userId, plan.id, {

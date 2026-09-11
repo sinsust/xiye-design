@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import type { AskMode, QaItem, SearchHits } from "./types";
+import { ASK_SOURCE_LABEL } from "./types";
 
 /** 命中词高亮：把 text 中首次出现的 query 包成 <mark>，一眼判断是否命中（P1-2） */
 function highlight(text: string, q: string) {
@@ -104,7 +105,9 @@ export function SearchPanel({
             `【问题】\n${item.q}`,
             `\n【回答】\n${item.a}`,
             item.sources.length
-              ? `\n【参考来源】\n${item.sources.map((s) => `- ${s.title}`).join("\n")}`
+              ? `\n【参考来源】\n${item.sources
+                  .map((s) => `- ${s.title}（${ASK_SOURCE_LABEL[s.source] ?? s.source}）`)
+                  .join("\n")}`
               : "",
           ].join("\n"),
           summary: item.a.slice(0, 200),
@@ -125,7 +128,7 @@ export function SearchPanel({
 
   if (!open) return null;
   return (
-    <div className="absolute right-0 top-11 z-40 w-[380px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-primary/15">
+    <div className="absolute right-0 top-11 z-40 w-[380px] origin-top-right animate-in fade-in-0 zoom-in-95 duration-150 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
       <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2.5">
         <Search className="size-3.5 text-muted-foreground" />
         <input
@@ -172,7 +175,7 @@ export function SearchPanel({
                   ))}
                 </div>
                 <p className="px-1 pb-1 text-[11px] leading-relaxed text-muted-foreground">
-                  输入关键词即时搜索全部内容；需要综合多个笔记给结论时，在下方「智能问答」提问。
+                  输入关键词即时搜索全部内容；需要综合多个笔记给结论时，在下方「问我的记忆」提问。
                 </p>
               </div>
             );
@@ -181,7 +184,7 @@ export function SearchPanel({
           if (!total) {
             return (
               <p className="px-1 py-1 text-[11px] text-muted-foreground">
-                没有找到「{query}」相关内容，试试在下方交给智能问答。
+                没有找到「{query}」相关内容，试试在下方交给问我的记忆。
               </p>
             );
           }
@@ -256,11 +259,11 @@ export function SearchPanel({
           );
         })()}
 
-        {/* 智能问答（并入全局搜索） */}
+        {/* 问我的记忆（并入全局搜索，命名与今日空间一致） */}
         <div className="rounded-lg border border-border/70 bg-muted/20 p-2.5">
           <div className="mb-1.5 flex items-center gap-1.5">
             <Sparkles className="size-3.5 text-primary" />
-            <span className="text-[11px] font-medium text-foreground">智能问答 · 基于全部笔记</span>
+            <span className="text-[11px] font-medium text-foreground">问我的记忆 · 基于全部笔记</span>
           </div>
           {qa.length > 0 && (
             <div className="mb-2 max-h-40 space-y-1.5 overflow-y-auto">
@@ -339,20 +342,35 @@ export function SearchPanel({
                   )}
                   {item.sources.length > 0 && (
                     <div className="mt-1 flex flex-wrap items-center gap-1">
-                      {item.sources.map((s, si) =>
-                        s.source === "ima" ? (
-                          <span key={si} className="truncate rounded-full bg-info/10 px-1.5 py-0.5 text-[10px] text-info">{s.title} · ima</span>
+                      {item.sources.map((s, si) => {
+                        const label = ASK_SOURCE_LABEL[s.source] ?? s.source;
+                        // ima 实时检索的 noteId 指向远端文档（格式 ima-xxx），无本地笔记可跳转
+                        const external = s.source === "ima";
+                        const cls =
+                          s.source === "ima" || s.source === "ima-synced"
+                            ? "bg-info/10 text-info"
+                            : s.source === "obsidian"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted/70 text-muted-foreground";
+                        return external ? (
+                          <span
+                            key={si}
+                            className={`truncate rounded-full px-1.5 py-0.5 text-[10px] ${cls}`}
+                          >
+                            {s.title} · {label}
+                            {s.sourceName ? ` · ${s.sourceName}` : ""}
+                          </span>
                         ) : (
                           <button
                             key={si}
                             type="button"
                             onClick={() => { jumpToNote(s.noteId); onClose(); }}
-                            className="max-w-full truncate rounded-full bg-muted/70 px-1.5 py-0.5 text-[10px] text-muted-foreground transition hover:text-primary"
+                            className={`max-w-full truncate rounded-full px-1.5 py-0.5 text-[10px] transition hover:text-primary ${cls}`}
                           >
-                            {s.title} · 本地
+                            {s.title} · {label}
                           </button>
-                        ),
-                      )}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

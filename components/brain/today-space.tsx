@@ -8,18 +8,33 @@ import {
   ChevronRight,
   Copy,
   Lightbulb,
+  Link2,
   Loader2,
   NotebookPen,
   RefreshCw,
+  Search,
   Sparkles,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { SkeletonRows } from "@/components/ui/skeleton";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { toast } from "@/components/ui/toast";
 import type { OrganizedNote } from "@/lib/brain-organizer";
+import { ASK_SOURCE_LABEL, type AskSourceItem } from "./types";
 
 // —— 与 GET /api/brain/today 响应对齐的本地类型 ——
+interface TodayCard {
+  kind: "sm2" | "learning";
+  reviewId: string;
+  noteId: string;
+  noteTitle: string;
+  noteCategory: string;
+  nextTs: number;
+  noteSummary: string;
+  noteContentPreview: string;
+}
 interface RecentNoteMeta {
   id: string;
   title: string;
@@ -39,16 +54,12 @@ interface WeeklySummary {
   updatedAt: number;
 }
 interface TodayResponse {
+  todayReviews: TodayCard[];
   recentNotes: RecentNoteMeta[];
   weeklySummary: WeeklySummary | null;
 }
-interface AskSource {
-  noteId: string;
-  title: string;
-  source: "local" | "ima";
-  sourceName?: string;
-  relevance?: number;
-}
+// 问答引用来源：与 /api/brain/ask 响应对齐（细分 本地 / Obsidian / ima 同步 / ima 实时）
+type AskSource = AskSourceItem;
 
 /* ═══ 标签配色：系统标签固定色 + 自定义标签哈希确定性分配 ═══ */
 const TAG_PALETTE = [
@@ -65,7 +76,7 @@ const TAG_PALETTE = [
 ] as const;
 
 const SYSTEM_TAG_MAP: Record<string, number> = {
-  工作: 0, 阅读读: 1, 阅读: 1, 随手记: 2, 文档: 3,
+  工作: 0, 阅读: 1, 随手记: 2, 文档: 3,
   技术: 4, 待办: 5, 学习: 6, 灵感: 7, 问答: 8,
 };
 
@@ -78,7 +89,13 @@ function tagStyle(tag: string): (typeof TAG_PALETTE)[number] {
   return TAG_PALETTE[Math.abs(h) % TAG_PALETTE.length];
 }
 
-export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }) {
+export function TodaySpace({
+  onOpenDashboard,
+  onOpenSearch,
+}: {
+  onOpenDashboard?: () => void;
+  onOpenSearch?: () => void;
+}) {
   const [data, setData] = useState<TodayResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -90,7 +107,18 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
   const [batchText, setBatchText] = useState("");
   const [composing, setComposing] = useState(false);
   const [composeError, setComposeError] = useState("");
-  const [receipt, setReceipt] = useState<{ noteId: string; title: string }[]>([]);
+  const [receipt, setReceipt] = useState<{ noteId: string; title: string; organizing: boolean }[]>([]);
+
+  // 复习动作中 + 卡片展开态（PRD §7.4 今日复习）
+  const [busyReview, setBusyReview] = useState<string | null>(null);
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+  const toggleReview = (id: string) =>
+    setExpandedReviews((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // 周摘要
   const [weeklyLoading, setWeeklyLoading] = useState(false);
@@ -153,6 +181,17 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
   }, [load]);
 
   // —— 顶部即时收录：默认 auto-apply 入库（决策 15/16）——
+  // 收录后 AI 整理在后台异步回写（6s/15s 两次延迟刷新拉取增强结果），
+  // 期间 receipt 行显示「整理中」，拉到 struct 或 20s 兜底后解除，避免误判「没干活/丢了」。
+  const syncOrganizing = useCallback(() => {
+    setReceipt((prev) => {
+      if (!prev.some((a) => a.organizing)) return prev;
+      const notes = dataRef.current?.recentNotes ?? [];
+      const organized = new Set(notes.filter((n) => n.struct).map((n) => n.id));
+      return prev.map((a) => (organized.has(a.noteId) ? { ...a, organizing: false } : a));
+    });
+  }, []);
+
   const submit = async () => {
     const text = batchText.trim();
     if (!text || composing) return;
@@ -172,14 +211,19 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
             .map((a: { noteId: string; suggestedTitle?: string; rawContent?: string }) => ({
               noteId: a.noteId,
               title: a.suggestedTitle || String(a.rawContent || "").slice(0, 40) || "已收录",
+              organizing: true,
             }))
         : [];
       setReceipt((prev) => [...applied, ...prev].slice(0, 6));
       setBatchText("");
       await load(true);
       // AI 整理已转后台（保存优先，决策 15 v2）：延迟刷新两次拉取整理增强结果
-      setTimeout(() => { void load(true); }, 6000);
-      setTimeout(() => { void load(true); }, 15000);
+      setTimeout(() => { void load(true).then(syncOrganizing); }, 6000);
+      setTimeout(() => { void load(true).then(syncOrganizing); }, 15000);
+      // 兜底：整理服务超时未回写也不再让「整理中」常驻
+      setTimeout(() => {
+        setReceipt((prev) => prev.map((a) => (a.organizing ? { ...a, organizing: false } : a)));
+      }, 20000);
     } catch (e) {
       setComposeError(e instanceof Error ? e.message : "收录失败");
     } finally {
@@ -188,11 +232,45 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
   };
 
   const undoNote = async (noteId: string) => {
+    // 撤销 = 永久删除（E2E 数据无回收站），与 note-card 删除同一确认标准，不再一键即删
+    const ok = await confirmDialog({
+      title: "撤销这条收录？",
+      description: "撤销会永久删除该笔记及其 AI 整理内容，不可恢复。",
+      confirmText: "撤销并删除",
+      confirmVariant: "destructive",
+    });
+    if (!ok) return;
     try {
-      await fetch(`/api/brain/notes?id=${encodeURIComponent(noteId)}`, { method: "DELETE" });
+      const res = await fetch(`/api/brain/notes?id=${encodeURIComponent(noteId)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("撤销失败");
       setReceipt((prev) => prev.filter((a) => a.noteId !== noteId));
+      await load(true);
     } catch {
-      /* 忽略 */
+      toast.error("撤销失败，请重试");
+    }
+  };
+
+  // —— 复习动作：SM-2（间隔复习）/ 学习复习 两套 ——
+  const actSm2 = async (id: string, action: "complete" | "skip") => {
+    setBusyReview(id);
+    try {
+      await fetch(`/api/brain/reviews?id=${encodeURIComponent(id)}&action=${action}`, { method: "POST" });
+      await load(true);
+    } finally {
+      setBusyReview(null);
+    }
+  };
+  const actLearning = async (id: string, action: "mastered" | "not_sure" | "snooze") => {
+    setBusyReview(id);
+    try {
+      await fetch(`/api/brain/learning-reviews/${encodeURIComponent(id)}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      await load(true);
+    } finally {
+      setBusyReview(null);
     }
   };
 
@@ -249,7 +327,9 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
             `【问题】\n${question.trim()}`,
             `\n【回答】\n${askAnswer}`,
             askSources.length
-              ? `\n【参考来源】\n${askSources.map((s) => `- ${s.title}`).join("\n")}`
+              ? `\n【参考来源】\n${askSources
+                  .map((s) => `- ${s.title}（${ASK_SOURCE_LABEL[s.source] ?? s.source}）`)
+                  .join("\n")}`
               : "",
           ].join("\n"),
           summary: askAnswer.slice(0, 200),
@@ -315,8 +395,19 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
                 </div>
                 {receipt.map((a) => (
                   <div key={a.noteId} className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-xs">
-                    <BookOpen className="size-3.5 shrink-0 text-success" />
-                    <span className="flex-1 truncate text-foreground">{a.title}</span>
+                    {a.organizing ? (
+                      <>
+                        <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
+                        <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                          {a.title} · AI 整理中…
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <BookOpen className="size-3.5 shrink-0 text-success" />
+                        <span className="min-w-0 flex-1 truncate text-foreground">{a.title}</span>
+                      </>
+                    )}
                     <button onClick={() => undoNote(a.noteId)} className="shrink-0 text-muted-foreground transition hover:text-destructive" aria-label="撤销">
                       <X className="size-3.5" />
                     </button>
@@ -390,6 +481,82 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
 
         {/* ═══ 右栏（1/3）═══ */}
         <div className="space-y-5">
+          {/* —— 今日复习（PRD §7.4，≤5 条）—— */}
+          <section className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-foreground">
+              <RefreshCw className="size-4 text-primary" />
+              今日复习
+              {data && data.todayReviews.length > 0 && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{data.todayReviews.length}</span>
+              )}
+            </div>
+            {loading ? (
+              <SkeletonRows rows={2} className="py-1" />
+            ) : data && data.todayReviews.length === 0 ? (
+              <p className="py-4 text-center text-xs text-muted-foreground">今天没有待复习</p>
+            ) : (
+              <div className="space-y-2">
+                {data?.todayReviews.map((c) => {
+                  const accent = c.kind === "sm2" ? "border-l-info" : "border-l-violet-400";
+                  const badge = c.kind === "sm2" ? "bg-info/10 text-info" : "bg-violet-500/15 text-violet-700 dark:text-violet-300";
+                  const preview = c.noteSummary || c.noteContentPreview;
+                  const expanded = expandedReviews.has(c.reviewId);
+                  return (
+                    <div key={c.reviewId} className={`rounded-lg border border-border border-l-2 ${accent} bg-background px-3 py-2.5`}>
+                      <div className="flex items-center gap-2">
+                        <span className={"rounded-full px-2 py-0.5 text-[11px] font-medium " + badge}>
+                          {c.kind === "sm2" ? "间隔复习" : "学习复习"}
+                        </span>
+                        {c.noteCategory && <span className="text-[11px] text-muted-foreground">{c.noteCategory}</span>}
+                      </div>
+                      <span className="mt-1 block text-sm font-medium text-foreground">{c.noteTitle}</span>
+                      {/* 复习内容预览：让「复习的是啥」一目了然 */}
+                      {preview ? (
+                        <button onClick={() => toggleReview(c.reviewId)} className="mt-1.5 block w-full text-left">
+                          <p className={"text-[11px] leading-relaxed text-muted-foreground " + (expanded ? "" : "line-clamp-2")}>
+                            {preview}
+                          </p>
+                          <span className="mt-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-primary">
+                            <BookOpen className="size-3" />
+                            {expanded ? "收起内容" : "查看复习内容"}
+                          </span>
+                        </button>
+                      ) : (
+                        <p className="mt-1.5 text-[11px] text-muted-foreground/60">该笔记暂无正文/摘要</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {c.kind === "sm2" ? (
+                          <>
+                            <Button size="sm" disabled={busyReview === c.reviewId} onClick={() => actSm2(c.reviewId, "complete")}>
+                              {busyReview === c.reviewId ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                              已复习
+                            </Button>
+                            <Button size="sm" variant="outline" disabled={busyReview === c.reviewId} onClick={() => actSm2(c.reviewId, "skip")}>
+                              跳过
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" disabled={busyReview === c.reviewId} onClick={() => actLearning(c.reviewId, "mastered")}>
+                              {busyReview === c.reviewId ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                              掌握
+                            </Button>
+                            <Button size="sm" variant="outline" disabled={busyReview === c.reviewId} onClick={() => actLearning(c.reviewId, "not_sure")}>
+                              模糊
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-muted-foreground" disabled={busyReview === c.reviewId} onClick={() => actLearning(c.reviewId, "snooze")}>
+                              延后
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
           {/* —— 本周摘要 —— */}
           <section className="rounded-xl border border-border bg-card p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -470,7 +637,7 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
                   <div className="flex flex-wrap gap-1.5">
                     {askSources.map((s) => (
                       <span key={s.noteId} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                        {s.source === "ima" ? "ima" : "本地"}
+                        {ASK_SOURCE_LABEL[s.source] ?? s.source}
                         {s.sourceName ? ` · ${s.sourceName}` : ""}
                         <span className="text-foreground">· {s.title}</span>
                       </span>
@@ -481,10 +648,19 @@ export function TodaySpace({ onOpenDashboard }: { onOpenDashboard?: () => void }
             )}
           </section>
 
-          {/* —— 入口：完整看板 —— */}
-          <div className="flex justify-center pb-2">
+          {/* —— 同步状态（ima / Obsidian）：今日空间是 80% 时间的停留页，同步状态在此一眼可见 —— */}
+          <SyncStatusLine onOpenDashboard={onOpenDashboard} />
+
+          {/* —— 入口：搜索记忆 + 高级工具（任务/项目/策略/数据引擎等，PRD §3）—— */}
+          <div className="flex items-center justify-center gap-1 pb-2">
+            {onOpenSearch && (
+              <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onOpenSearch}>
+                <Search className="size-4" />
+                搜索记忆
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onOpenDashboard}>
-              打开完整看板
+              高级工具
               <ChevronRight className="size-4" />
             </Button>
           </div>
@@ -669,4 +845,78 @@ function AiView({ struct }: { struct: OrganizedNote }) {
       ) : null}
     </div>
   );
+}
+
+// —— 同步状态单行：ima / Obsidian 连接态 + Obsidian 待同步数 ——
+// null = 未登录或查询失败（不渲染对应 chip，避免误导）。点击进入对应配置入口。
+function SyncStatusLine({ onOpenDashboard }: { onOpenDashboard?: () => void }) {
+  // ima: true=已绑定 false=未绑定 null=未知/未登录
+  const [imaBound, setImaBound] = useState<boolean | null>(null);
+  // obsidian: enabled + 待同步条数；null = 未知/未登录
+  const [obsidian, setObsidian] = useState<{ enabled: boolean; unsynced: number } | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/account/ima")
+      .then(async (r) => (r.ok ? ((await r.json())?.bound === true) : null))
+      .then((v) => {
+        if (alive) setImaBound(v);
+      })
+      .catch(() => {});
+    fetch("/api/brain/obsidian/config")
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const j = await r.json();
+        return { enabled: !!j?.config?.enabled, unsynced: Number(j?.unsyncedCount ?? 0) };
+      })
+      .then((v) => {
+        if (alive) setObsidian(v);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (imaBound === null && obsidian === null) return null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pb-1 text-[11px] text-muted-foreground">
+      <span className="inline-flex items-center gap-1">
+        <Link2 className="size-3" />
+        同步
+      </span>
+      {obsidian !== null && (
+        onOpenDashboard ? (
+          <button
+            type="button"
+            onClick={onOpenDashboard}
+            className="inline-flex items-center gap-1 transition hover:text-foreground"
+            title="Obsidian 同步设置在「高级工具」内"
+          >
+            <StatusDot ok={obsidian.enabled} />
+            Obsidian{obsidian.enabled ? " 已连接" : " 未开启"}
+            {obsidian.enabled && obsidian.unsynced > 0 && (
+              <span className="text-warning">· {obsidian.unsynced} 条待同步</span>
+            )}
+          </button>
+        ) : (
+          <span className="inline-flex items-center gap-1">
+            <StatusDot ok={obsidian.enabled} />
+            Obsidian{obsidian.enabled ? " 已连接" : " 未开启"}
+          </span>
+        )
+      )}
+      {imaBound !== null && (
+        <a href="/account" className="inline-flex items-center gap-1 transition hover:text-foreground" title="ima 凭证在「个人中心」管理">
+          <StatusDot ok={imaBound} />
+          ima{imaBound ? " 已绑定" : " 未绑定"}
+        </a>
+      )}
+    </div>
+  );
+}
+
+function StatusDot({ ok }: { ok: boolean }) {
+  return <span className={`inline-block size-1.5 rounded-full ${ok ? "bg-success" : "bg-muted-foreground/40"}`} aria-hidden />;
 }

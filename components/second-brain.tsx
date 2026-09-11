@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { Toaster, toast } from "./ui/toast";
+import { toast } from "./ui/toast";
 import {
   Brain,
   Check,
@@ -761,19 +761,7 @@ export function SecondBrain({
       loadStrategies();
     }
   }, [strategies, loadStrategies]);
-  // 策略维度聚合：strategyId(含空) → 任务数 / 已完成数
-  const strategyTaskStats = useMemo(() => {
-    const m = new Map<string, { total: number; done: number }>();
-    for (const t of tasks) {
-      const key = t.strategyId ?? "";
-      const o = m.get(key) ?? { total: 0, done: 0 };
-      o.total += 1;
-      if (t.status === "done") o.done += 1;
-      m.set(key, o);
-    }
-    return m;
-  }, [tasks]);
-  // 删除策略（关联任务 strategyId 置空，不删任务）
+  // 删除策略（删主题会级联删除其子策略；关联任务 strategyId 置空，不删任务）
   const deleteStrategy = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/brain/strategies?id=${id}`, { method: "DELETE" });
@@ -1049,6 +1037,16 @@ export function SecondBrain({
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // 今日空间「搜索记忆」入口：brain-home 切视图后广播 brain:open-search，此处打开全局搜索面板
+  useEffect(() => {
+    const onOpen = () => {
+      setSearchQuery("");
+      setSearchOpen(true);
+    };
+    window.addEventListener("brain:open-search", onOpen);
+    return () => window.removeEventListener("brain:open-search", onOpen);
   }, []);
 
   // 全局搜索面板：外点 / Esc 关闭
@@ -1431,6 +1429,7 @@ export function SecondBrain({
         dueDate: a.dueDate ?? null,
         priority: a.priority ?? "medium",
         strategyIndex: a.strategyIndex,
+        strategySubIndex: a.strategySubIndex,
         makeReminder: !!a.makeReminder,
       })),
     );
@@ -1573,6 +1572,7 @@ export function SecondBrain({
         dueDate: a.dueDate ?? null,
         priority: a.priority ?? "medium",
         strategyIndex: a.strategyIndex,
+        strategySubIndex: a.strategySubIndex,
         makeReminder: !!a.makeReminder,
       })),
   });
@@ -1591,6 +1591,7 @@ export function SecondBrain({
         dueDate: a.dueDate ?? null,
         priority: a.priority ?? "medium",
         strategyIndex: a.strategyIndex,
+        strategySubIndex: a.strategySubIndex,
         makeReminder: !!a.makeReminder,
       })),
     suggestedReminders: [],
@@ -2027,7 +2028,7 @@ export function SecondBrain({
                 <span className="mt-2 block border-t border-border/60 pt-2">
                   <span className="font-medium text-foreground">快捷键</span>
                   <span className="mt-1 flex flex-col gap-1">
-                    <span>⌘/Ctrl + K — 全局搜索 / 智能问答</span>
+                    <span>⌘/Ctrl + K — 全局搜索 / 问我的记忆</span>
                     <span>⌘/Ctrl + ↵ —「记一笔」中快速整理</span>
                   </span>
                 </span>
@@ -2135,8 +2136,8 @@ export function SecondBrain({
                   setSearchOpen((v) => !v);
                 }}
                 className="relative flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                aria-label="全局搜索 / 智能问答"
-                title="全局搜索 / 智能问答"
+                aria-label="全局搜索 / 问我的记忆"
+                title="全局搜索 / 问我的记忆"
               >
                 <Search className="size-[18px]" />
               </button>
@@ -2477,7 +2478,6 @@ export function SecondBrain({
                   strategies={strategies}
                   expandedStrategy={expandedStrategy}
                   setExpandedStrategy={setExpandedStrategy}
-                  strategyTaskStats={strategyTaskStats}
                   tasks={tasks}
                   cycleStrategyStatus={cycleStrategyStatus}
                   deleteStrategy={deleteStrategy}
@@ -3259,7 +3259,6 @@ export function SecondBrain({
           </div>
         </div>
       )}
-      <Toaster />
     </div>
   );
 }
