@@ -1,4 +1,12 @@
-import { sqliteTable, text, integer, real, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  primaryKey,
+  uniqueIndex,
+  index,
+} from "drizzle-orm/sqlite-core";
 
 // 本地：SQLite（better-sqlite3）。
 // PHASE B（线上 Supabase）：另建 lib/db/schema.pg.ts 用 pg-core 镜像下表，
@@ -797,6 +805,27 @@ export const decisionLedger = sqliteTable(
   },
   (t) => ({
     projectIdx: uniqueIndex("decision_ledger_project_title_idx").on(t.projectId, t.title),
+  })
+);
+
+// —— 全局操作审计日志（商用合规基建，PRD §8）——
+// 与 schema.pg 的 audit_logs 同构；user_id 可空，不设级联删除（注销后留痕）。
+export const auditLogs = sqliteTable(
+  "audit_logs",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id"),
+    action: text("action").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    detail: text("detail"),
+    ip: text("ip"),
+    createdAt: integer("created_at").notNull(),
+  },
+  (t) => ({
+    userIdx: index("audit_logs_user_id_idx").on(t.userId),
+    actionIdx: index("audit_logs_action_idx").on(t.action),
+    createdIdx: index("audit_logs_created_at_idx").on(t.createdAt),
   })
 );
 

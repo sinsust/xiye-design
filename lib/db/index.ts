@@ -63,6 +63,7 @@ let projectCheckpoints: any;
 let privateData: any;
 let privateDataAudit: any;
 let decisionLedger: any;
+let auditLogs: any;
 let schema: any;
 
 if (isPg) {
@@ -116,6 +117,7 @@ if (isPg) {
   flowOpLedger = schemaPg.flowOpLedger;
   privateDataAudit = schemaPg.privateDataAudit;
   decisionLedger = schemaPg.decisionLedger;
+  auditLogs = schemaPg.auditLogs;
   schema = schemaPg;
   // P0 根治：pg 路径启动幂等补齐缺失表/列（与 SQLite 路径自愈对齐）。
   // Vercel buildCommand 不跑 schema 脚本，纯 .sql 轨道下线上写操作会因缺表/缺列而崩。
@@ -190,6 +192,21 @@ if (isPg) {
     created_at integer not null,
     foreign key (user_id) references users(id) on delete cascade
   );`);
+  // 全局操作审计日志（商用合规基建）：user_id 可空（登录失败留痕）；
+  // 不设 on delete cascade —— 用户注销后审计记录必须保留。
+  sqlite.exec(`create table if not exists audit_logs (
+    id text primary key,
+    user_id text,
+    action text not null,
+    target_type text,
+    target_id text,
+    detail text,
+    ip text,
+    created_at integer not null
+  );`);
+  sqlite.exec(`create index if not exists audit_logs_user_id_idx on audit_logs (user_id);`);
+  sqlite.exec(`create index if not exists audit_logs_action_idx on audit_logs (action);`);
+  sqlite.exec(`create index if not exists audit_logs_created_at_idx on audit_logs (created_at);`);
   sqlite.exec(`create table if not exists agent_settings (
     user_id text not null,
     role text not null,
@@ -300,6 +317,12 @@ if (isPg) {
     `alter table brain_notes add column ima_doc_id text`,
     `alter table brain_notes add column ima_synced_at text`,
     `alter table brain_notes add column ima_note_id text`,
+    // 策略层级：主题 → 子策略
+    `alter table brain_strategies add column parent_id text`,
+    `alter table brain_strategies add column kind text not null default 'theme'`,
+    `alter table brain_strategies add column goal text`,
+    `alter table brain_strategies add column rationale text`,
+    `alter table brain_strategies add column sort_order integer not null default 0`,
   ]) {
     try {
       sqlite.exec(col);
@@ -790,7 +813,8 @@ if (isPg) {
   privateData = schemaSqlite.privateData;
   privateDataAudit = schemaSqlite.privateDataAudit;
   decisionLedger = schemaSqlite.decisionLedger;
+  auditLogs = schemaSqlite.auditLogs;
   schema = schemaSqlite;
 }
 
-export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userObsidianConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, privateData, privateDataAudit, decisionLedger, schema };
+export { db, users, projects, agentSettings, knowledgeEntries, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainReminderRules, brainReminderLog, brainNoteAccessLog, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainLearningReviewEvents, brainProactiveState, brainProactivePreferences, brainProactiveActions, brainNotifications, userPreferences, userImaConfig, userObsidianConfig, userFeishuConfig, flowOpLedger, projectCheckpoints, privateData, privateDataAudit, decisionLedger, auditLogs, schema };

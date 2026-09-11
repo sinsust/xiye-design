@@ -255,6 +255,16 @@ export const brainStrategies = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     description: text("description"),
+    // 子策略指向所属主题；主题为 null
+    parentId: text("parent_id"),
+    // theme = 策略主题（目标状态 + 取舍判断）；sub = 主题下的推进方向/步骤
+    kind: text("kind").notNull().default("theme"),
+    // 目标状态：要达成的结果（主题层）
+    goal: text("goal"),
+    // 取舍判断：为什么选这个方向、放弃了什么（主题层）
+    rationale: text("rationale"),
+    // 子策略在主题内的展示顺序
+    sortOrder: integer("sort_order").notNull().default(0),
     status: text("status").notNull().default("active"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
@@ -904,5 +914,28 @@ export const brainTableSessions = pgTable(
   (t) => ({
     userIdx: index("brain_table_sessions_user_id_idx").on(t.userId),
     expIdx: index("brain_table_sessions_exp_idx").on(t.expiresAt),
+  })
+);
+
+// —— 全局操作审计日志（商用合规基建，PRD §8）——
+// 覆盖：认证、第三方凭证绑定/解绑、私人资料增删、AI 端点调用。
+// user_id 可空（登录失败时无可识别用户仍需留痕）；不设 on delete cascade，
+// 用户注销后审计记录必须保留，否则失去合规意义。detail 为 JSON 去敏元数据。
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id"),
+    action: text("action").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    detail: text("detail"),
+    ip: text("ip"),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (t) => ({
+    userIdx: index("audit_logs_user_id_idx").on(t.userId),
+    actionIdx: index("audit_logs_action_idx").on(t.action),
+    createdIdx: index("audit_logs_created_at_idx").on(t.createdAt),
   })
 );

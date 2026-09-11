@@ -227,6 +227,13 @@ ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_rel_path text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_note_id text;
 ALTER TABLE brain_notes ADD COLUMN IF NOT EXISTS obsidian_synced_at text;
 
+-- 策略层级：主题（theme）→ 子策略（sub），子策略经 parent_id 挂在主题下
+ALTER TABLE brain_strategies ADD COLUMN IF NOT EXISTS parent_id text;
+ALTER TABLE brain_strategies ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'theme';
+ALTER TABLE brain_strategies ADD COLUMN IF NOT EXISTS goal text;
+ALTER TABLE brain_strategies ADD COLUMN IF NOT EXISTS rationale text;
+ALTER TABLE brain_strategies ADD COLUMN IF NOT EXISTS sort_order integer NOT NULL DEFAULT 0;
+
 -- obsidian 双向同步配置（每用户一行）
 CREATE TABLE IF NOT EXISTS user_obsidian_config (
   user_id text PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -296,6 +303,22 @@ CREATE TABLE IF NOT EXISTS decision_ledger (
   updated_at  bigint NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS decision_ledger_project_title_idx ON decision_ledger (project_id, title);
+
+-- 全局操作审计日志（商用合规基建，PRD §8）
+-- user_id 可空（登录失败留痕）；不设级联删除 —— 注销后审计记录必须保留。
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id          text PRIMARY KEY,
+  user_id     text,
+  action      text NOT NULL,
+  target_type text,
+  target_id   text,
+  detail      text,
+  ip          text,
+  created_at  bigint NOT NULL
+);
+CREATE INDEX IF NOT EXISTS audit_logs_user_id_idx ON audit_logs (user_id);
+CREATE INDEX IF NOT EXISTS audit_logs_action_idx ON audit_logs (action);
+CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx ON audit_logs (created_at);
 `;
 
 // 全局单例：保证整个 Node 进程（含 dev 模式 HMR 反复 reload 模块）只跑一次 schema reconcile。
