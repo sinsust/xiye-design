@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, ExternalLink, Loader2, Plug, RefreshCw, Table2, X } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import type { UploadResult } from "./TableUploader";
 
 type Status = "loading" | "connected" | "disconnected";
@@ -156,6 +157,13 @@ export function FeishuImportPanel({
   };
 
   const disconnect = async () => {
+    const ok = await confirmDialog({
+      title: "解绑飞书？",
+      description: "解绑后需重新授权才能导入飞书多维表；已导入的数据不受影响。",
+      confirmText: "解绑",
+      confirmVariant: "destructive",
+    });
+    if (!ok) return;
     setBusy("list");
     try {
       const res = await fetch("/api/feishu/disconnect", { method: "POST" });

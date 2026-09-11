@@ -4,6 +4,8 @@ import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 import { FlowLeaveGuard } from "@/components/flow-leave-guard";
 import { AgentsHydrator } from "@/components/agents-hydrator";
+import { Toaster } from "@/components/ui/toast";
+import { ConfirmHost } from "@/components/ui/confirm-dialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -90,6 +92,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <FlowLeaveGuard />
         <AgentsHydrator />
+        <Toaster />
+        <ConfirmHost />
       </body>
     </html>
   );

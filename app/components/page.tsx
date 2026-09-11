@@ -43,6 +43,7 @@ import { BRAND_SITES } from "@/data/brand-sites";
 import { PROJECT_TYPES } from "@/data/project-types";
 import { downloadBlob } from "@/lib/zip";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 const FluidText = dynamic(() => import("@/components/originkit/ui/fluid-text"), { loading: PreviewLoading });
 const SmokyText = dynamic(() => import("@/components/originkit/ui/smokytext"), { loading: PreviewLoading });
@@ -50,6 +51,14 @@ const FlashlightText = dynamic(() => import("@/components/originkit/ui/spotlight
 const RingGallery = dynamic(() => import("@/components/originkit/ring-gallery").then((m) => m.RingGallery), { loading: PreviewLoading });
 const Smooth3DSlideshow = dynamic(() => import("@/components/originkit/coverflow-gallery/ui/coverflowgallery"), { loading: PreviewLoading });
 const RoundCarousel = dynamic(() => import("@/components/originkit/round-carousel/ui/roundcarousel"), { loading: PreviewLoading });
+const MagneticCarousel = dynamic(() => import("@/components/originkit/magnetic-carousel"), { loading: PreviewLoading });
+const KlarnaCarousel = dynamic(() => import("@/components/originkit/klarna-carousel"), { loading: PreviewLoading });
+const DeckCarousel = dynamic(() => import("@/components/originkit/deck-carousel"), { loading: PreviewLoading });
+const GrainyCarousel = dynamic(() => import("@/components/originkit/grainy-carousel"), { loading: PreviewLoading });
+const DepthGallery = dynamic(() => import("@/components/originkit/depth-gallery"), { loading: PreviewLoading });
+const DirectionHover = dynamic(() => import("@/components/originkit/direction-hover"), { loading: PreviewLoading });
+const AuroraText = dynamic(() => import("@/components/originkit/aurora-text"), { loading: PreviewLoading });
+const PixelDrift = dynamic(() => import("@/components/originkit/pixel-drift"), { loading: PreviewLoading });
 const SpotlightFrames = dynamic(() => import("@/components/originkit/ui/spotlight-frames"), { loading: PreviewLoading });
 const ImageGrid = dynamic(() => import("@/components/originkit/ui/image-grid"), { loading: PreviewLoading });
 const HoverImageReveal = dynamic(() => import("@/components/originkit/ui/hover-image-reveal"), { loading: PreviewLoading });
@@ -60,8 +69,11 @@ import MovingGradientButton from "@/components/originkit/ui/moving-gradient-butt
 import ButtonResource from "@/components/originkit/ui/button-resource";
 const Hero36 = dynamic(() => import("@/components/originkit/hero-36"), { loading: PreviewLoading });
 const Hero19 = dynamic(() => import("@/components/originkit/hero-19"), { loading: PreviewLoading });
+const Hero14 = dynamic(() => import("@/components/originkit/hero-14"), { loading: PreviewLoading });
 const Hero04 = dynamic(() => import("@/components/originkit/hero-04"), { loading: PreviewLoading });
 const Pricing01 = dynamic(() => import("@/components/originkit/pricing-01"), { loading: PreviewLoading });
+const Pricing02 = dynamic(() => import("@/components/originkit/pricing-02"), { loading: PreviewLoading });
+const Footer02 = dynamic(() => import("@/components/originkit/footer-02"), { loading: PreviewLoading });
 import OutstandHero from "@/components/originkit/outstand/hero";
 import OutstandPricing from "@/components/originkit/outstand/pricing";
 import OutstandFaq from "@/components/originkit/outstand/faq";
@@ -401,6 +413,230 @@ export function Demo() {
 }`;
   }
 
+  if (comp.id === "magnetic-carousel") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    return `"use client";
+import MagneticCarousel from "@/components/originkit/magnetic-carousel";
+
+export function Demo() {
+  return (
+    <div className="relative h-[520px] w-full overflow-hidden">
+      <MagneticCarousel
+        collapsedWidth={${n("collapsedWidth", 100)}}
+        hoverWidth={${n("hoverWidth", 200)}}
+        collapsedHeight={${n("collapsedHeight", 340)}}
+        hoverHeight={${n("hoverHeight", 400)}}
+        openSize={${n("openSize", 600)}}
+        gap={${n("gap", 16)}}
+        influence={${n("influence", 200)}}
+        blur={${n("blur", 2)}}
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "klarna-carousel") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const on = (k: string, def = true) => settings[k] ? Boolean(settings[k]) : def
+    return `"use client";
+import ButtonCarousel from "@/components/originkit/klarna-carousel";
+
+export function Demo() {
+  return (
+    <div className="relative flex h-[520px] w-full items-center justify-center overflow-hidden bg-black/90">
+      <ButtonCarousel
+        imageWidth={${n("imageWidth", 250)}}
+        imageHeight={${n("imageHeight", 250)}}
+        cardRadius={${n("cardRadius", 0)}}
+        buttonSize={${n("buttonSize", 40)}}
+        buttonRadius={${n("buttonRadius", 20)}}
+        buttonCount={${n("buttonCount", 7)}}
+        curve={${n("curve", 5)}}
+        gap={${n("gap", 26)}}
+        labelShow={${on("labelShow", true)}}
+        labelColor="#ffffff"
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "depth-gallery") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import DepthGallery from "@/components/originkit/depth-gallery";
+
+export function Demo() {
+  return (
+    <div className="h-[640px] w-full">
+      <DepthGallery
+        depth={${n("depth", 5)}}
+        spread={${n("spread", 5)}}
+        cardWidth={${n("cardWidth", 420)}}
+        cardHeight={${n("cardHeight", 520)}}
+        radius={${n("radius", 4)}}
+        sensitivity={${n("sensitivity", 5)}}
+        smoothing={${n("smoothing", 6)}}
+        mood={{
+          strength: ${n("moodStrength", 7)},
+          blobSize: ${n("moodBlobSize", 5)},
+          grain: ${n("moodGrain", 3)},
+        }}
+        parallax={{
+          pointer: ${n("parallaxPointer", 5)},
+          breath: ${n("parallaxBreath", 5)},
+          drift: ${n("parallaxDrift", 5)},
+        }}
+        background="${s("background", "#000000")}"
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "direction-hover") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import DirectionHover from "@/components/originkit/direction-hover";
+
+export function Demo() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", background: ${JSON.stringify(s("background", "#0d0d0d"))}, padding: 48 }}>
+      <DirectionHover
+        title={${JSON.stringify(s("title", "DIRECTION HOVER"))}}
+        font={{
+          fontFamily: ${s("fontFamily", "Inter")},
+          fontSize: ${n("fontSize", 80)},
+          fontWeight: ${n("fontWeight", 700)},
+        }}
+        gap={${n("gap", 20)}}
+        textColor="${s("textColor", "#f2efe9")}"
+        hoverColor="${s("hoverColor", "#6E92FF")}"
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "aurora-text") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import AuroraText from "@/components/originkit/aurora-text";
+
+export function Demo() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", background: ${JSON.stringify(s("background", "#0d0d0d"))}, padding: 48 }}>
+      <AuroraText
+        text={${JSON.stringify(s("text", "GRADIENT TEXT"))}}
+        direction="${s("direction", "alternate")}"
+        angle={${n("angle", 135)}}
+        speed={${n("speed", 5)}}
+        colors={[${JSON.stringify(s("color1", "#FA6D0F"))}, ${JSON.stringify(s("color2", "#57F2AC"))}]}
+        font={{
+          fontFamily: ${s("fontFamily", "Inter")},
+          fontSize: ${n("fontSize", 90)},
+          fontWeight: ${n("fontWeight", 800)},
+          textAlign: "${s("textAlign", "center")}",
+        }}
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "pixel-drift") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    const b = (k: string, def = false) => String(settings[k] ?? def) === "true"
+    return `"use client";
+import PixelDrift from "@/components/originkit/pixel-drift";
+
+export function Demo() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", background: ${JSON.stringify(s("background", "#0d0d0d"))}, padding: 48 }}>
+      <div style={{ width: "100%", maxWidth: 600, height: 300 }}>
+        <PixelDrift
+          text={${JSON.stringify(s("text", "PIXEL DRIFT"))}}
+          colors={[${JSON.stringify(s("color1", "#FFFFFF"))}, ${JSON.stringify(s("color2", "#F9731A"))}, ${JSON.stringify(s("color3", "#FFFFFF"))}]}
+          mode="${s("mode", "onEnter")}"
+          replay={${b("replay", true)}}
+          position="${s("position", "above")}"
+          particleSize={${n("particleSize", 10)}}
+          particleCount={${n("particleCount", 50)}}
+          mouseEnabled={${b("mouseEnabled", true)}}
+          mouseRadius={${n("mouseRadius", 50)}}
+          mouseForce={${n("mouseForce", 30)}}
+          fontSize={${n("fontSize", 80)}}
+          autoFit={${b("autoFit", false)}}
+        />
+      </div>
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "grainy-carousel") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import GrainyCarousel from "@/components/originkit/grainy-carousel";
+
+export function Demo() {
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <GrainyCarousel
+        mode="${s("mode", "snap")}"
+        cardWidth={${n("cardWidth", 711)}}
+        cardHeight={${n("cardHeight", 400)}}
+        gap={${n("gap", 20)}}
+        rounded={${n("rounded", 8)}}
+        speed={${n("speed", 155)}}
+        scroll={{
+          drag: ${n("drag", 25)},
+          damping: ${n("damping", 60)},
+          zoom: ${n("zoom", 5)},
+        }}
+        grain={{
+          speed: ${n("grainSpeed", 50)},
+          amount: ${n("grainAmount", 10)},
+          scale: ${n("grainScale", 250)},
+        }}
+        background="${s("background", "rgba(0, 0, 0, 0)")}"
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "deck-carousel") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import DeckCarousel from "@/components/originkit/deck-carousel";
+
+export function Demo() {
+  return (
+    <div className="relative h-[520px] w-full overflow-hidden bg-black">
+      <DeckCarousel
+        count={${n("count", 12)}}
+        spacing={${n("spacing", 24)}}
+        cardWidth={${n("cardWidth", 180)}}
+        cardHeight={${n("cardHeight", 240)}}
+        cardRadius={${n("cardRadius", 8)}}
+        reach={${n("reach", 5)}}
+        scrollSensitivity={${n("scrollSensitivity", 5)}}
+        smoothing={${n("smoothing", 5)}}
+        background="${s("background", "#000000")}"
+      />
+    </div>
+  );
+}`;
+  }
+
   if (comp.id === "shiny-pill") {
     const s = (k: string, def: string) => String(settings[k] ?? def);
     const n = (k: string, def: number) => Number(settings[k] ?? def);
@@ -537,6 +773,15 @@ import Hero19 from "@/components/originkit/hero-19";
 
 export function Demo() {
   return <Hero19 />;
+}`;
+  }
+
+  if (comp.id === "hero-14") {
+    return `"use client";
+import Hero14 from "@/components/originkit/hero-14";
+
+export function Demo() {
+  return <Hero14 />;
 }`;
   }
 
@@ -771,7 +1016,7 @@ export default function ComponentLibraryPage() {
       setBrandProject({ name, typeId, desc });
       setPickedProjectName(d.project?.name || pr.name);
     } catch {
-      window.alert("读取项目失败，请稍后重试");
+      toast.error("读取项目失败，请稍后重试");
     }
   };
 
@@ -875,7 +1120,7 @@ export default function ComponentLibraryPage() {
       const blob = await r.blob();
       downloadBlob(blob, `${comp.id}-package.zip`);
     } catch {
-      window.alert("完整包下载失败，请稍后重试");
+      toast.error("完整包下载失败，请稍后重试");
     } finally {
       setPkgBusy(false);
     }
@@ -920,7 +1165,7 @@ export default function ComponentLibraryPage() {
       }
     } catch (e) {
       console.error(e);
-      window.alert("品牌包下载失败，请稍后重试");
+      toast.error("品牌包下载失败，请稍后重试");
     } finally {
       setBrandBusy(null);
     }
@@ -1103,7 +1348,7 @@ export default function ComponentLibraryPage() {
       setBrandRewritten((p) => ({ ...p, [siteId]: true }));
     } catch (e) {
       console.error(e);
-      window.alert(
+      toast.error(
         e instanceof Error ? e.message : "AI 改写失败，请检查 LLM 配置后重试"
       );
     } finally {
@@ -1720,6 +1965,168 @@ export default function ComponentLibraryPage() {
                 </div>
               )}
 
+              {comp.id === "magnetic-carousel" && (
+                <div className="flex h-[520px] w-full items-center justify-center overflow-hidden">
+                  <div className="h-[520px] w-full">
+                    <MagneticCarousel
+                      collapsedWidth={Number(settings.collapsedWidth ?? 100)}
+                      hoverWidth={Number(settings.hoverWidth ?? 200)}
+                      collapsedHeight={Number(settings.collapsedHeight ?? 340)}
+                      hoverHeight={Number(settings.hoverHeight ?? 400)}
+                      openSize={Number(settings.openSize ?? 600)}
+                      gap={Number(settings.gap ?? 16)}
+                      influence={Number(settings.influence ?? 200)}
+                      blur={Number(settings.blur ?? 2)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "klarna-carousel" && (
+                <div className="flex h-[520px] w-full items-center justify-center overflow-hidden bg-black/90">
+                  <div className="h-[520px] w-full">
+                    <KlarnaCarousel
+                      imageWidth={Number(settings.imageWidth ?? 250)}
+                      imageHeight={Number(settings.imageHeight ?? 250)}
+                      cardRadius={Number(settings.cardRadius ?? 0)}
+                      buttonSize={Number(settings.buttonSize ?? 40)}
+                      buttonRadius={Number(settings.buttonRadius ?? 20)}
+                      buttonCount={Number(settings.buttonCount ?? 7)}
+                      curve={Number(settings.curve ?? 5)}
+                      gap={Number(settings.gap ?? 26)}
+                      labelShow={Boolean(settings.labelShow ?? true)}
+                      labelColor="#ffffff"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "deck-carousel" && (
+                <div className="flex h-[520px] w-full overflow-hidden">
+                  <div className="h-[520px] w-full">
+                    <DeckCarousel
+                      count={Number(settings.count ?? 12)}
+                      spacing={Number(settings.spacing ?? 24)}
+                      cardWidth={Number(settings.cardWidth ?? 180)}
+                      cardHeight={Number(settings.cardHeight ?? 240)}
+                      cardRadius={Number(settings.cardRadius ?? 8)}
+                      reach={Number(settings.reach ?? 5)}
+                      scrollSensitivity={Number(settings.scrollSensitivity ?? 5)}
+                      smoothing={Number(settings.smoothing ?? 5)}
+                      background={String(settings.background ?? "#000000")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "depth-gallery" && (
+                <div className="flex h-[640px] w-full overflow-hidden">
+                  <div className="h-full w-full">
+                    <DepthGallery
+                      depth={Number(settings.depth ?? 5)}
+                      spread={Number(settings.spread ?? 5)}
+                      cardWidth={Number(settings.cardWidth ?? 420)}
+                      cardHeight={Number(settings.cardHeight ?? 520)}
+                      radius={Number(settings.radius ?? 4)}
+                      sensitivity={Number(settings.sensitivity ?? 5)}
+                      smoothing={Number(settings.smoothing ?? 6)}
+                      mood={{
+                        strength: Number(settings.moodStrength ?? 7),
+                        blobSize: Number(settings.moodBlobSize ?? 5),
+                        grain: Number(settings.moodGrain ?? 3),
+                      }}
+                      parallax={{
+                        pointer: Number(settings.parallaxPointer ?? 5),
+                        breath: Number(settings.parallaxBreath ?? 5),
+                        drift: Number(settings.parallaxDrift ?? 5),
+                      }}
+                      background={String(settings.background ?? "#000000")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "direction-hover" && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 320, padding: 48, background: String(settings.background ?? "#0d0d0d") }}>
+                  <DirectionHover
+                    title={String(settings.title ?? "DIRECTION HOVER")}
+                    font={{
+                      fontFamily: String(settings.fontFamily ?? "Inter"),
+                      fontSize: Number(settings.fontSize ?? 80),
+                      fontWeight: Number(settings.fontWeight ?? 700),
+                    }}
+                    gap={Number(settings.gap ?? 20)}
+                    textColor={String(settings.textColor ?? "#f2efe9")}
+                    hoverColor={String(settings.hoverColor ?? "#6E92FF")}
+                  />
+                </div>
+              )}
+
+              {comp.id === "aurora-text" && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 320, padding: 48, background: String(settings.background ?? "#0d0d0d") }}>
+                  <AuroraText
+                    text={String(settings.text ?? "GRADIENT TEXT")}
+                    direction={String(settings.direction ?? "alternate") as "alternate" | "left" | "right" | "top-to-bottom" | "bottom-to-top"}
+                    angle={Number(settings.angle ?? 135)}
+                    speed={Number(settings.speed ?? 5)}
+                    colors={[String(settings.color1 ?? "#FA6D0F"), String(settings.color2 ?? "#57F2AC")]}
+                    font={{
+                      fontFamily: String(settings.fontFamily ?? "Inter"),
+                      fontSize: Number(settings.fontSize ?? 90),
+                      fontWeight: Number(settings.fontWeight ?? 800),
+                      textAlign: (settings.textAlign as "left" | "right" | "center") ?? "center",
+                    }}
+                  />
+                </div>
+              )}
+
+              {comp.id === "pixel-drift" && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 320, padding: 48, background: String(settings.background ?? "#0d0d0d") }}>
+                  <div style={{ width: "100%", maxWidth: 600, height: 300 }}>
+                    <PixelDrift
+                      text={String(settings.text ?? "PIXEL DRIFT")}
+                      colors={[String(settings.color1 ?? "#FFFFFF"), String(settings.color2 ?? "#F9731A"), String(settings.color3 ?? "#FFFFFF")]}
+                      mode={String(settings.mode ?? "onEnter") as "onEnter" | "onHover"}
+                      replay={String(settings.replay ?? "true") === "true"}
+                      position={String(settings.position ?? "above") as "above" | "middle" | "below"}
+                      particleSize={Number(settings.particleSize ?? 10)}
+                      particleCount={Number(settings.particleCount ?? 50)}
+                      mouseEnabled={String(settings.mouseEnabled ?? "true") === "true"}
+                      mouseRadius={Number(settings.mouseRadius ?? 50)}
+                      mouseForce={Number(settings.mouseForce ?? 30)}
+                      fontSize={Number(settings.fontSize ?? 80)}
+                      autoFit={String(settings.autoFit ?? "false") === "true"}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "grainy-carousel" && (
+                <div className="flex overflow-auto">
+                  <div style={{ width: 1200, height: 800, flex: "none" }}>
+                    <GrainyCarousel
+                      mode={String(settings.mode ?? "snap")}
+                      cardWidth={Number(settings.cardWidth ?? 711)}
+                      cardHeight={Number(settings.cardHeight ?? 400)}
+                      gap={Number(settings.gap ?? 20)}
+                      rounded={Number(settings.rounded ?? 8)}
+                      speed={Number(settings.speed ?? 155)}
+                      scroll={{
+                        drag: Number(settings.drag ?? 25),
+                        damping: Number(settings.damping ?? 60),
+                        zoom: Number(settings.zoom ?? 5),
+                      }}
+                      grain={{
+                        speed: Number(settings.grainSpeed ?? 50),
+                        amount: Number(settings.grainAmount ?? 10),
+                        scale: Number(settings.grainScale ?? 250),
+                      }}
+                      background={String(settings.background ?? "rgba(0, 0, 0, 0)")}
+                    />
+                  </div>
+                </div>
+              )}
+
               {comp.id === "spotlight-frames" && (
                 <div className="flex h-[440px] w-full items-center justify-center overflow-hidden py-4">
                   <div className="h-full w-full">
@@ -1891,9 +2298,27 @@ export default function ComponentLibraryPage() {
                 </WidePreviewFrame>
               )}
 
+              {comp.id === "hero-14" && (
+                <WidePreviewFrame>
+                  <Hero14 />
+                </WidePreviewFrame>
+              )}
+
               {comp.id === "pricing-01" && (
                 <WidePreviewFrame>
                   <Pricing01 />
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "pricing-02" && (
+                <WidePreviewFrame>
+                  <Pricing02 />
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "footer-02" && (
+                <WidePreviewFrame>
+                  <Footer02 />
                 </WidePreviewFrame>
               )}
 

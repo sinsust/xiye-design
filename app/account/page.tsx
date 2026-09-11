@@ -11,11 +11,14 @@ import {
   KeyRound,
   Loader2,
   LogOut,
+  Plug,
   RefreshCw,
   Trash2,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import { fetchSession } from "@/lib/auth-session";
 import { useCurrentStyle, useAgentsStore } from "@/app/workflow/agents-store";
@@ -91,6 +94,7 @@ export default function AccountPage() {
   const [imaSyncResult, setImaSyncResult] = useState<ImaSyncResult | null>(null);
   const [imaSyncErr, setImaSyncErr] = useState("");
   const [imaSyncLogs, setImaSyncLogs] = useState<ImaSyncLog[]>([]);
+  const [imaLogsErr, setImaLogsErr] = useState(false);
   const [imaShowFailures, setImaShowFailures] = useState(false);
 
   const loadProjects = useCallback(async () => {
@@ -156,7 +160,15 @@ export default function AccountPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setImaError(data.detail || data.error || "绑定失败");
+        // 底层 ima 服务端报错是英文/技术性文本，直接透传用户不知道该改什么；
+        // 按错误语义映射为可操作的提示，原文收进折叠详情。
+        const raw = String(data?.detail || data?.error || "");
+        const friendly = /credential|api[_ ]?key|client[_ ]?id|401|403|sign|auth|token|invalid/i.test(raw)
+          ? "凭证验证未通过：请检查 Client ID 与 API Key 是否填写正确（API Key 只在创建时显示一次，可回 ima.qq.com/agent-interface 重新生成）。"
+          : raw
+            ? `绑定失败：服务暂时不可用，请稍后重试。`
+            : "绑定失败，请稍后重试。";
+        setImaError(friendly);
         return;
       }
       setImaBound(true);
@@ -171,10 +183,21 @@ export default function AccountPage() {
   }
 
   async function doImaUnbind() {
-    if (!confirm("解绑 ima 凭证？已导入第二大脑的条目仍会保留。")) return;
-    await fetch("/api/account/ima", { method: "DELETE" });
-    setImaBound(false);
-    setImaShowForm(false);
+    const ok = await confirmDialog({
+      title: "解绑 ima 凭证",
+      description: "已导入第二大脑的条目仍会保留。",
+      confirmText: "解绑",
+      confirmVariant: "destructive",
+    });
+    if (!ok) return;
+    const res = await fetch("/api/account/ima", { method: "DELETE" });
+    if (res.ok) {
+      setImaBound(false);
+      setImaShowForm(false);
+      toast.success("已解绑 ima 凭证，可随时重新绑定");
+    } else {
+      toast.error("解绑失败，请重试");
+    }
   }
 
   // 一键同步全部：POST 后台执行 + 轮询进度接口展示「正在同步... 12/87」
@@ -190,7 +213,7 @@ export default function AccountPage() {
         const d = await r.json();
         if (r.ok) setImaSyncProgress(d);
       } catch {
-        /* 忽略 */
+        // 有意静默：进度轮询失败留空即可，同步结果/错误另有展示，弹 toast 反而打扰
       }
     }, 800);
     try {
@@ -212,7 +235,13 @@ export default function AccountPage() {
   }
 
   async function doDelete(id: string) {
-    if (!confirm("删除该项目？此操作不可撤销。")) return;
+    const ok = await confirmDialog({
+      title: "删除项目",
+      description: "此操作不可撤销。",
+      confirmText: "删除",
+      confirmVariant: "destructive",
+    });
+    if (!ok) return;
     const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
     if (res.ok) loadProjects();
   }
@@ -293,8 +322,17 @@ export default function AccountPage() {
         <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
       </Link>
 
+      {/* 连接器与集成：三连接器聚合入口（P1 信息架构）——ima 配置卡即在本区块内，
+          Obsidian / 飞书的配置面板在第二大脑 → 高级工具内，这里给出状态与去向 */}
+      <section className="mt-10">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Plug className="size-4" /> 连接器与集成
+        </h2>
+        <ConnectorHubRows />
+      </section>
+
       {/* 腾讯 ima 知识库 · 个人凭证配置 */}
-      <section className="mt-6 rounded-2xl border border-border bg-card p-4">
+      <section className="mt-3 rounded-2xl border border-border bg-card p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -308,8 +346,18 @@ export default function AccountPage() {
             </div>
           </div>
           {imaBound ? (
-            <span className="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
-              已绑定
+            <span className="flex shrink-0 items-center gap-1.5">
+              <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
+                已绑定
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setImaShowForm((v) => !v)}
+                title="更换 Client ID / API Key，保存后覆盖旧凭证"
+              >
+                <KeyRound className="size-3.5" /> 更新凭证
+              </Button>
             </span>
           ) : (
             <Button size="sm" variant="outline" onClick={() => setImaShowForm((v) => !v)}>
@@ -456,6 +504,11 @@ export default function AccountPage() {
               </div>
             )}
 
+            {imaLogsErr && (
+              <p className="text-xs text-muted-foreground">
+                同步日志加载失败，可稍后重试或重新同步。
+              </p>
+            )}
             {imaSyncLogs.length > 0 && (
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
@@ -581,10 +634,10 @@ function StylePickerSection() {
         setSaved(true);
         setTimeout(() => setSaved(false), 2200);
       } else {
-        alert("风格保存失败，请重试。");
+        toast.error("风格保存失败，请重试。");
       }
     } catch {
-      alert("风格保存失败，请重试。");
+      toast.error("风格保存失败，请重试。");
     } finally {
       setSaving(false);
       setPending(null);
@@ -680,5 +733,94 @@ function StylePickerSection() {
         <p className="mt-2 text-xs font-medium text-success">已切换风格，主流程即时生效</p>
       )}
     </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * 连接器与集成（E5）：聚合 ima / Obsidian / 飞书三连接器的状态入口。
+ * ima 的配置卡直接在区块内；Obsidian / 飞书面板在第二大脑 → 高级工具内，
+ * 这里提供真实状态（并行查询）+ 跳转，未登录或查询失败不渲染状态徽标。
+ * ───────────────────────────────────────────────────────────── */
+function ConnectorHubRows() {
+  const [obsidianEnabled, setObsidianEnabled] = useState<boolean | null>(null);
+  const [feishuConnected, setFeishuConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/brain/obsidian/config")
+      .then(async (r) => (r.ok ? ((await r.json())?.config?.enabled === true) : null))
+      .then((v) => {
+        if (alive) setObsidianEnabled(v);
+      })
+      .catch(() => {});
+    fetch("/api/feishu/status")
+      .then(async (r) => (r.ok ? ((await r.json())?.connected === true) : null))
+      .then((v) => {
+        if (alive) setFeishuConnected(v);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      <ConnectorRow
+        href="/brain"
+        name="Obsidian 同步"
+        desc="第二大脑笔记与本地 Obsidian 仓库双向同步 · 配置在「第二大脑 → 高级工具」"
+        status={obsidianEnabled}
+        statusOn="已连接"
+        statusOff="未开启"
+      />
+      <ConnectorRow
+        href="/brain"
+        name="飞书多维表"
+        desc="导入飞书多维表格做 AI 分析 · 授权在「第二大脑 → 高级工具 → 表格分析」"
+        status={feishuConnected}
+        statusOn="已授权"
+        statusOff="未绑定"
+      />
+    </div>
+  );
+}
+
+function ConnectorRow({
+  href,
+  name,
+  desc,
+  status,
+  statusOn,
+  statusOff,
+}: {
+  href: string;
+  name: string;
+  desc: string;
+  /** true=已连接 false=未连接 null=未登录/未知（不渲染徽标） */
+  status: boolean | null;
+  statusOn: string;
+  statusOff: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition hover:border-primary/40 hover:bg-primary/[0.03]"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground">{name}</p>
+        <p className="truncate text-xs text-muted-foreground">{desc}</p>
+      </div>
+      {status !== null && (
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+            status ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {status ? statusOn : statusOff}
+        </span>
+      )}
+      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }

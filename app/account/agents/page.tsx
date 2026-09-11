@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, ImageOff, RotateCcw, Save, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { AGENT_PROFILES, type AgentId } from "@/app/workflow/agents";
 import { useAgentsStore, useCurrentStyle } from "@/app/workflow/agents-store";
 import { AgentAvatar } from "@/app/workflow/components/agent-common";
@@ -153,10 +154,10 @@ export default function AgentPersonasPage() {
         setSaved(true);
         setTimeout(() => setSaved(false), 2200);
       } else {
-        alert("保存失败，请重试。");
+        toast.error("保存失败，请重试。");
       }
     } catch {
-      alert("保存失败，请重试。");
+      toast.error("保存失败，请重试。");
     } finally {
       setSaving(false);
     }
@@ -261,7 +262,7 @@ export default function AgentPersonasPage() {
                             const dataUrl = await compressImageToDataUrl(f);
                             patch(a.id, { avatarUrl: dataUrl });
                           } catch {
-                            alert("图片读取失败，请换一张");
+                            toast.error("图片读取失败，请换一张");
                           } finally {
                             e.target.value = "";
                           }

@@ -2,6 +2,30 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { toast } from "@/components/ui/toast";
+
+/** 剪贴板 API 不可用（http 页面 / 无权限）时的降级：隐藏 textarea + execCommand */
+async function copyWithFallback(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    /* 走降级 */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 /** 通用复制按钮：复制传入文本，带 1.5s 成功反馈；自动阻止冒泡以免触发卡片展开 */
 export function CopyButton({
@@ -25,12 +49,12 @@ export function CopyButton({
 
   const onCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(text);
+    const ok = await copyWithFallback(text);
+    if (ok) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* 剪贴板不可用时静默失败 */
+    } else {
+      toast.error("复制失败：浏览器未授权剪贴板访问");
     }
   };
 

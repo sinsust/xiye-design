@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useState } from "react";
+import { create } from "zustand";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -88,5 +89,73 @@ export function ConfirmDialog({
       </div>
     </div>,
     document.body,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// 命令式 API：confirmDialog(options): Promise<boolean>
+// 用于替换原生 window.confirm 的二次确认场景。
+// 调用方在任意客户端事件处理器里 `const ok = await confirmDialog({...})`，
+// 无需自己管理 open 状态。ConfirmHost 挂载在 layout，统一承接渲染。
+// 取消 / ESC / 点遮罩 = resolve(false)；确认 = resolve(true)。
+// ─────────────────────────────────────────────────────────────
+
+interface ConfirmOptions {
+  title: ReactNode;
+  description?: ReactNode;
+  body?: ReactNode;
+  confirmText?: string;
+  cancelText?: string;
+  confirmVariant?: "destructive" | "default";
+}
+
+interface ConfirmRequest extends ConfirmOptions {
+  id: number;
+  resolve: (ok: boolean) => void;
+}
+
+interface ConfirmStore {
+  queue: ConfirmRequest[];
+  open: (opts: ConfirmOptions) => Promise<boolean>;
+  resolve: (id: number, ok: boolean) => void;
+}
+
+let _confirmSeq = 0;
+
+const useConfirmStore = create<ConfirmStore>((set, get) => ({
+  queue: [],
+  open: (opts) =>
+    new Promise<boolean>((resolve) => {
+      const id = ++_confirmSeq;
+      set((s) => ({ queue: [...s.queue, { ...opts, id, resolve }] }));
+    }),
+  resolve: (id, ok) => {
+    const req = get().queue.find((r) => r.id === id);
+    if (req) req.resolve(ok);
+    set((s) => ({ queue: s.queue.filter((r) => r.id !== id) }));
+  },
+}));
+
+/** 命令式二次确认。返回 Promise<boolean>：用户点确认=resolve(true)，取消/ESC/遮罩=resolve(false)。 */
+export function confirmDialog(opts: ConfirmOptions): Promise<boolean> {
+  return useConfirmStore.getState().open(opts);
+}
+
+/** 全局挂载点：渲染队列首个待确认项。挂到 app/layout.tsx 的 body 内。 */
+export function ConfirmHost() {
+  const current = useConfirmStore((s) => s.queue[0]);
+  const resolve = useConfirmStore((s) => s.resolve);
+  return (
+    <ConfirmDialog
+      open={!!current}
+      title={current?.title ?? ""}
+      description={current?.description}
+      body={current?.body}
+      confirmText={current?.confirmText}
+      cancelText={current?.cancelText}
+      confirmVariant={current?.confirmVariant}
+      onClose={() => current && resolve(current.id, false)}
+      onConfirm={() => current && resolve(current.id, true)}
+    />
   );
 }
