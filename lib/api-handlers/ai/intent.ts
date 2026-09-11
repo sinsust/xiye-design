@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import { interpretIntentOnline } from "@/lib/ai-intent-server";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
 
@@ -12,8 +13,9 @@ export const runtime = "nodejs";
 // 503 → 未配置 DEEPSEEK_API_KEY（客户端回退启发式）
 // 400/502 → 参数或 DeepSeek 调用错误
 export async function POST(req: NextRequest) {
-  const { res } = await requireUser();
+  const { user, res } = await requireUser();
   if (res) return res;
+  void logAuditReq(req, { userId: user.sub, action: AUDIT_ACTION.AI_CALL, targetType: "ai", targetId: "intent" });
   const rawBody = req.body ? await req.json().catch(() => null) : null;
   const running = flowMetaRunning({ operation: FLOW_OPERATION.intent, phase: "intent", operationId: typeof rawBody?.operationId === "string" ? rawBody.operationId : undefined });
   if (!await rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {

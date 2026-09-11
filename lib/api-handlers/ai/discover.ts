@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import {
   discover,
   runDiscoveryHeuristic,
@@ -41,8 +42,9 @@ function isMessage(v: unknown): v is DiscoverMessage {
 }
 
 export async function POST(req: NextRequest) {
-  const { res } = await requireUser();
+  const { user, res } = await requireUser();
   if (res) return res;
+  void logAuditReq(req, { userId: user.sub, action: AUDIT_ACTION.AI_CALL, targetType: "ai", targetId: "discover" });
   const rawBody = req.body ? await req.json().catch(() => null) : null;
   const running = flowMetaRunning({ operation: FLOW_OPERATION.discover, phase: "dialog", operationId: typeof rawBody?.operationId === "string" ? rawBody.operationId : undefined });
   if (!await rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {

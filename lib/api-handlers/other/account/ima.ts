@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import {
   getImaConfig,
   upsertImaConfig,
@@ -69,11 +70,17 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   await deleteImaConfig(user.email);
+  void logAuditReq(req, {
+    userId: user.sub,
+    action: AUDIT_ACTION.CREDENTIAL_UNBIND,
+    targetType: "credential",
+    targetId: "ima",
+  });
   return NextResponse.json({ ok: true });
 }

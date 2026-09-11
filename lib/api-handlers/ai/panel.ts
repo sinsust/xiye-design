@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import { consultAgents } from "@/lib/ai-panel-server";
 import { type ProductBrief } from "@/lib/ai-discover";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
@@ -26,8 +27,9 @@ function parseAgents(v: unknown): { role: string; name: string }[] {
 // 无 key / 异常：返回启发式兜底结果（不中断前端）
 
 export async function POST(req: NextRequest) {
-  const { res } = await requireUser();
+  const { user, res } = await requireUser();
   if (res) return res;
+  void logAuditReq(req, { userId: user.sub, action: AUDIT_ACTION.AI_CALL, targetType: "ai", targetId: "panel" });
   const rawBody = req.body ? await req.json().catch(() => null) : null;
   const running = flowMetaRunning({ operation: FLOW_OPERATION.panel, phase: "panel", operationId: typeof rawBody?.operationId === "string" ? rawBody.operationId : undefined });
   if (!await rateLimit(`ai:${getClientIp(req)}`, 30, 60_000)) {

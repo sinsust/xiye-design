@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { deleteFeishuConfig } from "@/lib/feishu/feishu-config";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 
 export const runtime = "nodejs";
 
@@ -17,5 +18,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized", message: "未登录" }, { status: 401 });
   }
   await deleteFeishuConfig(user.sub);
+  void logAuditReq(req, {
+    userId: user.sub,
+    action: AUDIT_ACTION.CREDENTIAL_UNBIND,
+    targetType: "credential",
+    targetId: "feishu",
+  });
   return NextResponse.json({ ok: true });
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import { db, projects } from "@/lib/db";
 import {
   FLOW_OPERATION,
@@ -72,6 +73,7 @@ interface ConceptBody {
 export async function POST(req: NextRequest) {
   const { user, res } = await requireUser();
   if (res) return res;
+  void logAuditReq(req, { userId: user.sub, action: AUDIT_ACTION.AI_CALL, targetType: "ai", targetId: "concept-brief" });
   const rawBody = req.body ? await req.json().catch(() => null) : null;
   const operationTypeRaw = asString(rawBody?.operation);
   const isBuild = operationTypeRaw === FLOW_OPERATION.buildConceptBrief;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import { db, projects } from "@/lib/db";
 import {
   flowError,
@@ -435,6 +436,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const { user, res } = await requireUser();
   if (res) return res;
+  void logAuditReq(req, { userId: user.sub, action: AUDIT_ACTION.AI_CALL, targetType: "ai", targetId: "journey" });
   const body = await req.json().catch(() => null);
   const projectId = asString(body?.projectId);
   const operationId = asString(body?.operationId);

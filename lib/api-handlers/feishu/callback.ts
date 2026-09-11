@@ -11,6 +11,7 @@ import { getSessionUser } from "@/lib/auth";
 import { exchangeCodeForToken } from "@/lib/feishu/client";
 import { upsertFeishuConfig } from "@/lib/feishu/feishu-config";
 import { safeDetail } from "@/lib/api-error";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,12 @@ export async function GET(req: NextRequest) {
       expiresAt,
       token.scope,
     );
+    void logAuditReq(req, {
+      userId: user.sub,
+      action: AUDIT_ACTION.CREDENTIAL_BIND,
+      targetType: "credential",
+      targetId: "feishu",
+    });
     return NextResponse.redirect(`${home}?feishu=connected`);
   } catch (err) {
     console.error("[feishu] callback failed (full):", err);

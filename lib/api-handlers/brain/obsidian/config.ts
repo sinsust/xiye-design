@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { startObsidianWatch, stopObsidianWatch } from "@/lib/obsidian-watch";
 import { listBrainNotes } from "@/lib/brain-db";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 
 export const runtime = "nodejs";
 
@@ -125,6 +126,13 @@ export async function PUT(req: NextRequest) {
       updatedAt: now,
     });
   }
+  // 审计：配置保存即视为 Obsidian 凭证绑定（enabled=1）或解绑（enabled=0）
+  void logAuditReq(req, {
+    userId: user.sub,
+    action: enabled === 1 ? AUDIT_ACTION.CREDENTIAL_BIND : AUDIT_ACTION.CREDENTIAL_UNBIND,
+    targetType: "credential",
+    targetId: "obsidian",
+  });
   if (enabled === 1) {
     const watchResult = await startObsidianWatch();
     if (!watchResult.ok) {
