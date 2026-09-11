@@ -4,26 +4,20 @@ import { listBrainNotes } from "@/lib/brain-db";
 import { brainRetrieve, buildBrainContext, type BrainRagHit } from "@/lib/brain-rag";
 import { embeddingEnabled } from "@/lib/embedding";
 import { getImaConfig } from "@/lib/ima-config";
-import { getConnector } from "@/lib/connectors/registry";
+import { listConnectors } from "@/lib/connectors/registry";
 import { logBrainNoteAccess } from "@/lib/brain-reminder";
+// 来源细分与标签下放到纯逻辑模块：前后端共用一份定义，且可脱离请求上下文验证
+import { localSourceOf, sourceMention, type AskSource } from "@/lib/brain-ask-source";
 
 export const runtime = "nodejs";
 
 export type AskMode = "local" | "ima" | "mixed";
-
-// 引用来源标注：每条被引用的资料都标注来自本地还是 ima（含知识库名）
-export interface AskSource {
-  noteId: string;
-  title: string;
-  source: "local" | "ima";
-  sourceName?: string;
-  relevance?: number;
-}
+export type { AskSource };
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     p,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("ima_timeout")), ms)),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("connector_timeout")), ms)),
   ]);
 }
 
@@ -62,30 +56,33 @@ export async function POST(req: NextRequest) {
     // 被提问引用 → 记访问流水，重置知识衰减计时
     for (const h of localHits) await logBrainNoteAccess(h.id, "rag_reference");
 
-    // ima 实时检索（连接器统一入口；失败静默跳过）
-    let imaContext = "";
-    let imaSources: AskSource[] = [];
-    if (useIma && imaCfg) {
+    // 外部连接器统一入口：遍历 registry 中已注册的读连接器（当前为 ima），失败静默降级。
+    // 凭据按连接器 id 在下方解析表登记；将来接入 Obsidian / 本地文件连接器时，只需在此加一行。
+    const connectorCreds: Record<string, unknown> = {};
+    if (useIma && imaCfg) connectorCreds.ima = imaCfg;
+
+    let connectorContext = "";
+    const connectorSources: AskSource[] = [];
+    for (const conn of listConnectors()) {
+      if (!conn.read) continue;
+      const creds = connectorCreds[conn.id];
+      if (!creds) continue;
       try {
-        const conn = getConnector("ima");
-        if (conn?.read) {
-          const r = await withTimeout(conn.read({ question }, imaCfg), 8000);
-          imaContext = r.context;
-          imaSources = r.sources as AskSource[];
-        }
+        const r = await withTimeout(conn.read({ question }, creds), 8000);
+        connectorContext += r.context;
+        connectorSources.push(...(r.sources as AskSource[]));
       } catch (err) {
-        console.error("[brain ask] ima enrich failed:", err);
+        console.error(`[brain ask] connector ${conn.id} enrich failed:`, err);
       }
     }
 
-    // 合并来源标注：本地 + ima
-    const localSources: AskSource[] = localHits.map((h) => ({
-      noteId: h.id,
-      title: h.title,
-      source: "local",
-      relevance: h.relevance,
-    }));
-    const sources: AskSource[] = [...localSources, ...imaSources];
+    // 合并来源标注：本地命中按溯源细分为 随手记 / Obsidian / ima 同步，连接器贡献为 ima 实时
+    const noteById = new Map(notes.map((n) => [n.id, n]));
+    const localSources: AskSource[] = localHits.map((h) => {
+      const { source, sourceName } = localSourceOf(noteById.get(h.id));
+      return { noteId: h.id, title: h.title, source, sourceName, relevance: h.relevance };
+    });
+    const sources: AskSource[] = [...localSources, ...connectorSources];
 
     const apiKey = process.env.LLM_MODEL_API_KEY;
     const baseUrl = process.env.LLM_MODEL_BASE_URL;
@@ -106,14 +103,14 @@ export async function POST(req: NextRequest) {
     if (!(apiKey && baseUrl && model)) {
       return NextResponse.json({
         answer: `找到了 ${sources.length} 条相关记录，但当前未配置 LLM 无法生成回答。相关片段如下：\n\n${sources
-          .map((s) => `• ${s.title}（${s.source === "ima" ? "来自 ima" + (s.sourceName ? " · " + s.sourceName : "") : "本地笔记"}）`)
+          .map((s) => `• ${s.title}（${sourceMention(s)}）`)
           .join("\n")}`,
         sources,
         semantic: semanticCapable,
       });
     }
 
-    const localRagContext = buildBrainContext(localHits) + imaContext;
+    const localRagContext = buildBrainContext(localHits) + connectorContext;
     const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -124,7 +121,7 @@ export async function POST(req: NextRequest) {
           {
             role: "system",
             content:
-              "你是用户的『第二大脑』问答助手，只根据下方提供的个人笔记与 ima 资料回答。回答要基于事实，简洁、有条理；资料里没有的信息要明确说『资料里没有』，不要编造。可以适当指出与问题相关的其他资料。",
+              "你是用户的『第二大脑』问答助手，只根据下方提供的个人资料（含本地随手记、已同步的 Obsidian 笔记、ima 知识库）回答。回答要基于事实，简洁、有条理；资料里没有的信息要明确说『资料里没有』，不要编造。可以适当指出与问题相关的其他资料。",
           },
           { role: "user", content: `用户问题：${question}\n${localRagContext}` },
         ],
