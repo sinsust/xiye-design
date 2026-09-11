@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { z } from "zod";
+import { logAuditReq, maskEmail, AUDIT_ACTION } from "@/lib/audit-log";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,13 @@ async function handleReset(req: NextRequest) {
   // 不区分「该邮箱是否存在」，统一返回成功，避免枚举账号
   await supabase.auth.resetPasswordForEmail(parsed.data.email.toLowerCase(), {
     redirectTo: `${origin}/auth/confirm`,
+  });
+  // 审计：无论账号是否存在都留痕（对外统一成功防枚举，审计侧仍记录请求源便于风控）
+  void logAuditReq(req, {
+    userId: null,
+    action: AUDIT_ACTION.PASSWORD_RESET_REQUEST,
+    targetType: "user",
+    detail: { email: maskEmail(parsed.data.email) },
   });
   return NextResponse.json({ ok: true });
 }

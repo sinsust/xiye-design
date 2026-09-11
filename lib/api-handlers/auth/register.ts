@@ -3,6 +3,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 import { db, users } from "@/lib/db";
 import { z } from "zod";
+import { logAuditReq, maskEmail, AUDIT_ACTION } from "@/lib/audit-log";
 
 export const runtime = "nodejs";
 
@@ -42,14 +43,16 @@ async function handleRegister(req: NextRequest) {
   });
 
   if (error) {
-    // 防账户枚举：已注册 / 其他注册失败一律返回与"待邮箱确认"一致的统一响应，
-    // 外部探测无法通过状态码或错误码区分该邮箱是否已注册。
-    return attachCookies(
-      NextResponse.json(
-        { user: null, requiresEmailConfirmation: true },
-        { status: 200 },
-      ),
-    );
+    // 已注册邮箱返回明确的 409 email_taken：前端据此引导「直接登录/找回密码」，
+    // 避免「假成功 → 永远等不到确认邮件」的死路（P0-3）。
+    // 枚举风险可接受：找回密码流程本就需要邮箱可达性，且 Supabase 默认注册响应已含该语义。
+    const msg = (error.message || "").toLowerCase();
+    if (error.status === 422 || msg.includes("already registered")) {
+      return NextResponse.json({ error: "email_taken" }, { status: 409 });
+    }
+    // 其余错误（网络/配置/限流）如实返回失败，让用户重试而非空等邮件
+    console.error("[auth/register] signUp 失败:", error.message);
+    return NextResponse.json({ error: "register_failed" }, { status: 500 });
   }
 
   const u = data.user;
@@ -66,6 +69,15 @@ async function handleRegister(req: NextRequest) {
   } catch {
     /* 已存在/冲突可忽略，后续登录时以 auth 身份为准 */
   }
+
+  // 审计：注册成功（去敏邮箱，仅留痕便于追溯）
+  void logAuditReq(req, {
+    userId: u.id,
+    action: AUDIT_ACTION.REGISTER,
+    targetType: "user",
+    targetId: u.id,
+    detail: { email: maskEmail(u.email) },
+  });
 
   // data.session 存在 = 免确认直接登录；否则站了邮箱确认流程，需等确认后再登录
   return attachCookies(

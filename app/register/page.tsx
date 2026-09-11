@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, UserPlus } from "lucide-react";
@@ -15,7 +15,37 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [confirmPending, setConfirmPending] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 重发冷却倒计时（60s）：每秒递减到 0
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  async function resendConfirm() {
+    if (resending || cooldown > 0 || !email) return;
+    setResending(true);
+    try {
+      const res = await fetch("/api/auth/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setResent(true);
+        setCooldown(60);
+      }
+    } catch {
+      /* 静默：用户可稍后再点 */
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,6 +101,21 @@ export default function RegisterPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             已向 {email} 发送确认邮件，请先查收并点击确认链接，再返回登录。
           </p>
+          <button
+            type="button"
+            onClick={resendConfirm}
+            disabled={resending || cooldown > 0}
+            className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:text-primary hover:underline disabled:opacity-50"
+          >
+            {resending
+              ? "发送中…"
+              : cooldown > 0
+                ? `重新发送（${cooldown}s 后可用）`
+                : "没收到邮件？重新发送"}
+          </button>
+          {resent && (
+            <p className="mt-2 text-xs text-muted-foreground">确认邮件已重新发送，请查收。</p>
+          )}
           <Link
             href="/login"
             className="mt-4 inline-block text-sm text-primary hover:underline"

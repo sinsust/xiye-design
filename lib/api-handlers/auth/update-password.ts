@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
 import { z } from "zod";
+import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 
 export const runtime = "nodejs";
 
@@ -36,5 +37,11 @@ async function handleUpdatePassword(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "update_failed" }, { status: 400 });
   }
+  void logAuditReq(req, {
+    userId: sessionData.user.id,
+    action: AUDIT_ACTION.PASSWORD_UPDATE,
+    targetType: "user",
+    targetId: sessionData.user.id,
+  });
   return attachCookies(NextResponse.json({ ok: true }));
 }

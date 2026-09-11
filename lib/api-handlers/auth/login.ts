@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createServerSupabaseWithCookies } from "@/lib/supabase/server";
+import { logAuditReq, maskEmail, AUDIT_ACTION } from "@/lib/audit-log";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -38,9 +39,22 @@ async function handleLogin(req: NextRequest) {
 
   if (error || !data.user) {
     // 统一收窄为「账号/密码错误」，避免泄露账号是否存在
+    void logAuditReq(req, {
+      userId: null,
+      action: AUDIT_ACTION.LOGIN_FAILED,
+      targetType: "user",
+      detail: { email: maskEmail(parsed.data.email) },
+    });
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
   const u = data.user;
+  void logAuditReq(req, {
+    userId: u.id,
+    action: AUDIT_ACTION.LOGIN_SUCCESS,
+    targetType: "user",
+    targetId: u.id,
+    detail: { email: maskEmail(u.email) },
+  });
   return attachCookies(
     NextResponse.json({ user: { id: u.id, email: u.email } }),
   );

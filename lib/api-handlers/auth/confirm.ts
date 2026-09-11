@@ -38,15 +38,20 @@ async function handleConfirm(req: NextRequest) {
           token_hash: (tokenHash || tokenParam) as string,
         });
         if (!error) {
-          return attachCookies(
-            NextResponse.redirect(new URL("/auth/update-password", req.url)),
-          );
+          // 按邮件类型分流（P0-4）：找回密码/换邮箱 → 设新密码页；
+          // 注册确认等 → 回登录页（会话已建立并随 cookie 写入），不再误跳「设置新密码」
+          const target =
+            otpType === "recovery" || otpType === "email_change"
+              ? "/auth/update-password"
+              : "/login?verified=1";
+          return attachCookies(NextResponse.redirect(new URL(target, req.url)));
         }
       }
     } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return attachCookies(NextResponse.redirect(new URL("/auth/update-password", req.url)));
+      // PKCE code 回跳（注册确认/魔法链接）：会话已建立，回登录页带验证成功提示
+      return attachCookies(NextResponse.redirect(new URL("/login?verified=1", req.url)));
     }
   }
 

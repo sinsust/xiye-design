@@ -38,6 +38,7 @@ function LoginInner() {
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get("next"));
   const verifyFailed = searchParams.get("verify") === "failed";
+  const verified = searchParams.get("verified") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -152,9 +153,22 @@ function LoginInner() {
           </button>
         </div>
 
+        {verified && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            邮箱已验证，请登录继续。
+          </p>
+        )}
         {verifyFailed && (
           <p className="mt-3 text-xs text-destructive">
-            重置链接已失效，请重新申请。
+            重置链接已失效。
+            <button
+              type="button"
+              onClick={sendReset}
+              disabled={resetState === "sending"}
+              className="ml-1 underline underline-offset-2 hover:text-primary"
+            >
+              {resetState === "sending" ? "发送中…" : "重新发送重置邮件"}
+            </button>
           </p>
         )}
         {resetState === "sent" && (

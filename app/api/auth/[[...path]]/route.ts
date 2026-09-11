@@ -9,6 +9,7 @@ import * as m3 from "@/lib/api-handlers/auth/register";
 import * as m4 from "@/lib/api-handlers/auth/reset-password";
 import * as m5 from "@/lib/api-handlers/auth/update-password";
 import * as m6 from "@/lib/api-handlers/auth/confirm";
+import * as m7 from "@/lib/api-handlers/auth/resend";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +29,7 @@ const ROUTES: RouteDef[] = [
   { key: "reset-password", methods: { POST: m4.POST as HandlerFn } },
   { key: "update-password", methods: { POST: m5.POST as HandlerFn } },
   { key: "confirm", methods: { GET: m6.GET as HandlerFn } },
+  { key: "resend", methods: { POST: m7.POST as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */
