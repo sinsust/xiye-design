@@ -1,0 +1,14 @@
+/* pricing-02 — CTA shine (from globals.css) */
+
+@keyframes shine-infinite {
+  from { transform: translateX(-160%); }
+  to { transform: translateX(160%); }
+}
+@theme {
+  --animate-shine-infinite: shine-infinite 1.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes shine-infinite {
+    from, to { transform: none; }
+  }
+}

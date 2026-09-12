@@ -47,3 +47,37 @@
 @theme {
   --font-switzer: "Switzer", Inter, ui-sans-serif, sans-serif;
 }
+
+/* originkit:hero-14 */
+/* components/originkit/hero-14.css */
+@theme {
+  --font-grotesk: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  /* LandFree Figma tokens */
+  --color-yellow75: #e9fd81;
+  --color-yellow60: #dcfc36;
+  --color-grey90: #e6e6e6;
+  --color-grey80: #cccccc;
+  --color-grey50: #808080;
+  --color-dark02: #050505;
+  --color-dark04: #0a0a0a;
+  --color-dark06: #0f0f0f;
+  --color-dark10: #1a1a1a;
+  --color-dark12: #1f1f1f;
+}
+
+/* originkit:pricing-02 */
+/* components/originkit/pricing-02.css */
+@theme {
+  --animate-shine-infinite: shine-infinite 1.4s linear infinite;
+}
+
+/* originkit:footer-02 */
+/* components/originkit/footer-02.css */
+@theme {
+  --font-hedvig: "Hedvig Letters Serif", Georgia, ui-serif, serif;
+}
+
+@theme {
+  --animate-social-slide-up: social-slide-up 800ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}

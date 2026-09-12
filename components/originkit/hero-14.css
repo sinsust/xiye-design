@@ -1,0 +1,35 @@
+/* hero-14 — LandFree dark hero (from Harsh-uu/component landfree-hero) */
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/originkit/hero-14/fonts-SpaceGrotesk.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-grotesk: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  /* LandFree Figma tokens */
+  --color-yellow75: #e9fd81;
+  --color-yellow60: #dcfc36;
+  --color-grey90: #e6e6e6;
+  --color-grey80: #cccccc;
+  --color-grey50: #808080;
+  --color-dark02: #050505;
+  --color-dark04: #0a0a0a;
+  --color-dark06: #0f0f0f;
+  --color-dark10: #1a1a1a;
+  --color-dark12: #1f1f1f;
+}
+
+/* Single-viewport catalogue shell — avoid 100vh feedback loops from
+   arbitrary min-height calcs (e.g. calc(100vh/0.9)) in the preview iframe.
+   Prefer --ok-design-h when the admin preview sets it. */
+.hero-14 {
+  height: var(--ok-design-h, 100svh);
+  max-height: var(--ok-design-h, 100svh);
+  min-height: var(--ok-design-h, 100svh);
+  overflow: hidden;
+}
