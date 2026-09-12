@@ -59,6 +59,11 @@ const DepthGallery = dynamic(() => import("@/components/originkit/depth-gallery"
 const DirectionHover = dynamic(() => import("@/components/originkit/direction-hover"), { loading: PreviewLoading });
 const AuroraText = dynamic(() => import("@/components/originkit/aurora-text"), { loading: PreviewLoading });
 const PixelDrift = dynamic(() => import("@/components/originkit/pixel-drift"), { loading: PreviewLoading });
+const ImageMagnifier = dynamic(() => import("@/components/originkit/image-magnifier"), { loading: PreviewLoading });
+const ZoomGrid = dynamic(() => import("@/components/originkit/zoom-grid"), { loading: PreviewLoading });
+const ScanGridButton = dynamic(() => import("@/components/originkit/scan-grid-button"), { loading: PreviewLoading });
+const DottedOffsetButton = dynamic(() => import("@/components/originkit/dotted-offset-button"), { loading: PreviewLoading });
+const LinkPreview = dynamic(() => import("@/components/originkit/link-preview"), { loading: PreviewLoading });
 const SpotlightFrames = dynamic(() => import("@/components/originkit/ui/spotlight-frames"), { loading: PreviewLoading });
 const ImageGrid = dynamic(() => import("@/components/originkit/ui/image-grid"), { loading: PreviewLoading });
 const HoverImageReveal = dynamic(() => import("@/components/originkit/ui/hover-image-reveal"), { loading: PreviewLoading });
@@ -73,6 +78,7 @@ const Hero14 = dynamic(() => import("@/components/originkit/hero-14"), { loading
 const Hero04 = dynamic(() => import("@/components/originkit/hero-04"), { loading: PreviewLoading });
 const Pricing01 = dynamic(() => import("@/components/originkit/pricing-01"), { loading: PreviewLoading });
 const Pricing02 = dynamic(() => import("@/components/originkit/pricing-02"), { loading: PreviewLoading });
+const Pricing03 = dynamic(() => import("@/components/originkit/pricing-03"), { loading: PreviewLoading });
 const Footer02 = dynamic(() => import("@/components/originkit/footer-02"), { loading: PreviewLoading });
 import OutstandHero from "@/components/originkit/outstand/hero";
 import OutstandPricing from "@/components/originkit/outstand/pricing";
@@ -579,6 +585,84 @@ export function Demo() {
 }`;
   }
 
+  if (comp.id === "image-magnifier") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    const b = (k: string, def = false) => String(settings[k] ?? def) === "true"
+    return `"use client";
+import MagnifyingCursor from "@/components/originkit/image-magnifier";
+
+export function Demo() {
+  return (
+    <div style={{ display: "flex", minHeight: 360, alignItems: "center", justifyContent: "center", width: "100%", background: ${JSON.stringify(s("background", "#111115"))}, padding: 24 }}>
+      <div style={{ width: "100%", maxWidth: 720, height: 400, overflow: "hidden", borderRadius: 12 }}>
+        <MagnifyingCursor
+          image={${JSON.stringify(s("image", "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/b14ae2a2-1116-4a7f-0a18-1d74c4a46f00/w=800"))}}
+          fit="${s("fit", "cover")}"
+          focusY={${n("focusY", 14)}}
+          zoom={${n("zoom", 2)}}
+          lensSize={${n("lensSize", 80)}}
+          rim={${b("rim", false)}}
+          rimOptions={{ color: ${JSON.stringify(s("rimColor", "#0A0A0C"))}, width: ${n("rimWidth", 6)} }}
+        />
+      </div>
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "zoom-grid") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import ZoomGrid from "@/components/originkit/zoom-grid";
+
+export function Demo() {
+  return (
+    <ZoomGrid
+      image={${JSON.stringify(s("image", "https://images.unsplash.com/photo-1695805311440-628c4db1c1d5?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTh8fG5hdHVyZSUyMGltYWdlfGVufDB8MHwwfHx8Mg%3D%3D"))}}
+      background="${s("background", "#000000")}"
+      size={${n("size", 72)}}
+      zoom={${n("zoom", 3)}}
+      reach={${n("reach", 600)}}
+      damping={${n("damping", 94)}}
+      speed={${n("speed", 50)}}
+      fade={${n("fade", 0)}}
+      dotSize={${n("dotSize", 15)}}
+      dotColor="${s("dotColor", "#ffffff")}"
+    />
+  );
+}`;
+  }
+
+  if (comp.id === "link-preview") {
+    const s = (k: string, def = "") => String(settings[k] ?? def);
+    const n = (k: string, def = 0) => Number(settings[k] ?? def);
+    return `"use client";
+import LinkPreview from "@/components/originkit/link-preview";
+
+export function Demo() {
+  return (
+    <div className="flex min-h-[26rem] w-full items-end justify-center bg-gradient-to-br from-[#0e0f14] via-[#171a24] to-[#0a0b10] p-8">
+      <LinkPreview
+        title="${s("title", "framer.com")}"
+        link="${s("link", "https://framer.com")}"
+        imageMode="${s("imageMode", "original") as any}"
+        customImage={{ src: "${s("customImage", "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0")}" }}
+        previewWidth={${n("previewWidth", 344)}}
+        previewHeight={${n("previewHeight", 172)}}
+        radius={${n("radius", 14)}}
+        shadow={${s("shadow", "on")} === "on"}
+        shadowColor="${s("shadowColor", "rgba(0,0,0,0.30)")}"
+        textColor="${s("textColor", "#FFFFFF")}"
+        underlineColor="${s("underlineColor", "#FFFFFF")}"
+        font={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 700, fontSize: "${n("fontSize", 96)}px" }}
+      />
+    </div>
+  );
+}`;
+  }
+
   if (comp.id === "grainy-carousel") {
     const n = (k: string, def = 0) => Number(settings[k] ?? def)
     const s = (k: string, def = "") => String(settings[k] ?? def)
@@ -660,6 +744,53 @@ export function Demo() {
         speed={${n("speed", 1.5)}}
         font={font}
         ${s("link", "") ? `link="${s("link", "")}"` : ""}
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "dotted-offset-button") {
+    const s = (k: string, def = "") => String(settings[k] ?? def);
+    const n = (k: string, def = 0) => Number(settings[k] ?? def);
+    return `"use client";
+import DottedOffsetButton from "@/components/originkit/dotted-offset-button";
+
+export function Demo() {
+  return (
+    <div className="flex min-h-[20rem] w-full items-center justify-center bg-gradient-to-br from-[#0e0f14] via-[#171a24] to-[#0a0b10] p-8">
+      <DottedOffsetButton
+        label="${s("label", "DOTTED OFFSET")}"
+        fill="${s("fill", "#000000")}"
+        textColor="${s("textColor", "#FFFFFF")}"
+        rounded={${n("rounded", 32)}}
+        hoverRounded={${n("hoverRounded", 25)}}
+        hover={{ offsetX: ${n("shadowDistance", 14)}, offsetY: ${n("shadowDistance", 14)}, rounded: ${n("hoverRounded", 25)}, borderColor: "${s("borderColor", "#FFFFFF")}" }}
+        shadow={{ color: "${s("shadowColor", "#00FF99")}", side: "${s("shadowSide", "right") as any}", distance: ${n("shadowDistance", 14)} }}
+        border={{ borderColor: "${s("borderColor", "#FFFFFF")}", borderStyle: "${s("borderStyle", "dashed") as any}", borderWidth: 2 }}
+        font={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 500, fontSize: ${n("fontSize", 40)} }}
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "scan-grid-button") {
+    const s = (k: string, def = "") => String(settings[k] ?? def);
+    const n = (k: string, def = 0) => Number(settings[k] ?? def);
+    return `"use client";
+import ScanGridButton from "@/components/originkit/scan-grid-button";
+
+export function Demo() {
+  return (
+    <div className="flex min-h-[20rem] w-full items-center justify-center bg-gradient-to-br from-[#0e0f14] via-[#171a24] to-[#0a0b10] p-8">
+      <ScanGridButton
+        label="${s("label", "SCAN GRID")}"
+        colors={{ fill: "${s("fill", "#000000")}", textColor: "${s("textColor", "#FFFFFF")}", hoverFill: "${s("fill", "#000000")}", hoverTextColor: "${s("textColor", "#FFFFFF")}" }}
+        scan={{ color: "${s("scanColor", "#FF8400")}", speed: ${n("speed", 50)} }}
+        glitchIntensity={${n("glitchIntensity", 0)}}
+        rounded={${n("rounded", 0)}}
+        font={{ fontFamily: "Inter, system-ui, sans-serif", fontWeight: 500, fontSize: ${n("fontSize", 40)} }}
       />
     </div>
   );
@@ -888,7 +1019,9 @@ function ItemButton({
           : "border-transparent text-muted-foreground hover:bg-muted/40"
       )}
     >
-      <span className="shrink-0">{ICONS[comp.icon] ?? null}</span>
+      {comp.category === "特效" ? null : (
+        <span className="shrink-0">{ICONS[comp.icon] ?? null}</span>
+      )}
       <span className="truncate">{comp.name}</span>
     </button>
   );
@@ -2101,6 +2234,67 @@ export default function ComponentLibraryPage() {
                 </div>
               )}
 
+              {comp.id === "image-magnifier" && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 360, padding: 24, background: String(settings.background ?? "#111115") }}>
+                  <div style={{ width: "100%", maxWidth: 720, height: 400, overflow: "hidden", borderRadius: 12 }}>
+                    <ImageMagnifier
+                      image={String(settings.image ?? "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/b14ae2a2-1116-4a7f-0a18-1d74c4a46f00/w=800")}
+                      fit={String(settings.fit ?? "cover") as "cover" | "contain"}
+                      focusY={Number(settings.focusY ?? 14)}
+                      zoom={Number(settings.zoom ?? 2)}
+                      lensSize={Number(settings.lensSize ?? 80)}
+                      rim={String(settings.rim ?? "false") === "true"}
+                      rimOptions={{
+                        color: String(settings.rimColor ?? "#0A0A0C"),
+                        width: Number(settings.rimWidth ?? 6),
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "zoom-grid" && (
+                <div style={{ display: "flex", overflow: "auto", background: String(settings.background ?? "#000000") }}>
+                  <div style={{ width: 1200, height: 800, flex: "none" }}>
+                    <ZoomGrid
+                      image={String(settings.image ?? "https://images.unsplash.com/photo-1695805311440-628c4db1c1d5?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NTh8fG5hdHVyZSUyMGltYWdlfGVufDB8MHwwfHx8Mg%3D%3D")}
+                      background={String(settings.background ?? "#000000")}
+                      size={Number(settings.size ?? 72)}
+                      zoom={Number(settings.zoom ?? 3)}
+                      reach={Number(settings.reach ?? 600)}
+                      damping={Number(settings.damping ?? 94)}
+                      speed={Number(settings.speed ?? 50)}
+                      fade={Number(settings.fade ?? 0)}
+                      dotSize={Number(settings.dotSize ?? 15)}
+                      dotColor={String(settings.dotColor ?? "#ffffff")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "link-preview" && (
+                <div className="flex min-h-[26rem] w-full items-end justify-center bg-gradient-to-br from-[#0e0f14] via-[#171a24] to-[#0a0b10] p-8">
+                  <LinkPreview
+                    title={String(settings.title ?? "framer.com")}
+                    link={String(settings.link ?? "https://framer.com")}
+                    imageMode={String(settings.imageMode ?? "original") as any}
+                    customImage={{ src: String(settings.customImage ?? "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0") }}
+                    previewWidth={Number(settings.previewWidth ?? 344)}
+                    previewHeight={Number(settings.previewHeight ?? 172)}
+                    radius={Number(settings.radius ?? 14)}
+                    shadow={String(settings.shadow ?? "on") === "on"}
+                    shadowColor={String(settings.shadowColor ?? "rgba(0,0,0,0.30)")}
+                    textColor={String(settings.textColor ?? "#FFFFFF")}
+                    underlineColor={String(settings.underlineColor ?? "#FFFFFF")}
+                    font={{
+                      fontFamily: "Inter, system-ui, sans-serif",
+                      fontWeight: 700,
+                      fontSize: `${Number(settings.fontSize ?? 96)}px`,
+                    }}
+                  />
+                </div>
+              )}
+
               {comp.id === "grainy-carousel" && (
                 <div className="flex overflow-auto">
                   <div style={{ width: 1200, height: 800, flex: "none" }}>
@@ -2200,6 +2394,58 @@ export default function ComponentLibraryPage() {
                       lineHeight: "1em",
                     }}
                     link={String(settings.link ?? "") || undefined}
+                  />
+                </div>
+              )}
+
+              {comp.id === "dotted-offset-button" && (
+                <div className="flex min-h-[20rem] w-full items-center justify-center bg-gradient-to-br from-[#0e0f14] via-[#171a24] to-[#0a0b10] p-8">
+                  <DottedOffsetButton
+                    label={String(settings.label ?? "DOTTED OFFSET")}
+                    fill={String(settings.fill ?? "#000000")}
+                    textColor={String(settings.textColor ?? "#FFFFFF")}
+                    rounded={Number(settings.rounded ?? 32)}
+                    hoverRounded={Number(settings.hoverRounded ?? 25)}
+                    border={{
+                      borderColor: String(settings.borderColor ?? "#FFFFFF"),
+                      borderStyle: String(settings.borderStyle ?? "dashed") as any,
+                      borderWidth: 2,
+                    }}
+                    shadow={{
+                      color: String(settings.shadowColor ?? "#00FF99"),
+                      side: String(settings.shadowSide ?? "right") as any,
+                      distance: Number(settings.shadowDistance ?? 14),
+                    }}
+                    font={{
+                      fontFamily: "Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      fontSize: Number(settings.fontSize ?? 40),
+                    }}
+                  />
+                </div>
+              )}
+
+              {comp.id === "scan-grid-button" && (
+                <div className="flex min-h-[20rem] w-full items-center justify-center bg-gradient-to-br from-[#0e0f14] via-[#171a24] to-[#0a0b10] p-8">
+                  <ScanGridButton
+                    label={String(settings.label ?? "SCAN GRID")}
+                    colors={{
+                      fill: String(settings.fill ?? "#000000"),
+                      textColor: String(settings.textColor ?? "#FFFFFF"),
+                      hoverFill: String(settings.fill ?? "#000000"),
+                      hoverTextColor: String(settings.textColor ?? "#FFFFFF"),
+                    }}
+                    scan={{
+                      color: String(settings.scanColor ?? "#FF8400"),
+                      speed: Number(settings.speed ?? 50),
+                    }}
+                    glitchIntensity={Number(settings.glitchIntensity ?? 0)}
+                    rounded={Number(settings.rounded ?? 0)}
+                    font={{
+                      fontFamily: "Inter, system-ui, sans-serif",
+                      fontWeight: 500,
+                      fontSize: Number(settings.fontSize ?? 40),
+                    }}
                   />
                 </div>
               )}
@@ -2313,6 +2559,12 @@ export default function ComponentLibraryPage() {
               {comp.id === "pricing-02" && (
                 <WidePreviewFrame>
                   <Pricing02 />
+                </WidePreviewFrame>
+              )}
+
+              {comp.id === "pricing-03" && (
+                <WidePreviewFrame>
+                  <Pricing03 />
                 </WidePreviewFrame>
               )}
 
