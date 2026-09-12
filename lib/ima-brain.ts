@@ -7,7 +7,7 @@ import { embed, buildListableText } from "./embedding";
 import {
   insertBrainNote,
   insertBrainTasks,
-  insertBrainStrategies,
+  insertStrategyTree,
   updateBrainNote,
   listBrainNotes,
   type BrainNote,
@@ -138,17 +138,8 @@ export async function importImaNote(
   // 策略落库；任务按 strategyIndex 关联（下标对应下方创建返回的顺序）
   let createdStrategies: { id: string }[] = [];
   try {
-    const strats = (organized.strategies ?? []).slice(0, 8);
-    if (strats.length) {
-      createdStrategies = await insertBrainStrategies(
-        userId,
-        strats.map((s) => ({
-          noteId: note.id,
-          title: s.title.slice(0, 200),
-          description: s.description ?? "",
-        })),
-      );
-    }
+    const tree = await insertStrategyTree(userId, note.id, (organized.strategies ?? []).slice(0, 2));
+    createdStrategies = tree.themeIds.filter(Boolean).length ? tree.themeIds.filter(Boolean).map((id) => ({ id: id as string })) : [];
   } catch (err) {
     console.error("[ima-brain] insert strategies failed:", err);
   }

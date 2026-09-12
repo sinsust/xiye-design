@@ -4,7 +4,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import {
   listBrainNotes,
   insertBrainNote,
-  insertBrainStrategies,
+  insertStrategyTree,
   insertBrainTasks,
   insertBrainReview,
 } from "@/lib/brain-db";
@@ -78,41 +78,34 @@ export async function POST(req: NextRequest) {
         });
         if (!note) throw new Error("insert failed");
 
-        // 策略 → 任务（按 strategyIndex 关联）→ 初始复习（SM-2）
-        let created: { id: string }[] = [];
+        // 策略（主题 → 子策略）→ 任务（优先挂子策略，其次挂主题）
+        let tree: { themeIds: (string | null)[]; subIds: (string | null)[][] } = {
+          themeIds: [],
+          subIds: [],
+        };
         try {
-          const strats = (organized.strategies ?? []).slice(0, 8);
-          if (strats.length) {
-            created = await insertBrainStrategies(
-              user.sub,
-              strats.map((s) => ({
-                noteId: note.id,
-                title: s.title.slice(0, 200),
-                description: s.description ?? "",
-              })),
-            );
-          }
+          tree = await insertStrategyTree(user.sub, note.id, organized.strategies ?? []);
         } catch (err) {
           console.error("[batch-import] strategies failed:", err);
         }
         try {
           const tasks = (organized.actionItems ?? [])
             .slice(0, 12)
-            .map((t) => ({
-              noteId: note.id,
-              title: t.text.slice(0, 40),
-              dueDate: t.dueDate ?? null,
-              priority: (t.priority === "high" || t.priority === "low" ? t.priority : "medium") as
-                | "high"
-                | "medium"
-                | "low",
-              strategyId:
-                typeof t.strategyIndex === "number" &&
-                t.strategyIndex >= 0 &&
-                t.strategyIndex < created.length
-                  ? created[t.strategyIndex].id
-                  : null,
-            }));
+            .map((t) => {
+              const ti = typeof t.strategyIndex === "number" ? t.strategyIndex : -1;
+              const si = typeof t.strategySubIndex === "number" ? t.strategySubIndex : -1;
+              const subId = ti >= 0 ? tree.subIds[ti]?.[si] ?? null : null;
+              return {
+                noteId: note.id,
+                title: t.text.slice(0, 40),
+                dueDate: t.dueDate ?? null,
+                priority: (t.priority === "high" || t.priority === "low" ? t.priority : "medium") as
+                  | "high"
+                  | "medium"
+                  | "low",
+                strategyId: (ti >= 0 ? subId ?? tree.themeIds[ti] ?? null : null) as string | null,
+              };
+            });
           if (tasks.length) await insertBrainTasks(user.sub, tasks);
         } catch (err) {
           console.error("[batch-import] tasks failed:", err);

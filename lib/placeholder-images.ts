@@ -2,10 +2,13 @@
  * 图片占位 · 双层池（单一数据源）。
  *
  * 解决「十几张重复 / 不知用多大图」两个问题：
- *   - A 层「画廊精图」：13 张 AI 风格图（取自 Originkit coverflow 画廊的 Cloudflare 图床）。
+ *   - A 层「画廊精图」：26 张 AI 风格图（原 Originkit coverflow 画廊 13 张，
+ *     外加磁性轮播 5 张、弧形按钮轮播 8 张，均取自同图床 Cloudflare）。
  *     用于封面 / Hero / 品牌 / 画廊签名视觉等「要设计感」的位置。
  *   - B 层「大批量图池」：993 张 Picsum 确定性 id（免 key、任意尺寸、同 id 同图，均已核实有效）。
  *     用于网格 / 缩略图 / 案例 / 博客 / 商品等「要数量、不重复」的位置。id 取自官方 /v2/list。
+ *   - C 层「组件精图」（Unsplash，10 张）：取自「发牌轮播」组件默认素材，灵活人像/场景设计图，
+ *     与 A/B 层图床不同，需显式 resolvePlaceholder(role,i,{tier:"unsplash"}) 或 unsplashImage(i) 取用。
  *
  * 统一入口按「区块角色」取图：resolvePlaceholder(role, i)，自动选层 + 配好宽高。
  * 原 premiumImage / premiumImages 保留，行为不变（仍取 A 层精图）。
@@ -19,6 +22,7 @@ export const IMAGE_DELIVERY_BASE =
   "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ";
 
 export const PREMIUM_IMAGE_IDS: string[] = [
+  // —— 原 coverflow 画廊精图（13 张）
   "316d1761-fd79-4ca9-b8d4-f2bb20521a00",
   "31afae9c-5ba3-4ec3-2534-ed8198ed1100",
   "34ce1842-4b7a-4d52-0302-38582c341700",
@@ -32,6 +36,21 @@ export const PREMIUM_IMAGE_IDS: string[] = [
   "ed7b1c40-3332-43d8-a9eb-4615ef341b00",
   "eec164e9-23f8-4f87-b48a-a208fa806100",
   "f8b3688c-11d0-425c-0b6f-66f133322c00",
+  // —— 磁性轮播组件精图（5 张）
+  "612d1402-0ad9-4135-3bbc-a30a6a252b00",
+  "6d2ad64a-102d-4eab-0efe-31479e34b500",
+  "be854dd1-37aa-4fc7-f569-fdb948109300",
+  "51984031-9176-484b-f5e0-4af9a8e9ed00",
+  "88369c6d-00cc-4ac9-74ca-0f0965e06300",
+  // —— 弧形按钮轮播精图（8 张）
+  "8fd4d2a3-a363-4658-d6ee-84790bc8f300",
+  "4d1fe81d-5289-4e08-b381-03e4e9efed00",
+  "6ab26fe4-5016-4c65-01e8-b3a71ea08200",
+  "4b1ec233-9a09-4483-1adb-404a93094100",
+  "20fd03c3-49d6-408c-3ac9-8c5a6ed2b500",
+  "c84f3e45-635f-4eaa-4e24-730098b55500",
+  "3b42034b-897e-456d-cb00-1f2cf0aa4700",
+  "9652cf81-4644-4471-1122-4e40ef6e2600",
 ];
 
 const PREMIUM_IDS = PREMIUM_IMAGE_IDS;
@@ -107,6 +126,31 @@ export function poolImage(
 }
 
 /* ------------------------------------------------------------------ */
+/* C 层：组件精图（Unsplash，灵活人像/场景设计图）                      */
+/* 来自新增「发牌轮播」组件的默认素材图。与 A/B 层图床不同（Unsplash），
+ * 单独成层；URL 已含完整 query（ixid 等），直接原样返回。               */
+/* ------------------------------------------------------------------ */
+
+export const UNSPLASH_FEATURE_URLS: string[] = [
+  "https://images.unsplash.com/photo-1590482634645-39ea413d7a41?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NzJ8fHVzZXIlMjBwcm9maWxlJTIwaW1hZ2UlMjB2aWJyYW50fGVufDB8fDB8fHwy",
+  "https://images.unsplash.com/photo-1759701546662-b79f5d881124?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDN8fHVzZXIlMjBwcm9maWxlJTIwaW1hZ2UlMjB2aWJyYW50fGVufDB8fDB8fHwy",
+  "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8dXNlciUyMHByb2ZpbGUlMjBpbWFnZSUyMHZpYnJhbnR8ZW58MHx8MHx8fDI%3D",
+  "https://images.unsplash.com/photo-1586297135537-94bc9ba060aa?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8dXNlciUyMHByb2ZpbGUlMjBpbWFnZSUyMHZpYnJhbnR8ZW58MHx8MHx8fDI%3D",
+  "https://images.unsplash.com/photo-1665174286799-5c51dcc9748a?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHVzZXIlMjBwcm9maWxlJTIwaW1hZ2UlMjB2aWJyYW50fGVufDB8fDB8fHwy",
+  "https://images.unsplash.com/photo-1714356333088-45a9ba618365?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NzZ8fHVzZXIlMjBwcm9maWxlJTIwaW1hZ2UlMjB2aWJyYW50fGVufDB8fDB8fHwy",
+  "https://images.unsplash.com/photo-1655669832303-58be6a0e42ad?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8ODd8fHVzZXIlMjBwcm9maWxlJTIwaW1hZ2UlMjB2aWJyYW50fGVufDB8fDB8fHwy",
+  "https://images.unsplash.com/photo-1655293459479-cacd56abeaf6?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTE0fHx1c2VyJTIwcHJvZmlsZSUyMGltYWdlJTIwdmlicmFudHxlbnwwfHwwfHx8Mg%3D%3D",
+  "https://images.unsplash.com/photo-1670626428555-bd2dbe344cf4?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTM2fHx1c2VyJTIwcHJvZmlsZSUyMGltYWdlJTIwdmlicmFudHxlbnwwfHwwfHx8Mg%3D%3D",
+  "https://images.unsplash.com/photo-1613698809174-93715bc96879?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTcxfHx1c2VyJTIwcHJvZmlsZSUyMGltYWdlJTIwdmlicmFudHxlbnwwfHwwfHx8Mg%3D%3D",
+];
+
+/** C 层：取第 idx 张 Unsplash 精图 URL（自动循环，原样返回完整链接）。 */
+export function unsplashImage(idx: number): string {
+  const urls = UNSPLASH_FEATURE_URLS;
+  return urls[((idx % urls.length) + urls.length) % urls.length];
+}
+
+/* ------------------------------------------------------------------ */
 /* 按「区块角色」统一取图：自动选层 + 配好宽高                            */
 /* ------------------------------------------------------------------ */
 
@@ -151,9 +195,25 @@ const ROLE_SIZES: Record<PlaceholderRole, { w: number; h: number }> = {
 export function resolvePlaceholder(
   role: PlaceholderRole,
   idx: number,
-  opts: { w?: number; h?: number; grayscale?: boolean; blur?: number } = {},
+  opts: { w?: number; h?: number; grayscale?: boolean; blur?: number; tier?: "auto" | "premium" | "pool" | "unsplash" } = {},
 ): string {
   const size = ROLE_SIZES[role] ?? ROLE_SIZES.hero;
+  // 显式指定图层时优先；默认 auto（签名视觉→精图 / 大批量→池）。
+  switch (opts.tier) {
+    case "unsplash":
+      return unsplashImage(idx);
+    case "premium":
+      return premiumImage(idx, { w: opts.w ?? size.w });
+    case "pool":
+      return poolImage(idx, {
+        w: opts.w ?? size.w,
+        h: opts.h ?? size.h,
+        grayscale: opts.grayscale,
+        blur: opts.blur,
+      });
+    default:
+      break;
+  }
   if (TIER_A_ROLES.has(role)) {
     return premiumImage(idx, { w: opts.w ?? size.w });
   }

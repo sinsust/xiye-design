@@ -9,7 +9,7 @@ import {
   deleteBrainNote,
   insertBrainTasks,
   insertBrainReview,
-  insertBrainStrategies,
+  insertStrategyTree,
   type BrainSource,
   type BrainTaskPriority,
 } from "@/lib/brain-db";
@@ -120,34 +120,58 @@ export async function POST(req: NextRequest) {
             (s: unknown) =>
               s && typeof (s as { title?: unknown }).title === "string" && String((s as { title: string }).title).trim(),
           )
-          .slice(0, 8)
+          // 一篇笔记最多 2 条策略主题
+          .slice(0, 2)
       : [];
-    const createdStrategies = strats.length
-      ? await insertBrainStrategies(
-          user.sub,
-          strats.map((s: { title: string; description?: unknown }) => ({
-            noteId: note.id,
-            title: String(s.title).trim().slice(0, 200),
-            description: typeof s.description === "string" ? s.description.trim() : "",
-          })),
-        )
-      : [];
+    // 策略按「主题 → 子策略」两层落库；子策略 id 供任务精确挂接
+    const tree = await insertStrategyTree(
+      user.sub,
+      note.id,
+      strats.map((s: Record<string, unknown>) => ({
+        title: String(s.title ?? "").trim().slice(0, 200),
+        goal: typeof s.goal === "string" ? s.goal.trim().slice(0, 200) : "",
+        rationale: typeof s.rationale === "string" ? s.rationale.trim().slice(0, 400) : "",
+        subStrategies: Array.isArray(s.subStrategies)
+          ? s.subStrategies
+              .map((x: unknown) => {
+                const so = (x ?? {}) as Record<string, unknown>;
+                return {
+                  title: String(so.title ?? "").trim().slice(0, 200),
+                  description: typeof so.description === "string" ? so.description.trim() : "",
+                };
+              })
+              .filter((x: { title: string }) => x.title)
+          : [],
+      })),
+    );
 
     // 任务：有 actionItems 时一并落库（关联到刚创建的笔记，可按 strategyIndex 关联策略）
     if (Array.isArray(body?.actionItems) && body.actionItems.length && note?.id) {
       const tasks = body.actionItems
         .filter((t: unknown) => t && typeof (t as { text?: unknown }).text === "string")
         .slice(0, 12)
-        .map((t: { text: string; dueDate?: string | null; priority?: unknown; strategyIndex?: unknown }) => {
-          const idx = typeof t.strategyIndex === "number" ? t.strategyIndex : -1;
-          return {
-            noteId: note.id,
-            title: String(t.text).trim().slice(0, 40),
-            dueDate: typeof t.dueDate === "string" && t.dueDate.trim() ? t.dueDate.trim().slice(0, 10) : null,
-            priority: (t.priority === "high" || t.priority === "low" ? t.priority : "medium") as BrainTaskPriority,
-            strategyId: idx >= 0 && idx < createdStrategies.length ? createdStrategies[idx].id : null,
-          };
-        })
+        .map(
+          (t: {
+            text: string;
+            dueDate?: string | null;
+            priority?: unknown;
+            strategyIndex?: unknown;
+            strategySubIndex?: unknown;
+          }) => {
+            const ti = typeof t.strategyIndex === "number" ? t.strategyIndex : -1;
+            const si = typeof t.strategySubIndex === "number" ? t.strategySubIndex : -1;
+            // 优先挂到子策略；只属于主题整体时挂主题
+            const subId = ti >= 0 ? tree.subIds[ti]?.[si] ?? null : null;
+            return {
+              noteId: note.id,
+              title: String(t.text).trim().slice(0, 40),
+              dueDate:
+                typeof t.dueDate === "string" && t.dueDate.trim() ? t.dueDate.trim().slice(0, 10) : null,
+              priority: (t.priority === "high" || t.priority === "low" ? t.priority : "medium") as BrainTaskPriority,
+              strategyId: ti >= 0 ? subId ?? tree.themeIds[ti] ?? null : null,
+            };
+          },
+        )
         .filter((t: { title: string }) => t.title);
       if (tasks.length) await insertBrainTasks(user.sub, tasks);
     }
@@ -163,7 +187,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ note, strategies: createdStrategies });
+    return NextResponse.json({
+      note,
+      strategies: tree.themeIds.filter(Boolean).length,
+    });
   } catch (err) {
     console.error("brain note create failed:", err);
     return NextResponse.json({ error: "create_failed" }, { status: 500 });

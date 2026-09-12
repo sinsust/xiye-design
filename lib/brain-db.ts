@@ -1400,12 +1400,23 @@ export async function skipBrainReview(
 
 export type BrainStrategyStatus = "active" | "paused" | "achieved" | "abandoned";
 
+/** 策略层级：theme = 策略主题（目标 + 取舍）；sub = 主题下的推进方向/步骤 */
+export type BrainStrategyKind = "theme" | "sub";
+
 export interface BrainStrategy {
   id: string;
   userId: string;
   noteId: string;
   title: string;
   description: string;
+  /** 子策略所属主题 id；主题为 null */
+  parentId: string | null;
+  kind: BrainStrategyKind;
+  /** 目标状态（主题层） */
+  goal: string;
+  /** 取舍判断（主题层） */
+  rationale: string;
+  sortOrder: number;
   status: BrainStrategyStatus;
   createdAt: number;
   updatedAt: number;
@@ -1415,6 +1426,11 @@ export type NewBrainStrategy = {
   noteId: string;
   title: string;
   description?: string;
+  parentId?: string | null;
+  kind?: BrainStrategyKind;
+  goal?: string;
+  rationale?: string;
+  sortOrder?: number;
   status?: BrainStrategyStatus;
 };
 
@@ -1424,6 +1440,13 @@ interface StrategyRow {
   noteId: string;
   title: string | null;
   description: string | null;
+  parent_id?: string | null;
+  parentId?: string | null;
+  kind?: string | null;
+  goal?: string | null;
+  rationale?: string | null;
+  sort_order?: number | null;
+  sortOrder?: number | null;
   status: string | null;
   createdAt: number;
   updatedAt: number;
@@ -1436,6 +1459,11 @@ function toStrategy(r: StrategyRow): BrainStrategy {
     noteId: r.noteId,
     title: r.title ?? "",
     description: r.description ?? "",
+    parentId: r.parentId ?? r.parent_id ?? null,
+    kind: (r.kind === "sub" ? "sub" : "theme") as BrainStrategyKind,
+    goal: r.goal ?? "",
+    rationale: r.rationale ?? "",
+    sortOrder: r.sortOrder ?? r.sort_order ?? 0,
     status: (r.status ?? "active") as BrainStrategyStatus,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
@@ -1490,6 +1518,11 @@ export async function insertBrainStrategies(
         noteId: item.noteId,
         title: item.title,
         description: item.description ?? null,
+        parentId: item.parentId ?? null,
+        kind: item.kind ?? "theme",
+        goal: item.goal ?? null,
+        rationale: item.rationale ?? null,
+        sortOrder: item.sortOrder ?? 0,
         status: item.status ?? "active",
         createdAt: now,
         updatedAt: now,
@@ -1528,13 +1561,28 @@ export async function updateBrainStrategy(
   }
 }
 
-/** 删除策略：先将其关联任务的 strategyId 置空（不删除任务），再删除策略。 */
+/**
+ * 删除策略：删主题会级联删掉它的子策略（子策略不能脱离主题存在），
+ * 所有相关任务的 strategyId 置空（任务本身保留）。
+ */
 export async function deleteBrainStrategy(userId: string, id: string): Promise<boolean> {
   try {
+    const childIds = (await db
+      .select({ id: brainStrategies.id })
+      .from(brainStrategies)
+      .where(and(eq(brainStrategies.parentId, id), eq(brainStrategies.userId, userId)))) as {
+      id: string;
+    }[];
+    const allIds = [id, ...childIds.map((c) => c.id)];
+    for (const sid of allIds) {
+      await db
+        .update(brainTasks)
+        .set({ strategyId: null })
+        .where(and(eq(brainTasks.strategyId, sid), eq(brainTasks.userId, userId)));
+    }
     await db
-      .update(brainTasks)
-      .set({ strategyId: null })
-      .where(and(eq(brainTasks.strategyId, id), eq(brainTasks.userId, userId)));
+      .delete(brainStrategies)
+      .where(and(eq(brainStrategies.parentId, id), eq(brainStrategies.userId, userId)));
     await db
       .delete(brainStrategies)
       .where(and(eq(brainStrategies.id, id), eq(brainStrategies.userId, userId)));
@@ -1543,6 +1591,56 @@ export async function deleteBrainStrategy(userId: string, id: string): Promise<b
     console.error("[brain-db] delete strategy failed:", err);
     return false;
   }
+}
+
+/**
+ * 按「主题 → 子策略」两层批量落库（AI 整理结果专用）。
+ * 返回 subIds[主题下标][子策略下标]，供 actionItems 精确挂到子策略；
+ * 挂不上子策略时调用方退回挂主题。
+ */
+export async function insertStrategyTree(
+  userId: string,
+  noteId: string,
+  themes: {
+    title: string;
+    goal?: string;
+    rationale?: string;
+    subStrategies?: { title: string; description?: string }[];
+  }[],
+): Promise<{ themeIds: (string | null)[]; subIds: (string | null)[][] }> {
+  const themeIds: (string | null)[] = [];
+  const subIds: (string | null)[][] = [];
+  if (!themes.length) return { themeIds, subIds };
+  const createdThemes = await insertBrainStrategies(
+    userId,
+    themes.map((t) => ({
+      noteId,
+      title: t.title,
+      goal: t.goal ?? "",
+      rationale: t.rationale ?? "",
+      kind: "theme" as const,
+    })),
+  );
+  for (let i = 0; i < themes.length; i++) {
+    const themeId = createdThemes[i]?.id ?? null;
+    themeIds[i] = themeId;
+    subIds[i] = [];
+    const subs = (themes[i].subStrategies ?? []).slice(0, 6);
+    if (!themeId || !subs.length) continue;
+    const createdSubs = await insertBrainStrategies(
+      userId,
+      subs.map((s, j) => ({
+        noteId,
+        title: s.title,
+        description: s.description ?? "",
+        parentId: themeId,
+        kind: "sub" as const,
+        sortOrder: j,
+      })),
+    );
+    subIds[i] = subs.map((_, j) => createdSubs[j]?.id ?? null);
+  }
+  return { themeIds, subIds };
 }
 
 // ---------- ima 增量同步日志 ----------

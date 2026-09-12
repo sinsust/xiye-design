@@ -8,7 +8,7 @@ import {
   insertBrainNote,
   updateBrainNote,
   insertBrainTasks,
-  insertBrainStrategies,
+  insertStrategyTree,
   insertBrainReview,
   getBrainInboxItem,
   updateBrainInboxItem,
@@ -152,25 +152,20 @@ export async function applyOrganizedToNote(
     // 按意图落地关联资产
     if (intent === "meeting" || intent === "project") {
       // 会议/项目：策略 + 任务（含 strategyIndex 关联）
-      let created: { id: string }[] = [];
-      const strats = (strategies ?? []).slice(0, 8);
-      if (strats.length) {
-        created = await insertBrainStrategies(
-          userId,
-          strats.map((s) => ({ noteId: note.id, title: (s.title ?? "").slice(0, 200), description: s.description ?? "" })),
-        );
-        createdStrategies = created.length;
-      }
-      const tasks = (actionItems ?? []).slice(0, 12).map((t) => ({
-        noteId: note.id,
-        title: (t.text ?? "").slice(0, 40),
-        dueDate: t.dueDate ?? null,
-        priority: toPriority(t.priority),
-        strategyId:
-          typeof t.strategyIndex === "number" && t.strategyIndex >= 0 && t.strategyIndex < created.length
-            ? created[t.strategyIndex].id
-            : null,
-      }));
+      const tree = await insertStrategyTree(userId, note.id, (strategies ?? []).slice(0, 2));
+      createdStrategies = tree.themeIds.filter(Boolean).length;
+      const tasks = (actionItems ?? []).slice(0, 12).map((t) => {
+        const ti = typeof t.strategyIndex === "number" ? t.strategyIndex : -1;
+        const si = typeof t.strategySubIndex === "number" ? t.strategySubIndex : -1;
+        const subId = ti >= 0 ? tree.subIds[ti]?.[si] ?? null : null;
+        return {
+          noteId: note.id,
+          title: (t.text ?? "").slice(0, 40),
+          dueDate: t.dueDate ?? null,
+          priority: toPriority(t.priority),
+          strategyId: ti >= 0 ? subId ?? tree.themeIds[ti] ?? null : null,
+        };
+      });
       createdTasks = tasks.length;
       if (tasks.length) await insertBrainTasks(userId, tasks);
     } else if (intent === "task") {
@@ -243,28 +238,26 @@ export async function enrichNoteWithOrganized(
 
   // 按意图补建任务/策略（与 applyOrganizedToNote 同规则）
   try {
-    let created: { id: string }[] = [];
-    const strats = (organized.strategies ?? []).slice(0, 8);
-    if ((intent === "meeting" || intent === "project") && strats.length) {
-      created = await insertBrainStrategies(
-        userId,
-        strats.map((s) => ({ noteId, title: (s.title ?? "").slice(0, 200), description: s.description ?? "" })),
-      );
-    }
+    const tree =
+      intent === "meeting" || intent === "project"
+        ? await insertStrategyTree(userId, noteId, (organized.strategies ?? []).slice(0, 2))
+        : { themeIds: [] as (string | null)[], subIds: [] as (string | null)[][] };
     const actionItems = organized.actionItems ?? [];
     if (intent === "meeting" || intent === "project" || intent === "task") {
       const tasks =
         actionItems.length > 0
-          ? actionItems.slice(0, 12).map((t) => ({
-              noteId,
-              title: (t.text ?? "").slice(0, 40),
-              dueDate: t.dueDate ?? null,
-              priority: toPriority(t.priority),
-              strategyId:
-                intent !== "task" && typeof t.strategyIndex === "number" && t.strategyIndex >= 0 && t.strategyIndex < created.length
-                  ? created[t.strategyIndex].id
-                  : null,
-            }))
+          ? actionItems.slice(0, 12).map((t) => {
+              const ti = typeof t.strategyIndex === "number" ? t.strategyIndex : -1;
+              const si = typeof t.strategySubIndex === "number" ? t.strategySubIndex : -1;
+              const subId = ti >= 0 ? tree.subIds[ti]?.[si] ?? null : null;
+              return {
+                noteId,
+                title: (t.text ?? "").slice(0, 40),
+                dueDate: t.dueDate ?? null,
+                priority: toPriority(t.priority),
+                strategyId: intent !== "task" && ti >= 0 ? subId ?? tree.themeIds[ti] ?? null : null,
+              };
+            })
           : intent === "task"
             ? [{ noteId, title: title.slice(0, 40), dueDate: null, priority: "medium" as BrainTaskPriority, strategyId: null }]
             : [];

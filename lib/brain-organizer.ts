@@ -20,8 +20,23 @@ export interface ActionItem {
   owner: string;
   dueDate: string | null;
   priority: "high" | "medium" | "low";
-  // 关联到返回的 strategies 数组下标（0 起）；无关联则不填
+  // 关联到返回的 strategies 数组下标（主题层，0 起）；无关联则不填
   strategyIndex?: number;
+  // 该主题下的 subStrategies 下标；任务只属于主题整体、或无从归属时为 null
+  strategySubIndex?: number;
+}
+
+/**
+ * 策略主题：一个要达成的方向，下挂若干子策略（并列推进方向或先后步骤）。
+ * 结构刻意做成「主题 → 子策略」两层：主题回答"要什么、为什么"，子策略回答"从哪几路推"。
+ */
+export interface StrategyTheme {
+  title: string;
+  // 目标状态：要达成的结果（不是动作）
+  goal: string;
+  // 取舍判断：为什么选这个方向、放弃了什么
+  rationale: string;
+  subStrategies: { title: string; description: string }[];
 }
 
 /** 量化指标：从原文抽取的关键数字（ROI、曝光增幅、预算、GMV 目标、库存、退货率…） */
@@ -56,8 +71,8 @@ export interface OrganizedNote {
   relatedReason: string;
   // 从原文中识别出的待办任务
   actionItems: ActionItem[];
-  // 会议纪要中拆解出的策略（如"Q3主攻东南亚市场"）
-  strategies: { title: string; description: string }[];
+  // 策略：主题（目标状态 + 取舍判断）+ 其下子策略；多数笔记 0~1 条主题，最多 2 条
+  strategies: StrategyTheme[];
   // 会议决议（纯文本），落库后并入笔记 summary 的扩展字段
   decisions: string[];
   // 参会人（从"参会人/参会"行识别的姓名或称呼）
@@ -88,6 +103,47 @@ export interface OrganizedNote {
   rewritten: string;
   // 本次整理是否实际走了 AI 模型（false = 本地启发式兜底，前端据此提示）
   aiUsed?: boolean;
+}
+
+/**
+ * 任务与策略的关键词重合度：取标题的连续 2 字片段，统计出现在任务文本中的数量。
+ * 中文场景下 2 字足以构成特征（"拼团""改版"），比整串匹配更耐噪音。
+ */
+function overlapScore(text: string, title: string): number {
+  let score = 0;
+  for (let i = 0; i + 2 <= title.length; i++) {
+    if (text.includes(title.slice(i, i + 2))) score += 1;
+  }
+  return score;
+}
+
+/**
+ * AI 经常不填 strategyIndex（实测 5 条任务只填了 1 条），导致策略与执行脱节。
+ * 兜底：没标下标的任务按关键词重合度自动挂到最匹配的子策略，其次挂主题；
+ * 完全无关（如成本测算这类独立事项）保持不挂。
+ */
+function autoLinkTasksToStrategies(items: ActionItem[], themes: StrategyTheme[]): ActionItem[] {
+  if (!themes.length) return items;
+  return items.map((it) => {
+    if (typeof it.strategyIndex === "number") return it;
+    // 用容器装候选，避开 TS 对闭包内 let 的控制流收窄
+    const box: { v: { ti: number; si: number | null; score: number } | null } = { v: null };
+    themes.forEach((th, ti) => {
+      const ts = overlapScore(it.text, th.title);
+      if (ts > 0 && (!box.v || ts > box.v.score)) box.v = { ti, si: null, score: ts };
+      th.subStrategies.forEach((sub, si) => {
+        const ss = overlapScore(it.text, sub.title);
+        if (ss > 0 && (!box.v || ss > box.v.score)) box.v = { ti, si, score: ss };
+      });
+    });
+    const best = box.v;
+    if (!best) return it;
+    return {
+      ...it,
+      strategyIndex: best.ti,
+      strategySubIndex: best.si === null ? undefined : best.si,
+    };
+  });
 }
 
 // 代码片段识别：命中足够多代码特征则判定为代码片段
@@ -443,28 +499,6 @@ export function isNoiseAction(text: string): boolean {
   return false;
 }
 
-/** 启发式提取策略：命中"决议/方向/策略/主攻"等词的行收敛为策略标题 */
-function heuristicStrategies(content: string): OrganizedNote["strategies"] {
-  const lines = content
-    .split(/\n|。|；/)
-    .map((l) => l.trim())
-    .filter((l) => l && l.length <= 80);
-  const markers = ["决议", "决定", "方向", "策略", "主打", "主攻", "重点推进", "目标", "未来半年", "下季度", "本季度", "市场"];
-  const out: OrganizedNote["strategies"] = [];
-  for (const line of lines) {
-    if (!markers.some((m) => line.includes(m))) continue;
-    let title = line
-      .replace(/^(会议)?(决议|决定|方向|策略)[:：\s]*(一致同意|通过)?[:：\s]*/, "")
-      .replace(/[。；]/g, "")
-      .trim();
-    if (!title) title = line.slice(0, 24);
-    if (!title) continue;
-    out.push({ title: title.slice(0, 30), description: line.slice(0, 120) });
-    if (out.length >= 5) break;
-  }
-  return out;
-}
-
 /** 启发式提取会议决议：命中"决议/决定/拍板/定于/取消"等词的行 */
 function heuristicDecisions(content: string): string[] {
   const lines = content
@@ -678,6 +712,10 @@ function parseOrganized(raw: string): Partial<OrganizedNote> {
                 typeof o.strategyIndex === "number" && o.strategyIndex >= 0
                   ? o.strategyIndex
                   : undefined,
+              strategySubIndex:
+                typeof o.strategySubIndex === "number" && o.strategySubIndex >= 0
+                  ? o.strategySubIndex
+                  : undefined,
             };
           })
           .filter((it) => it.text && !isNoiseAction(it.text))
@@ -727,13 +765,26 @@ function parseOrganized(raw: string): Partial<OrganizedNote> {
       ? obj.strategies
           .map((s: unknown) => {
             const o = (s ?? {}) as Record<string, unknown>;
+            const subs = Array.isArray(o.subStrategies) ? o.subStrategies : [];
             return {
-              title: String(o.title ?? "").trim().slice(0, 30),
-              description: String(o.description ?? "").trim().slice(0, 200),
+              title: String(o.title ?? "").trim().slice(0, 40),
+              goal: String(o.goal ?? "").trim().slice(0, 120),
+              rationale: String(o.rationale ?? "").trim().slice(0, 200),
+              subStrategies: subs
+                .map((x: unknown) => {
+                  const so = (x ?? {}) as Record<string, unknown>;
+                  return {
+                    title: String(so.title ?? "").trim().slice(0, 40),
+                    description: String(so.description ?? "").trim().slice(0, 200),
+                  };
+                })
+                .filter((x) => x.title)
+                .slice(0, 6),
             };
           })
           .filter((s) => s.title)
-          .slice(0, 5)
+          // 硬上限：一篇笔记最多 2 条策略主题
+          .slice(0, 2)
       : [];
     const decisions: string[] = cleanStringList(obj.decisions);
     const isSnippet: boolean = obj.isSnippet === true;
@@ -793,6 +844,20 @@ async function callQwen(
   type: NoteType,
 ): Promise<Partial<OrganizedNote>> {
   const baseUrl = (process.env.LLM_MODEL_BASE_URL || "").replace(/\/+$/, "");
+  /**
+   * 策略输出契约（主题 → 子策略两层）。之所以把门槛与禁区写得这么重：
+   * 早期版本只说"提炼长期策略/方向"，结果任何文本都能凑出策略——
+   * 一篇《易经》读后感的「阴阳平衡」「见微知著」也被当成策略；
+   * 同一主题的三个推进方向被平铺成三条并列策略，失去主题锚点。
+   */
+  const STRATEGY_SHAPE =
+    "每条是一个策略主题 {title: 主题名≤30字, goal: 要达成的目标状态≤60字（写结果，不是动作）, rationale: 为什么选这个方向、放弃了什么≤80字, subStrategies: 子策略数组 2–5 条，每项 {title: ≤24字, description: ≤80字}，是该主题下的并列推进方向或先后步骤}；" +
+    "**最多 2 条**：常规笔记（含会议纪要）通常 1 条，只有内容确实包含两个互不相关的战略方向时才允许 2 条；" +
+    "**默认输出空数组 []**：只有在规划「一个要推进的方向 + 分几步达成」时才生成。" +
+    "**会议/项目类输入通常要生成 1 条**：把通过或待决策的方向性议题提炼成主题（如「拼团二期提转化并控住成本」「首页改版用灰度+AB 平稳上线」），goal 写要达成的结果、rationale 写为什么这么选（可从「选了 A 没选 B」「因为 X 所以优先 Y」「避免重蹈上次事故」推导），推进路径拆成 subStrategies；" +
+    "**读书笔记、读后感、知识整理、概念讲解、随笔感悟一律输出 []**，哪怕内容成体系、有「方法」有「步骤」，那也是知识点不是策略（如《易经》读后感的「阴阳平衡」「见微知著」、工具教程的「建立知识关联」「结构化沉淀」都不是策略）；" +
+    "一次性动作 → 归入 actionItems，不要包装成策略；同一件事的并列做法或操作步骤 → 作为某主题下的 subStrategies，不要各自独立成主题；" +
+    "宁缺毋滥，但会议/项目类输入若确有方向性决策，不要因为拿不准就留空";
   /** 统一字段声明：所有类型共用同一套 OrganizedNote 键，按类型填充相关字段、其余留空 */
   const COMMON_FIELDS =
     "title（简洁标题，≤30 字）、category（分类，从「工作 / 阅读 / 学习 / 技术 / 设计 / 生活 / 灵感 / 随手记 / 文档 / 待办」中选一个）、" +
@@ -802,8 +867,10 @@ async function callQwen(
     "metrics（数组：抽取原文全部关键量化指标，每项 {label: 指标名≤12字, value: 数值含单位}；无数字则空数组 []）、" +
     "problemDomains（数组：把内容按主题归类，每项 {domain: 问题域名称≤10字, status: 现状/痛点一句话, conclusion: 结论或待决策一句话}；无法归类则空数组 []）、" +
     "openQuestions（数组：原文抛出的待澄清/待决策问题；无则空数组 []）、" +
-    "actionItems（数组，提取原文中明确要求去做的任务，每项含 text 任务内容≤40字、owner 负责人称呼(无则空字符串)、dueDate 截止日期(仅当原文给了明确绝对日期如 '2026-08-28' 或 '8月28日' 才填 ISO 格式 YYYY-MM-DD；原文是相对时间如'周二前'/'本周内'/'下周三' 一律填 null，并把相对时间原样保留在 text 里)、priority 'high'/'medium'/'low'、strategyIndex 该任务关联到的 strategies 数组下标，无关联则为 null；原文若无明确任务则输出空数组 []）、" +
-    "strategies（数组，从原文提炼的长期策略/方向，每项含 title≤30字、description≤80字；原文若非策略性质则空数组 []）、" +
+    "actionItems（数组，只提取原文**明确要求去做**的任务；原文没有明确待办就输出空数组 []，不要为了填满而编造。每项含 text 任务内容≤40字、owner 负责人称呼(无则空字符串)、dueDate 截止日期(仅当原文给了明确绝对日期如 '2026-08-28' 或 '8月28日' 才填 ISO 格式 YYYY-MM-DD；原文是相对时间如'周二前'/'本周内'/'下周三' 一律填 null，并把相对时间原样保留在 text 里)、priority 'high'/'medium'/'low'、strategyIndex 该任务服务的 strategies 主题下标(0/1，无关联则 null)、strategySubIndex 该主题下的 subStrategies 下标(只属于主题整体则 null)；**这两个下标要尽量填**：只要任务明显服务于某条主题/子策略就填对应数字，确实无关才填 null）、" +
+    "strategies（数组，" +
+    STRATEGY_SHAPE +
+    "）、" +
     "strategy（数组：基于全局主动推导的「策略规划建议」，每项 {angle: 角度名如'效率侧'/'风险侧'/'长期建设', logic: 该角度核心策略逻辑≤120字}；无则空数组 []）、" +
     "decisions（字符串数组，明确做出的决议结论；若无则为空数组 []）、" +
     "isSnippet（布尔，原文是否为代码片段；含代码块/函数定义/import 等视为 true，否则 false）、" +
@@ -826,10 +893,12 @@ async function callQwen(
           "metrics（数组：从原文抽取全部关键量化指标，每项 {label: 指标名≤12字, value: 数值含单位如 'ROI 1:1.2'/'小红书曝光 +30%'/'市场预算 -15%'/'GMV 目标 +20%'/'尾货 3000件'/'退货率 35%'/'客单价 ¥345'/'整体转化率 2.1%'/'访客 -8%'/'企微 2万·活跃<10%'}；无数字则空数组 []）、" +
           "problemDomains（数组：把内容按「问题域」归类，每项 {domain: 问题域名称≤10字, status: 现状/痛点一句话, conclusion: 初步结论或待决策一句话}；典型域：渠道投放/市场预算/设计产能/夏季尾货/私域运营/新品跟进/双11规划/达人直播/首页改版/会员体系）、" +
           "openQuestions（数组：原文抛出的待决策/待澄清问题，如「双11报不报？备货多少？」「学生证折扣可行吗？」；无则空数组 []）、" +
-          "strategies（数组，拆解出会议决定的长期策略/方向，每项含 title≤30字如『Q3主攻东南亚市场』、description≤80字说明为什么与怎么做）、" +
+          "strategies（数组，拆解会议决定的长期战略主题如『Q3 主攻东南亚市场』，" +
+          STRATEGY_SHAPE +
+          "）、" +
           "strategy（数组：基于全局主动推导的「策略规划建议」，按角度拆分，每项 {angle: 角度名如 「渠道侧」/「货品侧」/「组织侧」/「风险侧」/「长期建设」, logic: 该角度核心策略逻辑≤120字}；这是对原文未明说部分的主动推导，应给出可执行的策略方向）、" +
           "decisions（数组，会议明确通过的决议/结论，一句一条；若原文无显式决议则为空数组 []）、" +
-          "actionItems（数组，会上明确的待办，每项含 text≤40字、owner 负责人姓名(从 attendees 中取，无则为空字符串)、dueDate(仅当原文给了明确绝对日期如 '2026-08-28'/'8月28日' 才填 ISO YYYY-MM-DD；相对时间如'下周三前'/'本周内' 一律填 null 并把相对时间原样保留在 text 里，由系统按今天自动换算)、priority 'high'/'medium'/'low'、strategyIndex 该任务服务于哪个 strategies 下标，无则 null）、" +
+          "actionItems（数组，只提取会上**明确指派**的待办；会上没说要做的不要编造，无则空数组 []。每项含 text≤40字、owner 负责人姓名(从 attendees 中取，无则为空字符串)、dueDate(仅当原文给了明确绝对日期如 '2026-08-28'/'8月28日' 才填 ISO YYYY-MM-DD；相对时间如'下周三前'/'本周内' 一律填 null 并把相对时间原样保留在 text 里，由系统按今天自动换算)、priority 'high'/'medium'/'low'、strategyIndex 该任务服务的 strategies 主题下标(0/1，无则 null)、strategySubIndex 该主题下的 subStrategies 下标(只属于主题整体则 null)；**这两个下标要尽量填**：只要任务明显服务于某条主题/子策略就填对应数字，确实无关才填 null）、" +
           "isSnippet（false）、language（''）、codeContent（''）、source（''）、keyPoints（[]）、insights（[]）、" +
           "rewritten（字符串，把原始手记重写成专业会议纪要 Markdown，结构：\n## 会议名称 / 日期 / 参会人 / 核心议题\n## 一、关键问题与决策摘要（表格 | 问题域 | 现状/痛点 | 初步结论/待决策 |）\n## 二、下阶段行动计划（表格 | 事项 | 负责人 | 时间节点 |）\n## 三、遗留问题与风险\n## 四、下次会议安排\n## 五、策略规划建议（按 渠道侧/货品侧/组织侧/风险侧/长期建设 分点）\n保留全部关键事实、数据、人名、决策；去除口语冗余与重复；若原文已是规范纪要则留空字符串）。" +
           tail
@@ -939,7 +1008,8 @@ export async function organizeNote(
     related: [],
     relatedReason: "",
     actionItems: heuristicActionItems(content),
-    strategies: isMeeting ? heuristicStrategies(content) : [],
+    // 策略只由 AI 产出：启发式靠关键词命中行，会把观点/步骤误判成策略（历史教训），故兜底恒为空
+    strategies: [],
     decisions: isMeeting ? heuristicDecisions(content) : [],
     attendees: isMeeting ? heuristicAttendees(content) : [],
     metrics: heuristicMetrics(content),
@@ -998,7 +1068,10 @@ export async function organizeNote(
         aiUsed: true,
       };
       // 行动项日期统一规范化：相对时间按今天换算，错年份/过去过久的清空
-      merged.actionItems = normalizeActionDates(merged.actionItems);
+      merged.actionItems = autoLinkTasksToStrategies(
+        normalizeActionDates(merged.actionItems),
+        merged.strategies,
+      );
       if (merged.decisions.length && merged.summary) {
         merged.summary = merged.summary.replace(/\n+$/, "");
       }

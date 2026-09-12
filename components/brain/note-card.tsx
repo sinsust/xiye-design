@@ -88,6 +88,12 @@ export function NoteCard({
   onSelectChange?: (id: string, checked: boolean) => void;
 }) {
   const openCount = tasks.filter((t) => t.status !== "done").length;
+  // 策略按「主题 → 子策略」两层：卡片上只统计并展示主题，子策略缩进挂在主题下
+  const themeStrategies = strategies
+    .filter((s) => s.kind === "theme")
+    .sort((a, b) => a.createdAt - b.createdAt);
+  const subsOfTheme = (themeId: string) =>
+    strategies.filter((s) => s.parentId === themeId).sort((a, b) => a.sortOrder - b.sortOrder);
   // 删除采用真正的二次确认弹窗（此前是“再点一次”的内联两段式，不像确认）
   const [confirmOpen, setConfirmOpen] = useState(false);
   // 本地版本切换：点圆点查看历史/其它版本内容；null 表示看最新（链首）
@@ -148,12 +154,12 @@ export function NoteCard({
             {openCount > 0 ? (<><ClipboardList className="size-3" />{openCount}/{tasks.length}</>) : (<><Check className="size-3" />完成</>)}
           </span>
         )}
-        {strategies.length > 0 && (
+        {themeStrategies.length > 0 && (
           <span
             className="inline-flex items-center gap-1 rounded-[var(--radius)] bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary"
-            title={`关联 ${strategies.length} 个策略`}
+            title={`关联 ${themeStrategies.length} 个策略主题`}
           >
-            <Target className="size-3" />{strategies.length}
+            <Target className="size-3" />{themeStrategies.length}
           </span>
         )}
         {/* 版本标识：已归档 / 版本号 */}
@@ -392,18 +398,34 @@ export function NoteCard({
           </button>
           {showRelated && (
             <div className="space-y-3 px-4 pb-3">
-              {strategies.length > 0 && (
-                <div className="space-y-1">
-                  {strategies.map((s) => (
-                    <div key={s.id} className="flex items-center gap-2 text-xs">
-                      <span
-                        className="inline-block size-1.5 shrink-0 rounded-full"
-                        style={{ background: STRATEGY_COLOR[s.status] }}
-                      />
-                      <span className="min-w-0 flex-1 truncate text-foreground">{s.title}</span>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">{STRATEGY_LABEL[s.status]}</span>
-                    </div>
-                  ))}
+              {themeStrategies.length > 0 && (
+                <div className="space-y-1.5">
+                  {themeStrategies.map((s) => {
+                    const subs = subsOfTheme(s.id);
+                    return (
+                      <div key={s.id} className="space-y-0.5">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span
+                            className="inline-block size-1.5 shrink-0 rounded-full"
+                            style={{ background: STRATEGY_COLOR[s.status] }}
+                          />
+                          <span className="min-w-0 flex-1 truncate text-foreground">{s.title}</span>
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {STRATEGY_LABEL[s.status]}
+                          </span>
+                        </div>
+                        {subs.length > 0 && (
+                          <div className="ml-3.5 space-y-0.5 border-l border-border pl-2">
+                            {subs.map((sub) => (
+                              <div key={sub.id} className="truncate text-[11px] text-muted-foreground">
+                                {sub.title}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               {tasks.length > 0 && (
