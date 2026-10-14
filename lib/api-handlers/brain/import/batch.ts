@@ -9,6 +9,8 @@ import {
   insertBrainReview,
 } from "@/lib/brain-db";
 import { organizeNote } from "@/lib/brain-organizer";
+import { resolveLLM } from "@/lib/llm/resolve";
+import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 import { embed, buildListableText } from "@/lib/embedding";
 
 export const runtime = "nodejs";
@@ -41,6 +43,11 @@ export async function POST(req: NextRequest) {
     if (!items.length) return NextResponse.json({ error: "empty_items" }, { status: 400 });
 
     const existing = await listBrainNotes(user.sub);
+    // 统一 LLM 层解析整理用模型（一次解析，循环内复用）；未配置任何模型 → 明确报错
+    const model = await resolveLLM(user.sub, "brain-organize");
+    if (!model) {
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, { status: 412 });
+    }
     const results: {
       title: string;
       ok: boolean;
@@ -50,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     for (const it of items) {
       try {
-        const organized = await organizeNote(it.content, existing);
+        const organized = await organizeNote(it.content, existing, model);
         const noteContent = organized.rewritten || it.content;
 
         const vec = await embed(

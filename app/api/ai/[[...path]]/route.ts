@@ -13,8 +13,15 @@ import * as m7 from "@/lib/api-handlers/ai/panel";
 import * as m8 from "@/lib/api-handlers/ai/screen-map";
 import * as m9 from "@/lib/api-handlers/ai/screen-spec";
 import * as m10 from "@/lib/api-handlers/ai/prototype";
+// 手工登记：AI 模型管理（内置默认 + 多模型接入 + 功能级分配）
+import * as m11 from "@/lib/api-handlers/ai/models";
+import * as m12 from "@/lib/api-handlers/ai/models/settings";
+import * as m13 from "@/lib/api-handlers/ai/models/[id]";
+// 手工登记：AI 调用用量汇总（只读统计，无配额/拦截 —— BYOK 费用归用户自己）
+import * as m14 from "@/lib/api-handlers/ai/usage";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
 export const dynamic = "force-dynamic";
 
 type HandlerFn = (req: NextRequest, ctx?: unknown) => Promise<Response> | Response;
@@ -36,6 +43,10 @@ const ROUTES: RouteDef[] = [
   { key: "screen-map", methods: { GET: m8.GET as HandlerFn, POST: m8.POST as HandlerFn, PUT: m8.PUT as HandlerFn } },
   { key: "screen-spec", methods: { GET: m9.GET as HandlerFn, POST: m9.POST as HandlerFn, PUT: m9.PUT as HandlerFn } },
   { key: "prototype", methods: { GET: m10.GET as HandlerFn, POST: m10.POST as HandlerFn, PUT: m10.PUT as HandlerFn } },
+  { key: "models", methods: { GET: m11.GET as HandlerFn, POST: m11.POST as HandlerFn } },
+  { key: "models/settings", methods: { GET: m12.GET as HandlerFn, PUT: m12.PUT as HandlerFn } },
+  { key: "models/[id]", methods: { PATCH: m13.PATCH as HandlerFn, DELETE: m13.DELETE as HandlerFn } },
+  { key: "usage", methods: { GET: m14.GET as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

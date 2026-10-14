@@ -9,6 +9,7 @@ import * as m3 from "@/lib/api-handlers/projects/[id]/checkpoints/[cid]";
 import * as m4 from "@/lib/api-handlers/projects/[id]/decisions";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
 export const dynamic = "force-dynamic";
 
 type HandlerFn = (req: NextRequest, ctx?: unknown) => Promise<Response> | Response;

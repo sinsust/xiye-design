@@ -164,6 +164,49 @@ export const userFeishuConfig = pgTable("user_feishu_config", {
   updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 });
 
+// AI 模型接入配置（pg 镜像，按 userId 隔离，api_key 加密存储）。
+export const aiModelConfigs = pgTable("ai_model_configs", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  provider: text("provider").notNull(),
+  baseUrl: text("base_url").notNull(),
+  model: text("model").notNull(),
+  apiKeyEnc: text("api_key_enc"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+});
+
+// AI 模型生效策略（pg 镜像，按 userId 隔离，每档案一行）。
+export const aiModelSettings = pgTable("ai_model_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  activeModelId: text("active_model_id"),
+  featureMap: text("feature_map").notNull().default("{}"),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+});
+
+// AI 调用用量流水（pg 镜像，只读统计，不做配额/拦截）。
+export const aiUsage = pgTable("ai_usage", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  feature: text("feature").notNull().default("unknown"),
+  modelId: text("model_id"),
+  modelName: text("model_name"),
+  provider: text("provider"),
+  model: text("model"),
+  tokensIn: integer("tokens_in").notNull().default(0),
+  tokensOut: integer("tokens_out").notNull().default(0),
+  latencyMs: integer("latency_ms").notNull().default(0),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+
 // 第二大脑：用户私有的个人知识笔记（sqlite 镜像，userId 隔离）。
 export const brainNotes = pgTable(
   "brain_notes",

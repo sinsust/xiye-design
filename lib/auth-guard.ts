@@ -6,8 +6,12 @@ export function unauthorizedResponse(): NextResponse {
 }
 
 /**
- * 写/生成类 API 登录门禁：未登录返回 401，需登录的功能（保存项目、AI 生成/改写等）统一用它。
- * 用法：const { res } = await requireUser(); if (res) return res;
+ * 写/生成类 API 门禁。
+ *
+ * 形态 C（桌面应用）下不再有登录体系，本地档案恒存在：
+ * 本函数恒返回 { user, res: null }，所有调用方（保存项目、AI 生成/改写等）
+ * 的既有分支逻辑（if (res) return res）自动退化为永不触发，
+ * 业务代码零改动。
  */
 export async function requireUser(): Promise<
   { user: SessionUser; res: null } | { user: null; res: NextResponse }

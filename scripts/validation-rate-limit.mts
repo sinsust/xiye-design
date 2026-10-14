@@ -1,12 +1,8 @@
 /**
- * 限流持久化验证（批次2 P1 #3 跨实例）：
- * 直连真实 Supabase 调 rateLimit()，断言：
+ * 限流验证（单机内存实现）：
  *   T1 窗口内超 limit 被拦截（limit=3 → 前3次放行、第4次拦截）
- *   T2 短窗口过期后放行（limit=1/window=2000ms → 立即二次拦截、等 2300ms 后放行；
- *      窗口需远大于远端 RPC 网络延迟才能稳定复现"窗口内"）
+ *   T2 短窗口过期后放行（limit=1/window=2000ms → 立即二次拦截、等 2300ms 后放行）
  *
- * 依赖真实 Supabase（RPC check_rate_limit + rate_limits 表）。
- * 无 env 时 SKIP（exit 0），CI 未配 Secrets 时不误红。
  * 运行：npm run validate:rate-limit
  */
 
@@ -46,15 +42,7 @@ function check(name: string, cond: boolean, detail = ""): void {
 }
 
 async function main(): Promise<void> {
-  // 无 Supabase env → 诚实跳过（不视为失败）
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.log("=== 限流持久化验证（跨实例 RPC）===");
-    console.log("⚠️  SKIP: 未配置 NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY，");
-    console.log("    CI 未注入凭据时跳过（不视为失败）；配置后会在真实 Supabase 上验证。");
-    process.exit(0);
-  }
-
-  console.log("=== 限流持久化验证（跨实例 RPC）===\n");
+  console.log("=== 限流验证（单机内存）===\n");
 
   // T1：limit=3 / 60s，前3次放行、第4次拦截
   const k1 = `validate-ratelimit:${randomUUID()}`;

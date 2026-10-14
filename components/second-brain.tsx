@@ -34,6 +34,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SkeletonRows } from "@/components/ui/skeleton";
 import { TableAnalysisPage } from "@/components/table/TableAnalysisPage";
 import { ImaImportModal } from "@/components/ImaImportModal";
+import { hasLocalMachine } from "@/lib/deploy-mode";
 import BatchImportModal from "@/components/BatchImportModal";
 import { MarkdownView } from "@/components/MarkdownView";
 import { ReminderCenter } from "@/components/reminders/ReminderCenter";
@@ -1983,7 +1984,7 @@ export function SecondBrain({
         </div>
       )}
       <div className="mx-auto xiye-container px-4 py-8">
-        {imaOpen && (
+        {hasLocalMachine() && imaOpen && (
           <ImaImportModal
             onClose={() => setImaOpen(false)}
             onImported={(n) => {
@@ -2122,13 +2123,15 @@ export function SecondBrain({
               </div>
             )}
           </div>
-          <button
-            onClick={() => setImaOpen(true)}
-            className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
-          >
-            <Cloud className="size-4" />
-            <span className="hidden sm:inline">从 ima 导入</span>
-          </button>
+          {hasLocalMachine() && (
+            <button
+              onClick={() => setImaOpen(true)}
+              className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+            >
+              <Cloud className="size-4" />
+              <span className="hidden sm:inline">从 ima 导入</span>
+            </button>
+          )}
           <div className="ml-auto flex items-center gap-2">
             <div ref={searchWrapRef} className="relative">
               <button
@@ -2227,7 +2230,8 @@ export function SecondBrain({
               )}
             </div>
 
-            {/* ============ Obsidian 双向同步设置 ============ */}
+            {/* ============ Obsidian 双向同步设置（public 部署模式隐藏：无本地 vault 可同步） ============ */}
+            {hasLocalMachine() && (
             <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <button
                 type="button"
@@ -2433,6 +2437,7 @@ export function SecondBrain({
                 </div>
               )}
             </div>
+            )}
           </div>
         ) : workTab === "projects" ? (
           <div key="view-projects" className="animate-in fade-in duration-200 ease-out">
@@ -2739,7 +2744,9 @@ export function SecondBrain({
                         }}
                         onEdit={() => startEdit(n)}
                         onDeletePress={() => doDelete(n.id)}
-                        onWriteIma={imaBound ? writeNoteToIma : undefined}
+                        onWriteIma={
+                          hasLocalMachine() && imaBound ? writeNoteToIma : undefined
+                        }
                         imaWriting={imaWritingId === n.id}
                         obsidianHref={obsidianOpenHref(n)}
                         onToggleTask={(id, done) => toggleTaskDone(id, done)}
@@ -2803,7 +2810,7 @@ export function SecondBrain({
                 ) : (
                   <span
                     className="rounded-[var(--radius)] bg-warning/10 px-2 py-0.5 text-[11px] font-normal text-warning"
-                    title="未配置 LLM_MODEL_*（API Key / Base URL / Model ID 三者齐备才走 AI），已用本地启发式整理，效果弱于 AI"
+                    title="尚未在「设置 → AI 模型」中添加并设为生效，已用本地启发式整理，效果弱于 AI"
                   >
                     本地启发式整理
                   </span>

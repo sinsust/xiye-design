@@ -1,21 +1,19 @@
 // 多 Agent 会诊后端（Phase 2）：给定产品 brief，4 个专家角色各自独立调用大模型，
 // 并行产出结构化状态（status / progress / summary），前端据此更新专家卡。
 //
-// 复用 ai-discover-server 的 DeepSeek 封装（extractJson + DEEPSEEK 常量 + 重试/降级模式），
-// 但每个角色使用独立 system prompt，上下文为「已生长的产品 brief 文本」。
+// 复用 ai-discover-server 的 JSON 提取（extractJson）与重试/降级模式，
+// 模型由调用方经统一 LLM 层解析后传入（ResolvedModel）；每个角色使用独立 system prompt，上下文为「已生长的产品 brief 文本」。
 
 import { type ProductBrief, synthesizeBriefToText } from "@/lib/ai-discover";
-import {
-  extractJson,
-  DEEPSEEK_BASE_URL,
-  DEEPSEEK_MODEL,
-} from "@/lib/ai-discover-server";
+import { extractJson } from "@/lib/ai-discover-server";
 import {
   buildGuardNormDetails,
   guardSummary,
 } from "@/lib/guard-norms";
 import { getStyle, type AgentStyleId } from "@/lib/agent-styles";
 import { fenceUserInput } from "@/lib/prompt-sanitize";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 export type PanelAgentId = "moderator" | "pm" | "architect" | "designer" | "guard";
 export type PanelStatus = "done" | "thinking" | "producing";
@@ -194,9 +192,10 @@ function heuristicPanel(id: PanelAgentId, completeness: number): PanelAgentResul
 async function callPanelAgent(
   system: string,
   context: string,
-  apiKey: string,
+  model: ResolvedModel,
 ): Promise<RawPanel> {
-  const url = `${DEEPSEEK_BASE_URL}/chat/completions`;
+  const url = `${model.baseUrl}/chat/completions`;
+  const startedAt = Date.now();
   const baseMessages = [
     { role: "system", content: system },
     // context 内含用户产品描述等自由文本：隔离后作为「被分析的数据」传入
@@ -214,7 +213,7 @@ async function callPanelAgent(
       : baseMessages;
 
     const body = JSON.stringify({
-      model: DEEPSEEK_MODEL,
+      model: model.model,
       temperature: 0.6,
       max_tokens: 2000,
       ...(useJson ? { response_format: { type: "json_object" } } : {}),
@@ -227,7 +226,7 @@ async function callPanelAgent(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
         },
         body,
         signal: AbortSignal.timeout(40000),
@@ -245,6 +244,7 @@ async function callPanelAgent(
 
     try {
       const data = await res.json();
+      recordUsageFromModel(model, data, startedAt, "flow-panel");
       const content: string = data?.choices?.[0]?.message?.content ?? "";
       if (!content.trim()) {
         lastEmpty = true;
@@ -273,7 +273,7 @@ function guardPanelResult(completeness: number): PanelAgentResult {
 
 export async function consultAgents(
   brief: ProductBrief | null,
-  apiKey: string | undefined,
+  model: ResolvedModel,
   messages?: { role: string; content: string }[],
   persona?: { role: string; name: string }[],
   styleId?: string | null,
@@ -315,9 +315,8 @@ export async function consultAgents(
           // 尚无产品定义时仍给完整规范集，只是不额外强调与项目的贴合度
         };
       }
-      if (!apiKey) return heuristicPanel(id, completeness);
       try {
-        const raw = await callPanelAgent(systemPrompt(id), fullContext, apiKey);
+        const raw = await callPanelAgent(systemPrompt(id), fullContext, model);
         return normalize(id, raw, completeness);
       } catch (err) {
         console.error(`[ai-panel] ${id} failed:`, err instanceof Error ? err.message : err);

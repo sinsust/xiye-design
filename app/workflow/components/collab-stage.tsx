@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowRight,
@@ -575,7 +574,6 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
   const conceptBrief = useFlowStore((s) => s.conceptBrief);
   const setConceptBrief = useFlowStore((s) => s.setConceptBrief);
   const savedProjectId = useFlowStore((s) => s.savedProjectId);
-  const router = useRouter();
   const [savingDraft, setSavingDraft] = useState(false);
   const [saveDraftError, setSaveDraftError] = useState<string | null>(null);
   // P1-①：本地草稿（未保存项目）时，给收敛链一个显式解锁入口，替代静默锁死
@@ -593,10 +591,6 @@ export function CollabStage({ onAdvance }: CollabStageProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, data: snap }),
       });
-      if (res.status === 401) {
-        router.push("/login?redirect=/workflow");
-        return;
-      }
       if (!res.ok) {
         setSaveDraftError("保存失败，请稍后重试");
         return;

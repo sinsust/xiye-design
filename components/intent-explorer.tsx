@@ -69,6 +69,8 @@ export function IntentExplorer({
   const [showBrief, setShowBrief] = useState(true);
   const [error, setError] = useState<{ message: string; kind?: string } | null>(null);
   const [quickMode, setQuickMode] = useState(false);
+  // B1 · 本次参考的历史偏好提示（可解释：来源 + 可覆盖）
+  const [prefsHint, setPrefsHint] = useState<{ count: number; summary: string } | null>(null);
   const startedRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -206,6 +208,7 @@ export function IntentExplorer({
         brief?: ProductBrief;
         done?: boolean;
         error?: string;
+        prefsUsed?: { count: number; summary: string } | null;
       };
       const assistant: DiscoverMessage = {
         role: "assistant",
@@ -215,6 +218,7 @@ export function IntentExplorer({
       setMessages([...next, assistant]);
       setBrief(data.brief ?? currentBrief);
       setDone(Boolean(data.done));
+      if (data.prefsUsed) setPrefsHint(data.prefsUsed);
     } catch {
       setError({ message: "AI 调用失败，请重试或用文字继续补充。", kind: "client" });
     } finally {
@@ -267,6 +271,7 @@ export function IntentExplorer({
     setBrief(null);
     setDone(false);
     setError(null);
+    setPrefsHint(null);
     startedRef.current = false;
     // 「重新设计」= 整体清空历史项目（会话/PRD/类型/视觉/蓝图等），开全新工程
     useFlowStore.getState().resetAll(1);
@@ -363,6 +368,17 @@ export function IntentExplorer({
         </div>
 
         <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+          {/* B1 · 历史偏好参考提示（可解释 + 可覆盖） */}
+          {prefsHint && (
+            <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+              <Sparkles className="mt-0.5 size-3.5 shrink-0 text-primary" />
+              <span>
+                已参考你最近 <b className="font-semibold text-foreground">{prefsHint.count}</b>{" "}
+                个项目的偏好（{prefsHint.summary}）作为推荐底座，可在后续流程中随时覆盖。
+              </span>
+            </div>
+          )}
+
           {messages.map((m, i) => (
             <div
               key={i}

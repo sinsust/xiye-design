@@ -320,7 +320,7 @@ export function OverviewPanel(props: OverviewPanelProps) {
               {report?.aiUsed === false && (
                 <span
                   className="rounded-[var(--radius)] bg-warning/10 px-1.5 py-0.5 text-[10px] font-normal text-warning"
-                  title="未配置 LLM_MODEL_*（API Key / Base URL / Model ID 三者齐备才走 AI），已用本地启发式聚合，效果弱于 AI"
+                  title="尚未在「设置 → AI 模型」中添加并设为生效，已用本地启发式聚合，效果弱于 AI"
                 >
                   未启用 AI 摘要
                 </span>

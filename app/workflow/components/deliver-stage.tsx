@@ -24,7 +24,6 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LocalDraftHint } from "@/components/workflow/local-draft-hint";
 import { useFlowStore, type FlowState } from "@/lib/store/flow-store";
@@ -122,7 +121,6 @@ function safeName(name: string): string {
 }
 
 export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: () => void }) {
-  const router = useRouter();
   const productBrief = useFlowStore((s) => s.productBrief);
   const techStackId = useFlowStore((s) => s.techStack);
   const visualStyleId = useFlowStore((s) => s.visualStyle);
@@ -293,10 +291,6 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, data: snap }),
         });
-      }
-      if (res.status === 401) {
-        router.push("/login");
-        return;
       }
       if (!res.ok) {
         const err = (await res.json().catch(() => null)) as

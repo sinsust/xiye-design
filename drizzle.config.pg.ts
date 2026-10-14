@@ -5,8 +5,9 @@ import { defineConfig } from "drizzle-kit";
 // 但 Postgres 路径不会自动建表，必须 drizzle-kit push 一次，否则线上库无表）。
 //
 // 用法（本地执行，需先 export 你的 Supabase 连接串）：
-//   export DATABASE_URL="postgresql://postgres:[密码]@db.xxx.supabase.co:5432/postgres"
+//   export DATABASE_URL="postgresql://postgres:[密码]@db.xxx.supabase.co:6543/postgres"
 //   npm run db:push:pg
+// 注意：用 6543 事务池端口；不要用 5432+pgbouncer=true（session 池易打满，审计 R-2）。
 export default defineConfig({
   schema: "./lib/db/schema.pg.ts",
   out: "./drizzle/pg",

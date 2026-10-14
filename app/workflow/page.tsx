@@ -137,7 +137,6 @@ export default function FlowV2Page() {
   const [saveFailed, setSaveFailed] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-  const authedRef = useRef<boolean | null>(null);
   const router = useRouter();
 
   // 是否存在有效流程草稿（决定是否需要守卫/能否保存）
@@ -266,9 +265,8 @@ export default function FlowV2Page() {
   const onPrev = useCallback(() => setActive((a) => Math.max(0, a - 1)), []);
   const onNext = useCallback(() => goTo(active + 1), [active, goTo]);
 
-  /** 保存当前流程快照到「我的项目」（未登录先引导登录） */
-  const saveProject = useCallback(async (): Promise<"ok" | "unauthed" | "fail"> => {
-    // 不做前端预检登录，交由保存接口 401 兜底，减少一次网络往返（鉴权是纯 JWT 校验）
+  /** 保存当前流程快照到「我的项目」 */
+  const saveProject = useCallback(async (): Promise<"ok" | "fail"> => {
     setSaving(true);
     try {
       const store = useFlowStore.getState();
@@ -300,7 +298,6 @@ export default function FlowV2Page() {
           body: JSON.stringify({ name, data: snap }),
         });
       }
-      if (res.status === 401) return "unauthed";
       if (!res.ok) return "fail";
       const j = await res.json();
       if (j.project?.id) store.setSavedProjectId(j.project.id);
@@ -325,20 +322,17 @@ export default function FlowV2Page() {
 
   const onTopbarSave = async () => {
     const res = await saveProject();
-    setSaveMsg(res === "ok" ? "已保存" : res === "unauthed" ? "请先登录" : "保存失败");
-    if (res === "unauthed") router.push("/login");
-    else if (res) setTimeout(() => setSaveMsg(null), 2000);
+    setSaveMsg(res === "ok" ? "已保存" : "保存失败");
+    setTimeout(() => setSaveMsg(null), 2000);
   };
 
-  // 自动保存：登录后，草稿内容有变化时防抖写回项目（不打扰未登录用户）
+  // 自动保存：草稿内容有变化时防抖写回项目
   useEffect(() => {
     if (!hasDraft) return;
-    if (authedRef.current === false) return;
     const t = setTimeout(() => {
       void (async () => {
         const res = await saveProject();
-        if (res === "unauthed") authedRef.current = false;
-        else if (res === "ok") setSaveMsg("已保存");
+        if (res === "ok") setSaveMsg("已保存");
         else setSaveMsg(null);
       })();
     }, 900);
@@ -351,9 +345,6 @@ export default function FlowV2Page() {
     if (res === "ok") {
       setLeaveTarget(null);
       router.push(t);
-    } else if (res === "unauthed") {
-      setLeaveTarget(null);
-      router.push("/login");
     } else {
       setSaveFailed(true);
     }

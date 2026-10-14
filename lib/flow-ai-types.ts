@@ -14,6 +14,7 @@ export type FlowOperationState =
 /** 统一错误码（REST/模型层分类，前端据 retryable 决定是否展示重试） */
 export type FlowErrorCode =
   | "unauthorized"
+  | "model_not_configured"
   | "timeout"
   | "provider_unavailable"
   | "invalid_response"
@@ -97,6 +98,7 @@ export function newRequestId(prefix = "flow"): string {
 /** 错误码 → 安全用户文案 + 是否可重试。唯一权威映射点，各 API 不得各自造中文文案。 */
 const CODE_VIEW: Record<FlowErrorCode, { message: string; retryable: boolean }> = {
   unauthorized: { message: "登录状态已失效，请刷新后重试。", retryable: false },
+  model_not_configured: { message: "尚未配置 AI 模型，请到「设置 → AI 模型」添加并设为生效。", retryable: false },
   timeout: { message: "专家思考超时了，你的内容已安全保留，可以重试。", retryable: true },
   provider_unavailable: { message: "AI 服务暂时不可用，你的内容已安全保留，请稍后重试。", retryable: true },
   invalid_response: { message: "AI 返回的内容无法解析，请重试，或继续手动补充。", retryable: true },

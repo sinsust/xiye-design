@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth-guard";
 import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import { consultAgents } from "@/lib/ai-panel-server";
 import { type ProductBrief } from "@/lib/ai-discover";
+import { resolveLLM } from "@/lib/llm/resolve";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
 
 export const runtime = "nodejs";
@@ -47,16 +48,15 @@ export async function POST(req: NextRequest) {
       ? (body.messages as { role: string; content: string }[])
       : undefined;
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
     const agents = parseAgents(body?.agents);
-    if (!apiKey) {
-      // 无 key：启发式兜底
-      const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: true }));
-      const results = await consultAgents(brief, undefined, messages, agents, body?.styleId);
-      return NextResponse.json({ agents: results, flowMeta: meta });
+    const model = await resolveLLM(user.sub, "flow-panel");
+    if (!model) {
+      const errObj = flowError("model_not_configured", { operation: running.operation, phase: running.phase, requestId: running.requestId });
+      const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: errObj }));
+      return NextResponse.json({ agents: [], error: "model_not_configured", message: errObj.message, flowMeta: meta }, { status: 200 });
     }
     try {
-      const results = await consultAgents(brief, apiKey, messages, agents, body?.styleId);
+      const results = await consultAgents(brief, model, messages, agents, body?.styleId);
       const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
       return NextResponse.json({ agents: results, flowMeta: meta });
     } catch (err) {

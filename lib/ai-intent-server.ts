@@ -21,15 +21,12 @@ import {
 import { METHODOLOGY_INJECTION } from "@/lib/ai-methodology";
 import { fenceUserInput } from "@/lib/prompt-sanitize";
 import { SKILL_ASSEMBLY_INJECTION } from "@/lib/skill-assembly";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
-// AI 对话理解（意图解构）固定使用 DeepSeek。
-// LLM_MODEL_*（Qwen）预留给其它场景，稍后由调用方按需接入，不在此处抢优先级。
+// AI 对话理解（意图解构）：具体模型由调用方经统一 LLM 层解析后传入（ResolvedModel）。
 //
 // OpenAI 兼容：仅被 app/api/ai/intent 路由引用，绝不进入客户端 bundle。
-
-const DEEPSEEK_BASE_URL =
-  process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
-const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 
 // ───────────────────────── 目录（喂给 LLM 的真实可选项） ─────────────────────────
 
@@ -146,19 +143,20 @@ interface RawOutput {
   };
 }
 
-async function callDeepSeek(text: string, apiKey: string): Promise<RawOutput> {
+async function callDeepSeek(text: string, model: ResolvedModel): Promise<RawOutput> {
   let lastErr: unknown;
+  const startedAt = Date.now();
   // 单次 5xx/网络抖动重试一次；解析截断则降级为空对象（走启发式兜底，不抛 502）
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+      const res = await fetch(`${model.baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
         },
         body: JSON.stringify({
-          model: DEEPSEEK_MODEL,
+          model: model.model,
           temperature: 0.4,
           response_format: { type: "json_object" },
           messages: [
@@ -179,6 +177,7 @@ async function callDeepSeek(text: string, apiKey: string): Promise<RawOutput> {
         throw new Error("AI 服务暂不可用，请稍后重试");
       }
       const data = await res.json();
+      recordUsageFromModel(model, data, startedAt, "flow-intent");
       const content: string = data?.choices?.[0]?.message?.content ?? "";
       const cleaned = content
         .replace(/```json/gi, "")
@@ -336,8 +335,8 @@ function sanitize(raw: RawOutput, text: string): IntentRecommendation {
 
 export async function interpretIntentOnline(
   text: string,
-  apiKey: string,
+  model: ResolvedModel,
 ): Promise<IntentRecommendation> {
-  const raw = await callDeepSeek(text, apiKey);
+  const raw = await callDeepSeek(text, model);
   return sanitize(raw, text);
 }

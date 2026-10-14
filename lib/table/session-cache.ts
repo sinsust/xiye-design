@@ -1,17 +1,12 @@
 /**
- * 表格处理 —— 服务端会话缓存（L1 内存 + L2 Supabase 双层）
+ * 表格处理 —— 服务端会话缓存（进程内 Map）
  *
  * upload 时把解析/清洗/画像结果缓存，返回 tableId；analyze 只传 tableId，
  * 避免每次回传大体积 rows（Vercel 生产请求体 4.5MB 限制）。
  *
- * 原实现为进程内 Map，Serverless 冷启动/多实例下 upload 与 analyze 落到不同
- * 容器 → getTableCache 必返回 null → 410 table_expired。
- * 现改为双层：
- *  - L1：进程内 Map，同实例零延迟热缓存；
- *  - L2：Supabase brain_table_sessions 表（gzip+base64 整条 CacheEntry），
- *        跨实例/冷启动兜底。用 service_role 直写（绕过 RLS，不依赖 RLS 开关
- *        是否到位）；防串读由本模块每次读取都比对 userId 兜底，
- *        且 tableId 为随机不可枚举值。
+ * 单机形态（DB_MODE=sqlite + 桌面壳）下不存在多实例/冷启动，故只保留进程内缓存；
+ * 原先用于跨实例兜底的 Supabase L2 持久层已随 Supabase 配置一并移除。
+ * 防串读由本模块每次读取都比对 userId 兜底，且 tableId 为随机不可枚举值。
  * TTL 30 分钟（从 createdAt 计，不随访问续期），与旧行为一致。
  *
  * T1-D2 扩展：额外缓存 rawSheet（parser 原始 SheetInfo），供确认表头后服务端
@@ -20,12 +15,11 @@
  */
 
 import { randomUUID } from "crypto";
-import { saveRemote, loadRemote, deleteRemote } from "./session-persist";
 import type { SheetInfo, TableConfirmation } from "./types";
 import type { AnalysisPlan, PlanExecutionResult } from "./analysis-plan";
 import type { AnalysisNarrative } from "./narrative";
 
-/** 缓存条目（已加 id，便于 L2 主键与 upsert） */
+/** 缓存条目（已加 id，便于随机 tableId 与本模块内部索引） */
 export interface CacheEntry {
   /** 主键（与导出 tableId 一致） */
   id: string;
@@ -75,24 +69,17 @@ function isFresh(e: CacheEntry): boolean {
   return Date.now() - e.createdAt <= TTL_MS;
 }
 
-/** L1→L2 读取：命中内存直接返；未命中从 Supabase 拉取回填；过期/非本人/不存在 → null */
+/** 读取：命中内存且未过期、归属本人 → 返回；过期/非本人/不存在 → null */
 async function readEntry(id: string, userId: string): Promise<CacheEntry | null> {
   const local = store.get(id);
   if (local && local.userId === userId && isFresh(local)) return local;
   if (local && !isFresh(local)) store.delete(id);
-  const remote = await loadRemote(id, userId);
-  if (remote && isFresh(remote)) {
-    store.set(id, remote);
-    return remote;
-  }
-  if (remote) await deleteRemote(id); // 远端过期
   return null;
 }
 
-/** 写回 L1 内存 + L2 Supabase */
+/** 写回进程内缓存 */
 async function writeEntry(entry: CacheEntry): Promise<void> {
   store.set(entry.id, entry);
-  await saveRemote(entry);
 }
 
 /** 保存解析结果（绑定归属用户），返回 tableId */
@@ -160,10 +147,9 @@ export async function getTableConfirmation(id: string, userId: string): Promise<
   return entry?.confirmation ?? null;
 }
 
-/** 删除缓存（如用户主动放弃）；userId 提供时一并清理 L2 */
-export async function deleteTableCache(id: string, userId?: string): Promise<void> {
+/** 删除缓存（如用户主动放弃） */
+export async function deleteTableCache(id: string): Promise<void> {
   store.delete(id);
-  if (userId) await deleteRemote(id);
 }
 
 /* ─────────────── AnalysisPlan 存储（T2-A / T2-B 历史版本化） ─────────────── */

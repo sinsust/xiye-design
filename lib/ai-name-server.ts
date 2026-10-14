@@ -2,10 +2,8 @@
 // 只被 app/api/ai/name 路由引用，绝不进入客户端 bundle。
 
 import { fenceUserInput } from "@/lib/prompt-sanitize";
-
-const DEEPSEEK_BASE_URL =
-  process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
-const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 const SYSTEM_PROMPT = `你是品牌命名与定位专家。用户会给你一段已丰满的产品叙事（可能包含产品名、愿景、定位、目标用户、核心模块、分期等）。
 请你为它给出一个「项目名 + 一句对外描述」，要求：
@@ -30,20 +28,21 @@ export interface BrandNameSuggestion {
 
 export async function suggestBrandName(
   productText: string,
-  apiKey: string,
+  model: ResolvedModel,
 ): Promise<BrandNameSuggestion> {
   let lastErr: unknown;
+  const startedAt = Date.now();
   // 单次 5xx/网络抖动重试一次；解析截断则降级为空（前端回退本地默认名，不抛 502）
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+      const res = await fetch(`${model.baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
         },
         body: JSON.stringify({
-          model: DEEPSEEK_MODEL,
+          model: model.model,
           temperature: 0.7,
           response_format: { type: "json_object" },
           messages: [
@@ -63,6 +62,7 @@ export async function suggestBrandName(
         throw new Error("AI 服务暂不可用，请稍后重试");
       }
       const data = await res.json();
+      recordUsageFromModel(model, data, startedAt, "flow-name");
       const content: string = data?.choices?.[0]?.message?.content ?? "";
       const cleaned = content
         .replace(/```json/gi, "")

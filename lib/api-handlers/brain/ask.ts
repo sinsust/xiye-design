@@ -6,6 +6,9 @@ import { embeddingEnabled } from "@/lib/embedding";
 import { getImaConfig } from "@/lib/ima-config";
 import { listConnectors } from "@/lib/connectors/registry";
 import { logBrainNoteAccess } from "@/lib/brain-reminder";
+import { resolveLLM } from "@/lib/llm/resolve";
+import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 // 来源细分与标签下放到纯逻辑模块：前后端共用一份定义，且可脱离请求上下文验证
 import { localSourceOf, sourceMention, type AskSource } from "@/lib/brain-ask-source";
 
@@ -84,9 +87,10 @@ export async function POST(req: NextRequest) {
     });
     const sources: AskSource[] = [...localSources, ...connectorSources];
 
-    const apiKey = process.env.LLM_MODEL_API_KEY;
-    const baseUrl = process.env.LLM_MODEL_BASE_URL;
-    const model = process.env.LLM_MODEL_MODEL_ID;
+    const model = await resolveLLM(user.sub, "brain-ask");
+    if (!model) {
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, { status: 412 });
+    }
 
     if (!sources.length) {
       return NextResponse.json({
@@ -100,22 +104,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (!(apiKey && baseUrl && model)) {
-      return NextResponse.json({
-        answer: `找到了 ${sources.length} 条相关记录，但当前未配置 LLM 无法生成回答。相关片段如下：\n\n${sources
-          .map((s) => `• ${s.title}（${sourceMention(s)}）`)
-          .join("\n")}`,
-        sources,
-        semantic: semanticCapable,
-      });
-    }
-
     const localRagContext = buildBrainContext(localHits) + connectorContext;
-    const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+    const startedAt = Date.now();
+    const res = await fetch(`${model.baseUrl}/chat/completions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
+      },
       body: JSON.stringify({
-        model,
+        model: model.model,
         temperature: 0.4,
         messages: [
           {
@@ -130,6 +128,7 @@ export async function POST(req: NextRequest) {
     });
     if (!res.ok) throw new Error(`brain_ask_${res.status}`);
     const data = await res.json();
+    recordUsageFromModel(model, data, startedAt, "brain-ask");
     const answer: string = data?.choices?.[0]?.message?.content ?? "";
     if (!answer) throw new Error("brain_ask_empty");
     return NextResponse.json({ answer, sources, semantic: semanticCapable });

@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "next build --webpack && node -e \"require('fs').writeFileSync('.next/lock','')\"",
+  "buildCommand": "node scripts/build-sw.mjs && next build --webpack && node -e \"require('fs').writeFileSync('.next/lock','')\"",
   "installCommand": "npm ci"
 }

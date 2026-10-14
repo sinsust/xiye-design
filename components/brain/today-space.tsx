@@ -23,6 +23,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "@/components/ui/toast";
 import type { OrganizedNote } from "@/lib/brain-organizer";
 import { ASK_SOURCE_LABEL, type AskSourceItem } from "./types";
+import { displayTitle } from "./brain-utils";
 
 // —— 与 GET /api/brain/today 响应对齐的本地类型 ——
 interface TodayCard {
@@ -441,7 +442,7 @@ export function TodaySpace({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         {n.category && <span className="rounded-full bg-muted px-1.5 py-px text-[11px] text-muted-foreground">{n.category}</span>}
-                        <span className="truncate text-sm font-medium text-foreground">{n.title}</span>
+                        <span className="truncate text-sm font-medium text-foreground">{displayTitle(n)}</span>
                         {n.struct && (
                           <span title="已 AI 整理" className="shrink-0 text-primary/60">
                             <Sparkles className="size-3" />
@@ -677,7 +678,7 @@ export function TodaySpace({
             <div className="flex items-start justify-between gap-2 px-5 pt-5">
               <div>
                 {openNote.category && <span className="rounded-full bg-muted px-1.5 py-px text-[11px] text-muted-foreground">{openNote.category}</span>}
-                <h3 className="mt-1 text-base font-semibold text-foreground">{openNote.title}</h3>
+                <h3 className="mt-1 text-base font-semibold text-foreground">{displayTitle(openNote)}</h3>
               </div>
               <button onClick={() => setOpenNote(null)} className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="关闭">
                 <X className="size-4" />

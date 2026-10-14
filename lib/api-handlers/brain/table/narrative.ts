@@ -138,6 +138,7 @@ async function generateNarrative(
       temperature: 0.3,
       timeoutMs: 45000,
       forceRoute,
+      userId,
     });
     return parseAndValidateNarrative(parsed, plan, result, data);
   } catch (err) {

@@ -1,8 +1,10 @@
 // 知识库手工新增条目的「AI 完善」：根据 分类 / 名称 / 正文 / 地址，
-// 用 LLM_MODEL_*（Qwen，OpenAI 兼容）自动产出 summary / useCase / tags / stack。
+// 用「设置 → AI 模型」里用户配置的模型（OpenAI 兼容）自动产出 summary / useCase / tags / stack。
 // 未配置或调用失败时回退到本地启发式，保证新增一定能保存。
 
 import { KNOWLEDGE_TYPE_META, type KnowledgeType } from "./knowledge-types";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 export interface KnowledgeMeta {
   summary: string;
@@ -58,9 +60,7 @@ function parseRaw(content: string): KnowledgeMeta {
 
 async function callQwen(
   meta: KnowledgeMeta,
-  apiKey: string,
-  baseUrl: string,
-  model: string,
+  model: ResolvedModel,
   type: KnowledgeType,
   name: string,
   body: string,
@@ -68,11 +68,15 @@ async function callQwen(
   source?: string,
   localPath?: string,
 ): Promise<KnowledgeMeta> {
-  const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+  const startedAt = Date.now();
+  const res = await fetch(`${model.baseUrl}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    headers: {
+      "Content-Type": "application/json",
+      ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
+    },
     body: JSON.stringify({
-      model,
+      model: model.model,
       temperature: 0.5,
       response_format: { type: "json_object" },
       messages: [
@@ -100,6 +104,7 @@ async function callQwen(
   });
   if (!res.ok) throw new Error(`knowledge_ai_${res.status}`);
   const data = await res.json();
+  recordUsageFromModel(model, data, startedAt, "knowledge");
   const content: string = data?.choices?.[0]?.message?.content ?? "";
   if (!content) throw new Error("knowledge_ai_empty");
   const parsed = parseRaw(content);
@@ -121,20 +126,16 @@ export interface KnowledgeGenerateInput {
   localPath?: string;
 }
 
-/** 优先 Qwen，失败/未配置回退启发式。仅在服务端调用（依赖 LLM_MODEL_* 环境变量）。 */
+/** 优先 LLM，失败回退启发式。仅在服务端调用（模型由统一 LLM 层解析后传入）。 */
 export async function generateKnowledgeMeta(
   input: KnowledgeGenerateInput,
-  apiKey = process.env.LLM_MODEL_API_KEY || "",
-  baseUrl = process.env.LLM_MODEL_BASE_URL || "",
-  model = process.env.LLM_MODEL_MODEL_ID || "",
+  model: ResolvedModel,
 ): Promise<KnowledgeMeta> {
   const base = heuristic(input.type, input.name);
-  if (apiKey && baseUrl && model && KNOWLEDGE_TYPE_META.some((m) => m.id === input.type)) {
+  if (KNOWLEDGE_TYPE_META.some((m) => m.id === input.type)) {
     try {
       return await callQwen(
         base,
-        apiKey,
-        baseUrl,
         model,
         input.type,
         input.name,
@@ -144,7 +145,7 @@ export async function generateKnowledgeMeta(
         input.localPath,
       );
     } catch {
-      // Qwen 失败 → 用启发式结果
+      // LLM 失败 → 用启发式结果
     }
   }
   return base;

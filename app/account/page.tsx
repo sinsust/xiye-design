@@ -9,16 +9,19 @@ import {
   ChevronDown,
   FolderOpen,
   KeyRound,
+  Layers,
   Loader2,
-  LogOut,
   Plug,
   RefreshCw,
+  Sparkles,
   Trash2,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { ProfileSection } from "@/components/profile-section";
+import { isPublicDeploy } from "@/lib/deploy-mode";
 
 import { fetchSession } from "@/lib/auth-session";
 import { useCurrentStyle, useAgentsStore } from "@/app/workflow/agents-store";
@@ -108,17 +111,14 @@ export default function AccountPage() {
   useEffect(() => {
     let alive = true;
     // 并行拉取会话 + 项目列表，避免串行等待；会话读取全局缓存
+    // 本地档案模式下会话恒存在（getSessionUser 恒返回用户），无需再跳登录页
     Promise.all([fetchSession(), loadProjects()])
       .then(([u]) => {
         if (!alive) return;
-        if (!u) {
-          router.replace("/login");
-          return;
-        }
         setUser(u as MeUser);
       })
       .catch(() => {
-        if (alive) router.replace("/login");
+        /* 读取失败不阻塞页面，其余模块各自兜底 */
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -246,11 +246,6 @@ export default function AccountPage() {
     if (res.ok) loadProjects();
   }
 
-  async function doLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/login");
-  }
-
   async function openProject(id: string) {
     // 判断该项目是「流程草稿」（flat flow 快照）还是「builder 工作区」（含 skeleton），
     // 流程草稿回 /workflow 续接，builder 工作区回 /builder。
@@ -288,22 +283,27 @@ export default function AccountPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      {/* 用户区 */}
+      {/* 本地档案区：无登录体系，改为展示当前档案 + 档案管理 */}
       <div className="flex items-center gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
-          {(user.email[0] ?? "?").toUpperCase()}
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Layers className="size-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-base font-semibold text-foreground">个人中心</p>
-          <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+          <p className="text-base font-semibold text-foreground">档案与设置</p>
+          <p className="truncate text-xs text-muted-foreground">
+            数据保存在本机，按档案相互隔离
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={doLogout}>
-          <LogOut className="size-3.5" /> 退出登录
-        </Button>
       </div>
+
+      {/* 档案切换器：public 模式下身份由服务端签名 cookie 锁定，前端切换无效且会破坏签名 */}
+      {!isPublicDeploy() && <ProfileSection />}
 
       {/* 角色风格：选一套即切换主流程氛围（会诊/对话文案 + 人设默认名/头像） */}
       <StylePickerSection />
+
+      {/* AI 模型：内置默认 + 多模型接入 + 功能级分配 */}
+      <AiModelEntryCard />
 
       {/* 后宫智囊团 · 人设管理入口 */}
       <Link
@@ -331,7 +331,8 @@ export default function AccountPage() {
         <ConnectorHubRows />
       </section>
 
-      {/* 腾讯 ima 知识库 · 个人凭证配置 */}
+      {/* 腾讯 ima 知识库 · 个人凭证配置（public 部署模式隐藏：需本机安装 ima 客户端） */}
+      {!isPublicDeploy() && (
       <section className="mt-3 rounded-2xl border border-border bg-card p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -534,6 +535,7 @@ export default function AccountPage() {
           </div>
         )}
       </section>
+      )}
 
       <div className="mt-10">
         <div className="flex items-center justify-between">
@@ -602,6 +604,50 @@ export default function AccountPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/** AI 模型入口卡：展示当前生效模型名，跳转设置 · AI 模型 */
+function AiModelEntryCard() {
+  const [activeName, setActiveName] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/ai/models")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d) return;
+        const models: { id: string; name: string }[] = d.models ?? [];
+        const activeId: string | null = d.settings?.activeModelId ?? null;
+        const found = activeId ? models.find((m) => m.id === activeId) : undefined;
+        setActiveName(found?.name ?? "内置默认");
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return (
+    <Link
+      href="/account/models"
+      className="mt-6 flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 transition hover:border-primary/40 hover:bg-primary/[0.03]"
+    >
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <Sparkles className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground">AI 模型</p>
+        <p className="truncate text-xs text-muted-foreground">
+          内置默认模型开箱即用；可添加 DeepSeek / Qwen / Kimi 并给单个功能指定模型
+        </p>
+      </div>
+      {activeName && (
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          {activeName}
+        </span>
+      )}
+      <ArrowRight className="size-4 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }
 
@@ -766,14 +812,17 @@ function ConnectorHubRows() {
 
   return (
     <div className="space-y-2">
-      <ConnectorRow
-        href="/brain"
-        name="Obsidian 同步"
-        desc="第二大脑笔记与本地 Obsidian 仓库双向同步 · 配置在「第二大脑 → 高级工具」"
-        status={obsidianEnabled}
-        statusOn="已连接"
-        statusOff="未开启"
-      />
+      {/* Obsidian 需访问本机 vault 目录，public 部署无意义；飞书是云端授权，保留 */}
+      {!isPublicDeploy() && (
+        <ConnectorRow
+          href="/brain"
+          name="Obsidian 同步"
+          desc="第二大脑笔记与本地 Obsidian 仓库双向同步 · 配置在「第二大脑 → 高级工具」"
+          status={obsidianEnabled}
+          statusOn="已连接"
+          statusOff="未开启"
+        />
+      )}
       <ConnectorRow
         href="/brain"
         name="飞书多维表"

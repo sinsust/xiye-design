@@ -6,6 +6,7 @@ import * as m0 from "@/lib/api-handlers/knowledge/generate";
 import * as m1 from "@/lib/api-handlers/knowledge/_root";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
 export const dynamic = "force-dynamic";
 
 type HandlerFn = (req: NextRequest, ctx?: unknown) => Promise<Response> | Response;
@@ -17,7 +18,7 @@ interface RouteDef {
 
 const ROUTES: RouteDef[] = [
   { key: "generate", methods: { POST: m0.POST as HandlerFn } },
-  { key: "", methods: { POST: m1.POST as HandlerFn, PUT: m1.PUT as HandlerFn, DELETE: m1.DELETE as HandlerFn } },
+  { key: "", methods: { GET: m1.GET as HandlerFn, POST: m1.POST as HandlerFn, PUT: m1.PUT as HandlerFn, DELETE: m1.DELETE as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
     // - https://*.supabase.co：头像若走 Supabase Storage 托管（人设同步到云端时的外链图）
     // - https://picsum.photos / https://imagedelivery.net：既有占位/交付图域名，保留
     // - https://images.unsplash.com：Originkit 动效组件默认素材图（如 spotlight-frames 板条展示图）
-    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net https://api.dicebear.com https://*.supabase.co https://images.unsplash.com; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src ${scriptSrc}; connect-src 'self'`;
+    const csp = `default-src 'self'; img-src 'self' data: blob: https://picsum.photos https://imagedelivery.net https://api.dicebear.com https://*.supabase.co https://images.unsplash.com; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src ${scriptSrc}; connect-src 'self'; frame-ancestors 'self'`;
     return [
       {
         source: "/:path*",

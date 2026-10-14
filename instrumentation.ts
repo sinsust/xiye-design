@@ -4,11 +4,35 @@
 // 没有任何进程级启动钩子 —— dev server 每次重启监听即丢失，必须用户手动点一次按钮才恢复。
 // 这里在 server 启动时按 user_obsidian_config 中 enabled=1 的配置自动恢复监听 + 轮询兜底。
 //
-// 关闭方式：设 OBSIDIAN_AUTOSTART=0（例如线上部署不需要监听本地文件系统）。
+// 关闭方式：设 OBSIDIAN_AUTOSTART=0；public 部署模式（Vercel）默认即关闭
+//（没有本地 vault 可监听，见下方自检段），显式 OBSIDIAN_AUTOSTART=1 可强开。
+
+import { accessCodes, hasProfileHmacKey, isPublicDeploy } from "@/lib/deploy-mode";
 
 export async function register(): Promise<void> {
   // edge runtime 没有 fs / 数据库连接，直接跳过。
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  // public 模式启动自检（fail fast）：缺关键 env 直接让部署失败，
+  // 好过上线后所有请求 401/500 或静默降级到不安全状态。
+  if (isPublicDeploy()) {
+    const missing: string[] = [];
+    if (!hasProfileHmacKey()) missing.push("PROFILE_HMAC_KEY（≥32 字符随机串）");
+    if ((process.env.IMA_ENC_KEY ?? "").length < 32) missing.push("IMA_ENC_KEY（≥32 字符）");
+    if (accessCodes().length === 0) missing.push("ACCESS_CODE（邀请码白名单，逗号分隔多个）");
+    if (missing.length > 0) {
+      throw new Error(
+        `[instrumentation] public 部署模式缺少必需环境变量：${missing.join(" / ")}。配置清单见 docs/vercel-公开版部署.md`,
+      );
+    }
+    if (process.env.OBSIDIAN_AUTOSTART !== "1") {
+      console.log(
+        "[instrumentation] public 部署模式：跳过 Obsidian watcher（无本地 vault；OBSIDIAN_AUTOSTART=1 可强开）",
+      );
+      return;
+    }
+  }
+
   if (process.env.OBSIDIAN_AUTOSTART === "0") return;
 
   try {

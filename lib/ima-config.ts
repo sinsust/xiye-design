@@ -4,7 +4,7 @@
 // 每用户一行（按 email 隔离），密钥来自 env IMA_ENC_KEY（生产必须配置；缺失时仅本地开发兜底）。
 
 import crypto from "node:crypto";
-import { db, userImaConfig } from "@/lib/db";
+import { db, isBrowserData, userImaConfig } from "@/lib/db";
 import { eq, sql } from "drizzle-orm";
 
 // 自愈：本地 sqlite 的 dev server 常在「建表 SQL 之前」就启动，导致连接缓存旧 schema、
@@ -32,6 +32,9 @@ function ensureTable(): Promise<void> {
 
 const ALGO = "aes-256-gcm";
 
+/** 浏览器数据层的存储标记：见此前缀即为未加密明文（见 encrypt 的说明） */
+const PLAIN_PREFIX = "plain:";
+
 function getKey(): Buffer {
   const raw = process.env.IMA_ENC_KEY;
   if (raw && raw.length >= 32) return Buffer.from(raw.slice(0, 32), "utf8");
@@ -52,6 +55,11 @@ function getKey(): Buffer {
 
 /** 加密明文 → "iv:tag:enc"（均 base64）。 */
 export function encrypt(plain: string): string {
+  // 浏览器数据层不加密，理由不是省事：AES 密钥只可能来自部署方的 env，而线上形态
+  // 根本没有服务端 —— 库就是访问人自己机器上的一个文件。用同机可读到的材料去加密，
+  // 安全上等价于零，反而会把「换设备/清浏览器」这类正常备份动作变成不可逆。
+  // 因此明确标记明文，解密侧原样返回；本地/PG 两条轨道仍是 AES-256-GCM。
+  if (isBrowserData) return PLAIN_PREFIX + plain;
   const key = getKey();
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGO, key, iv);

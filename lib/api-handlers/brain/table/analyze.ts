@@ -15,6 +15,7 @@ import { randomUUID } from "crypto";
 import { getSessionUser } from "@/lib/auth";
 import { executeDimension, buildRecommendPrompt, buildFallbackDimensions } from "@/lib/table/analysis";
 import { chatLLMJsonRouted } from "@/lib/table/llm";
+import { ModelNotConfiguredError, MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 import { profileTable } from "@/lib/table/profiler";
 import {
   generatePlan,
@@ -96,10 +97,10 @@ export async function POST(req: NextRequest) {
 
     /* ── a) 自然语言查询：AI 理解意图 → 生成维度 → 执行 → 解读 ── */
     if (userQuery) {
-      const { dimension, route: route1 } = await understandQuery(userQuery, profile, headers, forceRoute);
+      const { dimension, route: route1 } = await understandQuery(userQuery, profile, headers, user.sub, forceRoute);
       const execution = executeDimension(dimension, headers, rows, columnTypes);
       // 单维解读：LLM 失败降级为空串（图与数据照常返回，不 500）
-      const interpretation = await interpretExecution(dimension, execution, forceRoute).catch(() => ({
+      const interpretation = await interpretExecution(dimension, execution, user.sub, forceRoute).catch(() => ({
         text: "",
         route: route1,
       }));
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
 
     /* ── b) 推荐维度（不执行） ── */
     if (selected.length === 0) {
-      const { dimensions, route } = await recommendDimensions(profile, forceRoute);
+      const { dimensions, route } = await recommendDimensions(profile, user.sub, forceRoute);
       return NextResponse.json({ dimensions, route });
     }
 
@@ -132,7 +133,7 @@ export async function POST(req: NextRequest) {
       dimension,
       execution: executeDimension(dimension, headers, rows, columnTypes),
     }));
-    const { map, route } = await interpretBatch(items, forceRoute).catch(() => ({
+    const { map, route } = await interpretBatch(items, user.sub, forceRoute).catch(() => ({
       map: {} as Record<string, string>,
       route: "",
     }));
@@ -144,6 +145,10 @@ export async function POST(req: NextRequest) {
     }));
     return NextResponse.json({ results, route });
   } catch (err) {
+    // 未配置任何模型 → 明确提示（推荐维度/单维解读仍按既有设计走本地兜底，不受影响）
+    if (err instanceof ModelNotConfiguredError) {
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, { status: 412 });
+    }
     console.error("brain table analyze failed:", err);
     return NextResponse.json(
       { error: "analyze_failed", message: `分析失败：${safeDetail(err)}` },
@@ -157,12 +162,14 @@ export async function POST(req: NextRequest) {
 /** b) 推荐维度（双线路并行 + LLM 失败本地规则兜底，永不 500） */
 async function recommendDimensions(
   profile: TableProfileResult,
+  userId: string,
   forceRoute?: "qwen" | "deepseek",
 ): Promise<{ dimensions: AnalysisDimension[]; route: string }> {
   const prompt = buildRecommendPrompt(profile);
   try {
     const { data, route } = await chatLLMJsonRouted<AnalysisDimension[]>(prompt, "请推荐分析维度，返回 JSON 数组", {
       forceRoute,
+      userId,
       // 推荐输出短，25s 足够；并行双线路下最慢 25s 出结果（Vercel Pro 函数 60s 时限内）
       timeoutMs: 25000,
     });
@@ -181,6 +188,7 @@ async function understandQuery(
   query: string,
   profile: TableProfileResult,
   headers: string[],
+  userId: string,
   forceRoute?: "qwen" | "deepseek",
 ): Promise<{ dimension: AnalysisDimension; route: string }> {
   const summary = buildRecommendPrompt(profile);
@@ -198,7 +206,7 @@ ${summary}
   "insight": "预期洞察"
 }
 只返回 JSON。`;
-  const { data, route } = await chatLLMJsonRouted<AnalysisDimension>(system, query, { forceRoute });
+  const { data, route } = await chatLLMJsonRouted<AnalysisDimension>(system, query, { forceRoute, userId });
   return { dimension: data, route };
 }
 
@@ -206,6 +214,7 @@ ${summary}
 async function interpretExecution(
   dimension: AnalysisDimension,
   execution: AnalysisExecutionResult,
+  userId: string,
   forceRoute?: "qwen" | "deepseek",
 ): Promise<{ text: string; route: string }> {
   const system = `你是数据分析师。下面是刚才执行的分析结果：
@@ -217,6 +226,7 @@ async function interpretExecution(
   const { data, route } = await chatLLMJsonRouted<{ interpretation: string }>(system, "请解读", {
     temperature: 0.5,
     forceRoute,
+    userId,
   });
   return { text: data.interpretation || "（暂无解读）", route };
 }
@@ -229,6 +239,7 @@ async function interpretExecution(
  */
 async function interpretBatch(
   items: Array<{ dimension: AnalysisDimension; execution: AnalysisExecutionResult }>,
+  userId: string,
   forceRoute?: "qwen" | "deepseek",
 ): Promise<{ map: Record<string, string>; route: string }> {
   if (items.length === 0) return { map: {}, route: "" };
@@ -249,7 +260,7 @@ ${block}
   const { data, route } = await chatLLMJsonRouted<{ interpretations?: Array<{ name?: string; text?: string }> }>(
     system,
     "请逐一解读",
-    { temperature: 0.5, timeoutMs: 45000, forceRoute },
+    { temperature: 0.5, timeoutMs: 45000, forceRoute, userId },
   );
   const map: Record<string, string> = {};
   for (const item of data.interpretations ?? []) {

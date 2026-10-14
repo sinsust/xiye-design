@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import { requireUser } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
 export const dynamic = "force-dynamic";
 
 // 策略两层改造的一次性迁移工具（GET 手工调用）。此前完全无鉴权，
+// 本工具 SQL 均为 PG 方言（::int / information_schema / IF NOT EXISTS），仅适用 PG 分支；
+// db 类型收敛后 BetterSQLite3Database 无 execute，这里显式断言到 postgres-js 以暴露原生 execute。
 // 任何人 curl 即可触发 wipe（清空 brain_strategies）/ alter（改表结构）/
 // sources（读取用户笔记正文）——已加登录门禁 + 生产环境禁用破坏性步骤。
 const DESTRUCTIVE_STEPS = new Set(["alter", "wipe"]);
+
+// 一次性迁移工具专用：PG 原生 execute（drizzle pg 数据库类型）。
+const pgDb = db as unknown as PostgresJsDatabase<never>;
 
 export async function GET(req: Request) {
   // 门禁 1：必须登录（此前裸奔）
@@ -35,26 +42,26 @@ export async function GET(req: Request) {
         "ALTER TABLE brain_strategies ADD COLUMN IF NOT EXISTS rationale text",
         "ALTER TABLE brain_strategies ADD COLUMN IF NOT EXISTS sort_order integer NOT NULL DEFAULT 0",
       ]) {
-        await db.execute(sql.raw(s));
+        await pgDb.execute(sql.raw(s));
       }
       return NextResponse.json({ ok: true, step: "alter" });
     }
     if (step === "wipe") {
-      const before = await db.execute(sql`select count(*)::int as n from brain_strategies`);
-      await db.execute(sql`delete from brain_strategies`);
-      const after = await db.execute(sql`select count(*)::int as n from brain_strategies`);
+      const before = await pgDb.execute(sql`select count(*)::int as n from brain_strategies`);
+      await pgDb.execute(sql`delete from brain_strategies`);
+      const after = await pgDb.execute(sql`select count(*)::int as n from brain_strategies`);
       const n = (r: unknown) => Number((r as any)?.[0]?.n ?? (r as any)?.rows?.[0]?.n ?? -1);
       return NextResponse.json({ before: n(before), after: n(after) });
     }
     if (step === "cols") {
-      const rows = await db.execute(sql`
+      const rows = await pgDb.execute(sql`
         select column_name from information_schema.columns
         where table_name = 'brain_strategies' order by ordinal_position
       `);
       return NextResponse.json({ cols: (rows as any).rows ?? rows });
     }
     if (step === "sources") {
-      const rows = await db.execute(sql`
+      const rows = await pgDb.execute(sql`
         select id, left(title, 40) as title, category, left(content, 260) as content
         from brain_notes
         where category in ('工作','策略') or title like '%会议%'
@@ -65,7 +72,7 @@ export async function GET(req: Request) {
     if (step === "organize") {
       const id = new URL(req.url).searchParams.get("id");
       const { organizeNote } = await import("@/lib/brain-organizer");
-      const src = await db.execute(
+      const src = await pgDb.execute(
         sql`select content from brain_notes where id = ${id ?? ""} limit 1`,
       );
       const content = String(((src as any).rows ?? src)[0]?.content ?? "").slice(0, 3000);

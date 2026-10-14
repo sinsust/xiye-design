@@ -9,6 +9,7 @@ import * as m4 from "@/lib/api-handlers/feishu/import";
 import * as m5 from "@/lib/api-handlers/feishu/tables";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
 export const dynamic = "force-dynamic";
 
 type HandlerFn = (req: NextRequest, ctx?: unknown) => Promise<Response> | Response;

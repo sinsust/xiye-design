@@ -15,6 +15,9 @@ import {
 import { makeZip } from "@/lib/server-zip";
 import { PROJECT_TYPES } from "@/data/project-types";
 import { safeDetail } from "@/lib/api-error";
+import { resolveLLM, type ResolvedModel } from "@/lib/llm/resolve";
+import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -24,7 +27,7 @@ export const maxDuration = 300;
 // 流程：把整站复制到 os 临时目录 → 抽取英文文案 → Qwen 译成中文(长度对齐) → 重新打包 zip。
 // 关键保证：改写只发生在临时副本，绝不写回原 outstand/ 目录 → 组件库预览与其他用户零影响。
 export async function POST(req: NextRequest) {
-  const { res } = await requireUser();
+  const { user, res } = await requireUser();
   if (res) return res;
   if (!await rateLimit(`ai:${getClientIp(req)}`, 10, 60_000)) {
     return new Response(JSON.stringify({ error: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
@@ -32,14 +35,9 @@ export async function POST(req: NextRequest) {
   const siteId = req.nextUrl.searchParams.get("site") ?? "Outstand";
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
 
-  const baseUrl = process.env.LLM_MODEL_BASE_URL?.replace(/\/+$/, "");
-  const model = process.env.LLM_MODEL_MODEL_ID;
-  const apiKey = process.env.LLM_MODEL_API_KEY;
-  if (!baseUrl || !model || !apiKey) {
-    return json(
-      { error: "未配置 LLM（LLM_MODEL_BASE_URL / LLM_MODEL_MODEL_ID / LLM_MODEL_API_KEY），无法进行 AI 改写。" },
-      400,
-    );
+  const model = await resolveLLM(user.sub, "brand-rewrite");
+  if (!model) {
+    return json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, 412);
   }
 
   let tmp: ReturnType<typeof makeTempCopy> | null = null;
@@ -71,9 +69,9 @@ export async function POST(req: NextRequest) {
 
     // 2) LLM 创作（分批并行 + 失败重试，避免单次负载过重导致超时/500）
     const ctx = makeContext(body);
-    let map = await translateAll(uniq, { baseUrl, model, apiKey }, ctx);
+    let map = await translateAll(uniq, model, ctx);
     if (map.size === 0) return json({ error: "AI 改写未能产出有效译文。" }, 502);
-    map = await refineSuitStrings(uniq, map, { baseUrl, model, apiKey }, ctx); // 对跑偏成套话的长文案二次精修，拉回品牌
+    map = await refineSuitStrings(uniq, map, model, ctx); // 对跑偏成套话的长文案二次精修，拉回品牌
     const transMap = new Map<string, string>(map);
 
     // 仅保留真正改动的文案，作为「用户意愿文案字典」回传前端（供下载覆盖层复用）。
@@ -374,7 +372,7 @@ const MAX_CONCURRENCY = 4; // 并发的批次上限
 /** 分批并行(限流)创作，合并结果；个别批次失败会重试，重试仍失败则该批按「跳过」处理。 */
 async function translateAll(
   uniq: string[],
-  client: { baseUrl: string; model: string; apiKey: string },
+  client: ResolvedModel,
   ctx: { projectName?: string; projectType?: string; narrative?: string },
 ): Promise<Map<string, string>> {
   // 长文案对创作质量敏感，用更小的批；短文案量大、创作空间小，用大一些的批。先喂长批。
@@ -410,7 +408,7 @@ async function translateAll(
 
 async function translateWithRetry(
   batch: string[],
-  client: { baseUrl: string; model: string; apiKey: string },
+  client: ResolvedModel,
   ctx: { projectName?: string; projectType?: string; narrative?: string },
 ): Promise<Map<string, string>> {
   let lastErr: unknown;
@@ -427,9 +425,10 @@ async function translateWithRetry(
 
 async function translateBatchOnce(
   batch: string[],
-  client: { baseUrl: string; model: string; apiKey: string },
+  client: ResolvedModel,
   ctx: { projectName?: string; projectType?: string; narrative?: string },
 ): Promise<Map<string, string>> {
+  const startedAt = Date.now();
   const res = await fetch(`${client.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -452,6 +451,7 @@ async function translateBatchOnce(
   });
   if (!res.ok) throw new Error(`AI 改写服务返回错误（${res.status}）。`);
   const data = await res.json();
+  recordUsageFromModel(client, data, startedAt, "brand-rewrite");
   const content: string = data?.choices?.[0]?.message?.content ?? "";
   const cleaned = content.replace(/```json/gi, "").replace(/```/g, "").trim();
   let parsed: unknown;
@@ -533,9 +533,10 @@ function refineTask(
 async function refineBatchOnce(
   batch: string[],
   draft: Map<string, string>,
-  client: { baseUrl: string; model: string; apiKey: string },
+  client: ResolvedModel,
   ctx: { projectName?: string; projectType?: string; narrative?: string },
 ): Promise<Map<string, string>> {
+  const startedAt = Date.now();
   const res = await fetch(`${client.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${client.apiKey}` },
@@ -552,6 +553,7 @@ async function refineBatchOnce(
   });
   if (!res.ok) throw new Error(`AI 精修服务返回错误（${res.status}）。`);
   const data = await res.json();
+  recordUsageFromModel(client, data, startedAt, "brand-rewrite");
   const content: string = data?.choices?.[0]?.message?.content ?? "";
   const cleaned = content.replace(/```json/gi, "").replace(/```/g, "").trim();
   let parsed: unknown;
@@ -573,7 +575,7 @@ async function refineBatchOnce(
 async function refineSuitStrings(
   uniq: string[],
   draft: Map<string, string>,
-  client: { baseUrl: string; model: string; apiKey: string },
+  client: ResolvedModel,
   ctx: { projectName?: string; projectType?: string; narrative?: string },
 ): Promise<Map<string, string>> {
   const core = buildCoreWords(ctx).split("、").filter(Boolean);

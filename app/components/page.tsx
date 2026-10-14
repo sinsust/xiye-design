@@ -48,7 +48,6 @@ import { cn } from "@/lib/utils";
 const FluidText = dynamic(() => import("@/components/originkit/ui/fluid-text"), { loading: PreviewLoading });
 const SmokyText = dynamic(() => import("@/components/originkit/ui/smokytext"), { loading: PreviewLoading });
 const FlashlightText = dynamic(() => import("@/components/originkit/ui/spotlighttext"), { loading: PreviewLoading });
-const RingGallery = dynamic(() => import("@/components/originkit/ring-gallery").then((m) => m.RingGallery), { loading: PreviewLoading });
 const Smooth3DSlideshow = dynamic(() => import("@/components/originkit/coverflow-gallery/ui/coverflowgallery"), { loading: PreviewLoading });
 const RoundCarousel = dynamic(() => import("@/components/originkit/round-carousel/ui/roundcarousel"), { loading: PreviewLoading });
 const MagneticCarousel = dynamic(() => import("@/components/originkit/magnetic-carousel"), { loading: PreviewLoading });
@@ -56,6 +55,10 @@ const KlarnaCarousel = dynamic(() => import("@/components/originkit/klarna-carou
 const DeckCarousel = dynamic(() => import("@/components/originkit/deck-carousel"), { loading: PreviewLoading });
 const GrainyCarousel = dynamic(() => import("@/components/originkit/grainy-carousel"), { loading: PreviewLoading });
 const DepthGallery = dynamic(() => import("@/components/originkit/depth-gallery"), { loading: PreviewLoading });
+const CircularGallery = dynamic(() => import("@/components/originkit/circular-gallery"), { loading: PreviewLoading });
+const FloatingGallery = dynamic(() => import("@/components/originkit/floating-gallery"), { loading: PreviewLoading });
+const SpiralImages = dynamic(() => import("@/components/originkit/spiral-images"), { loading: PreviewLoading });
+const OrbBand = dynamic(() => import("@/components/originkit/orb-band"), { loading: PreviewLoading });
 const DirectionHover = dynamic(() => import("@/components/originkit/direction-hover"), { loading: PreviewLoading });
 const AuroraText = dynamic(() => import("@/components/originkit/aurora-text"), { loading: PreviewLoading });
 const PixelDrift = dynamic(() => import("@/components/originkit/pixel-drift"), { loading: PreviewLoading });
@@ -337,33 +340,6 @@ export function Demo() {
 }`;
   }
 
-  if (comp.id === "ring-gallery") {
-    const n = (k: string) => settings[k] ?? 0;
-    const s = (k: string, def: string) => String(settings[k] ?? def);
-    return `"use client";
-import { RingGallery } from "@/components/originkit/ring-gallery";
-
-export function Demo() {
-  return (
-    <div className="relative flex h-[360px] w-full items-center justify-center overflow-hidden bg-[#0c0c0f]">
-      <RingGallery
-        rings={${n("rings")}}
-        direction="${s("direction", "cw") as string}"
-        speed={${n("speed")}}
-        innerRadius={${n("innerRadius")}}
-        ringGap={${n("ringGap")}}
-        cardWidth={${n("cardWidth")}}
-        cardHeight={${n("cardHeight")}}
-        rounded={${n("rounded")}}
-        tilt={${n("tilt")}}
-        fit="${s("fit", "cover") as string}"
-        count={${Number(s("count", "12"))}}
-      />
-    </div>
-  );
-}`;
-  }
-
   if (comp.id === "coverflow-gallery") {
     const n = (k: string, def = 0) => Number(settings[k] ?? def)
     const s = (k: string, def: string) => String(settings[k] ?? def)
@@ -498,6 +474,120 @@ export function Demo() {
         background="${s("background", "#000000")}"
       />
     </div>
+  );
+}`;
+  }
+
+  if (comp.id === "circular-gallery") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import CircularGallery from "@/components/originkit/circular-gallery";
+
+export function Demo() {
+  return (
+    <div className="relative h-[520px] w-full overflow-hidden">
+      <CircularGallery
+        count={${n("count", 25)}}
+        ringRadius={${n("ringRadius", 224)}}
+        card={{
+          width: ${n("cardWidth", 40)},
+          height: ${n("cardHeight", 45)},
+          radius: ${n("cardRadius", 4)},
+        }}
+        zoom={${n("zoom", 5)}}
+        zoomOffset={${n("zoomOffset", 0)}}
+        scrollSensitivity={${n("scrollSensitivity", 5)}}
+        smoothing={${n("smoothing", 10)}}
+        background="${s("background", "#000000")}"
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "floating-gallery") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import FloatingGallery from "@/components/originkit/floating-gallery";
+
+export function Demo() {
+  return (
+    <div className="relative h-[800px] w-full overflow-hidden">
+      <FloatingGallery
+        cardWidth={${n("cardWidth", 220)}}
+        cardHeight={${n("cardHeight", 280)}}
+        rounded={${n("rounded", 16)}}
+        speed={${n("speed", 50)}}
+        reach={${n("reach", 260)}}
+        fade={${n("fade", 0)}}
+        background="${s("background", "#0b0b0d")}"
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "spiral-images") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import SpiralImages from "@/components/originkit/spiral-images";
+
+export function Demo() {
+  return (
+    <div className="relative h-[600px] w-full overflow-hidden bg-[#0c0c0f]">
+      <SpiralImages
+        turns={${n("turns", 3.5)}}
+        speed={${n("speed", 2)}}
+        spacing={${n("spacing", 5)}}
+        spread={${n("spread", 6)}}
+        imageSize={${n("imageSize", 200)}}
+        sizeAttenuation={${n("sizeAttenuation", 2)}}
+        fadeIn={${n("fadeIn", 20)}}
+        fadeOut={${n("fadeOut", 0)}}
+        cornerRadius={${n("cornerRadius", 5)}}
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "orb-band") {
+    const n = (k: string, def = 0) => Number(settings[k] ?? def)
+    const s = (k: string, def = "") => String(settings[k] ?? def)
+    return `"use client";
+import OrbBand from "@/components/originkit/orb-band";
+
+export function Demo() {
+  return (
+    <div className="relative h-[520px] w-full overflow-hidden bg-[#0a0a0d]">
+      <OrbBand
+        dotColor="${s("dotColor", "#F4F1EA")}"
+        accentColor="${s("accentColor", "#00FFE5")}"
+        density={${n("density", 300)}}
+        dotSize={${n("dotSize", 130)}}
+        speed={${n("speed", 50)}}
+        spinTurns={${n("spinTurns", 1)}}
+        ball={{ spread: ${n("spread", 100)}, turn: ${n("turn", -180)}, tilt: ${n("tilt", -90)} }}
+        pointer={{ drag: ${n("drag", 100)}, damping: ${n("damping", 20)} }}
+      />
+    </div>
+  );
+}`;
+  }
+
+  if (comp.id === "hero-42") {
+    return `"use client";
+// 静态 HTML/CSS section：iframe 嵌入完整首屏（含 WebGL2 半调动效）
+export function Demo() {
+  return (
+    <iframe
+      src="/api/originkit/hero-42/index.html"
+      style={{ width: "100%", height: "760px", border: 0 }}
+      title="工作副驾驶首屏"
+    />
   );
 }`;
   }
@@ -2039,24 +2129,6 @@ export default function ComponentLibraryPage() {
                 </div>
               )}
 
-              {comp.id === "ring-gallery" && (
-                <div className="flex min-h-[20rem] items-center justify-center py-10">
-                  <RingGallery
-                    rings={Number(settings.rings ?? 3)}
-                    direction={String(settings.direction ?? "cw") as any}
-                    speed={Number(settings.speed ?? 7)}
-                    innerRadius={Number(settings.innerRadius ?? 110)}
-                    ringGap={Number(settings.ringGap ?? 120)}
-                    cardWidth={Number(settings.cardWidth ?? 72)}
-                    cardHeight={Number(settings.cardHeight ?? 92)}
-                    rounded={Number(settings.rounded ?? 6)}
-                    tilt={Number(settings.tilt ?? 6)}
-                    fit={String(settings.fit ?? "cover") as any}
-                    count={Number(settings.count ?? 12)}
-                  />
-                </div>
-              )}
-
               {comp.id === "coverflow-gallery" && (
                 <div className="flex min-h-[480px] w-full items-center justify-center overflow-hidden">
                   <Smooth3DSlideshow
@@ -2177,6 +2249,86 @@ export default function ComponentLibraryPage() {
                     />
                   </div>
                 </div>
+              )}
+
+              {comp.id === "circular-gallery" && (
+                <div className="flex h-[520px] w-full items-center justify-center overflow-hidden">
+                  <div className="h-[520px] w-full">
+                    <CircularGallery
+                      count={Number(settings.count ?? 25)}
+                      ringRadius={Number(settings.ringRadius ?? 224)}
+                      card={{
+                        width: Number(settings.cardWidth ?? 40),
+                        height: Number(settings.cardHeight ?? 45),
+                        radius: Number(settings.cardRadius ?? 4),
+                      }}
+                      zoom={Number(settings.zoom ?? 5)}
+                      zoomOffset={Number(settings.zoomOffset ?? 0)}
+                      scrollSensitivity={Number(settings.scrollSensitivity ?? 5)}
+                      smoothing={Number(settings.smoothing ?? 10)}
+                      background={String(settings.background ?? "#000000")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "floating-gallery" && (
+                <div className="flex h-[800px] w-full overflow-hidden">
+                  <div className="h-[800px] w-full">
+                    <FloatingGallery
+                      cardWidth={Number(settings.cardWidth ?? 220)}
+                      cardHeight={Number(settings.cardHeight ?? 280)}
+                      rounded={Number(settings.rounded ?? 16)}
+                      speed={Number(settings.speed ?? 50)}
+                      reach={Number(settings.reach ?? 260)}
+                      fade={Number(settings.fade ?? 0)}
+                      background={String(settings.background ?? "#0b0b0d")}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "spiral-images" && (
+                <div className="flex h-[600px] w-full items-center justify-center overflow-hidden bg-[#0c0c0f]">
+                  <div className="h-[600px] w-full">
+                    <SpiralImages
+                      turns={Number(settings.turns ?? 3.5)}
+                      speed={Number(settings.speed ?? 2)}
+                      spacing={Number(settings.spacing ?? 5)}
+                      spread={Number(settings.spread ?? 6)}
+                      imageSize={Number(settings.imageSize ?? 200)}
+                      sizeAttenuation={Number(settings.sizeAttenuation ?? 2)}
+                      fadeIn={Number(settings.fadeIn ?? 20)}
+                      fadeOut={Number(settings.fadeOut ?? 0)}
+                      cornerRadius={Number(settings.cornerRadius ?? 5)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "orb-band" && (
+                <div className="flex h-[520px] w-full items-center justify-center overflow-hidden bg-[#0a0a0d]">
+                  <div className="h-[520px] w-full">
+                    <OrbBand
+                      dotColor={String(settings.dotColor ?? "#F4F1EA")}
+                      accentColor={String(settings.accentColor ?? "#00FFE5")}
+                      density={Number(settings.density ?? 300)}
+                      dotSize={Number(settings.dotSize ?? 130)}
+                      speed={Number(settings.speed ?? 50)}
+                      spinTurns={Number(settings.spinTurns ?? 1)}
+                      ball={{ spread: Number(settings.spread ?? 100), turn: Number(settings.turn ?? -180), tilt: Number(settings.tilt ?? -90) }}
+                      pointer={{ drag: Number(settings.drag ?? 100), damping: Number(settings.damping ?? 20) }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {comp.id === "hero-42" && (
+                <iframe
+                  src="/api/originkit/hero-42/index.html"
+                  className="h-[760px] w-full border-0"
+                  title="工作副驾驶首屏"
+                />
               )}
 
               {comp.id === "direction-hover" && (

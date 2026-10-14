@@ -1,9 +1,12 @@
 /**
  * 表格处理 —— LLM 客户端
  *
- * 复用第二大脑统一的 LLM_MODEL_* 环境变量（与 brain-organizer 同一套配置）。
+ * 模型由统一 LLM 层解析（resolveLLM），不再在此直接读取环境变量。
  * 仅供服务端调用；支持 JSON 模式。
  */
+
+import { resolveLLM } from "@/lib/llm/resolve";
+import { chatWithModel, ModelNotConfiguredError } from "@/lib/llm/chat";
 
 /** LLM 调用选项 */
 export interface ChatLLMOptions {
@@ -13,98 +16,37 @@ export interface ChatLLMOptions {
   timeoutMs?: number;
   /** 温度（默认 0.4） */
   temperature?: number;
-  /** 手动强制线路（默认自动：线路1 失败自动切线路2）；"qwen"|"deepseek" */
+  /** 当前档案：决定用哪个模型（未配置任何模型时抛 ModelNotConfiguredError） */
+  userId?: string | null;
+  /** @deprecated 已废弃：路由改由模型配置决定，此字段接受但被忽略（仅为兼容旧请求契约保留） */
   forceRoute?: "qwen" | "deepseek";
 }
 
-/** 双线路标识 */
-export type LLMRouteId = "qwen" | "deepseek";
-
-/** 一条线路的配置（读取对应 env） */
-interface LLMRoute {
-  id: LLMRouteId;
-  name: string;
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-}
-
-/** 读取全部已配置线路（未配置完整三件套的线路跳过） */
-export function listLLMRoutes(): LLMRoute[] {
-  const routes: LLMRoute[] = [
-    {
-      id: "qwen",
-      name: "Qwen",
-      baseUrl: (process.env.LLM_MODEL_BASE_URL || "").replace(/\/+$/, ""),
-      apiKey: process.env.LLM_MODEL_API_KEY || "",
-      model: process.env.LLM_MODEL_MODEL_ID || "",
-    },
-    {
-      id: "deepseek",
-      name: "DeepSeek",
-      baseUrl: (process.env.DEEPSEEK_BASE_URL || "").replace(/\/+$/, ""),
-      apiKey: process.env.DEEPSEEK_API_KEY || "",
-      model: process.env.DEEPSEEK_MODEL || "",
-    },
-  ];
-  return routes.filter((r) => r.baseUrl && r.apiKey && r.model);
-}
-
-/** 指定线路调用 LLM（OpenAI-compatible chat completions），返回回复文本 */
-async function chatLLMWithRoute(
-  route: LLMRoute,
-  system: string,
-  user: string,
-  opts: ChatLLMOptions = {},
-): Promise<string> {
-  const res = await fetch(`${route.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${route.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: route.model,
-      temperature: opts.temperature ?? 0.4,
-      ...(opts.json ? { response_format: { type: "json_object" } } : {}),
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-    signal: AbortSignal.timeout(opts.timeoutMs ?? 40000),
-  });
-
-  if (!res.ok) {
-    throw new Error(`LLM 请求失败: HTTP ${res.status}`);
-  }
-  const data = await res.json();
-  const content: string = data?.choices?.[0]?.message?.content ?? "";
-  if (!content) {
-    throw new Error("LLM 返回空内容");
-  }
-  return content;
-}
+/** 实际使用的模型标识（沿用旧类型名，语义为「实际使用的模型名」） */
+export type LLMRouteId = string;
 
 /**
  * 调用配置的 LLM（OpenAI-compatible chat completions）
- * 兼容旧接口：只走线路1（Qwen）；新代码请用 chatLLMRouted / chatLLMJsonRouted。
  * @param system 系统提示词
  * @param user 用户内容
  * @returns 模型回复文本
- * @throws 未配置 LLM 或请求失败时抛明确错误
+ * @throws 请求失败时抛明确错误
  */
 export async function chatLLM(system: string, user: string, opts: ChatLLMOptions = {}): Promise<string> {
-  const routes = listLLMRoutes();
-  if (routes.length === 0) {
-    throw new Error("LLM 未配置（LLM_MODEL_BASE_URL / LLM_MODEL_API_KEY / LLM_MODEL_MODEL_ID）");
-  }
-  return chatLLMWithRoute(routes[0], system, user, opts);
+  const model = await resolveLLM(opts.userId, "table-analysis");
+  if (!model) throw new ModelNotConfiguredError();
+  return chatWithModel(model, {
+    system,
+    user,
+    json: opts.json,
+    temperature: opts.temperature,
+    timeoutMs: opts.timeoutMs,
+    meta: { userId: opts.userId, feature: "table-analysis" },
+  });
 }
 
 /**
  * 调用 LLM 并要求返回 JSON（自动去 markdown 代码块包裹）
- * 兼容旧接口：只走线路1；新代码请用 chatLLMJsonRouted。
  * @returns 解析后的对象
  */
 export async function chatLLMJson<T = Record<string, unknown>>(
@@ -117,43 +59,25 @@ export async function chatLLMJson<T = Record<string, unknown>>(
 }
 
 /**
- * 双线路路由调用：多条线路**并行**发出（先成功者胜），避免串行 N×超时撞平台函数时限。
- * 支持 forceRoute 手动强制某条线路（跳过另一条）。
- * @returns 解析结果 + 实际使用的线路
+ * 调用 LLM 并要求返回 JSON，同时返回实际使用的模型名。
+ * @returns 解析结果 + 实际使用的模型名
  */
 export async function chatLLMJsonRouted<T = Record<string, unknown>>(
   system: string,
   user: string,
   opts: ChatLLMOptions = {},
 ): Promise<{ data: T; route: LLMRouteId }> {
-  const routes = listLLMRoutes();
-  if (routes.length === 0) {
-    throw new Error("LLM 未配置（需要 LLM_MODEL_* 或 DEEPSEEK_* 至少一组）");
-  }
-  // 强制线路：只用该条；自动：全部线路并行
-  const order = opts.forceRoute
-    ? routes.filter((r) => r.id === opts.forceRoute)
-    : routes;
-
-  if (order.length === 1) {
-    // 单线路：直接调用（强制线路 / 只配了一条）
-    const raw = await chatLLMWithRoute(order[0], system, user, { ...opts, json: true });
-    return { data: parseJsonResponse<T>(raw), route: order[0].id };
-  }
-
-  // 多线路并行：先成功者胜；全败取最后一次错误
-  const results = await Promise.allSettled(
-    order.map(async (route) => {
-      const raw = await chatLLMWithRoute(route, system, user, { ...opts, json: true });
-      return { data: parseJsonResponse<T>(raw), route: route.id };
-    }),
-  );
-  let lastErr: unknown = null;
-  for (const r of results) {
-    if (r.status === "fulfilled") return r.value;
-    lastErr = r.reason;
-  }
-  throw lastErr instanceof Error ? lastErr : new Error("两条线路均调用失败");
+  const model = await resolveLLM(opts.userId, "table-analysis");
+  if (!model) throw new ModelNotConfiguredError();
+  const raw = await chatWithModel(model, {
+    system,
+    user,
+    json: true,
+    temperature: opts.temperature,
+    timeoutMs: opts.timeoutMs,
+    meta: { userId: opts.userId, feature: "table-analysis" },
+  });
+  return { data: parseJsonResponse<T>(raw), route: model.name };
 }
 
 /** 解析模型输出：容忍 ```json 代码块包裹与前后杂文本 */

@@ -57,6 +57,8 @@ export interface DiscoverResponse {
   branches: Branch[];
   brief: ProductBrief;
   done: boolean;
+  /** B1 · 本次参考的历史偏好摘要（服务端确定性统计；无偏好或未启用时缺省） */
+  prefsUsed?: { count: number; summary: string } | null;
 }
 
 /** 服务端多轮发现的请求体 */

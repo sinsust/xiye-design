@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowRight, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowStore } from "@/lib/store/flow-store";
@@ -16,7 +15,6 @@ import { useFlowStore } from "@/lib/store/flow-store";
  */
 export function LocalDraftHint() {
   const savedProjectId = useFlowStore((s) => s.savedProjectId);
-  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,10 +35,6 @@ export function LocalDraftHint() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, data: snap }),
       });
-      if (res.status === 401) {
-        router.push("/login?redirect=/workflow");
-        return;
-      }
       if (!res.ok) {
         setError("保存失败，请稍后重试");
         return;

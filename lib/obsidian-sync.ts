@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { db, userObsidianConfig, brainNotes } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -59,6 +60,50 @@ function sanitizeRelDir(input: string): string {
   return cleaned.replace(/^[a-zA-Z]:/, "").replace(/^\/+/, "");
 }
 
+/** C3 · vault 根目录白名单校验（审计 S-3）：vaultPath 来自用户配置，
+ * 未约束时可能指向磁盘根 / 用户主目录等任意可写目录，造成越界写/路径穿越。
+ * 约束：非空 → 非文件系统根 → 非用户主目录 → 存在且为目录 → 可写。
+ * 标准 Obsidian vault 应含 .obsidian 目录（非强制，避免新 vault 未初始化时被误拦）。 */
+export function validateVaultPath(vaultPath: string | null | undefined): {
+  ok: boolean;
+  error?: string;
+} {
+  if (!vaultPath || !vaultPath.trim()) {
+    return { ok: false, error: "vault 路径为空" };
+  }
+  const p = vaultPath.trim();
+  const norm = p.replace(/\\/g, "/").replace(/\/+$/, "") || "/";
+  // 1. 拒绝文件系统根（C:\、D:\、/ 等）
+  if (/^[a-zA-Z]:$/.test(norm) || norm === "/") {
+    return { ok: false, error: "vault 路径不能是磁盘或文件系统根目录" };
+  }
+  // 2. 拒绝用户主目录（防止把笔记铺进系统用户目录）
+  try {
+    if (path.resolve(p) === path.resolve(os.homedir())) {
+      return { ok: false, error: "vault 路径不能是用户主目录" };
+    }
+  } catch {
+    /* 解析失败不阻断，后续存在性检查兜底 */
+  }
+  // 3. 存在且为目录
+  let st: fs.Stats | null = null;
+  try {
+    st = fs.statSync(p);
+  } catch {
+    return { ok: false, error: "vault 目录不存在" };
+  }
+  if (!st.isDirectory()) {
+    return { ok: false, error: "vault 路径不是目录" };
+  }
+  // 4. 可写（写回/删除依赖）
+  try {
+    fs.accessSync(p, fs.constants.W_OK);
+  } catch {
+    return { ok: false, error: "vault 目录不可写" };
+  }
+  return { ok: true };
+}
+
 /**
  * 决定一条笔记应落在 vault 的哪个子目录（相对 vault 根）。
  * 优先级：
@@ -86,6 +131,12 @@ async function writeOne(note: BrainNote, cfgOverride?: ObsidianCfg): Promise<voi
   if (!cfg || !cfg.enabled || !cfg.vaultPath) return;
 
   const vault = cfg.vaultPath;
+  // C3 · vault 根目录白名单：非法配置拒绝写入（静默跳过，避免污染任意目录）
+  const v = validateVaultPath(vault);
+  if (!v.ok) {
+    console.warn(`[obsidian] vault 路径未通过白名单校验，跳过写回：${v.error}`);
+    return;
+  }
   const rel = resolveTargetFolder(note, cfg);
   const dir = rel ? path.join(vault, rel) : vault;
   const fileName = resolveFileNameForNote(dir, note);
@@ -135,6 +186,9 @@ async function writeOne(note: BrainNote, cfgOverride?: ObsidianCfg): Promise<voi
 
 async function removeOne(note: BrainNote): Promise<void> {
   if (!note.obsidianVault || !note.obsidianNoteId) return;
+  // C3 · 删除路径同样受 vault 白名单约束（防 DB 溯源列被污染后越界删除）
+  const v = validateVaultPath(note.obsidianVault);
+  if (!v.ok) return;
   const abs = path.join(note.obsidianVault, note.obsidianRelPath || "", `${note.obsidianNoteId}.md`);
   syncingPaths.add(abs);
   try {
@@ -182,6 +236,9 @@ export async function exportUnsyncedNotes(userId: string): Promise<ExportResult>
     return { ...empty, error: "尚未启用 Obsidian 同步或未配置 vault 路径" };
   }
   try {
+    // C3 · vault 白名单校验（替代裸 accessSync）：非法根目录/主目录等配置直接拒绝导出
+    const v = validateVaultPath(cfg.vaultPath);
+    if (!v.ok) return { ...empty, error: `vault 路径未通过校验：${v.error}` };
     fs.accessSync(cfg.vaultPath, fs.constants.W_OK);
   } catch {
     return { ...empty, error: `无法写入 vault 目录：${cfg.vaultPath}` };

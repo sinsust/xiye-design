@@ -6,10 +6,9 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ThemePresetToggle } from "@/components/theme-preset-toggle";
-import { AuthMenu } from "@/components/auth-menu";
+import { ProfileMenu } from "@/components/profile-menu";
 import { BrandLogo } from "@/components/brand-logo";
 import { UiPrefsSync } from "@/components/ui-prefs-sync";
-import { AuthGuardHost } from "@/components/auth-guard-host";
 
 type NavItem = { href: string; label: string };
 type NavGroup = { id: "studio" | "brain"; label: string; items: NavItem[] };
@@ -45,7 +44,6 @@ export function SiteNav() {
   return (
     <>
       <UiPrefsSync />
-      <AuthGuardHost />
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="relative mx-auto flex h-14 xiye-container items-center px-4">
         <BrandLogo />
@@ -76,7 +74,7 @@ export function SiteNav() {
         <div className="ml-auto flex items-center gap-1.5">
           <ThemePresetToggle />
           <ThemeToggle />
-          <AuthMenu />
+          <ProfileMenu />
           {/* 移动端汉堡：<sm 显示，点击展开导航抽屉 */}
           <button
             type="button"
@@ -96,6 +94,18 @@ export function SiteNav() {
       {mobileOpen && (
         <div className="border-t border-border bg-background sm:hidden">
           <nav className="xiye-container flex flex-col px-4 py-2">
+            {/* A2 · 移动端抽屉补首页入口（手机上品牌 Logo 之外还要有显式首页项） */}
+            <Link
+              href="/"
+              onClick={() => setMobileOpen(false)}
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                pathname === "/"
+                  ? "bg-primary/10 text-primary"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              首页
+            </Link>
             {NAV_GROUPS.map((group) => (
               <div key={group.id}>
                 <div className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

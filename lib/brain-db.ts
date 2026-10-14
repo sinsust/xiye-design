@@ -1,10 +1,28 @@
 // 第二大脑（Second Brain）数据访问层：用户私有的个人知识笔记读写。
 // 与 knowledge-db（云端共享技能库）不同，这里按 userId 硬隔离，仅本人可见。
 
-import { db, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainNotifications } from "@/lib/db";
+import { db, isBrowserData, brainNotes, brainTasks, brainReviews, brainStrategies, brainImaSyncLog, brainInboxItems, brainProjects, brainTaskTimeline, brainTaskComments, brainProcessingPlans, brainReminderItems, brainSimilarPairs, brainRelations, brainCurationLog, brainTaskOutcomes, brainWeeklyReviews, brainLearningReviews, brainNotifications } from "@/lib/db";
 import { eq, and, or, desc, asc, isNull, inArray, gte, lt } from "drizzle-orm";
 import { randomSuffix } from "./id";
-import { onNoteInserted, onNoteUpdated, onNoteDeleted } from "@/lib/obsidian-sync";
+
+// Obsidian 写回模块按调用点懒加载，不在顶层静态 import。
+// 原因有两个：① brain-db ↔ obsidian-sync 互为循环依赖（obsidian-sync 顶层就 import 本文件），
+// 叠加 lib/db 的 top-level await 后，浏览器轨道（esbuild 打包）会在模块初始化上互相等待而死锁；
+// ② 写本机 vault 只属于本地轨道，浏览器轨道根本不该加载它。
+type ObsidianHook = "onNoteInserted" | "onNoteUpdated" | "onNoteDeleted";
+let obsidianHooksModule: Promise<typeof import("@/lib/obsidian-sync")> | null = null;
+function fireObsidian(hook: ObsidianHook, note: BrainNote): void {
+  if (isBrowserData) return;
+  const run = async () => {
+    obsidianHooksModule ??= import("@/lib/obsidian-sync");
+    const m = await obsidianHooksModule;
+    m[hook](note);
+  };
+  // 与改动前一致：写回失败不阻塞笔记读写（原实现也是即发即忘，内部自吞异常）
+  void run().catch(() => {
+    obsidianHooksModule = null;
+  });
+}
 
 export type BrainSource = "text" | "file" | "clip" | "voice" | "ima" | "obsidian";
 
@@ -510,7 +528,7 @@ export async function insertBrainNote(
     updatedAt: now,
   }).returning();
   const inserted = insertedRows[0] ? toNote(insertedRows[0] as BrainRow) : null;
-  if (inserted) onNoteInserted(inserted);
+  if (inserted) fireObsidian("onNoteInserted", inserted);
   return inserted ?? {
     id,
     userId,
@@ -597,7 +615,7 @@ export async function updateBrainNote(
     .set(set)
     .where(and(eq(brainNotes.id, id), eq(brainNotes.userId, userId)));
   const updated = await getBrainNote(userId, id);
-  if (updated) onNoteUpdated(updated);
+  if (updated) fireObsidian("onNoteUpdated", updated);
   return updated;
 }
 
@@ -607,7 +625,7 @@ export async function deleteBrainNote(userId: string, id: string): Promise<boole
     await db
       .delete(brainNotes)
       .where(and(eq(brainNotes.id, id), eq(brainNotes.userId, userId)));
-    if (toRemove) onNoteDeleted(toRemove);
+    if (toRemove) fireObsidian("onNoteDeleted", toRemove);
     return true;
   } catch (err) {
     console.error("[brain-db] delete failed:", err);

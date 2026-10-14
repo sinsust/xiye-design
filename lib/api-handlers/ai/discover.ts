@@ -2,18 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
 import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
-import {
-  discover,
-  runDiscoveryHeuristic,
-} from "@/lib/ai-discover-server";
+import { discover } from "@/lib/ai-discover-server";
 import {
   emptyBrief,
   type DiscoverMessage,
   type ProductBrief,
 } from "@/lib/ai-discover";
+import { resolveLLM } from "@/lib/llm/resolve";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
 import { getStyle } from "@/lib/agent-styles";
 import { safeDetail } from "@/lib/api-error";
+import {
+  loadProjectPreferences,
+  formatPreferencesSummary,
+} from "@/lib/project-preferences";
 
 export const runtime = "nodejs";
 
@@ -66,23 +68,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "empty_messages", flowMeta: meta }, { status: 400 });
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) {
-      // 无 key：首轮启发式兜底（保证 UI 永远能跑起来）
-      const first = messages.find((m) => m.role === "user");
-      const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: true }));
-      return NextResponse.json({ ...runDiscoveryHeuristic(first?.content ?? ""), flowMeta: meta });
+    const model = await resolveLLM(user.sub, "flow-discover");
+    if (!model) {
+      const errObj = flowError("model_not_configured", { operation: running.operation, phase: running.phase, requestId: running.requestId });
+      const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: errObj }));
+      return NextResponse.json({
+        reply: errObj.message,
+        branches: [],
+        brief: brief ?? emptyBrief(),
+        done: false,
+        error: "model_not_configured",
+        message: errObj.message,
+        flowMeta: meta,
+      });
     }
 
     try {
+      // B1：加载用户历史偏好作为推荐底座（读 DB 失败静默，不影响访谈）
+      const prefs = await loadProjectPreferences(user.sub).catch(() => null);
+      const prefsUsed = prefs
+        ? { count: prefs.sampleCount, summary: formatPreferencesSummary(prefs) }
+        : null;
       const pay = await discover(
         messages,
         brief,
-        apiKey,
+        model,
         moderatorName(body?.agents) ?? getStyle(body?.styleId).moderatorTitle,
+        prefs,
       );
       const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
-      return NextResponse.json({ ...pay, flowMeta: meta });
+      return NextResponse.json({ ...pay, flowMeta: meta, prefsUsed });
     } catch (err) {
       // 模型调用失败：不中断对话、不伪装成功。保留已入文的用户/项目状态，brief 原样回传。
       const reason = safeDetail(err);

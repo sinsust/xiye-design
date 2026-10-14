@@ -7,6 +7,8 @@ import {
   generateCopyWithLLM,
   type CopyContext,
 } from "@/lib/copy-generator";
+import { resolveLLM } from "@/lib/llm/resolve";
+import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
 
 export const runtime = "nodejs";
@@ -14,7 +16,7 @@ export const runtime = "nodejs";
 // POST /api/ai/copy
 // body: { projectName?; projectType?; narrative? }
 // 200  → ContentOverride（根据项目 PRD/特征生成的全站文案覆盖）
-// 文案生成默认使用 LLM_MODEL_*（Qwen），不走 DeepSeek；未配置或调用失败时回退本地启发式
+// 文案生成走统一 LLM 层解析模型；调用失败时回退本地启发式
 export async function POST(req: NextRequest) {
   const { user, res } = await requireUser();
   if (res) return res;
@@ -34,19 +36,19 @@ export async function POST(req: NextRequest) {
       narrative: body?.narrative && typeof body.narrative === "object" ? body.narrative : null,
     };
 
-    const baseUrl = process.env.LLM_MODEL_BASE_URL;
-    const model = process.env.LLM_MODEL_MODEL_ID;
-    const apiKey = process.env.LLM_MODEL_API_KEY;
+    const model = await resolveLLM(user.sub, "copy");
+    if (!model) {
+      const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("model_not_configured", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE, flowMeta: meta }, { status: 412 });
+    }
     let fallbackUsed = true;
-    if (baseUrl && model && apiKey) {
-      try {
-        const override = await generateCopyWithLLM(ctx, apiKey, baseUrl, model);
-        fallbackUsed = false;
-        const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
-        return NextResponse.json({ ...override, flowMeta: meta });
-      } catch {
-        // Qwen 失败 → 回退启发式
-      }
+    try {
+      const override = await generateCopyWithLLM(ctx, model);
+      fallbackUsed = false;
+      const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
+      return NextResponse.json({ ...override, flowMeta: meta });
+    } catch {
+      // 模型失败 → 回退启发式
     }
     const override = generateCopyOverride(ctx);
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed }));

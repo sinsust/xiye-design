@@ -7,6 +7,7 @@
  */
 
 import { useState } from "react";
+import { hasLocalMachine } from "@/lib/deploy-mode";
 import { ArrowLeft, ArrowRight, Check, Download, Loader2, Plug, RefreshCw, Sparkles } from "lucide-react";
 import { TableUploader, type UploadResult } from "./TableUploader";
 import { FeishuImportPanel } from "./FeishuImportPanel";
@@ -277,6 +278,9 @@ export function TableAnalysisPage() {
             >
                 本地上传
               </button>
+            {/* 飞书多维表：OAuth 回调只能落回部署方的服务器（访客没有），
+                浏览器数据层下拿不到他人授权后的表 —— 直接不渲染这个入口 */}
+            {hasLocalMachine() && (
             <button
               onClick={() => {
                 setSource("feishu");
@@ -294,6 +298,7 @@ export function TableAnalysisPage() {
                 <Plug className="size-3.5" />
                 飞书多维表
               </button>
+            )}
             </div>
 
             {source === "file" ? (

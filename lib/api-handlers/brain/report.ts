@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { listBrainNotes } from "@/lib/brain-db";
 import { generateWeeklyReport } from "@/lib/brain-report";
+import { ModelNotConfiguredError, MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,10 @@ export async function GET(_req: NextRequest) {
       aiUsed,
     });
   } catch (err) {
+    // 未配置任何模型 → 明确提示，不走「看似失败」的 500
+    if (err instanceof ModelNotConfiguredError) {
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, { status: 412 });
+    }
     console.error("brain report failed:", err);
     return NextResponse.json({ error: "report_failed" }, { status: 500 });
   }

@@ -10,6 +10,8 @@ import {
 } from "@/lib/brain-db";
 import { organizeNote, deriveIntentFromOrganizedNote, type IntentVerdict } from "@/lib/brain-organizer";
 import { applyOrganizedToNote, enrichNoteWithOrganized } from "@/lib/inbox-process";
+import { resolveLLM } from "@/lib/llm/resolve";
+import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 import { safeDetail } from "@/lib/api-error";
 import { getCached } from "@/lib/brain-cache";
 
@@ -51,6 +53,12 @@ export async function POST(req: NextRequest) {
       (await getCached(`inbox:existing:${user.sub}`, 30_000, () => listBrainNotes(user.sub)).catch(() => [])) ?? [];
     if (DBG) console.log(`[save-latency] inbox.autoApply read-existing:${Date.now() - _t0}ms items=${items.length}`);
 
+    // 统一 LLM 层解析整理用模型（一次解析，循环内复用）；未配置任何模型 → 明确报错
+    const model = await resolveLLM(user.sub, "brain-organize");
+    if (!model) {
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, { status: 412 });
+    }
+
     if (autoApply) {
       const applied: (InboxPreview & { id: string; noteId: string; organizing: boolean })[] = [];
       const bgJobs: Promise<void>[] = [];
@@ -79,7 +87,7 @@ export async function POST(req: NextRequest) {
         bgJobs.push(
           (async () => {
             try {
-              const organized = await organizeNote(raw, existing);
+              const organized = await organizeNote(raw, existing, model);
               const verdict: IntentVerdict = deriveIntentFromOrganizedNote(raw, organized);
               await enrichNoteWithOrganized(user.sub, noteId, raw, organized, verdict.intent);
             } catch (err) {
@@ -108,7 +116,7 @@ export async function POST(req: NextRequest) {
       const raw = typeof it?.rawContent === "string" ? it.rawContent.trim() : "";
       if (!raw) continue;
       try {
-        const organized = await organizeNote(raw, existing);
+        const organized = await organizeNote(raw, existing, model);
         const verdict: IntentVerdict = deriveIntentFromOrganizedNote(raw, organized);
         const intent = verdict.intent;
         const preview: InboxPreview = {

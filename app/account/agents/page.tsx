@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, ImageOff, RotateCcw, Save, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,6 @@ function compressImageToDataUrl(file: File, maxSize = 256): Promise<string> {
 }
 
 export default function AgentPersonasPage() {
-  const router = useRouter();
   const [authLoading, setAuthLoading] = useState(true);
   const booted = useAgentsStore((s) => s.booted);
   const overrides = useAgentsStore((s) => s.overrides);
@@ -74,26 +72,22 @@ export default function AgentPersonasPage() {
     [],
   );
 
-  // 登录校验 + 触发服务端人设拉取（会话读取全局缓存）
+  // 会话读取（本地档案模式下恒存在，无登录门禁）+ 触发服务端人设拉取
   useEffect(() => {
     let alive = true;
     fetchSession()
-      .then((u) => {
+      .then(() => {
         if (!alive) return;
-        if (u) {
-          useAgentsStore.getState().boot();
-          setAuthLoading(false);
-        } else {
-          router.replace("/login");
-        }
+        useAgentsStore.getState().boot();
+        setAuthLoading(false);
       })
       .catch(() => {
-        if (alive) router.replace("/login");
+        if (alive) setAuthLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, [router]);
+  }, []);
 
   // 初始草稿（默认名称 + 已有覆盖头像）
   useEffect(() => {

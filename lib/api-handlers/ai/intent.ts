@@ -3,6 +3,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
 import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
 import { interpretIntentOnline } from "@/lib/ai-intent-server";
+import { resolveLLM } from "@/lib/llm/resolve";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";
 
 export const runtime = "nodejs";
@@ -10,8 +11,7 @@ export const runtime = "nodejs";
 // POST /api/ai/intent
 // body: { text: string }
 // 200 → IntentRecommendation
-// 503 → 未配置 DEEPSEEK_API_KEY（客户端回退启发式）
-// 400/502 → 参数或 DeepSeek 调用错误
+// 400/502 → 参数或模型调用错误
 export async function POST(req: NextRequest) {
   const { user, res } = await requireUser();
   if (res) return res;
@@ -30,13 +30,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "empty_input", flowMeta: meta }, { status: 400 });
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) {
-      const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("provider_unavailable", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
-      return NextResponse.json({ error: "missing_api_key", flowMeta: meta }, { status: 503 });
+    const model = await resolveLLM(user.sub, "flow-intent");
+    if (!model) {
+      const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("model_not_configured", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
+      return NextResponse.json({ error: "model_not_configured", flowMeta: meta }, { status: 412 });
     }
-
-    const rec = await interpretIntentOnline(text, apiKey);
+    const rec = await interpretIntentOnline(text, model);
     const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
     return NextResponse.json({ ...rec, flowMeta: meta });
   } catch {

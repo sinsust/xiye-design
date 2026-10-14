@@ -1,28 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Save, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFlowStore } from "@/lib/store/flow-store";
 import { captureSnapshot } from "@/lib/project-snapshot";
 
 export function BuilderSaveButton() {
-  const router = useRouter();
   const savedProjectId = useFlowStore((s) => s.savedProjectId);
   const setSavedProjectId = useFlowStore((s) => s.setSavedProjectId);
   const [naming, setNaming] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function startSave() {
+  function startSave() {
     setMsg(null);
-    const r = await fetch("/api/auth/me");
-    if (!r.ok) {
-      router.push("/login");
-      return;
-    }
-    setNaming(null); // 已有保存的项目：直接覆盖，不再问名字；未保存过则要求命名
+    // 已保存过的项目直接覆盖（不再问名字）；未保存过则展开命名输入框
+    if (savedProjectId) void doSave();
+    else setNaming("");
   }
 
   async function doSave() {

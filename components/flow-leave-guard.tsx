@@ -86,11 +86,6 @@ export function FlowLeaveGuard() {
       navigateTo(pending.target);
       return;
     }
-    if (r.reason === "login") {
-      setMsg("保存到「我的项目」需要先登录");
-      setPending({ ...pending, saving: false, busy: false });
-      return;
-    }
     setMsg("保存失败，请重试或选择放弃");
     setPending({ ...pending, saving: false, busy: false });
   };

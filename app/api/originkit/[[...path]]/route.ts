@@ -4,10 +4,12 @@ import { createStaticSiteHandler } from "@/lib/static-site-handler";
 import { requireUser } from "@/lib/auth-guard";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
 export const dynamic = "force-dynamic";
 
 const genius = createStaticSiteHandler("genius");
 const wexo = createStaticSiteHandler("wexo");
+const hero42 = createStaticSiteHandler("hero-42");
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ path?: string[] }> }) {
   // 整站模板（genius/wexo）仅供登录后的组件预览页 iframe 引用；
@@ -19,5 +21,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ path?: stri
   const path = raw ?? [];
   if (path[0] === "genius") return genius(req, { params: Promise.resolve({ path: path.slice(1) }) });
   if (path[0] === "wexo") return wexo(req, { params: Promise.resolve({ path: path.slice(1) }) });
+  if (path[0] === "hero-42") return hero42(req, { params: Promise.resolve({ path: path.slice(1) }) });
   return NextResponse.json({ error: "not_found", message: "整站模板不存在" }, { status: 404 });
 }

@@ -4,6 +4,9 @@
 
 import type { BrainNote } from "./brain-db";
 import { listBrainTasks, listOutcomesInRange, type BrainTaskOutcome } from "./brain-db";
+import { resolveLLM, type ResolvedModel } from "@/lib/llm/resolve";
+import { ModelNotConfiguredError } from "@/lib/llm/chat";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 export interface WeeklyReport {
   weekLabel: string;        // 如 "08.18 - 08.24"
@@ -118,16 +121,16 @@ function parseReport(raw: string): Partial<WeeklyReport> {
   }
 }
 
-async function callQwen(noteText: string, ws: Date, we: Date): Promise<Partial<WeeklyReport>> {
-  const baseUrl = (process.env.LLM_MODEL_BASE_URL || "").replace(/\/+$/, "");
-  const res = await fetch(`${baseUrl}/chat/completions`, {
+async function callQwen(noteText: string, ws: Date, we: Date, model: ResolvedModel): Promise<Partial<WeeklyReport>> {
+  const startedAt = Date.now();
+  const res = await fetch(`${model.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.LLM_MODEL_API_KEY}`,
+      ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
     },
     body: JSON.stringify({
-      model: process.env.LLM_MODEL_MODEL_ID,
+      model: model.model,
       temperature: 0.4,
       response_format: { type: "json_object" },
       messages: [
@@ -148,6 +151,7 @@ async function callQwen(noteText: string, ws: Date, we: Date): Promise<Partial<W
   });
   if (!res.ok) throw new Error(`brain_report_${res.status}`);
   const data = await res.json();
+  recordUsageFromModel(model, data, startedAt, "brain-report");
   const c: string = data?.choices?.[0]?.message?.content ?? "";
   if (!c) throw new Error("brain_report_empty");
   return parseReport(c);
@@ -213,33 +217,30 @@ export async function generateWeeklyReport(
     return { report: { ...base, summary }, source: picked, aiUsed: false };
   }
 
-  const apiKey = process.env.LLM_MODEL_API_KEY;
-  const baseUrl = process.env.LLM_MODEL_BASE_URL;
-  const model = process.env.LLM_MODEL_MODEL_ID;
-  if (apiKey && baseUrl && model) {
-    try {
-      const noteText = picked
-        .map((n) => {
-          const meta = [n.category, n.summary].filter(Boolean).join(" · ");
-          return `【${n.title}】\n${meta}\n${n.content}`;
-        })
-        .join("\n\n---\n\n");
-      const ai = await callQwen(noteText, weekStart, weekEnd);
-      const report: WeeklyReport = {
-        weekLabel: ai.weekLabel || base.weekLabel,
-        // 有任务结果统计时优先用覆盖后的 summary/completed；否则用 AI 结果或 base
-        summary: summary !== base.summary ? summary : ai.summary || base.summary,
-        completed: completed.length > base.completed.length ? completed : ai.completed?.length ? ai.completed : base.completed,
-        decisions: ai.decisions?.length ? ai.decisions : base.decisions,
-        blockers: ai.blockers?.length ? ai.blockers : base.blockers,
-        next: ai.next?.length ? ai.next : base.next,
-        taskStats,
-        outcomeSummaries,
-      };
-      return { report, source: picked, aiUsed: true };
-    } catch {
-      return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked, aiUsed: false };
-    }
+  const model = await resolveLLM(opts?.userId, "brain-report");
+  // 未配置任何模型 → 明确报错，不走启发式兜底（由调用方映射为「未配置模型」错误）
+  if (!model) throw new ModelNotConfiguredError();
+  try {
+    const noteText = picked
+      .map((n) => {
+        const meta = [n.category, n.summary].filter(Boolean).join(" · ");
+        return `【${n.title}】\n${meta}\n${n.content}`;
+      })
+      .join("\n\n---\n\n");
+    const ai = await callQwen(noteText, weekStart, weekEnd, model);
+    const report: WeeklyReport = {
+      weekLabel: ai.weekLabel || base.weekLabel,
+      // 有任务结果统计时优先用覆盖后的 summary/completed；否则用 AI 结果或 base
+      summary: summary !== base.summary ? summary : ai.summary || base.summary,
+      completed: completed.length > base.completed.length ? completed : ai.completed?.length ? ai.completed : base.completed,
+      decisions: ai.decisions?.length ? ai.decisions : base.decisions,
+      blockers: ai.blockers?.length ? ai.blockers : base.blockers,
+      next: ai.next?.length ? ai.next : base.next,
+      taskStats,
+      outcomeSummaries,
+    };
+    return { report, source: picked, aiUsed: true };
+  } catch {
+    return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked, aiUsed: false };
   }
-  return { report: { ...base, summary, completed, taskStats, outcomeSummaries }, source: picked, aiUsed: false };
 }

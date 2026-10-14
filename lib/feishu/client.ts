@@ -21,6 +21,32 @@ import type {
 
 const FEISHU_BASE = "https://open.feishu.cn/open-apis";
 
+/** 飞书接口默认超时（毫秒）：超过即中止，避免请求悬挂占用 handler。 */
+export const FEISHU_FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * 带超时的 fetch（C4 · 外部调用超时防护，审计 S-4）。
+ * 用 AbortController 实现，超时抛清晰错误；调用方原样 catch 即可。
+ */
+async function fetchWithTimeout(
+  input: string | URL | Request,
+  init?: RequestInit,
+  timeoutMs: number = FEISHU_FETCH_TIMEOUT_MS,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: ctrl.signal });
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new Error(`[feishu] 请求超时（>${timeoutMs}ms）：${String(input)}`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** 飞书接口业务错误（code !== 0）。 */
 export class FeishuApiError extends Error {
   code: number;
@@ -58,7 +84,7 @@ interface TokenBundle {
 /** 飞书 OAuth：用授权码换取 user_access_token + refresh_token。 */
 export async function exchangeCodeForToken(code: string): Promise<TokenBundle> {
   const { appId, appSecret, redirectUri } = getFeishuAppConfig();
-  const res = await fetch(`${FEISHU_BASE}/authen/v1/oidc/access_token`, {
+  const res = await fetchWithTimeout(`${FEISHU_BASE}/authen/v1/oidc/access_token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -84,7 +110,7 @@ export async function exchangeCodeForToken(code: string): Promise<TokenBundle> {
 /** 飞书 OAuth：用 refresh_token 刷新 user_access_token（refresh_token 可能轮换）。 */
 export async function refreshUserAccessToken(refreshToken: string): Promise<TokenBundle> {
   const { appId, appSecret } = getFeishuAppConfig();
-  const res = await fetch(`${FEISHU_BASE}/authen/v1/oidc/access_token`, {
+  const res = await fetchWithTimeout(`${FEISHU_BASE}/authen/v1/oidc/access_token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -124,7 +150,7 @@ export async function listTables(
   appToken: string,
   userAccessToken: string,
 ): Promise<Array<{ tableId: string; name: string }>> {
-  const res = await fetch(`${FEISHU_BASE}/bitable/v1/apps/${appToken}/tables`, {
+  const res = await fetchWithTimeout(`${FEISHU_BASE}/bitable/v1/apps/${appToken}/tables`, {
     headers: { Authorization: `Bearer ${userAccessToken}` },
   });
   const data = (await res.json()) as {
@@ -142,7 +168,7 @@ export async function listFields(
   tableId: string,
   userAccessToken: string,
 ): Promise<FeishuFieldMeta[]> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${FEISHU_BASE}/bitable/v1/apps/${appToken}/tables/${tableId}/fields`,
     { headers: { Authorization: `Bearer ${userAccessToken}` } },
   );
@@ -167,7 +193,7 @@ export async function listRecords(
     url.searchParams.set("page_size", "500");
     if (pageToken) url.searchParams.set("page_token", pageToken);
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchWithTimeout(url.toString(), {
       headers: { Authorization: `Bearer ${userAccessToken}` },
     });
     const data = (await res.json()) as FeishuListRecordsResponse;

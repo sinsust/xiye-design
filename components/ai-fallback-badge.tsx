@@ -23,7 +23,7 @@ export function AiFallbackBadge({
         "inline-flex items-center gap-1 rounded-[var(--radius)] bg-warning/10 px-1.5 py-0.5 text-[10px] font-normal text-warning",
         className ?? "",
       ].join(" ")}
-      title="本次内容由本地启发式规则生成，未调用 AI 模型；配置 LLM_MODEL_*（API Key / Base URL / Model ID 三者齐备）后自动改用 AI"
+      title="本次内容由本地启发式规则生成，未调用 AI 模型；到「设置 → AI 模型」添加并设为生效后自动改用 AI"
     >
       <AlertTriangle className="size-3" />
       {label}

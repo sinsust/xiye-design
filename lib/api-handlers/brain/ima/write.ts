@@ -14,6 +14,7 @@ import { getImaConfig } from "@/lib/ima-config";
 import { getConnector } from "@/lib/connectors/registry";
 import { getBrainNote, updateBrainNote } from "@/lib/brain-db";
 import type { BrainNote } from "@/lib/brain-db";
+import { displayTitle } from "@/lib/brain-display";
 
 export const runtime = "nodejs";
 
@@ -31,7 +32,7 @@ export function composeImaMarkdown(note: BrainNote): string {
   if (note.category) meta.push(`分类：${note.category}`);
   if (note.tags.length) meta.push(`标签：${note.tags.map((t) => `#${t}`).join(" ")}`);
   meta.push(`来源：${SOURCE_LABEL[note.source] ?? "xiye"}`);
-  parts.push(`# ${note.title || "未命名"}`);
+  parts.push(`# ${displayTitle(note, { max: 80, fallback: "未命名" })}`);
   parts.push(`> ${meta.join(" · ")}`);
   if (note.summary?.trim()) parts.push(note.summary.trim());
   parts.push("---");
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
   const r = await writeRaw(user, {
     action,
     content: composeImaMarkdown(note),
-    title: note.title || undefined,
+    title: displayTitle(note, { max: 80, fallback: "未命名" }) || undefined,
     noteId: action === "append" ? (note.imaNoteId ?? undefined) : undefined,
   });
   if (r instanceof NextResponse) return r;

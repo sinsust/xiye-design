@@ -24,10 +24,12 @@ import { fenceUserInput } from "@/lib/prompt-sanitize";
 import { SKILL_ASSEMBLY_INJECTION } from "@/lib/skill-assembly";
 import { buildRagContext } from "@/lib/rag";
 import { randomSuffix } from "@/lib/id";
-
-export const DEEPSEEK_BASE_URL =
-  process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
-export const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+import {
+  formatPreferencesBlock,
+  type ProjectPreferences,
+} from "@/lib/project-preferences";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 const BASE_SYSTEM_PROMPT = `你是一位真正有实战经验的资深产品架构师，正在通过多轮对话，帮助用户把一个模糊的想法丰满成一份有洞察、能落地的产品 PRD。
 
@@ -144,9 +146,9 @@ const summaryCache = new Map<string, string>();
 
 async function summarizeOldMessages(
   older: DiscoverMessage[],
-  apiKey: string | undefined,
+  model: ResolvedModel,
 ): Promise<string> {
-  if (!apiKey || !older.length) return "";
+  if (!older.length) return "";
   // 缓存 key 必须能区分不同会话：仅用「条数+首条前缀」会让两个首条相似但后续不同的会话互相串摘要。
   // 取全部 user 消息前缀拼接做指纹（消息数、首条、以及后续走向都参与区分）。
   const fingerprint = older
@@ -156,18 +158,19 @@ async function summarizeOldMessages(
   const key = `${older.length}|${fingerprint}`;
   const cached = summaryCache.get(key);
   if (cached) return cached;
+  const startedAt = Date.now();
   try {
     const text = older
       .map((m) => `${m.role === "user" ? "用户" : "AI"}: ${m.content.slice(0, 220)}`)
       .join("\n");
-    const res = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+    const res = await fetch(`${model.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
       },
       body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
+        model: model.model,
         temperature: 0.3,
         max_tokens: 500,
         messages: [
@@ -183,6 +186,7 @@ async function summarizeOldMessages(
     });
     if (!res.ok) return "";
     const data = await res.json();
+    recordUsageFromModel(model, data, startedAt, "flow-discover");
     const summary = (data?.choices?.[0]?.message?.content ?? "")
       .trim()
       .slice(0, 800);
@@ -200,12 +204,12 @@ async function summarizeOldMessages(
  */
 async function buildMessageWindow(
   messages: DiscoverMessage[],
-  apiKey: string | undefined,
+  model: ResolvedModel,
 ): Promise<{ role: string; content: string }[]> {
   if (messages.length <= RECENT_FULL_KEEP) return trimHistory(messages);
   const recent = messages.slice(-RECENT_FULL_KEEP);
   const older = messages.slice(0, messages.length - RECENT_FULL_KEEP);
-  const summary = await summarizeOldMessages(older, apiKey);
+  const summary = await summarizeOldMessages(older, model);
   if (summary) {
     return [
       { role: "user", content: `（更早对话摘要）${summary}` },
@@ -225,19 +229,63 @@ async function buildMessageWindow(
   return [...olderUser, ...trimHistory(recent)];
 }
 
+// ───────────────────────── B2 · 关键信息缺口检测（确定性，不额外调用 LLM） ─────────────────────────
+
+const EXTRA_BUSINESS_RE = /变现|商业|定价|收费|盈利|收入|商业模式/;
+const EXTRA_METRIC_RE = /指标|度量|北极星|成功标准|kpi|关键数据|怎么衡量/;
+
+/** 从当前 PRD 草稿确定性检测「还缺哪些关键信息」，供模型把握追问重点。
+ * 只报告「缺」的项；能从已有内容合理推断的缺口不重复报告。 */
+export function detectBriefGaps(brief: ProductBrief): string[] {
+  const gaps: string[] = [];
+  if (!brief.targetAudience || brief.targetAudience.length === 0) {
+    gaps.push("目标用户（为谁做、核心人群与使用场景）");
+  }
+  if (!brief.positioning || !brief.positioning.trim()) {
+    gaps.push("差异化定位（与现有方案的不同、为什么现在做）");
+  }
+  if (!brief.coreModules || brief.coreModules.length === 0) {
+    gaps.push("核心功能/模块（最关键的能力与边界）");
+  }
+  if (!brief.pages || brief.pages.length === 0) {
+    gaps.push("业务专属页面规划（核心模块对应的落地页面）");
+  }
+  const ek = Object.keys(brief.extra ?? {});
+  if (!ek.some((k) => EXTRA_BUSINESS_RE.test(k))) {
+    gaps.push("商业模式/变现方式（怎么创造与回收价值）");
+  }
+  if (!ek.some((k) => EXTRA_METRIC_RE.test(k))) {
+    gaps.push("成功指标/关键度量（衡量做没做成的标准）");
+  }
+  return gaps;
+}
+
+/** 把检测到的缺口格式化为注入 system 的追问指引段（无缺口时返回空串，不污染 prompt） */
+function formatGapsBlock(gaps: string[]): string {
+  if (!gaps.length) return "";
+  return `\n\n【当前 PRD 关键信息缺口（确定性检测，供你把握追问重点）】
+缺失：${gaps.join("、")}
+追问规则：若当前阶段适合继续提问，优先围绕上面缺口中最关键的 1 个追问（一次只问一个，不要一次抛多个）；不要在已有信息上反复确认。若缺口可从用户已答内容合理推断，或当前更适合给方向/收尾，则不必强行追问。`;
+}
+
 async function toOpenAIMessages(
   messages: DiscoverMessage[],
   currentBrief: ProductBrief,
   domainCtx: string,
-  apiKey: string | undefined,
+  model: ResolvedModel,
+  prefs?: ProjectPreferences | null,
 ): Promise<{ role: string; content: string }[]> {
+  // B1：历史偏好注入（确定性统计，仅作推荐底座）；B2：关键缺口注入（引导主动追问）
+  const prefsBlock = prefs ? formatPreferencesBlock(prefs) : "";
+  const gapsBlock = formatGapsBlock(detectBriefGaps(currentBrief));
+  const extra = `${prefsBlock}${gapsBlock}`;
   const out: { role: string; content: string }[] = [
     {
       role: "system",
-      content: `${buildSystemPrompt(domainCtx)}\n\n当前 PRD 草稿（请在此基础上更新，不要清空已填写字段）：\n${JSON.stringify(currentBrief, null, 2)}`,
+      content: `${buildSystemPrompt(domainCtx)}\n\n当前 PRD 草稿（请在此基础上更新，不要清空已填写字段）：\n${JSON.stringify(currentBrief, null, 2)}${extra}`,
     },
   ];
-  const window = await buildMessageWindow(messages, apiKey);
+  const window = await buildMessageWindow(messages, model);
   for (const m of window) {
     out.push(m);
   }
@@ -315,15 +363,17 @@ export function extractJson(content: string): RawOutput {
 async function callDeepSeek(
   messages: DiscoverMessage[],
   currentBrief: ProductBrief,
-  apiKey: string,
+  model: ResolvedModel,
   domainCtx: string,
+  prefs?: ProjectPreferences | null,
 ): Promise<RawOutput> {
-  const url = `${DEEPSEEK_BASE_URL}/chat/completions`;
+  const url = `${model.baseUrl}/chat/completions`;
   const baseMessages = await toOpenAIMessages(
     messages,
     currentBrief,
     domainCtx,
-    apiKey,
+    model,
+    prefs,
   );
 
   // 上一轮若因模型返回空白失败（DeepSeek 在长历史下 json_object 模式偶发空白），
@@ -332,6 +382,7 @@ async function callDeepSeek(
     "你上一轮的回复不是合法 JSON，无法被程序解析。请严格只输出一个 JSON 对象：不要任何解释文字、不要 markdown 代码块、不要 JSON 外的任何字符，直接以 { 开头、以 } 结尾。";
 
   let lastEmpty = false;
+  const startedAt = Date.now();
   let lastErr: unknown;
 
   // 三次投递：① json 标准 ② json+纠正提示（若①空白则换 free 绕过）③ free+纠正提示（兜底）
@@ -343,7 +394,7 @@ async function callDeepSeek(
       : baseMessages;
 
     const body = JSON.stringify({
-      model: DEEPSEEK_MODEL,
+      model: model.model,
       temperature: 0.6,
       max_tokens: 6000,
       ...(useJson ? { response_format: { type: "json_object" } } : {}),
@@ -356,7 +407,7 @@ async function callDeepSeek(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
         },
         body,
         signal: AbortSignal.timeout(40000),
@@ -375,6 +426,7 @@ async function callDeepSeek(
 
     try {
       const data = await res.json();
+      recordUsageFromModel(model, data, startedAt, "flow-discover");
       const content: string = data?.choices?.[0]?.message?.content ?? "";
       if (!content.trim()) {
         console.error(`[ai-discover] empty content (attempt ${attempt}), retrying`);
@@ -544,15 +596,11 @@ export function runDiscoveryHeuristic(text: string): DiscoverResponse {
 export async function discover(
   messages: DiscoverMessage[],
   brief: ProductBrief | null,
-  apiKey: string | undefined,
+  model: ResolvedModel,
   moderatorName?: string,
+  prefs?: ProjectPreferences | null,
 ): Promise<DiscoverResponse> {
   const prev = brief ?? emptyBrief();
-  // 无 key：首轮走启发式；非首轮（理论上不会发生，因为无 key 时前端只发首轮）也兜底
-  if (!apiKey) {
-    const first = messages.find((m) => m.role === "user");
-    return runDiscoveryHeuristic(first?.content ?? "");
-  }
   // 领域上下文：用首条用户消息启发式初判领域，注入 system，避免 AI 脱离领域空谈；
   // 叠加 RAG 检索命中知识库技能片段，让 AI 能真实借鉴 /library 里沉淀的方法论与案例。
   const firstUser = messages.find((m) => m.role === "user")?.content ?? "";
@@ -564,6 +612,6 @@ export async function discover(
   // 且 sanitize 允许空方向覆盖旧值；否则方向字段「模型没返回就沿用」，避免漂移。
   const change = wantsDirectionChange(messages);
   const effectivePrev = change ? { ...prev, chosenDirections: [] } : prev;
-  const raw = await callDeepSeek(messages, effectivePrev, apiKey, domainCtx);
+  const raw = await callDeepSeek(messages, effectivePrev, model, domainCtx, prefs);
   return sanitizeDiscover(raw, prev, { resetDirections: change });
 }

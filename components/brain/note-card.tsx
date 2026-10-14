@@ -28,6 +28,7 @@ import {
   STRATEGY_LABEL,
   SOURCE_ICON,
   catColor,
+  displayTitle,
   formatDueDate,
   highlightCode,
   langColor,
@@ -251,7 +252,7 @@ export function NoteCard({
       {/* 中部：标题 + 两行摘要 */}
       <div className="px-3.5 pt-2">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="min-w-0 truncate text-sm font-medium text-foreground">{cur.title}</h3>
+          <h3 className="min-w-0 truncate text-sm font-medium text-foreground">{displayTitle(cur)}</h3>
           {cur.isSnippet && cur.codeContent && (
             <button
               className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius)] border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground transition hover:border-primary/40 hover:text-primary"
@@ -563,7 +564,7 @@ export function NoteCard({
         body={
           <div className="space-y-3">
             <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-              <p className="line-clamp-2 text-sm font-medium text-foreground">{cur.title}</p>
+              <p className="line-clamp-2 text-sm font-medium text-foreground">{displayTitle(cur)}</p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">
                 {cur.category || "随手记"} · {relativeTime(cur.createdAt)}
               </p>

@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 import { FlowLeaveGuard } from "@/components/flow-leave-guard";
 import { AgentsHydrator } from "@/components/agents-hydrator";
+import { BrowserDataBootstrap } from "@/components/browser-data-bootstrap";
 import { Toaster } from "@/components/ui/toast";
 import { ConfirmHost } from "@/components/ui/confirm-dialog";
 
@@ -86,14 +87,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <SiteNav />
-        <main className="flex-1 w-full min-h-0">
-          <div className="mx-auto flex min-h-full w-full xiye-container flex-col px-4 py-8">{children}</div>
-        </main>
-        <FlowLeaveGuard />
-        <AgentsHydrator />
-        <Toaster />
-        <ConfirmHost />
+        {/* 浏览器数据层开关打开时：sw 接管前整页内容都不渲染（含 AgentsHydrator 这类
+            挂载即取数的组件），否则首屏请求会漏到服务器 /api。见组件内说明。 */}
+        <BrowserDataBootstrap>
+          <SiteNav />
+          <main className="flex-1 w-full min-h-0">
+            <div className="mx-auto flex min-h-full w-full xiye-container flex-col px-4 py-8">{children}</div>
+          </main>
+          <FlowLeaveGuard />
+          <AgentsHydrator />
+          <Toaster />
+          <ConfirmHost />
+        </BrowserDataBootstrap>
       </body>
     </html>
   );

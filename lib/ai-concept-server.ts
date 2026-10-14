@@ -12,17 +12,13 @@ import {
   type ProductConceptBrief,
   type ConceptBriefInputs,
   applyConceptRound,
-  buildConceptHeuristic,
   emptyConceptBrief,
   mergeConceptBrief,
   normalizeConceptOutput,
 } from "@/lib/flow-concept";
 import { fenceUserInput } from "@/lib/prompt-sanitize";
-
-export const CONCEPT_DEEPSEEK_BASE_URL =
-  process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";
-export const CONCEPT_DEEPSEEK_MODEL =
-  process.env.CONCEPT_MODEL || process.env.DEEPSEEK_MODEL || "deepseek-chat";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 const CONCEPT_SYSTEM_PROMPT = `你是一位资深产品负责人，正在通过多轮访谈，帮用户把一个想法逐步收敛成一张「产品创意 Brief」与一份可读的「初版产品方案（PRD 初稿）」。
 
@@ -145,13 +141,14 @@ function extractConceptJson(content: string): RawConceptOutput {
   throw new Error("parse:no-json");
 }
 
-async function callConceptModel(messages: ChatMsg[], apiKey: string): Promise<RawConceptOutput> {
-  const url = `${CONCEPT_DEEPSEEK_BASE_URL}/chat/completions`;
+async function callConceptModel(messages: ChatMsg[], model: ResolvedModel): Promise<RawConceptOutput> {
+  const url = `${model.baseUrl}/chat/completions`;
   let lastErr: unknown;
+  const startedAt = Date.now();
   for (let attempt = 0; attempt < 3; attempt++) {
     const useJson = attempt < 2;
     const body = JSON.stringify({
-      model: CONCEPT_DEEPSEEK_MODEL,
+      model: model.model,
       temperature: 0.4,
       max_tokens: 2000,
       ...(useJson ? { response_format: { type: "json_object" } } : {}),
@@ -163,7 +160,10 @@ async function callConceptModel(messages: ChatMsg[], apiKey: string): Promise<Ra
     try {
       res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        headers: {
+          "Content-Type": "application/json",
+          ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
+        },
         body,
         signal: AbortSignal.timeout(40000),
       });
@@ -174,6 +174,7 @@ async function callConceptModel(messages: ChatMsg[], apiKey: string): Promise<Ra
     if (!res.ok) throw new Error(`http:${res.status}`);
     try {
       const data = await res.json();
+      recordUsageFromModel(model, data, startedAt, "flow-concept");
       const content: string = data?.choices?.[0]?.message?.content ?? "";
       if (!content.trim()) {
         lastErr = new Error("parse:empty");
@@ -196,29 +197,16 @@ export async function buildConceptBrief(
   op: "build" | "update",
   inputs: ConceptBriefInputs,
   prev: ProductConceptBrief | null,
-  apiKey: string | undefined,
+  model: ResolvedModel,
 ): Promise<{ brief: ProductConceptBrief; reply: string; nextQuestion?: string; quickOptions?: string[] }> {
   const base = prev ?? emptyConceptBrief();
-  // 无 key / 非可信环境：走离线启发式 - 只把能确定的落定，其余进 openQuestions（绝不编造）
-  if (!apiKey) {
-    const heuristic = buildConceptHeuristic(inputs, base);
-    const merged = mergeConceptBrief(base, heuristic, inputs);
-    const next = ensureOpenQuestions(merged, inputs);
-    // 无 key 也按 build 的提升一次（首次/更新都不重复刷版本到离谱：仅首建时 version 归 1）
-    const brief = op === "build" && prev === null ? { ...next, version: 1 } : next;
-    return {
-      brief,
-      reply: nextQuestionFallback(next),
-      ...(next.openQuestions[0] ? { nextQuestion: next.openQuestions[0], quickOptions: optionFallback(next) } : {}),
-    };
-  }
 
   const messages: ChatMsg[] = [
     { role: "system", content: CONCEPT_SYSTEM_PROMPT },
     // inputs/prev 含用户自由输入：隔离后作为「被分析的数据」传入
     { role: "user", content: fenceUserInput("访谈输入", buildUserContent(inputs, prev), 8000) },
   ];
-  const raw = await callConceptModel(messages, apiKey);
+  const raw = await callConceptModel(messages, model);
   const norm = normalizeConceptOutput(raw);
   const merged = mergeConceptBrief(base, norm, inputs);
   // 把 AI 每轮的「决策层」并入 brief：关键决策 / 当前议题 / 初版方案初稿 / 关键未决问题。
@@ -272,12 +260,6 @@ function nextQuestionFor(brief: ProductConceptBrief, _next?: ProductConceptBrief
   if (firstMissing === "valueProposition") return "用户为什么非它不可？";
   if (firstMissing === "coreCapabilities") return "MVP 的核心能力是哪几项？";
   return "产品创意已基本落定，还差什么要我再帮你确认吗？";
-}
-
-function nextQuestionFallback(brief: ProductConceptBrief): string {
-  const h = normalizeConceptOutput(brief);
-  void h;
-  return nextQuestionFor(brief);
 }
 
 function optionFallback(brief: ProductConceptBrief): string[] {

@@ -12,6 +12,7 @@ import {
   flowMetaToJSON,
 } from "@/lib/flow-ai-types";
 import { buildConceptBrief } from "@/lib/ai-concept-server";
+import { resolveLLM } from "@/lib/llm/resolve";
 import { getConceptReadiness, emptyConceptBrief, type ConceptBriefInputs, type ProductConceptBrief } from "@/lib/flow-concept";
 import { applyFlowOpOnce, getFlowOpResult, type FlowOpType } from "@/lib/flow-op";
 import { safeDetail } from "@/lib/api-error";
@@ -137,9 +138,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ...(stored ?? {}), replay: true, flowMeta: meta });
     }
 
-    // 无 key 时 buildConceptBrief 内部走离线启发式（不编造、只落能定的）
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    const out = await buildConceptBrief(isBuild ? "build" : "update", inputs, prev, apiKey);
+    const model = await resolveLLM(user.sub, "flow-concept");
+    if (!model) {
+      const meta = flowMetaToJSON(flowMetaDone(running, { status: "failed", error: flowError("model_not_configured", { operation: running.operation, phase: running.phase, requestId: running.requestId }) }));
+      return NextResponse.json({ error: "model_not_configured", flowMeta: meta }, { status: 412 });
+    }
+    const out = await buildConceptBrief(isBuild ? "build" : "update", inputs, prev, model);
     const nextBrief = {
       ...out.brief,
       projectId,
@@ -166,7 +170,7 @@ export async function POST(req: NextRequest) {
       const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed" }));
       return NextResponse.json({ ...(stored ?? {}), replay: true, flowMeta: meta });
     }
-    const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: !apiKey }));
+    const meta = flowMetaToJSON(flowMetaDone(running, { status: "completed", fallbackUsed: false }));
     return NextResponse.json({ ...payload, flowMeta: meta });
   } catch (err) {
     // F0-A 错误协议：失败保留旧 Brief，不落幂等台账，不清空用户内容

@@ -4,6 +4,8 @@
 // 关联建议：若能匹配到用户已有笔记（按标题/内容相似），返回其 id，否则返回标题占位。
 
 import type { BrainNote } from "./brain-db";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 /** 输入类型：决定走哪套转译 prompt 与哪种可视化卡片 */
 export type NoteType =
@@ -842,8 +844,8 @@ async function callQwen(
   content: string,
   existing: BrainNote[],
   type: NoteType,
+  model: ResolvedModel,
 ): Promise<Partial<OrganizedNote>> {
-  const baseUrl = (process.env.LLM_MODEL_BASE_URL || "").replace(/\/+$/, "");
   /**
    * 策略输出契约（主题 → 子策略两层）。之所以把门槛与禁区写得这么重：
    * 早期版本只说"提炼长期策略/方向"，结果任何文本都能凑出策略——
@@ -959,14 +961,15 @@ async function callQwen(
         return buildSystemPrompt("jotting");
     }
   }
-  const res = await fetch(`${baseUrl}/chat/completions`, {
+  const startedAt = Date.now();
+  const res = await fetch(`${model.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.LLM_MODEL_API_KEY}`,
+      ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
     },
     body: JSON.stringify({
-      model: process.env.LLM_MODEL_MODEL_ID,
+      model: model.model,
       temperature: 0.4,
       response_format: { type: "json_object" },
       messages: [
@@ -987,15 +990,18 @@ async function callQwen(
   });
   if (!res.ok) throw new Error(`brain_organize_${res.status}`);
   const data = await res.json();
+  recordUsageFromModel(model, data, startedAt, "brain-organize");
   const content0: string = data?.choices?.[0]?.message?.content ?? "";
   if (!content0) throw new Error("brain_organize_empty");
   return parseOrganized(content0);
 }
 
-/** 整理一段原始文本为结构化笔记。existing 用于关联建议与兜底。服务端调用。 */
+/** 整理一段原始文本为结构化笔记。existing 用于关联建议与兜底。服务端调用。
+ *  model 缺省（未配置模型 / 离线调用点）时直接走启发式，不调用 AI。 */
 export async function organizeNote(
   content: string,
   existing: BrainNote[] = [],
+  model?: ResolvedModel,
 ): Promise<OrganizedNote> {
   const type = classifyInput(content);
   const isMeeting = type === "meeting";
@@ -1034,12 +1040,11 @@ export async function organizeNote(
     }
   }
 
-  const apiKey = process.env.LLM_MODEL_API_KEY;
-  const baseUrl = process.env.LLM_MODEL_BASE_URL;
-  const model = process.env.LLM_MODEL_MODEL_ID;
-  if (apiKey && baseUrl && model && content.trim().length > 4) {
+  // 模型来源：仅用调用方解析出的模型；未配置时走启发式（不再有内置兜底）。
+  const useModel: ResolvedModel | null = model ?? null;
+  if (useModel && content.trim().length > 4) {
     try {
-      const ai = await callQwen(content, existing, type);
+      const ai = await callQwen(content, existing, type, useModel);
       const merged: OrganizedNote = {
         title: ai.title || base.title,
         category: ai.category || base.category,

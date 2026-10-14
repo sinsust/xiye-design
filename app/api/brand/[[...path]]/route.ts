@@ -7,6 +7,7 @@ import * as m1 from "@/lib/api-handlers/brand/rewrite";
 import * as m2 from "@/lib/api-handlers/brand/zip";
 
 export const runtime = "nodejs";
+export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
 export const dynamic = "force-dynamic";
 
 type HandlerFn = (req: NextRequest, ctx?: unknown) => Promise<Response> | Response;

@@ -130,6 +130,9 @@ export const userObsidianConfig = sqliteTable("user_obsidian_config", {
     .references(() => users.id, { onDelete: "cascade" }),
   vaultPath: text("vault_path").notNull().default(""),
   enabled: integer("enabled").notNull().default(0),
+  // 分类 → vault 子目录映射（JSON）；defaultFolder 为兜底目录（schema.pg 同构）
+  defaultFolder: text("default_folder").notNull().default(""),
+  categoryFolderMap: text("category_folder_map").notNull().default("{}"),
   lastSyncedAt: text("last_synced_at"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
@@ -149,6 +152,56 @@ export const userFeishuConfig = sqliteTable("user_feishu_config", {
   scope: text("scope"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
+});
+
+// AI 模型接入配置（每档案多行）：用户在产品内添加的第三方模型（OpenAI 兼容协议）。
+// apiKeyEnc 为 AES-256-GCM 加密后的密文；可空 —— 自建/局域网等无需鉴权的端点不填 Key。
+export const aiModelConfigs = sqliteTable("ai_model_configs", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  // 服务商：qwen / deepseek / kimi / openai / custom
+  provider: text("provider").notNull(),
+  baseUrl: text("base_url").notNull(),
+  model: text("model").notNull(),
+  apiKeyEnc: text("api_key_enc"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// AI 模型生效策略（每档案一行）：当前生效模型 + 功能级覆盖。
+// activeModelId 为空 → 用内置默认模型；featureMap 为 JSON { featureKey: modelId }，缺省=跟随 active。
+export const aiModelSettings = sqliteTable("ai_model_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  activeModelId: text("active_model_id"),
+  featureMap: text("feature_map").notNull().default("{}"),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// AI 调用用量流水（只读统计，不做配额/拦截）：每次成功调用记一行。
+// BYOK 形态下 Key 与费用都归用户自己，这里只回答「我这个月花了多少、花在哪」。
+// tokensIn/Out 取响应的 usage；端点不返回 usage 时记 0（不阻塞主流程，fire-and-forget）。
+export const aiUsage = sqliteTable("ai_usage", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  /** 功能键（见 lib/llm/features.ts）；未知功能记 "unknown" */
+  feature: text("feature").notNull().default("unknown"),
+  /** 调用的模型配置 id（可空：模型删除后历史流水仍保留） */
+  modelId: text("model_id"),
+  modelName: text("model_name"),
+  provider: text("provider"),
+  model: text("model"),
+  tokensIn: integer("tokens_in").notNull().default(0),
+  tokensOut: integer("tokens_out").notNull().default(0),
+  latencyMs: integer("latency_ms").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
 });
 
 // 第二大脑：用户私有的个人知识笔记（随手记 + AI 自动整理）。
@@ -185,6 +238,8 @@ export const brainNotes = sqliteTable("brain_notes", {
   // ima 增量同步：来源文档唯一标识 + 最近一次同步时间
   imaDocId: text("ima_doc_id"),
   imaSyncedAt: text("ima_synced_at"),
+  // ima 增量同步：远端笔记 id（本地查询/去重用，schema.pg 同构）
+  imaNoteId: text("ima_note_id"),
   // obsidian 直连溯源（决策 13/14，桌面壳前仅预留列，不做 watcher/写回）
   obsidianVault: text("obsidian_vault"),
   obsidianRelPath: text("obsidian_rel_path"),
@@ -251,6 +306,12 @@ export const brainStrategies = sqliteTable("brain_strategies", {
   // 策略标题，如"Q3主攻东南亚市场"
   title: text("title").notNull(),
   description: text("description"),
+  // 策略两层改造（strat-fix 迁移同步）：主题/子策略层级（schema.pg 同构）
+  parentId: text("parent_id"),
+  kind: text("kind").notNull().default("theme"),
+  goal: text("goal"),
+  rationale: text("rationale"),
+  sortOrder: integer("sort_order").notNull().default(0),
   // active(活跃) / paused(暂停) / achieved(已达成) / abandoned(已放弃)
   status: text("status").notNull().default("active"),
   createdAt: integer("created_at").notNull(),

@@ -5,13 +5,18 @@ import {
   type KnowledgeType,
 } from "@/lib/knowledge-types";
 import { generateKnowledgeMeta } from "@/lib/knowledge-generator";
+import { resolveLLM } from "@/lib/llm/resolve";
+import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 import { getSessionUser } from "@/lib/auth";
+import { isBrowserData } from "@/lib/db";
+import { fetchBuiltinKnowledgeSnapshot } from "@/lib/browser/knowledge-snapshot";
 import { randomSuffix } from "@/lib/id";
 import {
   getCloudKnowledge,
   insertCloudKnowledge,
   updateCloudKnowledge,
   deleteCloudKnowledge,
+  listCloudKnowledge,
   type NewCloudKnowledge,
 } from "@/lib/knowledge-db";
 
@@ -53,6 +58,12 @@ export async function POST(req: NextRequest) {
     const localPath = typeof body?.localPath === "string" ? body.localPath.trim() : "";
     const promptBody = typeof body?.body === "string" ? body.body.trim() : "";
 
+    // 统一 LLM 层解析模型；未配置任何模型 → 明确报错（不再有内置兜底）
+    const model = await resolveLLM(user.sub, "knowledge");
+    if (!model) {
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, { status: 412 });
+    }
+
     // AI 完善（服务端），失败自动回退启发式
     const meta = await generateKnowledgeMeta({
       type,
@@ -61,7 +72,7 @@ export async function POST(req: NextRequest) {
       repoUrl,
       source,
       localPath,
-    });
+    }, model);
 
     const slug = `kg-${Date.now().toString(36)}-${randomSuffix()}`;
     const today = new Date().toISOString().slice(0, 10);
@@ -140,6 +151,33 @@ export async function PUT(req: NextRequest) {
   } catch (err) {
     console.error("knowledge update failed:", err);
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
+  }
+}
+
+// GET /api/knowledge
+// 列表 = 内置只读条目 + 云端共享条目。
+// 两条轨道取的内置条目来源不同，但语义一致：
+// - 本地/服务端：直接扫仓库 knowledge/categories；
+// - 浏览器数据层：读构建期导出的静态快照（没有文件系统），云端条目仍来自本机库。
+export async function GET() {
+  const user = await getSessionUser();
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  try {
+    const cloud = await listCloudKnowledge();
+    if (isBrowserData) {
+      const builtin = await fetchBuiltinKnowledgeSnapshot();
+      return NextResponse.json({ entries: [...builtin, ...cloud] });
+    }
+    const { getKnowledgeEntries } = await import("@/lib/knowledge-scan");
+    return NextResponse.json({ entries: [...getKnowledgeEntries(), ...cloud] });
+  } catch (err) {
+    console.error("[knowledge] 列表读取失败:", err);
+    return NextResponse.json(
+      { error: "list_failed", message: err instanceof Error ? err.message : String(err) },
+      { status: 500 },
+    );
   }
 }
 

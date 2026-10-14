@@ -10,6 +10,7 @@ import { insertBrainStrategies, insertBrainNote } from "@/lib/brain-db";
 import { chatLLMJson } from "@/lib/table/llm";
 import type { AnalysisResult } from "@/lib/table/types";
 import { safeDetail } from "@/lib/api-error";
+import { ModelNotConfiguredError, MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 
 export const runtime = "nodejs";
 
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
 ]
 只返回 JSON 数组，不要其他内容。`;
 
-    const raw = await chatLLMJson<unknown>(system, "提炼策略");
+    const raw = await chatLLMJson<unknown>(system, "提炼策略", { userId: user.sub });
     // 兼容裸数组或包裹对象（{ 策略建议: [...] } / { strategies: [...] }）
     const items = Array.isArray(raw)
       ? (raw as Array<{ title?: string; description?: string }>)
@@ -77,6 +78,9 @@ export async function POST(req: NextRequest) {
     );
     return NextResponse.json({ created, count: created.length });
   } catch (err) {
+    if (err instanceof ModelNotConfiguredError) {
+      return NextResponse.json({ error: "model_not_configured", message: MODEL_NOT_CONFIGURED_MESSAGE }, { status: 412 });
+    }
     console.error("brain extract strategies failed:", err);
     return NextResponse.json({ error: "extract_failed", message: `提取策略失败：${safeDetail(err)}` }, { status: 500 });
   }

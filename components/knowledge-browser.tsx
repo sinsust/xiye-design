@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect, useState, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
+import { hasLocalMachine } from "@/lib/deploy-mode";
 import {
   ArrowUpRight,
   AtSign,
@@ -384,7 +385,8 @@ function EntryFormModal({
             </div>
           </div>
 
-          {mode === "add" && (
+          {/* 本地文件夹地址：public 部署下访客机器上没有本仓库，填了也无效 */}
+          {mode === "add" && hasLocalMachine() && (
             <div className="mt-4">
               <label className="text-xs uppercase tracking-wide text-muted-foreground">
                 本地文件夹地址
@@ -885,7 +887,9 @@ export function KnowledgeBrowser({
                   )}
                   {open.repoUrl && <CopyableLink label="GitHub / 仓库" href={open.repoUrl} />}
                   {open.source && <CopyableLink label="官网 / 文档" href={open.source} />}
-                  {open.localPath && <CopyablePath label="本地路径" value={open.localPath} />}
+                  {hasLocalMachine() && open.localPath && (
+                    <CopyablePath label="本地路径" value={open.localPath} />
+                  )}
                 </dl>
                 {/* 局部图谱：当前条目 + 关联 */}
                 <div className="mt-5">

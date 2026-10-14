@@ -1,9 +1,11 @@
 // 全站文案自动生成：根据 AI 产品 PRD / 特征，产出贴合真实项目的 ContentOverride，
-// 替代统一 demo 占位文案。包含 ① 本地启发式（离线/失败兜底）② LLM 生成（默认走 LLM_MODEL_* / Qwen）③ 白名单清洗。
+// 替代统一 demo 占位文案。包含 ① 本地启发式（离线/失败兜底）② LLM 生成（走「设置 → AI 模型」里用户配置的模型）③ 白名单清洗。
 
 import { DEMO_CONTENT } from "@/data/skeleton-content";
 import type { ContentOverride } from "@/lib/content-resolver";
 import type { IntentNarrative } from "@/lib/ai-intent";
+import type { ResolvedModel } from "@/lib/llm/resolve";
+import { recordUsageFromModel } from "@/lib/llm/usage";
 
 export interface CopyContext {
   projectName?: string | null;
@@ -256,19 +258,21 @@ export function summarizeCopyChanges(
   return { count: paths.length, paths: paths.slice(0, 6) };
 }
 
-/** 用 LLM 生成（OpenAI 兼容，默认 LLM_MODEL_* / Qwen），失败则回退启发式 */
+/** 用 LLM 生成（OpenAI 兼容），失败则回退启发式 */
 export async function generateCopyWithLLM(
   ctx: CopyContext,
-  apiKey = process.env.LLM_MODEL_API_KEY || "",
-  baseUrl = (process.env.LLM_MODEL_BASE_URL || "").replace(/\/+$/, ""),
-  model = process.env.LLM_MODEL_MODEL_ID || "",
+  model: ResolvedModel,
 ): Promise<ContentOverride> {
   const base = generateCopyOverride(ctx);
-  const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/chat/completions`, {
+  const startedAt = Date.now();
+  const res = await fetch(`${model.baseUrl}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    headers: {
+      "Content-Type": "application/json",
+      ...(model.apiKey ? { Authorization: `Bearer ${model.apiKey}` } : {}),
+    },
     body: JSON.stringify({
-      model,
+      model: model.model,
       temperature: 0.8,
       response_format: { type: "json_object" },
       messages: [
@@ -280,6 +284,7 @@ export async function generateCopyWithLLM(
   });
   if (!res.ok) throw new Error(`copy_ai_${res.status}`);
   const data = await res.json();
+  recordUsageFromModel(model, data, startedAt, "copy");
   const content: string = data?.choices?.[0]?.message?.content ?? "";
   const cleaned = content.replace(/```json/gi, "").replace(/```/g, "").trim();
   const parsed = JSON.parse(cleaned) as unknown;

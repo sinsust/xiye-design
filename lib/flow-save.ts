@@ -6,17 +6,13 @@ import { useFlowStore } from "@/lib/store/flow-store";
 /**
  * 把当前 flow 状态存为「我的项目」里的一个草稿/项目。
  *
- * - 未登录：返回 { ok:false, reason:"login" }，由调用方决定（提示登录或放弃）。
- * - 已登录：有 savedProjectId 则 PUT 更新，否则 POST 新建并回填 id。
+ * - 有 savedProjectId 则 PUT 更新，否则 POST 新建并回填 id。
  *
  * @param opts.name 优先传入的名称；缺省用 projectInfo.projectName 或「未命名项目」。
  */
 export async function saveFlowDraft(opts?: {
   name?: string;
-}): Promise<{ ok: true; id: string } | { ok: false; reason: "login" | "failed" }> {
-  const me = await fetch("/api/auth/me");
-  if (!me.ok) return { ok: false, reason: "login" };
-
+}): Promise<{ ok: true; id: string } | { ok: false; reason: "failed" }> {
   const st = useFlowStore.getState();
   const snap = st.captureFlowSnapshot();
   const name =

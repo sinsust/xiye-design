@@ -9,7 +9,7 @@ if [ ! -d "node_modules" ]; then
   npm install || { echo "ERROR: npm install failed"; exit 1; }
 fi
 
-PORT=3000
+PORT=3200
 
 # 若端口已在响应，假定 dev server 已运行，直接打开浏览器，避免重复启动导致端口跳变
 if curl -s -o /dev/null --max-time 3 http://localhost:$PORT 2>/dev/null; then

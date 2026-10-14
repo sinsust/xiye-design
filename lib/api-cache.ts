@@ -9,7 +9,7 @@
  * - 纯客户端工具（引用 localStorage），仅在 client 组件中调用。
  */
 
-import { AUTH_CACHE_KEY } from "@/lib/auth-events";
+import { PROFILE_COOKIE } from "@/lib/local-profile";
 
 interface CacheEntry {
   data: unknown;
@@ -18,18 +18,17 @@ interface CacheEntry {
 
 const store = new Map<string, CacheEntry>();
 
-/** 当前用户作用域（从登录缓存读取 email；未登录/解析失败回退 anon） */
+/** 当前档案作用域（从 profile cookie 读取档案 id；缺省回退 anon） */
 function scopeKey(): string {
   try {
-    const raw = localStorage.getItem(AUTH_CACHE_KEY);
-    if (raw) {
-      const u = JSON.parse(raw) as { email?: string };
-      if (u?.email) return u.email;
-    }
+    const m = document.cookie.match(
+      new RegExp(`(?:^|; )${PROFILE_COOKIE}=([^;]*)`),
+    );
+    const id = m ? decodeURIComponent(m[1]) : "";
+    return id || "anon";
   } catch {
-    /* 解析失败回退 anon */
+    return "anon";
   }
-  return "anon";
 }
 
 /** 读缓存；未命中或过期返回 null */

@@ -168,6 +168,8 @@ export function formatDueDate(dueDate: string): string {
   return yy === curYY ? `${Number(mm)}月${Number(dd)}日` : `${yy}-${mm}-${dd}`;
 }
 
+export { displayTitle, isPlaceholderTitle } from "@/lib/brain-display";
+
 /** 把 ISO 下次复习时间转成"X 分钟后 / X 小时后 / 明天 / X 天后"的友好文案 */
 export function nextInHours(iso: string): string {
   const diff = new Date(iso).getTime() - Date.now();
