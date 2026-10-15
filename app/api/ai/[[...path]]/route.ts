@@ -21,6 +21,7 @@ import * as m13 from "@/lib/api-handlers/ai/models/[id]";
 import * as m14 from "@/lib/api-handlers/ai/usage";
 import * as m15 from "@/lib/api-handlers/ai/models/options";
 import * as m16 from "@/lib/api-handlers/ai/agent-manifest";
+import * as m17 from "@/lib/api-handlers/ai/models/current";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
@@ -52,6 +53,8 @@ const ROUTES: RouteDef[] = [
   { key: "models/[id]", methods: { PATCH: m13.PATCH as HandlerFn, DELETE: m13.DELETE as HandlerFn } },
   { key: "usage", methods: { GET: m14.GET as HandlerFn } },
   { key: "agent-manifest", methods: { POST: m16.POST as HandlerFn } },
+  // 精确匹配优先于 models/[id]，不会被动态段抢走
+  { key: "models/current", methods: { GET: m17.GET as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

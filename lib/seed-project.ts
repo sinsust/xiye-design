@@ -17,6 +17,7 @@ import { DEMO_CONTENT, type DemoContent } from "@/data/skeleton-content";
 import { deepMerge, type ContentOverride } from "@/lib/content-resolver";
 import { resolveArchitecture } from "@/lib/architecture";
 import { SECRET_PATTERN } from "@/lib/security";
+import { auditSeedImports, buildNotesMd } from "@/lib/seed-imports";
 import { buildStaticPreviewHtml } from "@/lib/static-preview";
 
 const DEFAULT_STYLE_ID = "aw-brutalist";
@@ -1509,7 +1510,7 @@ const SEED_RUN: Record<string, { label: string; run: string; runnable: boolean }
 
 function seedReadme(t: SeedTokens, state: FlowState, meta: { label: string; run: string; runnable: boolean }): string {
   const stack = TECH_STACKS.find((s) => s.id === state.techStack);
-  return `# seed/ — 可运行底座工程
+  return `# 本工程 — 可运行底座
 
 > 由 xiye 流程工作台生成 · 技术栈 **${stack?.name ?? "未选择"}** · 视觉风格 token 已落地
 > 这是给 AI 开发 Agent 的**开工起点**：目录按 docs/ARCHITECTURE.md 铺好，壳页面已套用 globals.css 的设计 token。
@@ -1537,7 +1538,7 @@ ${meta.runnable ? "启动后访问本地开发地址，即可看到已套用视�
 3. 按 \`motion\` 接入动效（framework 决定 gsap / lenis / css）
 4. 按 \`stack.aiIntegration\` 把 AI 能力收敛到服务端
 
-> 完整规格见 \`../docs/*.md\` 与 \`../xiye.agent.json\`。
+> 完整规格见 \`docs/*.md\` 与 \`xiye.agent.json\`。
 `;
 }
 
@@ -1649,9 +1650,9 @@ app.listen(port, () => console.log(\`API ready on :\${port}\`));
   // 决策17：静态产物预览档 preview.html（自包含 HTML，独立可开，勿放 docs/ 避免与 README 混淆）
   const style = VISUAL_STYLE_MAP[state.visualStyle ?? ""] ?? VISUAL_STYLES[0];
   const assembled: SeedFile[] = [
-    { path: "README.md", content: readme },
+    { path: "SEED.md", content: readme },
     { path: "preview.html", content: buildStaticPreviewHtml(state, style, state.designSystem) },
-    ...buildAgentMdFiles(state),
+    ...buildAgentEntryMatrix(state),
     ...files,
     ...buildBlueprintFiles(state, tokens),
     ...buildStyleAnchorFiles(state),
@@ -1664,18 +1665,36 @@ app.listen(port, () => console.log(\`API ready on :\${port}\`));
   assembled.forEach((f, i) => lastIndex.set(f.path, i));
   const deduped = assembled.filter((f, i) => lastIndex.get(f.path) === i);
 
+  // C：生成期 import 审计 + 兜底打桩，保证解压后 npm run dev 不因缺失模块崩溃
+  const pkgRaw = deduped.find((f) => f.path === "package.json")?.content;
+  const pkgDeps = new Set<string>();
+  if (pkgRaw) {
+    try {
+      const p = JSON.parse(pkgRaw);
+      Object.keys(p.dependencies ?? {}).forEach((d) => pkgDeps.add(d));
+      Object.keys(p.devDependencies ?? {}).forEach((d) => pkgDeps.add(d));
+    } catch {
+      /* 非 JS 栈可能无 package.json 或不合法，忽略 */
+    }
+  }
+  const audit = auditSeedImports(deduped, pkgDeps);
+  const withAudit = [...deduped, ...audit.stubs];
+  if (audit.stubs.length || audit.issues.length) {
+    withAudit.push({ path: "BUILD_NOTES.md", content: buildNotesMd(audit) });
+  }
+
   return {
-    files: deduped,
+    files: withAudit,
     runCommand: meta.run,
     frameworkLabel: meta.label,
     runnable: meta.runnable,
   };
 }
 
-// —— 三件套-A：AGENTS.md / CLAUDE.md（AI 编码工具自动读取）——
-// prefix：seed 内为 "../"（引用仓库根 docs/），zip 根为 ""（直接引用 docs/）
+// —— 三件套-A：agent 自动读取入口（AGENTS.md / CLAUDE.md / .cursorrules / …）——
+// 扁平化后 docs 与工程同根，agentEntryBody 默认 prefix 为 ""（直接引用 docs/）
 
-export function buildAgentMdFiles(state: FlowState, prefix = "../"): SeedFile[] {
+function agentEntryBody(state: FlowState, prefix = ""): string {
   const projName = state.projectInfo?.projectName ?? "你的产品";
   const stack = TECH_STACKS.find((s) => s.id === state.techStack);
   const meta = SEED_RUN[state.techStack ?? ""] ?? SEED_RUN.react_express;
@@ -1756,7 +1775,7 @@ ${pagesLines}
 
 ## DO
 
-- 以本 seed 为起点做增量开发，不要另起炉灶重建工程
+- 以本工程为起点做增量开发，不要另起炉灶重建工程
 - 先落地 globals.css token + tailwind 主题，让视觉基线先生效
 - 按 pages 逐页装配组件，componentVariants 决定实现类与预览类
 - AI 能力收敛到服务端（stack.aiIntegration），前端只读流
@@ -1782,10 +1801,24 @@ node scripts/verify.mjs
 ${decisionsSection}
 `;
 
-  return [
-    { path: "AGENTS.md", content: body },
-    { path: "CLAUDE.md", content: body },
+  return body;
+}
+
+// —— 三件套-A·增强：覆盖主流 agent 编程工具的自动读取入口 ——
+// 不同工具认的文件名不同：Claude Code / Codex / 通用 → AGENTS.md；Cursor → .cursorrules；
+// GitHub Copilot → copilot-instructions.md（仓库根或 .github/）；Windsurf → .windsurfrules。
+// 全部共用同一份自包含开工指令，使「解压后把工程交给任意 agent 工具即可直接开工」。
+export function buildAgentEntryMatrix(state: FlowState): SeedFile[] {
+  const body = agentEntryBody(state, ""); // 扁平化后 docs 与工程同根，prefix 为空
+  const names = [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".cursorrules",
+    "copilot-instructions.md",
+    ".windsurfrules",
+    ".github/copilot-instructions.md",
   ];
+  return names.map((n) => ({ path: n, content: body }));
 }
 
 // —— 三件套-B：蓝图落盘 —— 页面路由占位 + 组件文件占位 + BLUEPRINT.md ——
@@ -1887,7 +1920,7 @@ export default function ${PageName}Page() {
     "# BLUEPRINT.md — 蓝图装配清单",
     "",
     "> 由 xiye 流程工作台生成。页面路由与组件文件占位已落盘，AI 按此清单逐页装配。",
-    "> 视觉基线（token）、核心组件 CSS（Button/Input/Card/Modal）见 `../docs/DESIGN_SPEC.md`，动效库见 `../docs/MOTION.md`。",
+    "> 视觉基线（token）、核心组件 CSS（Button/Input/Card/Modal）见 `docs/DESIGN_SPEC.md`，动效库见 `docs/MOTION.md`。",
     "",
     ...assembly.flatMap((p) => [
       `## ${p.pageName}（\`${p.pageSlug}\`）`,

@@ -638,7 +638,7 @@ function AiModelEntryCard() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">AI 模型</p>
         <p className="truncate text-xs text-muted-foreground">
-          内置默认模型开箱即用；可添加 DeepSeek / Qwen / Kimi 并给单个功能指定模型
+          需先添加至少一个模型并「设为当前生效」，AI 功能才可用；可添加 DeepSeek / Qwen / Kimi 并给单个功能指定模型
         </p>
       </div>
       {activeName && (

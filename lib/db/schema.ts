@@ -173,7 +173,7 @@ export const aiModelConfigs = sqliteTable("ai_model_configs", {
 });
 
 // AI 模型生效策略（每档案一行）：当前生效模型 + 功能级覆盖。
-// activeModelId 为空 → 用内置默认模型；featureMap 为 JSON { featureKey: modelId }，缺省=跟随 active。
+// activeModelId 为空 → 无可用模型（resolveLLM 不再有内置兜底）；featureMap 为 JSON { featureKey: modelId }，缺省=跟随 active。至少配置一个模型并设为当前生效，AI 功能才可用。
 export const aiModelSettings = sqliteTable("ai_model_settings", {
   userId: text("user_id")
     .primaryKey()

@@ -23,7 +23,7 @@ import { buildArchitectureMarkdown } from "@/lib/architecture";
 import { validateExport } from "@/lib/export-consistency";
 import { buildAgentManifest, buildAgentHandoffMd, resolvedTokens } from "@/lib/agent-manifest";
 import { buildCssVariables, buildTailwindConfig } from "@/lib/design-tokens-css";
-import { buildSeedProject, buildAgentMdFiles, resolveSeedTokens } from "@/lib/seed-project";
+import { buildSeedProject, buildAgentEntryMatrix, resolveSeedTokens } from "@/lib/seed-project";
 import { buildAiKickoffPrompt } from "@/lib/ai-prompt";
 import { buildSecurityGuideMd } from "@/lib/security-guide";
 import { buildGuardNormsMd } from "@/lib/guard-norms";
@@ -373,19 +373,18 @@ npm install
 npm run dev
 \`\`\`
 
-## 可运行底座（seed/）
-\`seed/\` 是按所选技术栈生成的**可运行工程骨架**：依赖锁定版本、目录按架构铺好、壳页面已套用设计 token。
-把 \`seed/\` 目录交给 AI 开发 Agent，作为其开工起点：
+## 可运行工程（解压即完整项目）
+本工程解压后即为**完整可运行项目**：依赖锁定版本、目录按架构铺好、壳页面已套用设计 token。
+把整个工程目录交给 AI 开发 Agent 打开，即为其开工起点：
 
 \`\`\`bash
-cd seed
 ${(() => {
   const seed = buildSeedProject(state, resolveSeedTokens(state));
   return seed.runCommand;
 })()}
 \`\`\`
 
-seed 内已含：
+工程内已含：
 - \`AGENTS.md\` / \`CLAUDE.md\`：AI 编码工具（Claude Code / Cursor / Copilot）打开工程即自动加载的**开发约定**
 - \`BLUEPRINT.md\`：蓝图装配清单（页面路由与组件文件占位已落盘）
 - \`scripts/verify.mjs\`：**可脚本化验收**（token / 目录 / 页面 / 组件 / 无 TODO / 无密钥泄漏）
@@ -623,7 +622,7 @@ export function buildPrdMd(
         `- 当：用户触发「${name}」的主操作（进入/创建/提交/查看）\n` +
         `- 应：主流程顺畅完成，关键结果立即可见，且符合所选视觉规范（token 一致、响应式、动效克制）\n` +
         `- 边界：输入为空/非法时有友好提示；加载中与失败态均有明确反馈；数据存取走 DATA_CONTRACT 约定接口\n` +
-        `- 可测：该功能关键路径可被 seed/scripts/verify.mjs 或浏览器手工脚本覆盖，无 TODO/FIXME 遗留\n` +
+        `- 可测：该功能关键路径可被 scripts/verify.mjs 或浏览器手工脚本覆盖，无 TODO/FIXME 遗留\n` +
         `\`\`\``
       );
     })
@@ -744,7 +743,7 @@ ${blocks}
 
   // 9. 里程碑与交付范围
   const milestoneRows = [
-    `### Phase 0 · 底座跑通（参照 \`seed/\`）\n- 启动工程并确认运行；读交接文档；verify.mjs 全部通过。`,
+    `### Phase 0 · 底座跑通（参照本工程）\n- 在工程根启动并确认运行；读交接文档；node scripts/verify.mjs 全部通过。`,
     `### Phase 1 · 核心链路（P0 · 共 ${p0} 个 P0 页面）\n> 范围：${p0Pages.map((p) => `\`${p.name}\``).join("、") || "核心 P0 页面"}\n- 打通端到端主流程，可被关键路径验收覆盖。`,
     `### Phase 2 · 完善分层（P1 → P2）\n> 范围：P1 共 ${p1} 个、P2 共 ${p2} 个页面\n- 实现 P1 能力与打磨视觉/动效；P2 按需补齐；非目标（第 8 节）不做。`,
   ].join("\n\n");
@@ -844,7 +843,7 @@ ${coreJourneySection}
 
 ## 7. 关键数据模型（候选实体与建议字段）
 
-> AI 开发时可细化到实际 ORM/Schema；字段命名与接口契约遵循 \`seed/DATA_CONTRACT.md\`。
+> AI 开发时可细化到实际 ORM/Schema；字段命名与接口契约遵循 \`DATA_CONTRACT.md\`。
 
 | 候选实体 | 建议字段 | 备注 |
 | --- | --- | --- |
@@ -958,7 +957,7 @@ export function generateProject(state: FlowState, content?: ContentOverride, sty
       { filename: "SECURITY.md", title: "安全开发注意事项", content: buildSecurityGuideMd() },
       { filename: "GUARD_NORMS.md", title: "开发边界规范", content: buildGuardNormsMd() },
       // 三件套-A：AI 编码工具打开仓库根即自动读取的顶层约定（zip 根目录）
-      ...buildAgentMdFiles(state, "").map((f) => ({ filename: f.path, title: "AI 开发约定", content: f.content })),
+      ...buildAgentEntryMatrix(state).map((f) => ({ filename: f.path, title: "AI 开发约定", content: f.content })),
       // P0 修复：把 collab 收敛链（蓝图/旅程/页面地图/界面规格/原型）接进交付物，
       // 否则用户在协同阶段审阅确认的产物在交付门被整体丢弃（此前 project-generator 完全不消费这 5 层）。
       // P2-④：透传所选角色风格，使 spec 文档顶部带「收敛视角」注脚，语气与风格一致。
@@ -970,53 +969,22 @@ export function generateProject(state: FlowState, content?: ContentOverride, sty
 }
 
 /**
- * P0-2：zip 根目录 package.json「命令跳板」。
- *
- * 背景：可运行工程实体在 `seed/` 子目录，但用户解压后最自然的动作是在根目录直接
- * `npm i` —— 此前必然失败且无任何提示，是交付物「第一分钟就撞上的墙」。
- *
- * 做法：根目录放一个薄转发 package.json，把 install / dev / build / start /
- * typecheck 全部代理到 seed/，使「解压 → npm i → npm run dev」真正走通；
- * 同时保留 seed/ 内部结构，既有交接文档里「cd seed/」的说法依然成立、不冲突。
+ * 注：B 扁平化后，可运行工程直接落工程根（无 seed/ 子目录），根 package.json 即真实工程
+ * 的 package.json（由 buildSeedProject 产出），不再需要转发跳板。
  */
-function buildRootPackageJson(project: GeneratedProject): string {
-  const rawName = (project.projectName || "xiye-app").toLowerCase().replace(/[^a-z0-9-]+/g, "-");
-  // 包名不允许以 - 开头/结尾
-  const name = rawName.replace(/^-+|-+$/g, "") || "xiye-app";
-  return JSON.stringify(
-    {
-      name,
-      version: "0.1.0",
-      private: true,
-      description: `${project.tagline || ""}（可运行工程位于 seed/ 目录，根目录命令已转发）`.trim(),
-      scripts: {
-        postinstall: "cd seed && npm install",
-        dev: "cd seed && npm run dev",
-        build: "cd seed && npm run build",
-        start: "cd seed && npm run start",
-        typecheck: "cd seed && npm run typecheck",
-      },
-    },
-    null,
-    2,
-  );
-}
 
 export function buildProjectZipFiles(project: GeneratedProject): { name: string; content: string }[] {
+  // 规格文档：README.md 落工程根（人类总览），其余落 docs/。
+  // AGENTS.md / CLAUDE.md / .cursorrules 等 agent 入口文件已由 seed.files 在工程根产出，不在此重复。
   const docFiles = project.docs.map((d) => ({
-    name: d.filename === "AGENTS.md" || d.filename === "CLAUDE.md" ? d.filename : `docs/${d.filename}`,
+    name: d.filename === "README.md" ? "README.md" : `docs/${d.filename}`,
     content: d.content,
   }));
-  const styleFiles = [
-    { name: "styles/globals.css", content: project.cssVariables },
-    { name: "styles/tailwind.config.ts", content: project.tailwindConfig },
-  ];
   const rootJson = [
-    // P0-2：根目录 package.json 跳板 —— 让「解压后根目录 npm i」直接可用
-    { name: "package.json", content: buildRootPackageJson(project) },
     { name: "xiye.agent.json", content: project.agentManifest },
     { name: "xiye.config.json", content: project.xiyeConfig },
   ];
-  const seedFiles = project.seed.files.map((f) => ({ name: `seed/${f.path}`, content: f.content }));
-  return [...docFiles, ...styleFiles, ...rootJson, ...seedFiles];
+  // B：扁平化 —— seed 文件直接落工程根（无 seed/ 子目录），解压即完整可跑工程
+  const seedFiles = project.seed.files.map((f) => ({ name: f.path, content: f.content }));
+  return [...seedFiles, ...docFiles, ...rootJson];
 }

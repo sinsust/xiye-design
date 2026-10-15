@@ -191,6 +191,12 @@ export async function createModel(userId: string, input: ModelInput): Promise<Mo
     createdAt: now,
     updatedAt: now,
   });
+  // 首模型自动激活：用户添加第一个模型时期望它直接可用，不必再手动「设为当前」。
+  // 否则 activeModelId 为空 → resolveLLM 返回 null → AI 功能报 model_not_configured、不发起任何请求。
+  const cur = await getSettings(userId);
+  if (!cur.activeModelId) {
+    await saveSettings(userId, { activeModelId: id });
+  }
   return {
     id,
     name: input.name,

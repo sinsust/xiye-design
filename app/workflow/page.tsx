@@ -29,6 +29,7 @@ import { CollabStage } from "./components/collab-stage";
 import { RefineStage } from "./components/refine-stage";
 import { BuildStage } from "./components/build-stage";
 import { DeliverStage } from "./components/deliver-stage";
+import { ModelChip } from "@/components/workflow/model-chip";
 import { LeaveDialog } from "./components/leave-dialog";
 
 // 阶段 ↔ store.currentStep（老 /flow 的 1..4）双向映射。历史遗留顺序，语义不可改，
@@ -439,6 +440,8 @@ export default function FlowV2Page() {
               })}
             </span>
           ) : null}
+          {/* 当前生效模型芯片：做产品时实际调用哪个模型，常驻可见、一键去设置 */}
+          <ModelChip />
         </div>
         <div className="min-w-0 flex-1">
           <StepBar active={active} done={done} onJump={goTo} maxReached={reachedTo} />

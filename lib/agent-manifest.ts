@@ -293,7 +293,7 @@ export function buildAgentManifest(state: FlowState): AgentManifest {
     bootstrap: (() => {
       const seed = buildSeedProject(state, resolveSeedTokens(state));
       return {
-        seedDir: "seed/",
+        seedDir: ".",
         runnable: seed.runnable,
         install: seed.runCommand.split(" && ")[0] ?? "npm install",
         dev: seed.runCommand.split(" && ").slice(1).join(" && ") || seed.runCommand,
@@ -320,7 +320,7 @@ export function buildAgentManifest(state: FlowState): AgentManifest {
     ],
     rules: {
       do: [
-        "以 seed/ 为起点做增量开发，不要另起炉灶重建工程",
+        "以本工程为起点做增量开发，不要另起炉灶重建工程",
         "先落地 globals.css token + tailwind 主题，让视觉基线先生效",
         "按 pages 逐页装配组件，componentVariants 决定实现类与预览类",
         "AI 能力收敛到服务端（stack.aiIntegration），前端只读流",
@@ -345,7 +345,7 @@ export function buildAgentManifest(state: FlowState): AgentManifest {
     },
     consistency: { ok: report.ok, issues: report.issues, warnings: report.warnings },
     referenceFiles: [
-      "seed/ — 可运行底座工程（依赖/配置/入口/壳页面已套 token）",
+      "本工程 — 可运行底座（依赖/配置/入口/壳页面已套 token）",
       "docs/ARCHITECTURE.md — 工程架构（目录/分层/数据流/落点）",
       "docs/DESIGN_SPEC.md — 视觉与技术规范（token/组件/动效/暗色）",
       "docs/SKELETON.md — 页面骨架说明",
@@ -387,12 +387,11 @@ export function buildAgentHandoffMd(state: FlowState, report: ConsistencyReport)
 标定一个产品：**${projName}**（${typeName}）${stack ? `，框架方案 **${stack.name}**（${stack.frontend} / ${stack.backend} / ${stack.database}）` : ""}。
 请按本技能交付：能跑起来的项目骨架、技术栈代码目录、视觉规范落地、蓝图各页面与组件、动效。
 
-## 二、开工起点（seed/ 可运行底座）
+## 二、开工起点（本工程 可运行底座）
 
-**不要从零搭工程。** \`seed/\` 已按所选技术栈生成可运行骨架：依赖锁定版本、目录按架构铺好、壳页面已套用设计 token。
+**不要从零搭工程。** 本工程已按所选技术栈生成可运行骨架：依赖锁定版本、目录按架构铺好、壳页面已套用设计 token。
 
 \`\`\`bash
-cd seed
 ${seed.runCommand}
 \`\`\`
 
@@ -401,7 +400,7 @@ ${seed.runCommand}
 ## 三、必须先读、且必须按它实现的文件
 
 1. \`docs/PRD.md\` —— 产品需求（范围 / 功能 / 优先级），AI 开发的功能依据：先界定做什么。
-2. \`seed/\` —— **可运行底座**：依赖/配置/入口/壳页面，开工起点。
+2. 本工程 —— **可运行底座**：依赖/配置/入口/壳页面，开工起点。
 3. \`docs/ARCHITECTURE.md\` —— 工程目录、分层边界、数据流。**目录结构照此落地，不得改成扁平实现。**
 4. \`docs/DESIGN_SPEC.md\` —— 设计 token、组件规范、动效、暗色。**token 必须原样落地。**
 5. \`docs/SKELETON.md\` 与 \`docs/MOTION.md\` —— 各页面的区块与动效细节。
@@ -410,7 +409,7 @@ ${seed.runCommand}
 ## 四、硬性约束
 
 - **不改设计**：视觉基线 = ${tokenLine}。任何偏离都需要在此总纲明确授权。
-- **冲突以 globals.css 为准**：若 \`docs/DESIGN_SPEC.md\` / \`seed/AGENTS.md\` / \`xiye.config.json\` 间色彩或字体矛盾，一律以 \`globals.css\` 的 :root 为唯一真值，其余对齐之；存疑先提示用户确认。
+- **冲突以 globals.css 为准**：若 \`docs/DESIGN_SPEC.md\` / \`AGENTS.md\` / \`xiye.config.json\` 间色彩或字体矛盾，一律以 \`globals.css\` 的 :root 为唯一真值，其余对齐之；存疑先提示用户确认。
 - **不悬空引用**：本包已通过一致性自检（以下）${report.ok ? "，无悬空引用。" : "，存在需人工确认的问题，见文末。"}
 - **密钥安全**：所有含密钥的 AI 调用必须放服务端；浏览器 bundle 不得出现模型密钥。
 - **按清单搭页面**：
@@ -426,7 +425,7 @@ ${dontLines}
 
 ## 六、实现顺序建议
 
-1. \`cd seed && ${seed.runCommand}\` 先跑起来，确认壳页面与视觉 token 生效。
+1. \`${seed.runCommand}\` 先跑起来，确认壳页面与视觉 token 生效。
 2. 落地 \`globals.css\` 的 :root token + tailwind 主题（seed 已含，核对一致即可）。
 3. 逐页按 \`pages\` 装配组件（componentVariants 对应的实现类与预览类）。
 4. 接入 \`motion\` 指定的动效（framework 决定用 gsap / lenis / css）。

@@ -71,11 +71,10 @@ ${(inferFeatureDetails(state).map((f) => f.desc ? `  - **${f.name}**：${f.desc}
 ${stackLine}
 
 # 开工方式（不要从零搭工程）
-\`seed/\` 已按所选技术栈生成可运行底座：依赖锁定、目录按架构铺好、壳页面已套用设计 token。
+本工程已按所选技术栈生成可运行底座：依赖锁定、目录按架构铺好、壳页面已套用设计 token。
 先把它跑起来，再在此之上做增量开发：
 
 \`\`\`bash
-cd seed
 ${seed.runCommand}
 \`\`\`
 
@@ -83,20 +82,20 @@ ${seed.runCommand}
 
 # 必须先读、并按它实现的文件
 1. \`docs/PRD.md\` —— 产品需求（范围 / 功能清单 / 优先级），是 AI 开发的功能依据：先读它界定「做什么」
-2. \`seed/AGENTS.md\`、\`seed/CLAUDE.md\` —— 开发约定（主流 AI 工具打开工程会自动加载）
+2. \`AGENTS.md\`、\`CLAUDE.md\` —— 开发约定（主流 AI 工具打开工程会自动加载）
 3. \`docs/AI_HANDOFF.md\` —— 交接总纲
 4. \`xiye.agent.json\` —— 机器可读清单（栈 / 页面 / token / 动效 / 约束）
 5. \`docs/ARCHITECTURE.md\` —— 架构（目录 / 分层 / 数据流）。目录结构照此落地，不得改成扁平实现
 6. \`docs/DESIGN_SPEC.md\`、\`docs/SKELETON.md\`、\`docs/MOTION.md\` —— 视觉与技术规范
-7. \`seed/BLUEPRINT.md\` —— 页面路由与组件占位已生成，按它装配
-8. \`seed/DATA_CONTRACT.md\` —— 数据模型与 API 契约
+7. \`BLUEPRINT.md\` —— 页面路由与组件占位已生成，按它装配
+8. \`DATA_CONTRACT.md\` —— 数据模型与 API 契约
 
 # 视觉基线（锁定，未经授权不得更改）
 - 主色 primary = \`${tk.colors.primary}\` ｜ 字号/字体 = \`${tk.typography.fontFamily}\` ｜ 圆角 = \`${tk.layout.radius}\` ｜ 暗色 = \`${tk.layout.darkMode}\`
 - token 见 \`globals.css\` 的 :root 与 \`tailwind.config.ts\` 映射。任何换色/改字体/改圆角都需用户明确授权。
 
 # 冲突处理（文档间不一致时）
-- 若发现 \`docs/DESIGN_SPEC.md\` / \`seed/AGENTS.md\` / \`xiye.config.json\` 之间色彩或字体矛盾，**一律以 \`styles/globals.css\` 的 \`:root\` 为唯一真值**，其余文档对齐之。
+- 若发现 \`docs/DESIGN_SPEC.md\` / \`AGENTS.md\` / \`xiye.config.json\` 之间色彩或字体矛盾，**一律以 \`globals.css\` 的 \`:root\` 为唯一真值**，其余文档对齐之。
 - 仍存疑时，先提示用户确认再改；不要凭推测静默覆盖 token。
 
 # 页面与组件（按蓝图逐页装配）
@@ -116,7 +115,7 @@ ${dontLines}
 以 \`docs/PRD.md\` 第 4 节列出的页面优先级为准，分 3 个阶段增量开发。**每一阶段完成即停下，输出「完成清单」并等待确认后，才可进入下一阶段**——不要在未确认时继续写业务代码：
 
 **Phase 0（底座跑通）**
-- 任务：\`cd seed\` 启动成功；首页壳页面正常渲染；按上面「必须先读」顺序把文件读完并确认理解了文档间的依赖关系。
+- 任务：在工程根启动成功；首页壳页面正常渲染；按上面「必须先读」顺序把文件读完并确认理解了文档间的依赖关系。
 - 完成输出：标记「Phase 0 完成」，贴启动日志/截图 + \`verify.mjs\` 通过项，列出你认为接下来最该先做的页面。
 - 等待我确认 → 进入 Phase 1。
 
@@ -136,11 +135,11 @@ ${dontLines}
 # 完成验收
 运行 seed 自检：
 \`\`\`bash
-cd seed && node scripts/verify.mjs
+node scripts/verify.mjs
 \`\`\`
 需全部通过（token 一致性 / 目录分层 / 交接文件 / 蓝图落盘 / 无 TODO / 无密钥泄漏）。通过后按 docs/AI_HANDOFF.md 的「完成回执」格式交付：启动截图 + 验收逐项结果 + 已实现页面/组件清单 + 复跑命令。
 
-现在开始：先读上述文件，然后 \`cd seed\` 按「分步开发节奏」的 Phase 0 → 1 → 2 逐阶段把页面与组件实现出来，每阶段结束后停下来等我确认。`;
+现在开始：先读上述文件，然后按「分步开发节奏」的 Phase 0 → 1 → 2 逐阶段把页面与组件实现出来，每阶段结束后停下来等我确认。`;
 }
 
 /** 辅助内联技术栈依赖用 */
