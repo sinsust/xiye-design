@@ -1,19 +1,21 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { isPublicDeploy } from "@/lib/deploy-mode";
 import { EnterForm } from "@/components/enter-form";
+import { EnterLocalRedirect } from "@/components/enter-local-redirect";
 
 /**
  * /enter —— 邀请码门户（public 部署模式专用，server component）。
  *
- * local / 桌面模式（DEPLOY_MODE != public）下本页【不适用】：
- *   middleware 在 local 模式直接放行（不做任何拦截），门户只会对单机用户造成困惑
- *   （输入邀请码后 POST /api/enter 返回 404 not_public）。
- *   因此这里 redirect 到首页（不用 notFound()：App Router 流式 SSR 下响应头已发出，
- *   notFound() 只能替换内容、改不了状态码，实测仍是 200，语义不清）。
+ * 静态化（Hobby 函数数削减 §5.1.3 措施 E）：本页不再使用 redirect()/notFound()，
+ * 这些会把它锁成动态渲染（占 1 个 Vercel Function）。isPublicDeploy() 在构建期由
+ * NEXT_PUBLIC_DEPLOY_MODE 内联，因此分支在构建期即确定：
+ *   - public 构建：渲染表单（middleware 总闸已放行 /enter）；
+ *   - local 构建：渲染 EnterLocalRedirect，客户端跳回首页。
  */
 export default function EnterPage() {
-  if (!isPublicDeploy()) redirect("/");
+  if (!isPublicDeploy()) {
+    return <EnterLocalRedirect />;
+  }
   return (
     <Suspense fallback={null}>
       <EnterForm />

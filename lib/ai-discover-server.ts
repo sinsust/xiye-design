@@ -420,7 +420,13 @@ async function callDeepSeek(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error("[ai-discover] DeepSeek non-ok:", res.status, safeDetail(text).slice(0, 160));
+      // 同上：厂商名取自实际配置，不要写死 DeepSeek
+      console.error(
+        `[ai-discover] ${model.provider} 非 2xx:`,
+        res.status,
+        `model=${model.model}`,
+        safeDetail(text).slice(0, 160),
+      );
       throw new Error(`http:${res.status}`);
     }
 

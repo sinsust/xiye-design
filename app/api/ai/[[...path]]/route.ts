@@ -19,6 +19,8 @@ import * as m12 from "@/lib/api-handlers/ai/models/settings";
 import * as m13 from "@/lib/api-handlers/ai/models/[id]";
 // 手工登记：AI 调用用量汇总（只读统计，无配额/拦截 —— BYOK 费用归用户自己）
 import * as m14 from "@/lib/api-handlers/ai/usage";
+import * as m15 from "@/lib/api-handlers/ai/models/options";
+import * as m16 from "@/lib/api-handlers/ai/agent-manifest";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
@@ -45,8 +47,11 @@ const ROUTES: RouteDef[] = [
   { key: "prototype", methods: { GET: m10.GET as HandlerFn, POST: m10.POST as HandlerFn, PUT: m10.PUT as HandlerFn } },
   { key: "models", methods: { GET: m11.GET as HandlerFn, POST: m11.POST as HandlerFn } },
   { key: "models/settings", methods: { GET: m12.GET as HandlerFn, PUT: m12.PUT as HandlerFn } },
+  // 精确匹配优先于 models/[id]（matchRoute 先跑精确轮），所以不会被 [id] 抢走
+  { key: "models/options", methods: { POST: m15.POST as HandlerFn } },
   { key: "models/[id]", methods: { PATCH: m13.PATCH as HandlerFn, DELETE: m13.DELETE as HandlerFn } },
   { key: "usage", methods: { GET: m14.GET as HandlerFn } },
+  { key: "agent-manifest", methods: { POST: m16.POST as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

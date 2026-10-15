@@ -8,7 +8,7 @@
 // 因此所有 /api 分发严格串行。代价是没有并发，收益是写路径不存在竞态、且与业务代码零改动等价。
 
 import * as aiRoutes from "@/app/api/ai/[[...path]]/route";
-import * as authRoutes from "@/app/api/auth/[[...path]]/route";
+import * as authRoutes from "@/lib/api-handlers/auth/me";
 import * as brainRoutes from "@/app/api/brain/[[...path]]/route";
 import * as brandRoutes from "@/app/api/brand/[[...path]]/route";
 import * as feishuRoutes from "@/app/api/feishu/[[...path]]/route";
@@ -16,7 +16,7 @@ import * as knowledgeRoutes from "@/app/api/knowledge/[[...path]]/route";
 import * as originkitRoutes from "@/app/api/originkit/[[...path]]/route";
 import * as projectsRoutes from "@/app/api/projects/[[...path]]/route";
 import * as otherRoutes from "@/app/api/[[...path]]/route";
-import * as stratFixRoutes from "@/app/api/strat-fix/route";
+import * as stratFixRoutes from "@/lib/api-handlers/misc/strat-fix";
 import { NextRequest, NextResponse } from "@/lib/browser/next-server-shim";
 import { setCurrentRequest } from "@/lib/browser/current-request";
 import { persist } from "@/lib/browser/sqlite";

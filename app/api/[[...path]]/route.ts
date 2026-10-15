@@ -8,6 +8,9 @@ import * as m2 from "@/lib/api-handlers/other/component-source";
 import * as m3 from "@/lib/api-handlers/other/skill-content";
 import * as m4 from "@/lib/api-handlers/other/component-zip";
 import * as m5 from "@/lib/api-handlers/other/user/preferences";
+import * as mAuthMe from "@/lib/api-handlers/auth/me";
+import * as mEnter from "@/lib/api-handlers/misc/enter";
+import * as mStratFix from "@/lib/api-handlers/misc/strat-fix";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
@@ -27,6 +30,10 @@ const ROUTES: RouteDef[] = [
   { key: "component-zip", methods: { GET: m4.GET as HandlerFn } },
   { key: "skill-content", methods: { GET: m3.GET as HandlerFn } },
   { key: "user/preferences", methods: { GET: m5.GET as HandlerFn, PUT: m5.PUT as HandlerFn } },
+  // 以下三项由独立 route 合并而来（Hobby 函数数削减：auth / enter / strat-fix → 根分发器）
+  { key: "auth/me", methods: { GET: mAuthMe.GET as HandlerFn } },
+  { key: "enter", methods: { POST: mEnter.POST as HandlerFn, DELETE: mEnter.DELETE as HandlerFn } },
+  { key: "strat-fix", methods: { GET: mStratFix.GET as HandlerFn } },
 ];
 
 /** 精确匹配优先，其次 [id] 动态段匹配；返回参数表 */

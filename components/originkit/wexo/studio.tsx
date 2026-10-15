@@ -6,6 +6,7 @@
 // - 一键把全部 12 块「修改后的整站」与 framer.css/images/fonts 一起打包成可独立部署的 zip 下载
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
+import { hasLocalMachine } from "@/lib/deploy-mode";
 import {
   SECTION_BASE,
   WEXO_SLUGS,
@@ -297,6 +298,9 @@ export function WexoStudio({ slug }: { slug: string }) {
         >
           <Pencil className="size-4" />
         </button>
+        {/* 整站 zip 要在服务端读仓库并打包，浏览器数据层做不到 → 不渲染；
+            留一个等价的 ml-auto 占位，避免右侧工具条布局跟着位移 */}
+        {hasLocalMachine() ? (
         <button
           onClick={handleExport}
           disabled={exporting}
@@ -304,6 +308,9 @@ export function WexoStudio({ slug }: { slug: string }) {
         >
           {exporting ? "打包中…" : "导出整站 Zip"}
         </button>
+        ) : (
+          <span className="ml-auto" />
+        )}
         {exportMsg && (
           <span className="text-xs text-muted-foreground">{exportMsg}</span>
         )}

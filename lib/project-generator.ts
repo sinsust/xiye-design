@@ -969,6 +969,39 @@ export function generateProject(state: FlowState, content?: ContentOverride, sty
   };
 }
 
+/**
+ * P0-2：zip 根目录 package.json「命令跳板」。
+ *
+ * 背景：可运行工程实体在 `seed/` 子目录，但用户解压后最自然的动作是在根目录直接
+ * `npm i` —— 此前必然失败且无任何提示，是交付物「第一分钟就撞上的墙」。
+ *
+ * 做法：根目录放一个薄转发 package.json，把 install / dev / build / start /
+ * typecheck 全部代理到 seed/，使「解压 → npm i → npm run dev」真正走通；
+ * 同时保留 seed/ 内部结构，既有交接文档里「cd seed/」的说法依然成立、不冲突。
+ */
+function buildRootPackageJson(project: GeneratedProject): string {
+  const rawName = (project.projectName || "xiye-app").toLowerCase().replace(/[^a-z0-9-]+/g, "-");
+  // 包名不允许以 - 开头/结尾
+  const name = rawName.replace(/^-+|-+$/g, "") || "xiye-app";
+  return JSON.stringify(
+    {
+      name,
+      version: "0.1.0",
+      private: true,
+      description: `${project.tagline || ""}（可运行工程位于 seed/ 目录，根目录命令已转发）`.trim(),
+      scripts: {
+        postinstall: "cd seed && npm install",
+        dev: "cd seed && npm run dev",
+        build: "cd seed && npm run build",
+        start: "cd seed && npm run start",
+        typecheck: "cd seed && npm run typecheck",
+      },
+    },
+    null,
+    2,
+  );
+}
+
 export function buildProjectZipFiles(project: GeneratedProject): { name: string; content: string }[] {
   const docFiles = project.docs.map((d) => ({
     name: d.filename === "AGENTS.md" || d.filename === "CLAUDE.md" ? d.filename : `docs/${d.filename}`,
@@ -979,6 +1012,8 @@ export function buildProjectZipFiles(project: GeneratedProject): { name: string;
     { name: "styles/tailwind.config.ts", content: project.tailwindConfig },
   ];
   const rootJson = [
+    // P0-2：根目录 package.json 跳板 —— 让「解压后根目录 npm i」直接可用
+    { name: "package.json", content: buildRootPackageJson(project) },
     { name: "xiye.agent.json", content: project.agentManifest },
     { name: "xiye.config.json", content: project.xiyeConfig },
   ];

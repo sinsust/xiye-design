@@ -10,6 +10,8 @@ import {
 } from "@/lib/brain-db";
 import { organizeNote } from "@/lib/brain-organizer";
 import { resolveLLM } from "@/lib/llm/resolve";
+// PRD §7.2 / 决策 16：改写结果入库时必须保留原文附录，绝不静默覆盖用户原始正文
+import { contentWithOriginal } from "@/lib/note-original";
 import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 import { embed, buildListableText } from "@/lib/embedding";
 
@@ -58,7 +60,8 @@ export async function POST(req: NextRequest) {
     for (const it of items) {
       try {
         const organized = await organizeNote(it.content, existing, model);
-        const noteContent = organized.rewritten || it.content;
+        // 有改写则用改写作正文主体，并附原文回溯；无改写直接用原文
+        const noteContent = contentWithOriginal(organized.rewritten, it.content);
 
         const vec = await embed(
           buildListableText({

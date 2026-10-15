@@ -4,67 +4,12 @@
 // 没有任何进程级启动钩子 —— dev server 每次重启监听即丢失，必须用户手动点一次按钮才恢复。
 // 这里在 server 启动时按 user_obsidian_config 中 enabled=1 的配置自动恢复监听 + 轮询兜底。
 //
-// 关闭方式：设 OBSIDIAN_AUTOSTART=0；public 部署模式（Vercel）默认即关闭
-//（没有本地 vault 可监听，见下方自检段），显式 OBSIDIAN_AUTOSTART=1 可强开。
-
-import { accessCodes, hasProfileHmacKey, isPublicDeploy } from "@/lib/deploy-mode";
-
+// 本文件必须保持「只判断、只转发」：真正的 node 专属逻辑在 lib/instrumentation-node.ts。
+// 原因见该文件头 —— 守卫若写成开头的提前 return，webpack 不会把后续代码当死代码，
+// edge 编译就会去解析 better-sqlite3 的 require('fs') 并直接构建失败。
 export async function register(): Promise<void> {
-  // edge runtime 没有 fs / 数据库连接，直接跳过。
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
-
-  // public 模式启动自检（fail fast）：缺关键 env 直接让部署失败，
-  // 好过上线后所有请求 401/500 或静默降级到不安全状态。
-  if (isPublicDeploy()) {
-    const missing: string[] = [];
-    if (!hasProfileHmacKey()) missing.push("PROFILE_HMAC_KEY（≥32 字符随机串）");
-    if ((process.env.IMA_ENC_KEY ?? "").length < 32) missing.push("IMA_ENC_KEY（≥32 字符）");
-    if (accessCodes().length === 0) missing.push("ACCESS_CODE（邀请码白名单，逗号分隔多个）");
-    if (missing.length > 0) {
-      throw new Error(
-        `[instrumentation] public 部署模式缺少必需环境变量：${missing.join(" / ")}。配置清单见 docs/vercel-公开版部署.md`,
-      );
-    }
-    if (process.env.OBSIDIAN_AUTOSTART !== "1") {
-      console.log(
-        "[instrumentation] public 部署模式：跳过 Obsidian watcher（无本地 vault；OBSIDIAN_AUTOSTART=1 可强开）",
-      );
-      return;
-    }
-  }
-
-  if (process.env.OBSIDIAN_AUTOSTART === "0") return;
-
-  try {
-    const { startObsidianWatch } = await import("@/lib/obsidian-watch");
-    // 超时保护：register() 是 server 启动的前置 await，一旦 DB 不可达/连接池耗尽，
-    // startObsidianWatch 会一直挂着等待连接 —— try/catch 拦不住 hang，整个 server 会
-    // 处于「端口在听但所有请求无响应」的状态。这里给 10s 上限，超时先放行启动，
-    // watcher 若后续成功仍会自行生效（它内部先 stop 再建，不会重复监听）。
-    const res = await Promise.race([
-      // import 必须一并纳入超时：@/lib/obsidian-watch 会连带加载 lib/db，
-      // 而 lib/db 有 top-level await（建连/建表），DB 不可达时卡在 import 而非函数调用。
-      (async () => {
-        const { startObsidianWatch } = await import("@/lib/obsidian-watch");
-        return startObsidianWatch();
-      })(),
-      new Promise<{ ok: boolean; error?: string; watching: number }>((resolve) => {
-        const t = setTimeout(
-          () => resolve({ ok: false, error: "autostart 超时（10s），DB 可能不可达或连接池已满", watching: 0 }),
-          10_000,
-        );
-        t.unref?.();
-      }),
-    ]);
-    if (res.watching > 0) {
-      console.log(`[instrumentation] obsidian watch started: ${res.watching} vault(s)`);
-    } else {
-      // 无启用配置是正常状态（尚未在「第二大脑 → 看板」里配置 vault），不打 error。
-      console.log("[instrumentation] obsidian watch: no enabled vault config");
-    }
-    if (res.error) console.error("[instrumentation] obsidian watch error:", res.error);
-  } catch (err) {
-    // 启动钩子绝不能阻断 server 启动：DB 不可用 / 表缺失 / 路径无权限都只告警。
-    console.error("[instrumentation] obsidian autostart failed (non-fatal):", err);
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { registerNode } = await import("@/lib/instrumentation-node");
+    await registerNode();
   }
 }

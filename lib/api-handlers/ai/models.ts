@@ -4,6 +4,7 @@ import { z } from "zod";
 import { listModels, createModel, getSettings } from "@/lib/llm/config-store";
 import { PROVIDERS } from "@/lib/llm/providers";
 import { FEATURES } from "@/lib/llm/features";
+import { checkModelAvailable } from "@/lib/llm/validate-model";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
   const d = parsed.data;
+  // 先问厂商「这个名字真的能用吗」再落库：模型名下架/写错如果留到调用时才暴露，
+  // 会被各功能的启发式兜底吞成「AI 服务暂时不可用」，用户无从下手。
+  const check = await checkModelAvailable({
+    baseUrl: d.baseUrl.trim(),
+    apiKey: d.apiKey?.trim() ?? "",
+    model: d.model.trim(),
+  });
+  if (!check.ok) {
+    return NextResponse.json({ error: "model_unavailable", message: check.message }, { status: 400 });
+  }
   const model = await createModel(user.sub, {
     name: d.name.trim(),
     provider: d.provider,

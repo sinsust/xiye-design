@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { db, userObsidianConfig, brainNotes } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -79,7 +78,12 @@ export function validateVaultPath(vaultPath: string | null | undefined): {
   }
   // 2. 拒绝用户主目录（防止把笔记铺进系统用户目录）
   try {
-    if (path.resolve(p) === path.resolve(os.homedir())) {
+    // 用 env 取家目录，不直接调 os.homedir()：@vercel/nft 会把 path.resolve(os.homedir())
+    // 静态折成真实家目录、当成资源引用去 glob `C:\Users\<you>\**\/*`，
+    // 撞上 Windows 的 Application Data junction 后 next build 直接 EPERM 失败。
+    // USERPROFILE / HOME 与 os.homedir() 同源，语义不变，而 process.env 折不动。
+    const home = process.env.USERPROFILE || process.env.HOME || "";
+    if (home && path.resolve(p) === path.resolve(home)) {
       return { ok: false, error: "vault 路径不能是用户主目录" };
     }
   } catch {

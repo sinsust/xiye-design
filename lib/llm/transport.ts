@@ -61,7 +61,13 @@ export async function llmChat(model: ResolvedModel, opts: LlmChatOpts): Promise<
           lastErr = new Error(`LLM 服务暂不可用（${res.status}），重试中`);
           continue;
         }
-        throw new Error(`LLM 请求失败: HTTP ${res.status}`);
+        // 必须带上厂商原文：只报 HTTP 404 时，用户分不清是模型名下架、key 无效还是地址写错，
+        // 而这三种情况的处理动作完全不同（模型名错会被上层兜底成「AI 服务暂时不可用」）。
+        const detail = await res.text().catch(() => "");
+        const brief = detail.replace(/\s+/g, " ").trim().slice(0, 180);
+        throw new Error(
+          `${model.provider} 返回 ${res.status}${brief ? `：${brief}` : ""}（模型 ${model.model}）`,
+        );
       }
 
       const data = await res.json();

@@ -9,12 +9,15 @@ import { ThemePresetToggle } from "@/components/theme-preset-toggle";
 import { ProfileMenu } from "@/components/profile-menu";
 import { BrandLogo } from "@/components/brand-logo";
 import { UiPrefsSync } from "@/components/ui-prefs-sync";
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 
 type NavItem = { href: string; label: string };
 type NavGroup = { id: "studio" | "brain"; label: string; items: NavItem[] };
 
 // M1：xiye 2.0 产品线拆分 —— Studio（AI 产品工作台）与 Brain（个人记忆/知识工作台）
 // 同一母品牌下两个清晰模式，不在同一导航心智里混用。
+// 注：`/library`（知识库）在此前被误挂在 Studio 组下，但它承载的是「查阅/沉淀个人知识」，
+// 属 Brain 心智（PRD §3 双产品线边界）。这里按语义归入 Brain 组，修正 IA 归属错误。
 const NAV_GROUPS: NavGroup[] = [
   {
     id: "studio",
@@ -23,13 +26,15 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/workflow", label: "做产品" },
       { href: "/builder", label: "搭页面" },
       { href: "/components", label: "找组件" },
-      { href: "/library", label: "存知识" },
     ],
   },
   {
     id: "brain",
     label: "Brain",
-    items: [{ href: "/brain", label: "第二大脑" }],
+    items: [
+      { href: "/brain", label: "第二大脑" },
+      { href: "/library", label: "知识库" },
+    ],
   },
 ];
 
@@ -134,6 +139,8 @@ export function SiteNav() {
         </div>
       )}
     </header>
+    {/* P2-4 · PRD §6.1：移动端底部主导航（仅 <sm 显示） */}
+    <MobileTabBar />
     </>
   );
 }

@@ -8,10 +8,13 @@ import FluidText from "@/components/originkit/ui/fluid-text";
 import {
   ArrowRight,
   ArrowUpRight,
+  Brain,
   Check,
   Copy,
   Layers,
   Palette,
+  PenLine,
+  Search,
   Shirt,
   Sparkles,
   X,
@@ -174,6 +177,33 @@ const TONES = [
   { id: "all", name: "深浅不限" },
   { id: "light", name: "浅色" },
   { id: "dark", name: "深色" },
+] as const;
+
+/**
+ * Brain 产品线入口卡（P0-3）。
+ * PRD §1 把「产品定位混杂」列为 1 号问题，§3 要求两条产品线入口清晰；
+ * 此前首页 Hero 写着「一个工作台，两条清晰主线」，正文却只有 Studio 一个区块、
+ * 全页零 Brain 入口 —— 文案与实现自相矛盾，新用户无从感知第二条产品线。
+ */
+const BRAIN_ENTRY_CARDS = [
+  {
+    icon: PenLine,
+    title: "随手记",
+    desc: "粘贴一段文字即自动成标题、摘要与标签，原文永久保留。",
+    href: "/brain",
+  },
+  {
+    icon: Search,
+    title: "问我的记忆",
+    desc: "一句话跨本地笔记、Obsidian 与腾讯 ima 检索，答案带来源。",
+    href: "/brain",
+  },
+  {
+    icon: Brain,
+    title: "今日复习",
+    desc: "每天只给当天下次该复习的少量卡片，不与记录流程打架。",
+    href: "/brain",
+  },
 ] as const;
 
 /** 风格迷你预览：用真实 palette 做一张设计标本，避免重复占位文案 */
@@ -827,6 +857,40 @@ export default function Home() {
           <p className="mt-6 text-center text-xs text-muted-foreground">
             共 {filtered.length} 个风格 · 点击卡片看详情，hover 卡片可「整页试穿」
           </p>
+        </div>
+      </section>
+
+      {/* Brain 预览：记忆助手（P0-3 · PRD §3 双产品线入口清晰） */}
+      <section className="reveal mx-auto mt-16 max-w-5xl">
+        <div className="mb-5 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Brain
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">第二大脑 · 记忆助手</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              随手记录、自动整理，连接 Obsidian 与腾讯 ima，一句话找回你说过、学过的东西。
+            </p>
+          </div>
+          <Link href="/brain" className="shrink-0 text-xs text-primary hover:underline">
+            进入 Brain 今日空间 →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {BRAIN_ENTRY_CARDS.map((c) => (
+            <Link
+              key={c.title}
+              href={c.href}
+              className="group rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/60"
+            >
+              <div className="flex items-center gap-2">
+                <c.icon className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                <span className="text-sm font-medium text-foreground">{c.title}</span>
+              </div>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{c.desc}</p>
+            </Link>
+          ))}
         </div>
       </section>
 

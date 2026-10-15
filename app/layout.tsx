@@ -7,6 +7,7 @@ import { AgentsHydrator } from "@/components/agents-hydrator";
 import { BrowserDataBootstrap } from "@/components/browser-data-bootstrap";
 import { Toaster } from "@/components/ui/toast";
 import { ConfirmHost } from "@/components/ui/confirm-dialog";
+import { DevHeartbeat } from "@/components/dev-heartbeat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,6 +99,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AgentsHydrator />
           <Toaster />
           <ConfirmHost />
+          {/* dev-only：浏览器关闭后自动停机（生产构建被 tree-shake 移除） */}
+          {process.env.NODE_ENV === "development" && <DevHeartbeat />}
         </BrowserDataBootstrap>
       </body>
     </html>

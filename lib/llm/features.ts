@@ -17,6 +17,7 @@ export type FeatureKey =
   | "brain-report"
   | "brain-ask"
   | "knowledge"
+  | "agent-manifest"
   | "table-analysis";
 
 export interface FeatureMeta {
@@ -36,6 +37,7 @@ export const FEATURES: FeatureMeta[] = [
   { key: "copy", label: "文案生成", group: "内容生成" },
   { key: "brand-rewrite", label: "品牌文案改写", group: "内容生成" },
   { key: "knowledge", label: "知识库条目生成", group: "内容生成" },
+  { key: "agent-manifest", label: "Agent 清单生成", group: "内容生成" },
   { key: "brain-organize", label: "内容整理", group: "第二大脑" },
   { key: "brain-report", label: "周报生成", group: "第二大脑" },
   { key: "brain-ask", label: "智能问答", group: "第二大脑" },

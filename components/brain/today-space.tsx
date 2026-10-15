@@ -303,10 +303,54 @@ export function TodaySpace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, mode: "mixed" }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "提问失败");
-      setAskAnswer(json.answer || "");
-      setAskSources(Array.isArray(json.sources) ? json.sources : []);
+      if (!res.ok) {
+        const ct = res.headers.get("content-type") || "";
+        if (ct.includes("application/json")) {
+          const json = await res.json();
+          throw new Error(json?.error || "提问失败");
+        }
+        throw new Error(`提问失败（${res.status}）`);
+      }
+      const ct = res.headers.get("content-type") || "";
+      if (!res.body || !ct.includes("text/event-stream")) {
+        // 降级路径：非流式 JSON（含模型降级 degraded）
+        const json = await res.json();
+        setAskAnswer(json.answer || "");
+        setAskSources(Array.isArray(json.sources) ? json.sources : []);
+        if (json.degraded) setAskError("模型超时或不可用，已显示检索到的来源");
+      } else {
+        // P2-1 流式：逐 delta 增量渲染，sources 经 meta 事件先行
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          let idx: number;
+          while ((idx = buf.indexOf("\n\n")) !== -1) {
+            const chunk = buf.slice(0, idx);
+            buf = buf.slice(idx + 2);
+            const evLine = chunk.split("\n").find((l) => l.startsWith("event:"));
+            const dataLine = chunk.split("\n").find((l) => l.startsWith("data:"));
+            if (!evLine || !dataLine) continue;
+            const event = evLine.slice(6).trim();
+            let data: any;
+            try {
+              data = JSON.parse(dataLine.slice(5).trim());
+            } catch {
+              continue;
+            }
+            if (event === "meta") {
+              setAskSources(Array.isArray(data.sources) ? data.sources : []);
+            } else if (event === "delta") {
+              setAskAnswer((prev) => prev + (data.text ?? ""));
+            } else if (event === "error") {
+              setAskError(data.message || "生成中断，已显示检索到的来源");
+            }
+          }
+        }
+      }
     } catch (e) {
       setAskError(e instanceof Error ? e.message : "提问失败");
     } finally {
@@ -634,15 +678,53 @@ export function TodaySpace({
                   </div>
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{askAnswer}</p>
+                {/* P2-2 · PRD §7.3「回答始终带来源卡片，允许跳回原始记录」：
+                    此前来源仅是一行 chip，无摘要也无法点击，无法满足「跳回原文」。 */}
                 {askSources.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {askSources.map((s) => (
-                      <span key={s.noteId} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                        {ASK_SOURCE_LABEL[s.source] ?? s.source}
-                        {s.sourceName ? ` · ${s.sourceName}` : ""}
-                        <span className="text-foreground">· {s.title}</span>
-                      </span>
-                    ))}
+                  <div className="mt-2 space-y-1.5 border-t border-border/40 pt-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      参考来源
+                    </p>
+                    {askSources.map((s) => {
+                      // 仅「已入库到本地」的来源可跳回详情；
+                      // ima 实时命中只在云端，本地无对应 note，故不可点击。
+                      const linked =
+                        s.source === "local" || s.source === "obsidian"
+                          ? data?.recentNotes.find((n) => n.id === s.noteId)
+                          : undefined;
+                      return (
+                        <button
+                          key={`${s.source}-${s.noteId}`}
+                          type="button"
+                          disabled={!linked}
+                          onClick={() => linked && setOpenNote(linked)}
+                          className={[
+                            "w-full rounded-lg border border-border bg-background px-2.5 py-2 text-left transition",
+                            linked
+                              ? "hover:border-primary/60 hover:bg-muted/40"
+                              : "cursor-default opacity-80",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            <span className="shrink-0 rounded-full bg-muted px-1.5 py-px">
+                              {ASK_SOURCE_LABEL[s.source] ?? s.source}
+                            </span>
+                            {s.sourceName && <span className="truncate">{s.sourceName}</span>}
+                            {typeof s.relevance === "number" && (
+                              <span className="ml-auto shrink-0 tabular-nums opacity-70">
+                                {Math.round(s.relevance * 100)}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] font-medium text-foreground">{s.title}</p>
+                          {linked?.summary && (
+                            <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
+                              {linked.summary}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

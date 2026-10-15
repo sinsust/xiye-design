@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { z } from "zod";
-import { updateModel, deleteModel, isModelInUse, listModels } from "@/lib/llm/config-store";
+import { updateModel, deleteModel, isModelInUse, listModels, getModelById } from "@/lib/llm/config-store";
+import { checkModelAvailable } from "@/lib/llm/validate-model";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,24 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const parsed = patchSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+  }
+  // 端点或模型名有变动时，先向厂商核对这个名字可用（同 POST 的理由）
+  const stored = await getModelById(user.sub, id);
+  if (stored) {
+    const nextBase = parsed.data.baseUrl?.trim() || stored.baseUrl;
+    const nextModel = parsed.data.model?.trim() || stored.model;
+    const nextKey =
+      parsed.data.apiKey === undefined ? stored.apiKey : parsed.data.apiKey?.trim() ?? "";
+    if (nextBase !== stored.baseUrl || nextModel !== stored.model) {
+      const check = await checkModelAvailable({
+        baseUrl: nextBase,
+        apiKey: nextKey,
+        model: nextModel,
+      });
+      if (!check.ok) {
+        return NextResponse.json({ error: "model_unavailable", message: check.message }, { status: 400 });
+      }
+    }
   }
   const ok = await updateModel(user.sub, id, parsed.data);
   if (!ok) {

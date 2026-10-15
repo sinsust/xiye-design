@@ -45,6 +45,7 @@ import { downloadBlob } from "@/lib/zip";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { hasLocalMachine } from "@/lib/deploy-mode";
 const FluidText = dynamic(() => import("@/components/originkit/ui/fluid-text"), { loading: PreviewLoading });
 const SmokyText = dynamic(() => import("@/components/originkit/ui/smokytext"), { loading: PreviewLoading });
 const FlashlightText = dynamic(() => import("@/components/originkit/ui/spotlighttext"), { loading: PreviewLoading });
@@ -1284,6 +1285,8 @@ export default function ComponentLibraryPage() {
 
   // 拉取当前组件源码，供「复制源码」（支持多文件拼接）
   useEffect(() => {
+    // 浏览器数据层：/api/component-source 读的是仓库文件，拿不到；按钮也已隐藏
+    if (!hasLocalMachine()) return;
     let alive = true;
     setSourceCode("");
     const paths = sourcePathFor(comp.id);
@@ -1772,6 +1775,8 @@ export default function ComponentLibraryPage() {
           </span>
           <div className="flex shrink-0 items-center gap-2">
             {/* 品牌包：下载 / AI 改写 */}
+            {/* 整站品牌包要读仓库目录并打 zip，只有本机版做得到 */}
+            {hasLocalMachine() && (
             <div className="relative">
               <Button
                 variant="outline"
@@ -1987,7 +1992,8 @@ export default function ComponentLibraryPage() {
                 </>
               )}
             </div>
-            {multiFile && (
+            )}
+            {hasLocalMachine() && multiFile && (
               <Button
                 variant="outline"
                 size="sm"
@@ -1998,6 +2004,8 @@ export default function ComponentLibraryPage() {
                 {pkgBusy ? "打包中…" : "下载完整包"}
               </Button>
             )}
+            {/* 源码与整站包都靠服务端读仓库文件，浏览器数据层拿不到 → 不渲染（不是留个灰按钮） */}
+            {hasLocalMachine() && (
             <Button
               variant="outline"
               size="sm"
@@ -2011,6 +2019,7 @@ export default function ComponentLibraryPage() {
               )}
               {sourceCopied ? "已复制" : "复制源码"}
             </Button>
+            )}
             <Button
               variant={panelOpen ? "default" : "outline"}
               size="sm"
@@ -2323,7 +2332,8 @@ export default function ComponentLibraryPage() {
                 </div>
               )}
 
-              {comp.id === "hero-42" && (
+              {/* hero-42 预览由 /api/originkit 读仓库目录，浏览器数据层没有文件系统 */}
+              {hasLocalMachine() && comp.id === "hero-42" && (
                 <iframe
                   src="/api/originkit/hero-42/index.html"
                   className="h-[760px] w-full border-0"

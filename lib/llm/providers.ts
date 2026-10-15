@@ -41,7 +41,10 @@ export const PROVIDERS: ProviderTemplate[] = [
     id: "kimi",
     name: "Kimi（Moonshot）",
     baseUrl: "https://api.moonshot.cn/v1",
-    models: ["kimi-k2-0905-preview", "moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+    // 2026-10-14 用真实 key 打 GET /v1/models 核对过：kimi-k2-0905-preview 已下架
+    // （厂商回 404 resource_not_found_error），列在这里的才是当前可命名的模型。
+    // 这里只是下拉候选，不是白名单 —— 保存时统一向厂商核对（lib/llm/validate-model.ts）。
+    models: ["kimi-k3", "kimi-k2.6", "kimi-k2.7-code", "kimi-k2.7-code-highspeed"],
     keyRequired: true,
     keyHint: "在 platform.moonshot.cn 创建 API Key",
   },

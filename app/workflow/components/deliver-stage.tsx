@@ -137,6 +137,8 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [promptOpen, setPromptOpen] = useState(false);
+  const [aiEnhance, setAiEnhance] = useState<null | { aiConventions: string[]; gotchas: string[]; acceptanceAdditions: string[] }>(null);
+  const [aiEnhancing, setAiEnhancing] = useState(false);
 
   const activeRef = useRef<ItemKey>("zip");
   activeRef.current = active;
@@ -318,10 +320,49 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
     URL.revokeObjectURL(url);
   };
 
+  // P1-3：AI 增强契约 —— 让 AI 基于项目结构生成开发契约增强段，合并进 xiye.agent.json。
+  type AgentEnhancement = { aiConventions: string[]; gotchas: string[]; acceptanceAdditions: string[] };
+  const enhanceContract = async () => {
+    if (!project) return;
+    setAiEnhancing(true);
+    try {
+      const briefParts = [`项目：${project.projectName}`];
+      try {
+        const m = JSON.parse(project.agentManifest);
+        if (m?.meta?.projectType) briefParts.push(`类型：${m.meta.projectType}`);
+        if (m?.stack?.name) briefParts.push(`技术栈：${m.stack.name}`);
+        if (Array.isArray(m?.pages)) briefParts.push(`页面：${m.pages.map((p: any) => p.name ?? p.id).join("、")}`);
+      } catch {}
+      briefParts.push(`功能：${(project.features ?? []).map((f: any) => f.name).join("、")}`);
+      const res = await fetch("/api/ai/agent-manifest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brief: briefParts.join("\n") }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error ?? "生成失败");
+      setAiEnhance(json.aiEnhancement ?? null);
+    } catch (e) {
+      setSaveMsg(`AI 增强失败：${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setAiEnhancing(false);
+    }
+  };
+  const withAiEnhancement = (p: GeneratedProject): GeneratedProject => {
+    if (!aiEnhance) return p;
+    try {
+      const m = JSON.parse(p.agentManifest);
+      m.aiEnhancement = aiEnhance;
+      return { ...p, agentManifest: JSON.stringify(m, null, 2) };
+    } catch {
+      return p;
+    }
+  };
+
   const downloadZip = () => {
     if (!project) return;
     const name = safeName(project.projectName || "xiye-project");
-    downloadBlob(buildZip(buildProjectZipFiles(project)), `${name}.zip`);
+    downloadBlob(buildZip(buildProjectZipFiles(withAiEnhancement(project))), `${name}.zip`);
   };
 
   // M2-D：导出为可直接打开的工作区目录（主交接物）。优先用 File System Access API 写盘，
@@ -339,7 +380,7 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
     }
     try {
       const dir = await picker({ mode: "readwrite" });
-      const files = buildProjectZipFiles(project);
+      const files = buildProjectZipFiles(withAiEnhancement(project));
       for (const f of files) {
         const parts = f.name.split("/");
         let cur: FileSystemDirectoryHandle = dir;
@@ -640,6 +681,17 @@ export function DeliverStage({ visible, onBack }: { visible: boolean; onBack: ()
             <Button size="sm" className="gap-2" onClick={saveProject} disabled={saving}>
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
               {saveMsg ?? "保存"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={enhanceContract}
+              disabled={!project || aiEnhancing}
+              title="让 AI 基于项目结构生成开发契约增强，合并进 xiye.agent.json"
+            >
+              {aiEnhancing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              {aiEnhance ? "重生成契约" : "AI 增强契约"}
             </Button>
             <Button
               size="sm"

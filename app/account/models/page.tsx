@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ModelIdField } from "@/components/ai-model-field";
 import { toast } from "@/components/ui/toast";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -359,7 +360,10 @@ function ModelRow({
         body: JSON.stringify(patch),
       });
       if (!r.ok) {
-        toast.error("保存失败，请检查填写");
+        // 服务端会给出具体原因（如「该账号下没有模型 kimi-k2-0905-preview，可用：kimi-k3…」），
+        // 必须原样显示；只说「保存失败」会让人反复检查填错的字段。
+        const d = await r.json().catch(() => null);
+        toast.error(String(d?.message ?? d?.error ?? "") || "保存失败，请检查填写");
         return;
       }
       toast.success("已保存");
@@ -427,7 +431,13 @@ function ModelRow({
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           <FieldInput label="名称" value={name} onChange={setName} />
           <FieldInput label="Base URL" value={baseUrl} onChange={setBaseUrl} />
-          <FieldInput label="模型 id" value={modelId} onChange={setModelId} />
+          <ModelIdField
+            value={modelId}
+            onChange={setModelId}
+            baseUrl={baseUrl}
+            apiKey={apiKey}
+            storedId={model.id}
+          />
           <FieldInput
             label={`API Key（留空表示不变${model.hasKey ? "，当前已配置" : ""}）`}
             value={apiKey}
@@ -505,7 +515,8 @@ function AddModelSection({
         }),
       });
       if (!r.ok) {
-        toast.error("添加失败，请检查填写");
+        const d = await r.json().catch(() => null);
+        toast.error(String(d?.message ?? d?.error ?? "") || "添加失败，请检查填写");
         return;
       }
       toast.success("已添加模型");
@@ -556,21 +567,13 @@ function AddModelSection({
           <FieldInput label="名称" value={name} onChange={setName} placeholder="如：DeepSeek Chat" />
           <FieldInput label="Base URL" value={baseUrl} onChange={setBaseUrl} />
 
-          <div>
-            <label className="text-xs text-muted-foreground">模型 id</label>
-            <input
-              value={modelId}
-              onChange={(e) => setModelId(e.target.value)}
-              list="ai-model-options"
-              placeholder="可从候选里选，也可自填"
-              className="mt-1 w-full rounded-[var(--radius)] border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-            <datalist id="ai-model-options">
-              {(provider?.models ?? []).map((m) => (
-                <option key={m} value={m} />
-              ))}
-            </datalist>
-          </div>
+          <ModelIdField
+            value={modelId}
+            onChange={setModelId}
+            baseUrl={baseUrl}
+            apiKey={apiKey}
+            presets={provider?.models ?? []}
+          />
 
           <FieldInput
             label={`API Key${keyRequired ? "（必填）" : "（可留空）"}`}

@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/auth-guard";
 import { logAuditReq, AUDIT_ACTION } from "@/lib/audit-log";
-import {
-  generateCopyOverride,
-  generateCopyWithLLM,
-  type CopyContext,
-} from "@/lib/copy-generator";
+import { generateCopyOverride, type CopyContext } from "@/lib/copy-generator";
+import { generateCopyWithLLM } from "@/lib/copy-generator-server";
 import { resolveLLM } from "@/lib/llm/resolve";
 import { MODEL_NOT_CONFIGURED_MESSAGE } from "@/lib/llm/chat";
 import { FLOW_OPERATION, flowError, flowMetaDone, flowMetaRunning, flowMetaToJSON } from "@/lib/flow-ai-types";

@@ -63,6 +63,7 @@ export function InputTab({
   const [parsing, setParsing] = useState(false);
   const [ocrActive, setOcrActive] = useState(false);
   const [parseErr, setParseErr] = useState<string | null>(null);
+  const [importedMsg, setImportedMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const appendText = useCallback(
@@ -82,6 +83,7 @@ export function InputTab({
       }
       setParsing(true);
       setParseErr(null);
+      setImportedMsg(null);
       setOcrActive(false);
       try {
         const fd = new FormData();
@@ -105,7 +107,23 @@ export function InputTab({
           setParseErr(json.warning ?? "未能从文件中提取到文本");
           return;
         }
-        appendText(`--- 📎 ${file.name} ---\n` + extracted.trim());
+        // P2-3（web 可行版）：本地文件经「导入」入口直接入库第二大脑，纳入 RAG 检索，
+        // 兑现 PRD §7.7「本地文件检索」能力（真·本地文件 / Obsidian 连接器需桌面壳，web 不可行）。
+        const raw = `# 📎 ${file.name}\n\n${extracted.trim()}`;
+        try {
+          const r = await fetch("/api/brain/inbox", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: [{ rawContent: raw }], autoApply: true }),
+          });
+          if (!r.ok) throw new Error("inbox_failed");
+          setImportedMsg(`已导入「${file.name}」到第二大脑，可在问答中检索`);
+          setParseErr(null);
+        } catch {
+          // 入库失败回退：填进输入框，用户手动点「整理」即可入库
+          setParseErr("自动导入失败，已填入输入框，你点「整理」即可入库");
+          appendText(raw);
+        }
       } catch (err: any) {
         console.error("[input-tab] parse error:", err);
         setParseErr(`解析失败：${err?.message ?? String(err)}`);
@@ -215,6 +233,16 @@ export function InputTab({
           <X className="mt-0.5 size-3 shrink-0" />
           <span>{parseErr}</span>
           <button type="button" className="ml-auto underline" onClick={() => setParseErr(null)}>
+            关闭
+          </button>
+        </div>
+      )}
+
+      {importedMsg && (
+        <div className="mt-2 flex items-start gap-1.5 rounded-[var(--radius)] border border-success/30 bg-success/10 px-3 py-2 text-xs text-success dark:border-success/30 dark:bg-success dark:text-success">
+          <Check className="mt-0.5 size-3 shrink-0" />
+          <span>{importedMsg}</span>
+          <button type="button" className="ml-auto underline" onClick={() => setImportedMsg(null)}>
             关闭
           </button>
         </div>

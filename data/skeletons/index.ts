@@ -15,6 +15,10 @@ import { MISC_PAGE } from "./misc";
 import { DOCS_PAGE } from "./docs";
 import { AI_CHAT_PAGE } from "./ai-chat";
 import { FEEDBACK_PAGE } from "./feedback";
+// 业务专属功能页（P1-1）：带状态与数据流的真实业务页面，而非通用视觉模板
+import { ORDER_HALL_PAGE } from "./order-hall";
+import { ORDER_DETAIL_PAGE } from "./order-detail";
+import { SERVICE_DETAIL_PAGE } from "./service-detail";
 
 export type { SkeletonPage, SkeletonComponent, SkeletonVariant } from "./types";
 
@@ -32,7 +36,19 @@ export const SKELETON_PAGES: SkeletonPage[] = [
   DOCS_PAGE,
   AI_CHAT_PAGE,
   FEEDBACK_PAGE,
+  // 业务专属功能页（P1-1）：接单大厅 → 订单详情 → 服务详情，构成服务撮合主流程
+  ORDER_HALL_PAGE,
+  ORDER_DETAIL_PAGE,
+  SERVICE_DETAIL_PAGE,
 ];
+
+/** 业务专属功能页 id（区别于 home/pricing 等通用视觉页） */
+const BUSINESS_PAGE_IDS = new Set(["order-hall", "order-detail", "service-detail"]);
+
+/** 判断某页是否为业务专属功能页 */
+export function isBusinessPage(pageId: string): boolean {
+  return BUSINESS_PAGE_IDS.has(pageId);
+}
 
 export const SKELETON_PAGE_MAP: Record<string, SkeletonPage> = Object.fromEntries(
   SKELETON_PAGES.map((p) => [p.id, p]),

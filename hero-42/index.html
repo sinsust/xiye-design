@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>inmix — Your Autonomous Work Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: #ededed; }
+
+  :root {
+    --tight: "Inter Tight", sans-serif;
+    --hn: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --nm: "Neue Montreal", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --card-shadow:
+      0 177px 50px 0 rgba(0,0,0,0), 0 113px 45px 0 rgba(0,0,0,0.01),
+      0 64px 38px 0 rgba(0,0,0,0.05), 0 28px 28px 0 rgba(0,0,0,0.09),
+      0 7px 16px 0 rgba(0,0,0,0.1);
+    /* 5.556vw == 80px at the 1440 design width */
+    --pad-x: clamp(20px, 5.556vw, 80px);
+  }
+
+  img { display: block; max-width: none; }
+  p { margin: 0; }
+
+  /* ---------- stage ---------- */
+  .hero { position: relative; background: #ededed; overflow: hidden; }
+  .hero__texture {
+    position: absolute; inset: 0; opacity: .2; pointer-events: none;
+    background: url("assets/texture.png") top left / 1076.1488px 1076.1488px repeat;
+  }
+  .frame {
+    position: relative; width: 100%; max-width: 1440px; margin: 0 auto;
+    padding: clamp(48px, 8.5vw, 87px) var(--pad-x);
+  }
+
+  .stack {
+    width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 90px;
+  }
+
+  /* ---------- headings ---------- */
+  .headings {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+    gap: 24px 40px; width: 100%;
+  }
+  .headings__left { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px; }
+
+  .badge {
+    display: flex; align-items: center; gap: 12px;
+    padding: 2px 12px 2px 2px; border-radius: 100px;
+    background: #fff; box-shadow: inset 0 0 0 .5px #d5d5d5;
+  }
+  .badge__pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 12px; border-radius: 100px;
+    background: #252525; box-shadow: inset 0 0 0 .5px #000;
+    backdrop-filter: blur(4.255px);
+    filter: drop-shadow(0 89px 12.5px rgba(0,0,0,0)) drop-shadow(0 57px 11.5px rgba(0,0,0,0.01))
+            drop-shadow(0 32px 9.5px rgba(0,0,0,0.05)) drop-shadow(0 14px 7px rgba(0,0,0,0.09))
+            drop-shadow(0 4px 4px rgba(0,0,0,0.1));
+  }
+  .badge__dot { position: relative; width: 6px; height: 6px; flex-shrink: 0; }
+  .badge__dot img { position: absolute; inset: -33.33%; width: auto; height: auto; }
+  .badge__pill span {
+    font: 500 14px/1.5 var(--tight); color: rgba(255,255,255,.8); white-space: nowrap;
+  }
+  .badge__join { display: flex; align-items: flex-end; justify-content: center; }
+  .badge__join span {
+    font: 500 14px/1.5 var(--tight); color: rgba(37,37,37,.55); white-space: nowrap;
+  }
+  .badge__chev { display: flex; align-items: center; justify-content: center; width: 17px; height: 18px; flex-shrink: 0; }
+  .badge__chev img { width: 18px; height: 17px; transform: rotate(90deg); }
+
+  .headline {
+    font: 400 clamp(32px, 4.03vw, 58px)/1.05 var(--hn); letter-spacing: -.05em; color: #252525;
+    text-align: center; white-space: nowrap;
+  }
+  .headings__right { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .headings__right p {
+    font: 500 15px/1.5 var(--tight); color: rgba(37,37,37,.55); width: 100%; max-width: 324px;
+  }
+
+  /* ---------- cards ---------- */
+  .cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; }
+  .card {
+    position: relative; height: 535px; border: 4px solid #fff; border-radius: 8px; overflow: hidden;
+  }
+  .card--flex { flex: 0 0 auto; width: 395px; }
+  .card--wide { flex: 0 0 auto; width: 450px; }
+  .card__bg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; border-radius: 8px; pointer-events: none;
+  }
+
+  .card__dots {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    display: block; pointer-events: none;
+  }
+
+  .card__head {
+    position: absolute; top: 28px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .card__head--l { left: 28px; width: 327px; }
+  .card__head--c { left: 50%; transform: translateX(-50%); width: 386px; }
+  .card__head img { width: 84px; height: 20px; }
+  .card__head--c img { width: 85px; height: 20px; }
+  .card__head span { font: 500 14px/1.5 var(--tight); color: rgba(255,255,255,.55); white-space: nowrap; }
+
+  .card__foot {
+    position: absolute; left: 28px; top: 413px; width: 347px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  }
+  .card__foot-icon { position: relative; width: 24px; height: 24px; overflow: hidden; flex-shrink: 0; }
+  .card__foot-icon img { position: absolute; mix-blend-mode: plus-lighter; }
+  .card__foot-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; }
+  .card__title {
+    font: 400 22px/1.05 var(--hn); letter-spacing: -.44px; width: 100%;
+    background-image: linear-gradient(130.34805226930771deg, rgb(153,153,153) .50767%, rgb(194,194,194) 55.539%, rgb(153,153,153) 102.71%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    mix-blend-mode: plus-lighter;
+  }
+  .card__title--c {
+    width: auto; white-space: nowrap;
+    background-image: linear-gradient(122.67662625640739deg, rgb(153,153,153) .50767%, rgb(194,194,194) 55.539%, rgb(153,153,153) 102.71%);
+  }
+  .card__sub { font: 500 15px/1.5 var(--tight); color: rgba(255,255,255,.35); width: 100%; }
+
+  /* ---------- card 1: date strip + panel ---------- */
+  .widget {
+    position: absolute; left: calc(50% - .5px); top: calc(50% - 32px); transform: translate(-50%, -50%);
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 12px;
+  }
+  .dates {
+    position: relative; width: 100%; height: 41px; border-radius: 38px; overflow: hidden;
+    background: rgba(255,255,255,.3); border: 1px solid rgba(255,255,255,.2);
+  }
+  .dates__row {
+    position: absolute; left: calc(50% - .5px); top: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+  }
+  .dates__row > p { font: 500 14px/1.5 var(--tight); color: #fff; text-align: center; white-space: nowrap; }
+  .dates__sel {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 4px 12px; border-radius: 28px; background: #fff; box-shadow: inset 0 0 0 .5px #fff;
+    filter: drop-shadow(0 30px 4.5px rgba(0,0,0,0)) drop-shadow(0 19px 4px rgba(0,0,0,0.01))
+            drop-shadow(0 11px 3.5px rgba(0,0,0,0.05)) drop-shadow(0 5px 2.5px rgba(0,0,0,0.09))
+            drop-shadow(0 1px 1.5px rgba(0,0,0,0.1));
+  }
+  .dates__sel p { font: 500 14px/1.5 var(--tight); color: #000; text-align: center; width: 100%; }
+  .dates__fade { position: absolute; bottom: -1px; width: 48px; height: 41px; }
+  .dates__fade--l { left: -1px; background: linear-gradient(to right, #547061, rgba(84,112,97,0)); }
+  .dates__fade--r { right: -1px; background: linear-gradient(to left, #547061, rgba(84,112,97,0)); }
+
+  .panel {
+    position: relative; width: 218px; background: #fff; border-radius: 8px; overflow: hidden;
+    box-shadow: var(--card-shadow);
+  }
+  .panel--1 { height: 174px; }
+  .panel--2 { height: 227px; }
+  .panel__head {
+    position: absolute; left: 50%; transform: translateX(-50%); top: 14px; width: 190px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel__head > p { font: 500 13px/1.5 var(--tight); color: #000; text-align: center; white-space: nowrap; }
+  .seg { display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 6px; background: #f0f0f0; }
+  .seg--solo { gap: 0; }
+  .seg button {
+    display: flex; align-items: center; justify-content: center; padding: 3px 6px;
+    border: 0; border-radius: 4px; background: #fff; cursor: pointer;
+    filter: drop-shadow(0 3px 1.5px rgba(0,0,0,0.04)) drop-shadow(0 1px .5px rgba(0,0,0,0.15));
+  }
+  .seg img { width: 12px; height: 12px; }
+  .seg .flip { transform: rotate(180deg); }
+  .panel__rule { position: absolute; left: 50%; transform: translateX(-50%); top: 47px; width: 218px; height: 0; }
+  .panel__rule img { position: absolute; top: -.8px; left: 0; width: 218px; height: .8px; }
+
+  .rows {
+    position: absolute; left: 14px; top: 68px; width: 190px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 20px;
+  }
+  .rows > div { display: flex; align-items: center; gap: 8px; width: 100%; }
+  .rows img { width: 15px; height: 15px; flex-shrink: 0; }
+  .rows p { font: 400 12px/1.25 var(--tight); color: rgba(0,0,0,.45); text-align: center; white-space: nowrap; }
+
+  .cursor { position: absolute; inset: 17.82% 3.54% 72.33% 89.91%; }
+  .cursor img { position: absolute; inset: -5.83% -48.99% -134.18% -48.99%; width: auto; height: auto; }
+
+  /* ---------- card 2: draft ---------- */
+  .draft {
+    position: absolute; left: calc(50% - 1px); top: calc(50% - 33px); transform: translate(-50%, -50%);
+  }
+  .draft__body { position: absolute; left: 0; top: 47px; width: 218px; height: 180px; overflow: hidden; }
+  .draft__hl { position: absolute; height: 16px; overflow: hidden; }
+  .draft__hl img { width: 100%; height: 100%; object-fit: cover; opacity: .1; }
+  .draft__text {
+    position: absolute; left: 14px; top: 15px; width: 190px;
+    font: 400 12px/1.35 var(--tight); color: rgba(0,0,0,.45);
+  }
+  .draft__text b { font-weight: 400; color: #000; }
+  .draft__fade {
+    position: absolute; left: -2px; top: 111px; width: 220px; height: 69px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), #fff);
+  }
+
+  .chip {
+    position: absolute; display: flex; align-items: center; justify-content: center;
+    padding: 8px 10px; border-radius: 38px;
+    background: rgba(255,255,255,.3); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2);
+  }
+  .chip p {
+    font: 400 14px/normal var(--tight); letter-spacing: -.28px; color: #fff; white-space: nowrap;
+    text-box: trim-both cap alphabetic;
+  }
+  .wire { position: absolute; height: 0; }
+  .wire img { position: absolute; top: -1px; left: 0; height: 1px; }
+  .node {
+    position: absolute; width: 3px; height: 3px; border-radius: 13px;
+    background: #d9d9d9; border: .2px solid #000;
+    box-shadow: 0 2px 1px 0 rgba(0,0,0,0), 0 2px 1px 0 rgba(0,0,0,0.01),
+                0 1px 1px 0 rgba(0,0,0,0.05), 0 0 1px 0 rgba(0,0,0,0.09);
+  }
+
+  /* ---------- card 3: stats ---------- */
+  .stats {
+    position: absolute; left: calc(50% + 3.5px); top: calc(50% - 27.5px); transform: translate(-50%, -50%);
+    width: 218px; display: flex; flex-direction: column; align-items: flex-start; gap: 13px;
+    -webkit-mask-image: url("assets/stats-mask.svg"); mask-image: url("assets/stats-mask.svg");
+    -webkit-mask-size: 229px 239px; mask-size: 229px 239px;
+    -webkit-mask-position: -5px 3px; mask-position: -5px 3px;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    mask-mode: alpha;
+  }
+  .stat {
+    display: flex; flex-direction: column; align-items: flex-start; width: 100%;
+    padding: 14px; border-radius: 8px; overflow: hidden;
+    background: rgba(255,255,255,.3); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2);
+  }
+  .stat--light { background: #fff; box-shadow: var(--card-shadow); }
+  .stat__row { display: flex; align-items: flex-end; justify-content: space-between; width: 100%; }
+  .stat__meta { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .stat__meta img { width: 18px; height: 18px; }
+  .stat__meta > div { position: relative; width: 18px; height: 18px; overflow: hidden; }
+  .stat__meta > div img { position: absolute; inset: 8.33% 8.33% .77% 8.73%; width: auto; height: auto; }
+  .stat__meta p { font: 500 13px/1.5 var(--tight); color: rgba(255,255,255,.55); text-align: center; white-space: nowrap; }
+  .stat--light .stat__meta p { color: #000; }
+  .stat__val { font: 400 36px/1 var(--nm); color: rgba(255,255,255,.35); white-space: nowrap; }
+  .stat__val--grad {
+    background-image: linear-gradient(177.86173395438271deg, rgb(17,82,186) 14.657%, rgb(25,56,104) 75.852%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* ---------- logos ---------- */
+  .logos {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 0 25px; overflow: hidden;
+  }
+  .logo { position: relative; height: 30px; flex-shrink: 0; }
+  .logo__icon, .logo__text { position: absolute; }
+  .logo__text { overflow: hidden; }
+  .logo img { position: absolute; width: 100%; height: 100%; }
+
+  .logos-wrap {
+    position: relative; align-self: stretch;
+    margin-inline: calc(-1 * var(--pad-x)); padding-inline: var(--pad-x);
+  }
+  /* -24/-26 reproduces the design's 80px-tall band centred on the 30px logo row */
+  .edge { position: absolute; top: -24px; bottom: -26px; width: min(331px, 23vw); pointer-events: none; }
+  .edge--l { left: 0; background: linear-gradient(to left, rgba(237,237,237,0) 0%, #ededed 73.615%); }
+  .edge--r { right: 0; background: linear-gradient(to right, rgba(237,237,237,0) 0%, #ededed 73.615%); }
+
+  /* ---------- breakpoints ---------- */
+  /* The 3-up row only exists at >=1440 (content 1280). The moment the cards wrap,
+     the design's 395/450/395 widths read as a mistake in a column, so all three go
+     to 450 -- card 2 can't go the other way, its Insights chip sits at left:348px.
+     The header row then has to stretch instead of being a fixed 327px. */
+  @media (max-width: 1439px) {
+    .card--flex { width: 450px; }
+    .card__head--l { right: 28px; width: auto; }
+  }
+
+  /* Below ~1130px the 7 logos no longer fit one row; once centred and wrapped
+     the edge fades have nothing to fade off, so they go. */
+  @media (max-width: 1129px) {
+    .logos { flex-wrap: wrap; justify-content: center; gap: 28px 40px; }
+    .edge { display: none; }
+  }
+  /* Card internals are absolutely positioned against a fixed 387/442 box, so the
+     card is scaled as a unit rather than resized once one no longer fits. */
+  @media (max-width: 520px) { .cards { zoom: .8; } }
+  /* Figma's text-align:center is a no-op on the unwrapped single line; once it
+     wraps, left matches the badge and paragraph above/below it. */
+  @media (max-width: 480px) { .headline { white-space: normal; text-align: left; } }
+  @media (max-width: 420px) { .cards { zoom: .6; } }
+</style>
+</head>
+<body>
+<section class="hero">
+  <div class="hero__texture"></div>
+  <div class="frame">
+
+    <div class="stack">
+
+      <!-- headings -->
+      <div class="headings">
+        <div class="headings__left">
+          <div class="badge">
+            <div class="badge__pill">
+              <div class="badge__dot"><img src="assets/dot.svg" alt=""></div>
+              <span>We’re hiring</span>
+            </div>
+            <a class="badge__join" href="#" style="text-decoration:none">
+              <span>Join our team</span>
+              <span class="badge__chev"><img src="assets/chevron.svg" alt=""></span>
+            </a>
+          </div>
+          <p class="headline">Your Autonomous Work Copilot</p>
+        </div>
+        <div class="headings__right">
+          <p>Monitor activity, draft context-aware responses, and forecast outcomes automatically.</p>
+        </div>
+      </div>
+
+      <!-- cards -->
+      <div class="cards">
+
+        <!-- card 1 -->
+        <div class="card card--flex">
+          <img class="card__bg" src="assets/card1-bg.jpg" alt="">
+          <canvas class="card__dots" data-dot-matrix data-cell-size="12" data-colors="#0A2013FF,#0B321CFF,#084425FF" data-seed="0"></canvas>
+
+          <div class="card__head card__head--l">
+            <img src="assets/logo-inmix-a.svg" alt="inmix">
+            <span>inmix.com</span>
+          </div>
+
+          <div class="widget">
+            <div class="dates">
+              <div class="dates__row">
+                <p>3</p><p>4</p><p>5</p><p>6</p><p>7</p>
+                <div class="dates__sel"><p>8</p></div>
+                <p>9</p><p>10</p>
+              </div>
+              <div class="dates__fade dates__fade--l"></div>
+              <div class="dates__fade dates__fade--r"></div>
+            </div>
+
+            <div class="panel panel--1">
+              <div class="panel__head">
+                <p>March 8</p>
+                <div class="seg">
+                  <button type="button"><img class="flip" src="assets/arrow-right-01.svg" alt="Previous"></button>
+                  <button type="button"><img src="assets/arrow-right-02.svg" alt="Next"></button>
+                </div>
+              </div>
+              <div class="panel__rule"><img src="assets/line-2282.svg" alt=""></div>
+              <div class="rows">
+                <div><img src="assets/icon-search-ai.svg" alt=""><p>3 Bottlenecks Detected</p></div>
+                <div><img src="assets/icon-alert.svg" alt=""><p>2 Risk Alerts Flagged</p></div>
+                <div><img src="assets/icon-workflow.svg" alt=""><p>26% Workflow Optimized</p></div>
+              </div>
+              <div class="cursor"><img src="assets/cursor.svg" alt=""></div>
+            </div>
+          </div>
+
+          <div class="card__foot">
+            <div class="card__foot-icon"><img src="assets/icon-bolt.svg" alt="" style="inset:8.84% 21.3% 8.49% 20.34%"></div>
+            <div class="card__foot-text">
+              <p class="card__title">Smart Work Insights</p>
+              <p class="card__sub">Real-time activity tracking and summaries.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- card 2 -->
+        <div class="card card--wide">
+          <img class="card__bg" src="assets/card2-bg.jpg" alt="">
+          <canvas class="card__dots" data-dot-matrix data-cell-size="12" data-colors="#0C201AFF,#0C2755FF,#093A47FF" data-seed="137"></canvas>
+
+          <div class="card__head card__head--c">
+            <img src="assets/logo-inmix-b.svg" alt="inmix">
+            <span>inmix.com</span>
+          </div>
+
+          <div class="draft panel panel--2">
+            <div class="panel__head">
+              <p>AI Task Draft</p>
+              <div class="seg seg--solo">
+                <button type="button"><img src="assets/icon-dots.svg" alt="More"></button>
+              </div>
+            </div>
+            <div class="panel__rule"><img src="assets/line-2282.svg" alt=""></div>
+            <div class="draft__body">
+              <div class="draft__hl" style="left:9px;top:47px;width:112px"><img src="assets/card2-bg.jpg" alt=""></div>
+              <div class="draft__hl" style="left:31px;top:111px;width:145px"><img src="assets/card2-bg.jpg" alt=""></div>
+              <div class="draft__text">
+                <p>Hey Alex,</p>
+                <p>&#8203;</p>
+                <p><b>I noticed your team’s</b> sprint velocity dropped 18% this week 📉.</p>
+                <p>&#8203;</p>
+                <p>Based on workflow patterns, it looks like<b> most time is being spent on</b> repetitive status updates and manual reporting.</p>
+                <p>&#8203;</p>
+                <p>I’ve automated summary reports and drafted 3 task optimizations to help the team refocus on high-impact work.</p>
+                <p>&#8203;</p>
+                <p>Would you like a quick overview or a detailed breakdown?</p>
+              </div>
+              <div class="draft__fade"></div>
+            </div>
+          </div>
+
+          <div class="chip" style="left:27px;top:205px"><p>Context</p></div>
+          <div class="chip" style="left:348px;top:270px"><p>Insights</p></div>
+
+          <div class="wire" style="left:292px;top:288px;width:60px"><img src="assets/line-2283.svg" alt="" style="width:60px"></div>
+          <div class="node" style="left:291px;top:286px"></div>
+          <div class="wire" style="left:97px;top:223px;width:28px"><img src="assets/line-2284.svg" alt="" style="width:28px"></div>
+          <div class="node" style="left:123px;top:221px"></div>
+
+          <div class="card__foot">
+            <div class="card__foot-icon"><img src="assets/icon-book-ai.svg" alt="" style="inset:0.05% 4.17% 8.33% 12.5%"></div>
+            <div class="card__foot-text">
+              <p class="card__title card__title--c">Intelligent Response Engine</p>
+              <p class="card__sub">Context-aware messages generated instantly.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- card 3 -->
+        <div class="card card--flex">
+          <img class="card__bg" src="assets/card3-bg.jpg" alt="">
+          <canvas class="card__dots" data-dot-matrix data-cell-size="12" data-colors="#0C1528FF,#17243CFF,#212F45FF" data-seed="291"></canvas>
+
+          <div class="card__head card__head--l">
+            <img src="assets/logo-inmix-a.svg" alt="inmix">
+            <span>inmix.com</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="stat__row">
+                <div class="stat__meta">
+                  <img src="assets/icon-hourglass.svg" alt="">
+                  <p>Time Saved</p>
+                </div>
+                <p class="stat__val">12h</p>
+              </div>
+            </div>
+            <div class="stat stat--light">
+              <div class="stat__row">
+                <div class="stat__meta">
+                  <img src="assets/icon-target.svg" alt="">
+                  <p>Accuracy Rate</p>
+                </div>
+                <p class="stat__val stat__val--grad">97%</p>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat__row">
+                <div class="stat__meta">
+                  <div><img src="assets/icon-ai.svg" alt=""></div>
+                  <p>AI Score</p>
+                </div>
+                <p class="stat__val">92%</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card__foot">
+            <div class="card__foot-icon"><img src="assets/icon-target-lg.svg" alt="" style="inset:8.33%"></div>
+            <div class="card__foot-text">
+              <p class="card__title">Predictive Performance Metrics</p>
+              <p class="card__sub">Forecast output and optimize efficiency.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- logos -->
+      <div class="logos-wrap">
+      <div class="logos">
+        <div class="logo" style="width:113.4px">
+          <div class="logo__icon" style="inset:0 73.54% 0 0"><img src="assets/brand-iconize-icon.svg" alt="Iconize"></div>
+          <div class="logo__text" style="inset:0 0 0 34.39%">
+            <div style="position:absolute;inset:26.7% 2.38% 26.5% -0.02%"><img src="assets/brand-iconize-text.svg" alt=""></div>
+          </div>
+        </div>
+        <div class="logo" style="width:135.6px">
+          <div class="logo__icon" style="inset:0 77.88% 0 0"><img src="assets/brand-wayline-icon.svg" alt="WayLINE"></div>
+          <div class="logo__text" style="inset:0 0 0 28.76%">
+            <div style="position:absolute;inset:26.92% 17.14% 26.3% 0.05%"><img src="assets/brand-wayline-text.svg" alt=""></div>
+          </div>
+        </div>
+        <div class="logo" style="width:123px">
+          <div class="logo__icon" style="inset:0 75.61% 0 0"><img src="assets/brand-imprintify-icon.svg" alt="Imprintify"></div>
+          <div class="logo__text" style="inset:0 0 0 31.71%">
+            <div style="position:absolute;inset:26.13% 1.2% 13.71% 0.3%"><img src="assets/brand-imprintify-text.svg" alt=""></div>
+          </div>
+        </div>
+        <div class="logo" style="width:96px">
+          <div class="logo__icon" style="inset:0 68.75% 0 0"><img src="assets/brand-signet-icon.svg" alt="Signet"></div>
+          <div class="logo__text" style="inset:0 0 0 40.63%">
+            <div style="position:absolute;inset:26.56% 0.7% 14.96% 0.32%"><img src="assets/brand-signet-text.svg" alt=""></div>
+          </div>
+        </div>
+        <div class="logo" style="width:123.6px">
+          <div class="logo__icon" style="inset:0 75.73% 0 0"><img src="assets/brand-grapherz-icon.svg" alt="Grapherz" style="bottom:-0.3%;height:auto;top:0"></div>
+          <div class="logo__text" style="inset:0 0 0 31.55%">
+            <div style="position:absolute;inset:25.68% 4.62% 15.42% 0.13%"><img src="assets/brand-grapherz-text.svg" alt=""></div>
+          </div>
+        </div>
+        <div class="logo" style="width:111.6px">
+          <div class="logo__icon" style="inset:0 73.12% 0 0"><img src="assets/brand-artistry-icon.svg" alt="Artistry"></div>
+          <div class="logo__text" style="inset:0 0 0 34.95%">
+            <div style="position:absolute;inset:26.14% 0.39% 11.78% 0.12%"><img src="assets/brand-artistry-text.svg" alt=""></div>
+          </div>
+        </div>
+        <div class="logo" style="width:121.8px">
+          <div class="logo__icon" style="inset:0 75.37% 0 0"><img src="assets/brand-prelude-icon.svg" alt="Prelude" style="inset:-0.54% 0 0 -0.5%;width:auto;height:auto"></div>
+          <div class="logo__text" style="inset:0 0 0 32.02%">
+            <div style="position:absolute;inset:27.48% 0.59% 27.07% 0"><img src="assets/brand-prelude-text.svg" alt=""></div>
+          </div>
+        </div>
+      </div>
+        <div class="edge edge--l"></div>
+        <div class="edge edge--r"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+<script src="assets/dot-matrix.js"></script>
+</body>
+</html>

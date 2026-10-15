@@ -239,6 +239,9 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
   const [copied, setCopied] = useState<string | null>(null);
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  // P1-2：搭建阶段的真实 AI 协同建议（此前右栏是硬编码静态文案，点了没反应）
+  const [adviceState, setAdviceState] = useState<"idle" | "loading" | "error">("idle");
+  const [advice, setAdvice] = useState<{ role: string; name: string; summary: string }[] | null>(null);
   const addPanelRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -399,6 +402,56 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
       setCopyState("error");
     }
     setTimeout(() => setCopyState((s) => (s === "done" || s === "error" ? "idle" : s)), 2000);
+  };
+
+  // P1-2：针对「当前选中区块」跑一次专家会诊，给出可执行的搭建建议。
+  // 复用 /api/ai/panel（与 refine 阶段同一接口）；失败时不清空已有建议，
+  // 保留静态规范文案作兜底，保证界面永远有内容可看。
+  const generateAdvice = async () => {
+    if (adviceState === "loading" || !currentComp) return;
+    setAdviceState("loading");
+    const pageName = currentPage?.name ?? pageSlug ?? "当前页面";
+    const compName = resolveText(currentComp.name);
+    const variantName = currentVariant ? resolveText(currentVariant.name) : "默认";
+    try {
+      const res = await fetch("/api/ai/panel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brief: productBrief,
+          messages: [
+            {
+              role: "user",
+              content: [
+                `我正在搭建「${pageName}」页面的「${compName}」区块，当前变体：${variantName}。`,
+                projectType ? `项目类型：${projectType}。` : "",
+                "请给出这个区块实现时的具体建议：结构要点、关键交互、易错点、验收标准。",
+                "要求：3 条以内，每条一句话，直接给结论，不要套话。",
+              ]
+                .filter(Boolean)
+                .join(""),
+            },
+          ],
+        }),
+      });
+      if (!res.ok) throw new Error(`panel_${res.status}`);
+      const data = (await res.json()) as {
+        agents?: { role?: string; name?: string; summary?: string }[];
+      };
+      const list = (data.agents ?? [])
+        .map((a) => ({
+          role: a.role ?? "expert",
+          name: a.name ?? "专家",
+          summary: (a.summary ?? "").trim(),
+        }))
+        .filter((a) => a.summary);
+      if (!list.length) throw new Error("empty_advice");
+      setAdvice(list);
+      setAdviceState("idle");
+    } catch {
+      setAdviceState("error");
+      setTimeout(() => setAdviceState((s) => (s === "error" ? "idle" : s)), 2000);
+    }
   };
 
   /* ── 左栏：AI 推荐页面 → 匹配骨架组件 ── */
@@ -716,10 +769,39 @@ export function BuildStage({ onAdvance }: BuildStageProps) {
               </div>
             )}
 
+            {/* P1-2：搭建阶段的真实 AI 协同建议 */}
             <div className="space-y-2 border-t border-border/30 pt-3">
-              <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                <Sparkles className="size-3 text-primary" /> AI 协同建议
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                  <Sparkles className="size-3 text-primary" /> AI 协同建议
+                </p>
+                <button
+                  type="button"
+                  onClick={generateAdvice}
+                  disabled={adviceState === "loading"}
+                  className="shrink-0 rounded-md border border-border px-2 py-0.5 text-[10px] text-foreground transition hover:bg-muted disabled:opacity-60"
+                >
+                  {adviceState === "loading" ? "生成中…" : advice ? "重新生成" : "生成建议"}
+                </button>
+              </div>
+
+              {adviceState === "error" && (
+                <p className="text-[11px] text-destructive">
+                  建议生成失败，下方通用规范仍然有效。
+                </p>
+              )}
+
+              {advice && advice.length > 0 && (
+                <div className="space-y-1.5 rounded-lg bg-primary/5 px-2.5 py-2">
+                  {advice.map((a) => (
+                    <p key={a.role} className="text-[11px] leading-relaxed text-foreground">
+                      <span className="font-medium">{a.name}：</span>
+                      <span className="text-muted-foreground">{a.summary}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-1.5 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <Palette className="size-3 shrink-0" />

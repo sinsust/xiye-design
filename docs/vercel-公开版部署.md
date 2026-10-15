@@ -59,8 +59,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 |---|---|---|
 | Framework Preset | Next.js | — |
 | Node.js Version | 20.x 或 22.x | 与本地对齐 |
-| **Plan** | **Pro 起步** | Hobby 函数上限 10s，而 LLM 传输超时 40s —— Hobby 上 AI 生成必被掐死 |
-| Function Max Duration | 300s | 已给所有 nodejs 路由加 `export const maxDuration = 300`（门户 API 60s） |
+| **Plan** | **Hobby 可跑（见下），商用必须 Pro** | 见 5.1：Hobby 的坑不是超时（Fluid compute 后默认即 300s），而是 **12 个函数/部署** 与 **ToS 禁止商业用途** |
+| Function Max Duration | 300s | 已给所有 nodejs 路由加 `export const maxDuration = 300`（门户 API 60s）。Hobby 的 300s 即默认也是上限，刚好够 |
 
 ---
 
@@ -118,6 +118,72 @@ public 模式下右上角改为「退出」按钮（清 HttpOnly cookie → 回�
 | 6 | 单密钥边界 | `IMA_ENC_KEY` 一把全局密钥加密所有人的 LLM key 与 ima 凭证。PG 库泄漏 = 全员 key 可解密 |
 | 7 | 国内访问 | Vercel 海外节点速度不稳；自有域名面向国内用户涉及备案问题 |
 | 8 | `middleware.ts` 在 Next 16 已废弃 | 启动日志会警告 `The "middleware" file convention is deprecated. Please use "proxy" instead.`。当前 16.2.11 仍可用（框架内部已按 proxy 处理），但升级大版本前需改名为 `proxy.ts` |
+| 9 | **Hobby 只有 12 个函数/部署** | 见 5.1，本仓库已削减为 8 个，Hobby 可直接部署（余量 4）；商用/收费仍须 Pro |
+| 10 | **Hobby ToS 禁止商业用途** | 给客户做、公司业务、有收费服务，就算流量没超也违规，Vercel 有权停号。非技术限制但同样是硬墙 |
+
+---
+
+## 五·一、Hobby 到底能不能跑：函数数账本（2026-10-14 实测核对）
+
+### 5.1.1 先纠正一个过时结论
+
+以前写「Hobby 函数上限 10s，必须 Pro」——**已不成立**。Vercel 上了 Fluid compute（新项目默认开启）后：
+
+| | Hobby | Pro |
+|---|---|---|
+| 函数执行时长 | **默认 300s，上限也是 300s** | 默认 300s，上限 800s |
+| 内存 | 2 GB / 1 vCPU | 4 GB / 2 vCPU |
+| 函数数/部署 | **12** | 无此限制 |
+| 环境变量 | 64 KB 总量（**不限个数**） | 同 |
+| 请求体 | 4.5 MB | 同 |
+
+→ **LLM 传输超时 40s 在 Hobby 上完全够，不需要为时长升 Pro。**
+
+### 5.1.2 Hobby 真正的硬墙是「函数数量」
+
+每个 `route.ts` 和每个**动态渲染**的 `page.tsx` 都算 1 个 Vercel Function（静态预渲染的页面不算；`middleware` 是 edge function，**不占**这 12 个名额）。
+
+本仓库当前清单（2026-10-14 逐个文件统计）：
+
+| # | 文件 | 类型 |
+|---|---|---|
+| 1 | `app/api/[[...path]]/route.ts` | 根分发器 |
+| 2 | `app/api/ai/[[...path]]/route.ts` | 分发器 |
+| 3 | `app/api/auth/[[...path]]/route.ts` | 分发器（**已删除，并入根分发器 → `/api/auth/me`**） |
+| 4 | `app/api/brain/[[...path]]/route.ts` | 分发器 |
+| 5 | `app/api/brand/[[...path]]/route.ts` | 分发器 |
+| 6 | `app/api/enter/route.ts` | 门户 API（**已删除，并入根分发器**） |
+| 7 | `app/api/feishu/[[...path]]/route.ts` | 分发器 |
+| 8 | `app/api/knowledge/[[...path]]/route.ts` | 分发器 |
+| 9 | `app/api/originkit/[[...path]]/route.ts` | 分发器 |
+| 10 | `app/api/projects/[[...path]]/route.ts` | 分发器 |
+| 11 | `app/api/strat-fix/route.ts` | 单路由（**已删除，并入根分发器**） |
+| 12 | `app/brain/page.tsx` | 已静态化（client shell，去掉 force-dynamic） |
+| 13 | `app/library/page.tsx` | 已静态化（改走 KnowledgeBrowserFromClient 客户端取数，行为不变） |
+| 14 | `app/enter/page.tsx` | 已静态化（去掉 redirect；local 模式走客户端跳回首页） |
+
+**合计 8 个函数（7 个 API 分发器 + 0 个动态页面）≤ 12 → Hobby 可直接部署（余量 4）**。历史上 14 > 12 会报以下错（已通过合并根除）：
+`No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan. Create a team (Pro plan) to deploy more.`
+
+### 5.1.3 削减方案（14 → 8，全部沿用已有模式，零架构风险）✅ 已实施（2026-10-14）
+
+仓库里已有成熟的合并范式：`scripts/migrate-api-catchall.mjs` + 根分发器（`brain` 就是这么把 52 个 route.ts 合成 1 个函数的）。
+
+| 措施 | 省 | 做法 |
+|---|---|---|
+| A | -1 | `auth` 分发器只剩 `/api/auth/me` 一个路由 → 并进根分发器 |
+| B | -1 | `enter` 门户 API（POST/DELETE）→ 并进根分发器 |
+| C | -1 | `strat-fix` 单路由 → 并进根分发器 |
+| D | -2 | `brain/page.tsx`、`library/page.tsx` 去掉 `force-dynamic`，改客户端取数（两者本来就是 client shell + `Suspense`） |
+| E | -1 | `enter/page.tsx` 的门禁已由 middleware 总闸负责，页面本身可静态化 |
+
+削减后：**8 个函数，Hobby 余量 4 —— 已于 2026-10-14 落地（实测 tsc --noEmit 0 错误）**。七个大前缀（ai/brain/brand/feishu/knowledge/originkit/projects）各自独立，import 不互相污染，冷启动不受影响。
+
+> 注：部署后可在 **Deployment → Deployment Summary** 看到 Vercel 实际统计的函数数，以它为准。
+
+### 5.1.4 环境变量那 64KB 完全不是问题
+
+不是「10 个变量」的限制 —— Vercel 对 Hobby 的约束是**所有变量名+值合计 64 KB**，单个变量也不能超过 64 KB。本仓库 `process.env.*` 去重后 31 个、总长度几百字节，**余量 99% 以上**，无需任何优化。
 
 ---
 
@@ -155,7 +221,7 @@ App Router 流式 SSR 下响应头先发出，`notFound()` 只能替换渲染内
 - [ ] 本地用 5432 直连跑一次 `npm run db:push:pg` 建表
 - [ ] 生成 `PROFILE_HMAC_KEY` / `IMA_ENC_KEY` / `ACCESS_CODE`
 - [ ] Vercel 导入仓库，配好第二节全部 env（`DATABASE_URL` 用 **6543**）
-- [ ] Plan 升到 Pro（否则 10s 超时）
+- [ ] 确认 Plan：**Hobby 需先做「函数数削减」**（见 5.1，否则部署直接失败）；商用/收费必须 Pro
 - [ ] 部署，访问 `/` → 应 307 跳 `/enter`
 - [ ] 输邀请码 → 建档 + 种签名 cookie → 进入首页
 - [ ] 手写一个假 cookie `xiye_profile=<别人的id>` → 应被踢回 `/enter`（验签失败）

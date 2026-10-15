@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bell,
   Check,
@@ -17,6 +17,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProvenancePanel, type ProvenanceAnchor } from "@/components/brain/ProvenancePanel";
+
+/**
+ * 单次批量收录的条数上限（P0-5 护栏）。
+ * 空行拆分对「多段长文」极易误判，若无上限，一次误粘贴就可能产生几十上百条笔记。
+ * 超过上限时禁用提交并提示，引导用户分批录入。
+ */
+const MAX_BATCH_BLOCKS = 20;
 
 // —— 类型（与后端 /api/brain/inbox 对齐）——
 type InboxIntent = "note" | "task" | "meeting" | "snippet" | "project" | "unknown";
@@ -144,13 +151,22 @@ export function InboxDrawer({
     if (open) load();
   }, [open, load]);
 
+  // 拆分结果实时可见：让用户在点「收录」之前就知道会被拆成几条，
+  // 而不是提交后才发现一条输入变成了一堆卡片（审计文档自认的 P3 回归风险）。
+  const batchBlocks = useMemo(
+    () =>
+      batchText
+        .split(/\n\s*\n/)
+        .map((b) => b.trim())
+        .filter(Boolean),
+    [batchText],
+  );
+  const batchTooMany = batchBlocks.length > MAX_BATCH_BLOCKS;
+
   // 提交批量输入：按空行拆分 → POST /inbox（默认 auto-apply 即时收录）→ 展示可撤销回执
   const submitBatch = async () => {
-    const blocks = batchText
-      .split(/\n\s*\n/)
-      .map((b) => b.trim())
-      .filter(Boolean);
-    if (!blocks.length || submittingBatch) return;
+    const blocks = batchBlocks;
+    if (!blocks.length || submittingBatch || batchTooMany) return;
     setSubmittingBatch(true);
     setError("");
     try {
@@ -338,11 +354,23 @@ export function InboxDrawer({
               className="max-h-[140px] min-h-[64px] w-full resize-y rounded-md border border-muted bg-card px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary"
               rows={2}
             />
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">AI 即时收录进记忆，可随时撤销</span>
-              <Button size="sm" onClick={submitBatch} disabled={!batchText.trim() || submittingBatch}>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span
+                className={`text-[11px] ${batchTooMany ? "text-destructive" : "text-muted-foreground"}`}
+              >
+                {batchTooMany
+                  ? `将拆分为 ${batchBlocks.length} 条，超出单次上限 ${MAX_BATCH_BLOCKS} 条，请分批录入`
+                  : batchBlocks.length > 1
+                    ? `将拆分为 ${batchBlocks.length} 条记录`
+                    : "AI 即时收录进记忆，可随时撤销"}
+              </span>
+              <Button
+                size="sm"
+                onClick={submitBatch}
+                disabled={!batchText.trim() || submittingBatch || batchTooMany}
+              >
                 {submittingBatch ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
-                即时收录
+                {!batchTooMany && batchBlocks.length > 1 ? `收录 ${batchBlocks.length} 条` : "即时收录"}
               </Button>
             </div>
           </div>

@@ -4,6 +4,8 @@
 
 import { organizeNote, classifyInput, type OrganizedNote } from "./brain-organizer";
 import { embed, buildListableText } from "./embedding";
+// PRD §7.2 / 决策 16：改写结果入库时必须保留原文附录，绝不静默覆盖用户原始正文
+import { contentWithOriginal, stripOriginalAppendix } from "./note-original";
 import {
   insertBrainNote,
   insertBrainTasks,
@@ -113,8 +115,8 @@ export async function importImaNote(
   // 关联建议用用户已有笔记
   const existing = await listBrainNotes(userId);
   const { organized, degraded } = await runOrganize(content, existing, input.title);
-  // 深度重写：有规范化正文则作为入库正文（导入即规范）
-  const noteContent = organized.rewritten || content;
+  // 深度重写：有规范化正文则作为入库正文；同时把原文作为附录保留，防信息丢失
+  const noteContent = contentWithOriginal(organized.rewritten, content);
 
   const note = await insertBrainNote(userId, {
     source: "ima",
@@ -183,9 +185,11 @@ export async function updateImaNote(
   const content = input.content?.trim() || input.title;
   const existing = await listBrainNotes(userId);
   const { organized, degraded } = await runOrganize(content, existing, input.title);
-  const noteContent = organized.rewritten || content;
+  const noteContent = contentWithOriginal(organized.rewritten, content);
 
-  if (note.content === content && !degraded) {
+  // 幂等比对：入库正文可能是「改写 + 原文附录」，需先剥离附录再与原始输入比对，
+  // 否则每次同步都会误判 changed=true，导致重复整理与重复建任务。
+  if (stripOriginalAppendix(note.content) === content && !degraded) {
     await updateBrainNote(userId, note.id, { imaSyncedAt: new Date().toISOString() });
     return { note, changed: false };
   }

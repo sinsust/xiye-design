@@ -74,6 +74,9 @@ export function encrypt(plain: string): string {
 
 /** 解密 "iv:tag:enc" → 明文。 */
 export function decrypt(payload: string): string {
+  // 浏览器轨道存的是明文（见 encrypt 的说明）：必须在这里短路，
+  // 否则下面的三段切分会把 "plain:xxx" 当成缺段而静默返回空串 —— 表现为「配了 key 却 401」。
+  if (payload.startsWith(PLAIN_PREFIX)) return payload.slice(PLAIN_PREFIX.length);
   const key = getKey();
   const [ivB64, tagB64, encB64] = payload.split(":");
   if (!ivB64 || !tagB64 || !encB64) return "";

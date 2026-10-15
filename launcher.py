@@ -14,20 +14,22 @@ import subprocess
 import webbrowser
 
 PORT = 3200
-DEFAULT_BASE = r"D:\workspace\xiye"
+
+# 项目根：优先脚本自身所在目录（无论放在哪都自适应，不再硬编码旧路径 D:\workspace\xiye）
+DEFAULT_BASE = os.path.dirname(os.path.abspath(__file__))
 
 # 已知 Node 安装位置（用于 PATH 缺 npm 时兜底定位）
 NODE_CANDIDATES = [
     r"C:\Program Files\nodejs\node.exe",
     r"C:\Program Files (x86)\nodejs\node.exe",
-    r"C:\Users\Administrator\.workbuddy\binaries\node\versions\22.22.2\node.exe",
-    r"C:\Users\Administrator\.workbuddy\binaries\node\versions\24.14.0\node.exe",
+    r"C:\Users\Admin1\.workbuddy\binaries\node\versions\22.22.2\node.exe",
+    r"C:\Users\Admin1\.workbuddy\binaries\node\versions\24.19.0\node.exe",
 ]
 NPM_DIR_CANDIDATES = [
     r"C:\Program Files\nodejs",
     r"C:\Program Files (x86)\nodejs",
-    r"C:\Users\Administrator\.workbuddy\binaries\node\versions\22.22.2",
-    r"C:\Users\Administrator\.workbuddy\binaries\node\versions\24.14.0",
+    r"C:\Users\Admin1\.workbuddy\binaries\node\versions\22.22.2",
+    r"C:\Users\Admin1\.workbuddy\binaries\node\versions\24.19.0",
 ]
 
 

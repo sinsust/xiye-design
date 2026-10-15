@@ -1,24 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import { requireUser } from "@/lib/auth-guard";
-
-export const runtime = "nodejs";
-export const maxDuration = 300; // Vercel 公开版：AI 生成/zip 打包等长任务（Pro 档上限 300s）
-export const dynamic = "force-dynamic";
 
 // 策略两层改造的一次性迁移工具（GET 手工调用）。此前完全无鉴权，
 // 本工具 SQL 均为 PG 方言（::int / information_schema / IF NOT EXISTS），仅适用 PG 分支；
 // db 类型收敛后 BetterSQLite3Database 无 execute，这里显式断言到 postgres-js 以暴露原生 execute。
 // 任何人 curl 即可触发 wipe（清空 brain_strategies）/ alter（改表结构）/
 // sources（读取用户笔记正文）——已加登录门禁 + 生产环境禁用破坏性步骤。
+// 原 app/api/strat-fix/route.ts 抽出，并入根分发器 app/api/[[...path]]（Hobby 函数数削减）。
 const DESTRUCTIVE_STEPS = new Set(["alter", "wipe"]);
 
 // 一次性迁移工具专用：PG 原生 execute（drizzle pg 数据库类型）。
 const pgDb = db as unknown as PostgresJsDatabase<never>;
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   // 门禁 1：必须登录（此前裸奔）
   const { res } = await requireUser();
   if (res) return res;

@@ -238,7 +238,13 @@ async function callPanelAgent(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error("[ai-panel] DeepSeek non-ok:", res.status, text.slice(0, 300));
+      // 日志里别再写死 DeepSeek：本项目早已支持多服务商，误标会把排查带到别的厂商上
+      console.error(
+        `[ai-panel] ${model.provider} 非 2xx:`,
+        res.status,
+        `model=${model.model}`,
+        text.slice(0, 300),
+      );
       throw new Error(`http:${res.status}`);
     }
 

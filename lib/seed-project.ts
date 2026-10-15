@@ -1790,6 +1790,44 @@ ${decisionsSection}
 
 // —— 三件套-B：蓝图落盘 —— 页面路由占位 + 组件文件占位 + BLUEPRINT.md ——
 
+/**
+ * 生成组件文件的真实内容（P1-3：修复「交付物是空壳」这一致命缺陷）。
+ *
+ * 背景：骨架变体的 `code` 字段里本就存着完整可运行的 TSX 实现（Hero / FeatureGrid / …），
+ * 但此前落盘时被丢弃、统一改写成 TODO 占位空壳，导致用户解压执行
+ * `npm i && npm run dev` 后看到的是一堆空 section —— 上游所有 AI 专业度在这一刻归零。
+ *
+ * 现在：优先落 `code`（占位文案已用 DEMO_CONTENT 揭示），无 code 时才回落占位模板。
+ */
+function componentFileContent(c: {
+  componentId: string;
+  componentName: string;
+  variantName: string;
+  prompt: string;
+  code: string;
+}): string {
+  const Comp = pascal(c.componentId);
+  if (c.code && c.code.trim()) {
+    const revealed = revealPlaceholders(c.code);
+    // 变体 code 为具名导出，落盘改成 default 导出，便于 page.tsx 直接 import
+    return `// ${c.componentName} · 变体：${c.variantName}
+// 说明：骨架库中该变体的完整实现，占位文案已填充。
+// 投入生产前：替换为真实文案与数据，并按 docs/DESIGN_SPEC.md 的 token 做最终核对。
+${revealed.replace(/export function /g, "export default function ")}
+`;
+  }
+  return `// ${c.componentName} · 变体：${c.variantName}
+// 实现提示：${c.prompt || "按 docs/DESIGN_SPEC.md 的组件规范实现"}
+export default function ${Comp}() {
+  return (
+    <section>
+      {/* TODO: 按蓝图实现 ${c.componentName}（${c.variantName}） */}
+    </section>
+  );
+}
+`;
+}
+
 function buildBlueprintFiles(state: FlowState, tokens: SeedTokens): SeedFile[] {
   const assembly = blueprintAssembly(state);
   if (!assembly.length) return [];
@@ -1822,39 +1860,23 @@ export default function ${PageName}Page() {
 `,
       });
       // 组件文件：components/<PageName>/<Component>.tsx
+      // P1-3：优先落骨架库里的完整 TSX 实现，而不是 TODO 空壳
       for (const c of comps) {
         const Comp = pascal(c.componentId);
         files.push({
           path: `components/${PageName}/${Comp}.tsx`,
-          content: `// ${c.componentName} · 变体：${c.variantName}
-// 实现提示：${c.prompt || "按 docs/DESIGN_SPEC.md 的组件规范实现"}
-export default function ${Comp}() {
-  return (
-    <section>
-      {/* TODO: 按蓝图实现 ${c.componentName}（${c.variantName}） */}
-    </section>
-  );
-}
-`,
+          content: componentFileContent(c),
         });
       }
     } else {
       // 非 Next 栈：生成 BLUEPRINT.md 装配清单（路由/组件由 AI 按架构落地）
       // 组件文件占位统一放 components/ 下
+      // P1-3：同样优先落骨架库里的完整 TSX 实现
       for (const c of comps) {
         const Comp = pascal(c.componentId);
         files.push({
           path: `components/${PageName}/${Comp}.tsx`,
-          content: `// ${c.componentName} · 变体：${c.variantName}
-// 实现提示：${c.prompt || "按 docs/DESIGN_SPEC.md 的组件规范实现"}
-export default function ${Comp}() {
-  return (
-    <section>
-      {/* TODO: 按蓝图实现 ${c.componentName}（${c.variantName}） */}
-    </section>
-  );
-}
-`,
+          content: componentFileContent(c),
         });
       }
     }

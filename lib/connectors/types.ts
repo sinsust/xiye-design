@@ -49,6 +49,12 @@ export interface Connector {
   id: string;
   label: string;
   caps: { read: boolean; write: boolean };
+  /**
+   * 是否依赖桌面运行态（持久磁盘读写 + 长驻 watcher + `obsidian://` 拉起）。
+   * PRD 决策 14：Obsidian 直连仅在桌面壳可用，**Vercel 线上（public 模式）禁用**。
+   * 因此这类连接器在 public 部署下不注册，避免暴露无意义或危险的入口。
+   */
+  requiresDesktop?: boolean;
   status(creds?: unknown): Promise<ConnectorStatus>;
   read?(ctx: ConnectorReadContext, creds?: unknown): Promise<ConnectorReadResult>;
   write?(ctx: ConnectorWriteContext, creds?: unknown): Promise<ConnectorWriteResult>;

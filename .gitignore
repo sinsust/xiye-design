@@ -164,3 +164,11 @@ public/knowledge.json
 # 历史 dev server 日志（勿入库）
 dev_server*.log
 dev-server.log
+
+# 本地 dev server 临时启动日志（运行时产物，勿入库）
+.gate.log
+
+# 本地门禁 SQLite 库（运行时产物，勿入库）
+xiye-gate.db
+xiye-gate.db-shm
+xiye-gate.db-wal

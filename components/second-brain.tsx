@@ -50,6 +50,8 @@ import type {
   BrainStrategy,
   BrainStrategyStatus,
 } from "@/lib/brain-db";
+// PRD §7.2 / 决策 16：改写结果入库时必须保留原文附录，绝不静默覆盖用户原始正文
+import { contentWithOriginal } from "@/lib/note-original";
 import type {
   AskMode,
   AskSourceItem,
@@ -1397,8 +1399,9 @@ export function SecondBrain({
     setWSnippet(!!d.isSnippet);
     setWLanguage(d.language ?? "");
     setWCode(d.codeContent ?? "");
-    // 规范正文：优先用 AI 深度重写；无则回落原始记录
-    setWContent(d.rewritten || raw || "");
+    // 规范正文：优先用 AI 深度重写；无则回落原始记录。
+    // 用了改写版时把原文作为附录一并保留，保证「原文永久保留、改写只是辅助视图」。
+    setWContent(contentWithOriginal(d.rewritten, raw));
     // 完整结构化草稿随笔记一并落库（struct）
     setWStruct(d);
     setWorkspaceOpen(true);
@@ -1827,7 +1830,8 @@ export function SecondBrain({
       if (!res.ok || !data?.draft) throw new Error(data?.error);
       const d = data.draft as OrganizedDraft;
       setEditTitle(d.title || editTitle);
-      setEditContent(d.rewritten || editContent);
+      // 同上：改写生效时保留原文附录，避免「重新整理」把用户原始记录冲掉
+      setEditContent(contentWithOriginal(d.rewritten, editContent));
       setEditStruct(d);
     } catch {
       toast("重新整理失败，请稍后重试", "error");
@@ -2038,12 +2042,14 @@ export function SecondBrain({
           </span>
         </div>
 
-        {/* 顶部导航：常显 首页 / 记一笔；高级工具收纳进折叠「高级工具 ▾」 */}
+        {/* 顶部导航：常显 概览 / 随手记；高级工具收纳进折叠「高级工具 ▾」 */}
         <div className="mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-border/60 bg-card/70 px-2 py-1.5 shadow-lg shadow-primary/5 backdrop-blur-md">
-          {/* 常显入口：首页 / 记一笔 */}
+          {/* 常显入口：概览 / 随手记
+              术语统一（P2-5）：原标签「首页」与全站首页概念冲突，「记一笔」与
+              今日空间的「随手记」是同一动作却两套叫法，这里统一为「概览 / 随手记」。 */}
           {[
-            { v: "dashboard" as const, label: "首页", icon: Home },
-            { v: "input" as const, label: "记一笔", icon: PenLine },
+            { v: "dashboard" as const, label: "概览", icon: Home },
+            { v: "input" as const, label: "随手记", icon: PenLine },
           ].map((i) => {
             const active = topView === "dashboard" ? i.v === "dashboard" : i.v === workTab;
             return (

@@ -5,9 +5,9 @@ import { signProfileCookie } from "@/lib/profile-signature";
 import { ensureLocalUser } from "@/lib/local-scope";
 import { newProfileId } from "@/lib/local-profile";
 
-export const runtime = "nodejs";
-// 门户发放是轻量操作（校验 + 建档 + 种 cookie），无需长超时
-export const maxDuration = 60;
+// 邀请码门户 API：校验邀请码 → 建档案 → 种签名 cookie（POST）；
+// 退出当前档案、清签名 cookie（DELETE）。
+// 原 app/api/enter/route.ts 抽出，并入根分发器 app/api/[[...path]]（Hobby 函数数削减）。
 
 /** 常数时间比较，防时序侧信道 */
 function safeEqual(a: string, b: string): boolean {
@@ -17,16 +17,6 @@ function safeEqual(a: string, b: string): boolean {
   return crypto.timingSafeEqual(ba, bb);
 }
 
-/**
- * POST /api/enter —— 邀请码门户：校验邀请码 → 建档案 → 种签名 cookie。
- *
- * body: { code: string }
- * 200 { ok: true }                        + Set-Cookie: xiye_profile=<id>.<sig>
- * 403 { error: "invalid_code" }           邀请码错误
- * 403 { error: "access_disabled" }        未配置 ACCESS_CODE
- * 404 { error: "not_public" }             非 public 模式（本地部署无门户）
- * 500 { error: "server_misconfigured" }   PROFILE_HMAC_KEY 缺失/非法
- */
 export async function POST(req: NextRequest) {
   if (!isPublicDeploy()) {
     return NextResponse.json({ error: "not_public" }, { status: 404 });
@@ -73,13 +63,6 @@ export async function POST(req: NextRequest) {
   return res;
 }
 
-/**
- * DELETE /api/enter —— 退出当前档案（清签名 cookie）。
- *
- * cookie 是 HttpOnly，前端 JS 清不掉，必须走服务端。
- * 200 { ok: true }            + Set-Cookie: xiye_profile=<空>, maxAge=0
- * 404 { error: "not_public" } 非 public 模式
- */
 export async function DELETE(req: NextRequest) {
   if (!isPublicDeploy()) {
     return NextResponse.json({ error: "not_public" }, { status: 404 });

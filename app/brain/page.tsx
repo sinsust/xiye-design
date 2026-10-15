@@ -1,8 +1,6 @@
 import { BrainHome } from "@/components/brain/brain-home";
 import { Suspense } from "react";
 
-export const dynamic = "force-dynamic";
-
 export default async function BrainPage() {
   // M3：默认进入「今日空间」轻量记忆助手；完整看板为二级入口
   // 不再在服务端整表预取笔记全文：今日空间用 /api/brain/today 轻量聚合；

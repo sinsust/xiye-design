@@ -225,6 +225,10 @@ const TYPE_BLUEPRINT: Record<string, Record<string, string[]>> = {
     about: ["about-story", "about-team"],
     auth: ["auth-login", "auth-signup"],
     dashboard: ["dash-table", "dash-list"],
+    // 业务专属功能页（P1-1）：接单大厅 → 订单详情 → 服务详情
+    "order-hall": ["hall-filter", "hall-list", "hall-empty"],
+    "order-detail": ["detail-timeline", "detail-customer", "detail-items", "detail-actions"],
+    "service-detail": ["svc-hero", "svc-tiers", "svc-reviews", "svc-booking"],
   },
   education: {
     home: ["navbar", "hero", "features", "pricing", "testimonials"],
@@ -252,6 +256,10 @@ const TYPE_BLUEPRINT: Record<string, Record<string, string[]>> = {
     about: ["about-story", "about-team"],
     product: ["product-info"],
     auth: ["auth-login"],
+    // 上门服务主流程（P1-1）：浏览可接订单 → 查看单据 → 服务详情与下单
+    "order-hall": ["hall-filter", "hall-list", "hall-empty"],
+    "order-detail": ["detail-timeline", "detail-customer", "detail-items", "detail-actions"],
+    "service-detail": ["svc-hero", "svc-tiers", "svc-reviews", "svc-booking"],
   },
   mobile_app: {
     home: ["navbar", "hero", "features"],
